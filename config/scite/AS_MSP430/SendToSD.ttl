@@ -1,0 +1,24 @@
+
+; param1 = this macro filename
+; param2 = pathname of file to write in SD_CARD
+; param3 = /C = default COM saved in TERATERM.INI with all its parameters.
+
+basename fname param2       ; fname = file.ext of param2
+strinsert fname 1 '\'       ; fname = \file.ext, to force absolute path
+
+testlink
+if result=0 connect  param3
+
+sendln '     $0A BASE ! ECHO STOP' ; blanks are added to pass LPMx wake up time...
+
+inputbox 'here you can add a path to the file: ' 'Send a File to SD_CARD target' fname
+
+sendln 'TERM2SD" ' inputstr '"'    ; send to FastForth the command TERM2SD" \file.ext" ...with optionnal path added in inputbox
+
+sendfile param2 0       ; binary flag = 0 to send text file
+
+sendln #4               ; send ETX to ask FastForth to close file
+
+showtt 0
+
+; end

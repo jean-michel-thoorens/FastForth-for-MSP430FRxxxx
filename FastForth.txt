@@ -1,0 +1,51 @@
+
+FORTH vocabulary
+   COLD            WARM            (WARM)          WIPE            RST_HERE        RST_STATE       PWR_HERE        PWR_STATE    
+   MOVE            LEAVE           +LOOP           LOOP            DO              REPEAT          WHILE           AGAIN        
+   UNTIL           BEGIN           THEN            ELSE            IF              POSTPONE        [']             IS           
+   IMMEDIATE       ;               :               RECURSE         ]               [               DEFER           DOES>        
+   CREATE          CONSTANT        VARIABLE        \               '               ABORT"          ABORT           QUIT         
+   EVALUATE        COUNT           LITERAL         ,               EXECUTE         >NUMBER         FIND            WORD         
+   ."              S"              TYPE            SPACES          SPACE           CR              (CR)            NOECHO       
+   ECHO            EMIT            (EMIT)          ACCEPT          KEY             (KEY)           C,              ALLOT        
+   HERE            .               D.              U.              UD.             SIGN            HOLD            #>           
+   #S              #               <#              BL              STATE           BASE            >IN             J            
+   I               UNLOOP          U<              >               <               =               0<              0=           
+   ABS             NEGATE          XOR             OR              AND             -               +               C!           
+   C@              !               @               DEPTH           R@              R>              >R              ROT          
+   OVER            SWAP            DROP            ?DUP            DUP             LIT             EXIT
+
+ASSEMBLER vocabulary
+   ?GOTO           GOTO            FW3             FW2             FW1             BW3             BW2             BW1          
+   ?JMP            JMP             REPEAT          WHILE           AGAIN           UNTIL           ELSE            THEN         
+   IF              0=              0<>             U>=             U<              0<              0>=             S<           
+   S>=             RRUM            RLAM            RRAM            RRCM            POPM            PUSHM           CALL         
+   PUSH.B          PUSH            SXT             RRA.B           RRA             SWPB            RRC.B           RRC          
+   AND.B           AND             XOR.B           XOR             BIS.B           BIS             BIC.B           BIC          
+   BIT.B           BIT             DADD.B          DADD            CMP.B           CMP             SUB.B           SUB          
+   SUBC.B          SUBC            ADDC.B          ADDC            ADD.B           ADD             MOV.B           MOV          
+   RETI            LO2HI           COLON           ENDASM          ENDCODE         ASM             CODE            HI2LO        
+   ASSEMBLER   
+
+VOCABULARY ADD-ON
+   DEFINITIONS     ONLY            PREVIOUS        ALSO            FORTH           VOCABULARY   
+
+ANS_COMPLEMENT ADD-ON
+   >BODY           SOURCE          .(              (               DECIMAL         HEX             FILL            +!           
+   [CHAR]          CHAR            CELL+           CELLS           CHAR+           CHARS           ALIGN           ALIGNED      
+   2OVER           2SWAP           2DROP           2DUP            2!              2@              */              */MOD        
+   MOD             /               /MOD            *               FM/MOD          SM/REM          UM/MOD          M*           
+   UM*             S>D             NIP             2/              2*              MIN             MAX             1-           
+   1+              RSHIFT          LSHIFT          INVERT          
+
+SD_CARD_LOADER ADD-ON
+   LOAD"           (ACCEPT)     
+
+SD_CARD_READ_WRITE ADD-ON
+   TERM2SD"        SD_EMIT         WRITE           WRITE"          READ            READ"           CLOSE           DEL"         
+   CD"
+
+SD_TOOLS ADD-ON
+   DIR_D           FAT_D           CLUST_D         SECT_D          DUMP            U.R             MIN          
+   MAX             WORDS           .S              SP@             ?
+

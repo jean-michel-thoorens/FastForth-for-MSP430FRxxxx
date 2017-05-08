@@ -1,0 +1,14 @@
+connect  param3
+sendln '     $0A BASE ! STOP' ; blanks are to pass LPMx wake up time...
+
+inputbox 'Send a File' 'Select File : ' param2
+
+showtt 0
+sendln 'NOECHO' ; by default
+sendfile inputstr 0
+showtt 1
+
+end
+; param1 = this macro
+; param2 = file to send
+; param3 = "/C"

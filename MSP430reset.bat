@@ -1,0 +1,1 @@
+a:\prog\MSP430Flasher\msp430flasher -m SBW2 -z [RESET,VCC=3300]
