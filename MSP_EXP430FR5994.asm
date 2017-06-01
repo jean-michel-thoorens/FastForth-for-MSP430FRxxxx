@@ -71,12 +71,12 @@
 ; P3.6/TB0.5                          
 ; P3.5/TB0.4/COUT                     
 ; P3.4/TB0.3/SMCLK
-; P7.3/UCB2STE/TA4.1       RTS ----> CTS  UARTtoUSB bridge (optional hardware control flow)
+; P7.3/UCB2STE/TA4.1
 ; P2.6/TB0.1/UCA1RXD/UCA1SOMI 
 ; P2.5/TB0.0/UCA1TXD/UCA1SIMO 
 ; P4.3/A11
-; P4.2/A10
-; P4.1/A9
+; P4.2/A10       RTS ----> CTS  UARTtoUSB bridge (optional hardware control flow)
+; P4.1/A9        CTS <---- RTS  UARTtoUSB bridge (optional hardware control flow)
 ;
 ; J2 - right ext.
 ; GND
@@ -184,19 +184,27 @@ TERM_REN    .equ P2REN
 ; PORT4 FastForth usage
 
 
-; PORTx default wanted state : pins as input with pullup resistor
+        .IFDEF TERMINALCTSRTS
 
-            MOV #-1,&PBOUT      ; all pins output pull up resistors
-            BIS #-1,&PBREN      ; all pins with pull resistors
+; RTS output is wired to the CTS input of UART2USB bridge 
+; CTS is not used by FORTH terminal
+; configure RTS as output high to disable RX TERM during start FORTH
 
-    .IFDEF TERMINALCTSRTS
-;configure P4.1 as RTS output high
-RTS         .equ  2
+RTS         .equ  4 ; P4.2
+;CTS         .equ  8 ; P4.3
 HANDSHAKOUT .equ  P4OUT
 HANDSHAKIN  .equ  P4IN
-            BIS.B #RTS,&HANDSHAKOUT
-    .ENDIF
+            BIS     #00400h,&PBDIR  ; all pins as input else P4.2
+            BIS     #-1,&PBREN      ; all input pins with resistor
+            MOV     #-1,&PBOUT      ; that acts as pull up, and P4.2 as output HIGH
 
+        .ELSEIF
+
+; PORTx default wanted state : pins as input with pullup resistor
+            MOV     #-1,&PBOUT   ; OUT1
+            BIS     #-1,&PBREN   ; REN1 all pullup resistors
+
+          .ENDIF
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT5/6
@@ -270,7 +278,12 @@ s1          .set 020h    ; P5.5 bit position
 ; CS code for MSP430FR5969
             MOV.B   #CSKEY,&CSCTL0_H ;  Unlock CS registers
 
-    .IF FREQUENCY = 0.5
+    .IF FREQUENCY = 0.25
+;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
+            MOV     #DIVA_0 + DIVS_32 + DIVM_32,&CSCTL3
+            MOV     #4,X
+
+    .ELSEIF FREQUENCY = 0.5
             MOV     #0,&CSCTL1                  ; Set 1MHZ DCO setting
             MOV     #DIVA_2 + DIVS_2 + DIVM_2,&CSCTL3             ; set all dividers as 2
             MOV     #4,X

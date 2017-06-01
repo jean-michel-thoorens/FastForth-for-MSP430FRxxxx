@@ -18,6 +18,7 @@
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+;https://forth-standard.org/standard/core/TwoFetch
 ;C 2@    a-addr -- x1 x2    fetch 2 cells ; the lower address will appear on top of stack
             FORTHWORD "2@"
             SUB     #2, PSP
@@ -25,6 +26,7 @@
             MOV     @TOS,TOS
             mNEXT
 
+;https://forth-standard.org/standard/core/TwoStore
 ;C 2!    x1 x2 a-addr --    store 2 cells ; the top of stack is stored at the lower adr
             FORTHWORD "2!"
             MOV     @PSP+,0(TOS)
@@ -32,6 +34,7 @@
             MOV     @PSP+,TOS
             mNEXT
 
+;https://forth-standard.org/standard/core/TwoDUP
 ;C 2DUP   x1 x2 -- x1 x2 x1 x2   dup top 2 cells
             FORTHWORD "2DUP"
             SUB     #4,PSP          ; -- x1 x x x2
@@ -39,12 +42,14 @@
             MOV     4(PSP),0(PSP)   ; -- x1 x2 x1 x2
             mNEXT
 
+;https://forth-standard.org/standard/core/TwoDROP
 ;C 2DROP  x1 x2 --          drop 2 cells
             FORTHWORD "2DROP"
             ADD     #2,PSP
             MOV     @PSP+,TOS
             mNEXT
 
+;https://forth-standard.org/standard/core/TwoSWAP
 ;C 2SWAP  x1 x2 x3 x4 -- x3 x4 x1 x2
             FORTHWORD "2SWAP"
             MOV     @PSP,W          ; -- x1 x2 x3 x4    W=x3
@@ -55,6 +60,7 @@
             MOV     W,2(PSP)        ; -- x3 x4 x1 x2
             mNEXT
 
+;https://forth-standard.org/standard/core/TwoOVER
 ;C 2OVER  x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2
             FORTHWORD "2OVER"
             SUB     #4,PSP          ; -- x1 x2 x3 x x x4

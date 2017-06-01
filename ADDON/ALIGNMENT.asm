@@ -18,12 +18,14 @@
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+;https://forth-standard.org/standard/core/ALIGNED
 ;C ALIGNED  addr -- a-addr       align given addr
             FORTHWORD "ALIGNED"
 ALIGNED     BIT     #1,TOS
             ADDC    #0,TOS
             mNEXT
 
+;https://forth-standard.org/standard/core/ALIGN
 ;C ALIGN    --                         align HERE
             FORTHWORD "ALIGN"
 ALIGNN      BIT     #1,&DDP   ; 3

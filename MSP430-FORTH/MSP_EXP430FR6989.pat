@@ -90,7 +90,7 @@
 ! P1.7 -UCB0 SCL/SOMI   J2.14   ----> SCL hardware I2C Master or Slave
 !
 ! P3.0 -UCB1 CLK        J4.33   ----> free (if UARTtoUSB with software control flow)
-! P3.1 -UCB1 SDA/SIMO   J4.32   <---> free
+! P3.1 -UCB1 SDA/SIMO   J4.32   <---> free (if UARTtoUSB with software control flow)
 ! P3.2 -UCB1 SCL/SOMI   J1.5    ----> free
 ! P3.3 -         TA1.1  J1.5    <---> free
 !
@@ -100,6 +100,40 @@
 ! PJ.7 - HFXO 
 
 
+! ============================================
+! FORTH I/O :
+! ============================================
+TERM_TX=\$10!          ; P3.4 = TX
+TERM_RX=\$20!          ; P3.5 = RX
+TERM_TXRX=\$30!
+
+TERM_REN=\$226!
+TERM_SEL=\$22C!
+TERM_IE=\$23A!
+TERM_IFG=\$23C!
+Deep_RST=\$10!         ; = TX pin
+Deep_RST_IN=\$220!  ; TERMINAL TX  pin as FORTH Deep_RST
+
+RTS=2!              ; P3.1
+CTS=1!              ; P3.0
+HANDSHAKIN=\$220!
+HANDSHAKOUT=\$222!
+
+
+SD_CS=\$40!        ; P2.6 as SD_CS     
+SD_CD=\$80!        ; P2.7 as SD_CD
+SD_CDIN=\$201!
+SD_CSOUT=\$203!
+SD_CSDIR=\$205!
+
+SD_SEL1=\$20C!  ; word access, to configure UCB0
+SD_REN=\$206!   ; word access, to configure pullup resistors
+SD_BUS=\$07!    ; pins P2.2 as UCB0CLK, P2.0 as UCB0SIMO & P2.1 as UCB0SOMI
+
+
+! ============================================
+! APPLICATION I/O :
+! ============================================
 LED1_OUT=\$202!
 LED1=1!      P1.0
 

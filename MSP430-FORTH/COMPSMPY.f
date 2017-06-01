@@ -138,8 +138,8 @@ ENDCODE
 \     \
 
 CODE M*             \ n1 n2 -- dlo dhi  signed 16*16->32 multiply             
-MOV TOS,S         \ TOS= n2
-XOR @PSP,S        \ S contains sign of result
+MOV TOS,S           \ TOS= n2
+XOR @PSP,S          \ S contains sign of result
 CMP #0,0(PSP)       \ n1 > -1 ?
 S< IF
     XOR #-1,0(PSP)  \ n1 --> u1
@@ -155,7 +155,7 @@ LO2HI               \ -- ud1 u2
 UM*                 \ UMSTAR use S,T,W,X,Y
 HI2LO
 POPM S,IP
-CMP #0,S          \ sign of result > -1 ?
+CMP #0,S            \ sign of result > -1 ?
 S< IF
     XOR #-1,0(PSP)  \ ud --> d
     XOR #-1,TOS

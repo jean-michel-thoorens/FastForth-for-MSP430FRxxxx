@@ -18,20 +18,24 @@
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+;https://forth-standard.org/standard/core/CHARS
 ;C CHARS    n1 -- n2            chars->adrs units
             FORTHWORD "CHARS"
             mNEXT
 
+;https://forth-standard.org/standard/core/CHARPlus
 ;C CHAR+    c-addr1 -- c-addr2   add char size
             FORTHWORD "CHAR+"
             ADD     #1,TOS
             mNEXT
 
+;https://forth-standard.org/standard/core/CELLS
 ;C CELLS    n1 -- n2            cells->adrs units
             FORTHWORD "CELLS"
             ADD     TOS,TOS
             mNEXT
 
+;https://forth-standard.org/standard/core/CELLPlus
 ;C CELL+    a-addr1 -- a-addr2      add cell size
             FORTHWORD "CELL+"
             ADD     #2,TOS

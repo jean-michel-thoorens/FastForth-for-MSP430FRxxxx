@@ -245,22 +245,30 @@ TERM_REN    .equ P2REN
 ; PORT4 usage
 ; switch S1
 SWITCHIN    .set P4IN    ; port
-S1          .set 020h    ; P4.5 bit position
+S1          .set 020h    ; P4.5
 
 ; P4.6 as LED1 output low
 
-; PORTx default wanted state : pins as input with pullup resistor
-
-            MOV #04000h,&PBDIR    ; all pins as input else P4.6 (LED1)
-            MOV #0BFFFh,&PBOUT    ; all pins output high else P4.6 (LED1)
-            BIS #0BFFFh,&PBREN    ; all pins with pull resistors else P4.6 (LED1)
-
     .IFDEF TERMINALCTSRTS
-;configure P4.1 as RTS output high
-RTS         .equ  2
+
+; RTS output is wired to the CTS input of UART2USB bridge 
+; CTS is not used by FORTH terminal
+; configure RTS as output high to disable RX TERM during start FORTH
+
+RTS         .equ  2 ; P4.1
+;CTS         .equ  1 ; P4.0 
 HANDSHAKOUT .equ  P4OUT
 HANDSHAKIN  .equ  P4IN
-            BIS.B #RTS,&HANDSHAKOUT
+
+            BIS #04200h,&PBDIR  ; all pins as input else P4.1 (RTS), P4.6 (LED1)
+            BIS #-1,&PBREN      ; all inputs with resistor
+            MOV #0BFFFh,&PBOUT  ; that acts as pull up , P4.6 (LED1) output LOW, RTS output HIGH
+
+    .ELSEIF
+            BIS #04000h,&PBDIR  ; all pins as input else P4.6 (LED1)
+            BIS #-1,&PBREN      ; all inputs with resistor
+            MOV #0BFFFh,&PBOUT  ; that acts as pull up, P4.6 (LED1) output LOW
+
     .ENDIF
 
 
@@ -294,7 +302,12 @@ HANDSHAKIN  .equ  P4IN
 
             MOV.B   #CSKEY,&CSCTL0_H ;  Unlock CS registers
 
-    .IF FREQUENCY = 0.5
+    .IF FREQUENCY = 0.25
+;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
+            MOV     #DIVA_0 + DIVS_32 + DIVM_32,&CSCTL3
+            MOV     #2,X
+
+    .ELSEIF FREQUENCY = 0.5
             MOV     #0,&CSCTL1                  ; Set 1MHZ DCO setting
             MOV     #DIVA_2 + DIVS_2 + DIVM_2,&CSCTL3             ; set all dividers as 2
             MOV     #4,X
@@ -330,7 +343,7 @@ HANDSHAKIN  .equ  P4IN
 
     .IFDEF LF_XTAL
             MOV     #SELA_LFXCLK+SELS_DCOCLK+SELM_DCOCLK,&CSCTL2
-    .ELSE
+    .ELSEIF
             MOV     #SELA_VLOCLK+SELS_DCOCLK+SELM_DCOCLK,&CSCTL2
     .ENDIF
             MOV.B   #01h, &CSCTL0_H                               ; Lock CS Registers

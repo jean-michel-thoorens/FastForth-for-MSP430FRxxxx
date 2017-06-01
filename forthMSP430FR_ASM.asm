@@ -135,17 +135,17 @@ ASMCODE     CALL #HEADER        ; same as ":" ...
             .word   BRAN,HI2LONEXT
 
 
-            FORTHWORD "ASM"     ; used to define an assembler word which is not executable by FORTH interpreter
-                                ; i.e. typically an assembler word called by CALL and ended by RET
-                                ; ASM word is only accessible in ASSEMBLER CONTEXT
-            MOV     &CURRENT,&ASM_CURRENT
-            MOV     #ASSEMBLER_BODY,&CURRENT
-            JMP     ASMCODE
-
             asmword "ENDCODE"   ; restore previous context and test PSP balancing
 ENDCODE     mDOCOL
             .word   PREVIOUS,QREVEAL
             .word   EXIT
+
+            FORTHWORD "ASM"     ; used to define an assembler word which is not executable by FORTH interpreter
+                                ; i.e. typically an assembler word called by CALL and ended by RET
+                                ; ASM words are only v in ASSEMBLER CONTEXT
+            MOV     &CURRENT,&ASM_CURRENT
+            MOV     #ASSEMBLER_BODY,&CURRENT
+            JMP     ASMCODE
 
             asmword "ENDASM"    ; end of ASM word
             MOV     &ASM_CURRENT,&CURRENT
@@ -154,7 +154,7 @@ ENDCODE     mDOCOL
 
             asmword "COLON"     ; compile DOCOL, remove ASSEMBLER from CONTEXT, switch to compilation state
             MOV &DDP,W
-            
+
     .SWITCH DTC
     .CASE 1
             MOV #DOCOL1,0(W)    ; compile CALL xDOCOL
@@ -220,7 +220,7 @@ SearchARG   ASMtoFORTH                      ; -- separator      search word firs
             .word   WORDD,FIND              ; -- c-addr
             .word   ZEROEQUAL
             .word   QBRAN,SearchARGW        ; -- c-addr         if found
-            .word   QNUMBER                 ;           
+            .word   QNUMBER                 ;
             .word   QBRAN,NotFound          ; -- c-addr
             .word   AsmSrchEnd              ; -- value          end if number found
 SearchARGW  FORTHtoASM                      ; -- xt
@@ -237,7 +237,7 @@ QDODOES     CMP     #DODOES,X
             JNZ     AsmSrchEnd
             ADD     #4,TOS                  ; leave BODY for DOES words (but don't execute !)
 AsmSrchEnd  RET                             ;
-            
+
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER : search REG
 ; ----------------------------------------------------------------------
@@ -260,7 +260,7 @@ StoARGsearchREG
 SearchREG   PUSH    &TOIN                   ; -- separator  save >IN
             ADD     #1,&TOIN                ;               skip "R"
             ASMtoFORTH                      ;               search xx of Rxx
-            .word   WORDD,QNUMBER           ;    
+            .word   WORDD,QNUMBER           ;
             .word   QBRAN,notREG            ; -- xxxx       if number found
             FORTHtoASM                      ; -- c-addr     if number not found
             ADD     #2,RSP                  ;           remove >IN
@@ -272,7 +272,7 @@ notREG      FORTHtoASM                      ; -- c-addr
             MOV     @RSP+,&TOIN             ; -- c-addr          restore >IN
             BIS     #Z,SR                   ;           Z=1 ==> not found
             MOV     @RSP+,PC                ; -- c_addr
-            
+
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER : INTERPRET FIRST OPERAND
 ; ----------------------------------------------------------------------
@@ -333,7 +333,7 @@ PARAM10M1   CMP #-1,TOS                     ; -- xxxx       = -1 ?
 
 ; case of all others "#xxxx"<sep>           ; -- xxxx
 PARAM1000   MOV #0030h,&ASMTYPE             ; -- xxxx       add immediate code type : @PC+,
-            
+
 ; case of "&xxxx"<sep>                      ; <== PARAM110
 ; case of <sep>"&xxxx"                      ; <== PARAM20
 StoreArg    MOV &DDP,X                      ; -- xxxx
@@ -357,7 +357,7 @@ PARAM110    MOV     #0210h,&ASMTYPE         ; -- sep        set code type : xxxx
 ; case of "&xxxx"<sep>
 ; case of <sep>"&xxxx"                      ; <== PARAM20
 PARAM111    ADD     #1,&TOIN                ; -- sep        skip "&" prefix
-            PUSH    #StoreArg               ;               prepare next ret : compile xxxx then ret                
+            PUSH    #StoreArg               ;               prepare next ret : compile xxxx then ret
             JMP     SearchARG               ; -- sep        abort if not found
 ; ------------------------------------------
 
@@ -415,7 +415,7 @@ PARAM130    ADD     #0010h,&ASMTYPE         ;               AS=0b01 for indexing
 
 ; PARAM2     --                             ; parse input buffer until BL and compute this 2th operand
 
-PARAM2      mDOCOL                          ;               
+PARAM2      mDOCOL                          ;
             .word   FBLANK,SKIP             ;               skip space(s) between "arg1," and "arg2" if any
             FORTHtoASM                      ; -- c-addr     search for '&' of "&xxxx
             CMP.B   #'&',0(TOS)             ;
@@ -760,7 +760,7 @@ CODE_JMP    mDOCON                      ; branch always
             mDOCON
             .word   3400h
 
-            asmword "0>="               ; if 0>= assertion  ; use only with IF UNTIL WHILE ! 
+            asmword "0>="               ; if 0>= assertion  ; use only with IF UNTIL WHILE !
             mDOCON
             .word   3000h
 
@@ -809,7 +809,7 @@ ASM_THEN1   MOV     @PSP+,TOS           ; --
 ;C ELSE     @OPCODE1 -- @OPCODE2    branch for IF..ELSE
             asmword "ELSE"
 ASM_ELSE    MOV     &DDP,W              ; --        W=HERE
-            MOV     #3C00h,0(W)         ;           compile unconditionnal branch 
+            MOV     #3C00h,0(W)         ;           compile unconditionnal branch
             ADD     #2,&DDP             ; --        DP+2
             SUB     #2,PSP
             MOV     W,0(PSP)            ; -- dst
@@ -868,7 +868,7 @@ JUMP        mDOCOL
             .word   ASM_UNTIL,EXIT
 
 
-; invert FORTH conditionnal branch      FORTH_JMP_OPCODE -- LABEL_JMP_OPCODE      
+; invert FORTH conditionnal branch      FORTH_JMP_OPCODE -- LABEL_JMP_OPCODE
 INVJMP      BIT #1000h,TOS  ; 3xxxh case ?
             JNZ INVJMP3xxxh ; yes
 INVJMP2xxxh XOR #0400h,TOS  ; no: case of JNE/JNZ JEQ/JZ JNC/JLO JC/JHS
@@ -879,7 +879,7 @@ INVJMP3xxxh CMP #3400h,TOS
 INVJMP3800h MOV #3400h,TOS  ; not jump if >= --> jump if <
             mNEXT
 INVJMP3400h MOV #3800h,TOS  ; not jump if <  --> jump if >=
-INVJMPEND   mNEXT           
+INVJMPEND   mNEXT
 
 
 ;ASM    <cond> ?JMP <word>  ;  OPCODE --       conditionnal branch to a previous definition
@@ -899,7 +899,7 @@ BACKWARDDOES        ;
     MOV @RSP+,IP
     MOV TOS,Y
     MOV @PSP+,TOS
-    MOV @Y,W        ;               W = [PFA]   
+    MOV @Y,W        ;               W = [PFA]
     CMP #0,W        ;               W = 0 ?
     JNZ BACKWUSE
 BACKWSET            ; --
@@ -911,19 +911,19 @@ BACKWUSE            ; -- OPCODE
 
 ; backward label 1
             asmword "BW1"
-            mdodoes 
+            mdodoes
             .word BACKWARDDOES
 CLRBW1      .word 0
 
 ; backward label 2
             asmword "BW2"
-            mdodoes 
+            mdodoes
             .word BACKWARDDOES
 CLRBW2      .word 0
 
 ; backward label 3
             asmword "BW3"
-            mdodoes 
+            mdodoes
             .word BACKWARDDOES
 CLRBW3      .word 0
 
@@ -947,19 +947,19 @@ FORWUSE             ; PFA -- @OPCODE
 
 ; forward label 1
             asmword "FW1"
-            mdodoes 
+            mdodoes
             .word FORWARDDOES
 CLRFW1      .word 0
 
 ; forward label 2
             asmword "FW2"
-            mdodoes 
+            mdodoes
             .word FORWARDDOES
 CLRFW2      .word 0
 
 ; forward label 3
             asmword "FW3"
-            mdodoes 
+            mdodoes
             .word FORWARDDOES
 CLRFW3      .word 0
 
@@ -981,34 +981,85 @@ CLRFW3      .word 0
 
 
 
+; ------------------------------------------------------------------------------------------
+; forthMSP430FR ASSEMBLER : .IF .ELSEIF .ENDIF structure
+; ------------------------------------------------------------------------------------------
+; it's borrows leave stack
+; [IF] interpret next word, if false scans line and refill it until [ELSE] or [IF] or [THEN] found, else do nothing
+; [ELSE] tests address, tests flag, remove them and leave [THEN] address, if false scans line and refill it until [THEN] found
+; [THEN] remove one parameter from leave stack
+
+;        ASMWORD ".ELSEIF"        ; fall here if [IF] was true
+;brELSE      PSUH IP
+;            MOV &LEAVEPTR,IP
+;            CMP #brIF,-2(IP)    ; case of [IF] state was true
+;            JZ BrElseNext       ; to skip [ELSE] state
+;            CMP #BrElse,-2(IP)  ; case of [ELSE] state was true
+;            JZ BrThenNext       ; to terminate with [THEN] state
+;            ASMtoFORTH          ; else abort
+;            .word   XSQUOTE
+;            .byte   13,"[IF] missing!"
+;            .word   QABORTYES
+;
+;BrElseNext
 
 
 
 
+;        ASMWORD ".ENDIF"    ; fall here if [IF] without [ELSE] was true, or if [ELSE] was true
+;brTHEN      JMP brELSE      ;
+;BrThenNext  SUB #2,&LEAVEPTR
+;            MOV @RSP+,IP
+;            mNEXT
+;
+;
+;        ASMWORD ".IF"
+;BrIF         mDOCOL
+;BrIf1       .word   FBLANK,WORDD            ; Z = EOL
+;            FORTHtoASM
+;            JZ SrchCndEol
+;            ASMtoFORTH
+;            .word   FIND
+;            .word   ZEROEQUAL
+;            .word   QBRAN,SrchCOND1         ; -- c-addr         if found
+;            .word   QNUMBER                 ;
+;SrchCOND1  FORTHtoASM                       ; -- xt|value|0
+;            MOV     @TOS,IP
+;cDOVAR      CMP     #DOVAR,IP
+;            JNZ     cDOCON
+;            MOV     2(IP),TOS
+;            MOV     @TOS,TOS                ; remplace CFA by value of VARIABLE
+;            JMP     SrchCOND2
+;cDOCON      CMP     #DOCON,IP
+;            JNZ     SrchBrIF
+;            MOV     2(TOS),TOS              ; remplace CFA by value for CONSTANT and CREATEd words
+;SrchBrIF    CMP     #BrIF,IP                ; [IF] found ?
+;            JNZ     SrchBrELSE
+;            ADD     #2,&LEAVEPTR            ; -- flag     LEAVEPTR+2
+;            MOV     &LEAVEPTR,IP            ;
+;            CMP     #0,TOS
+;            JZ      SrchBrIF1               ; to scan
+;            MOV     #BrIf,-2(IP)            ; case of [IF] is true
+;            MOV     @RSP+,IP
+;            mNEXT
+;SrchBrIF1   MOV     #BrElse,-2(IP)          ; case of [IF] is false
+;            MOV     #BrIf1,IP
+;            mNEXT
 
+;SrchBrELSE  CMP     #BrELSE,IP              ; [ELSE] found ?
+;            JZ      BrELSECond
+;SrchBrTHEN  CMP     #BrTHEN,IP              ; [THEN] found ?
+;            JZ      BrTHENCond
+;SrchCOND2
+;
+;SrchCndEol  FORTHtoASM
+;            MOV     @PSP+,TOS
+;            MOV
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+;SrchCOND3   JZ      BrIF
+;
+;            CMP #0,TOS
+;            JZ  SrchCOND3
+;            .word   QBRAN,SrchCOND4
+;            .word   BRAN,SrchCOND3
+;SrchCOND4   .word   FTOIN,FETCH

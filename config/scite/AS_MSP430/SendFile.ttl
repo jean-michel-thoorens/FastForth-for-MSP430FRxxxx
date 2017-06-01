@@ -3,8 +3,12 @@ sendln '     $0A BASE ! STOP' ; blanks are to pass LPMx wake up time...
 
 inputbox 'Send a File' 'Select File : ' param2
 
+strcompare param4 'NOECHO'
+if result = 0 sendln 'NOECHO'
+strcompare param4 'ECHO'
+if result = 0 sendln 'ECHO'
+
 showtt 0
-sendln 'NOECHO' ; by default
 sendfile inputstr 0
 showtt 1
 

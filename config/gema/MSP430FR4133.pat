@@ -52,25 +52,3 @@ U_NMI_Vec=\$FFFA!
 S_NMI_Vec=\$FFFC!
 RST_Vec=\$FFFE!
 
-TA0CTL=\$300!       \ TA0 control                 
-TA0CCTL0=\$302!     \ Capture/compare control 0   
-TA0CCTL1=\$304!     \ Capture/compare control 1   
-TA0CCTL2=\$306!     \ Capture/compare control 2   
-TA0R=\$310!         \ TA0 counter register        
-TA0CCR0=\$312!      \ Capture/compare register 0  
-TA0CCR1=\$314!      \ Capture/compare register 1  
-TA0CCR2=\$316!      \ Capture/compare register 2  
-TA0EX0=\$320!       \ TA0 expansion register 0    
-TA0IV=\$32E!        \ TA0 interrupt vector        
-
-TA1CTL=\$340!       \ TA1 control                 
-TA1CCTL0=\$342!     \ Capture/compare control 0   
-TA1CCTL1=\$344!     \ Capture/compare control 1   
-TA1CCTL2=\$346!     \ Capture/compare control 2   
-TA1R=\$350!         \ TA1 counter register        
-TA1CCR0=\$352!      \ Capture/compare register 0  
-TA1CCR1=\$354!      \ Capture/compare register 1  
-TA1CCR2=\$356!      \ Capture/compare register 2  
-TA1EX0=\$360!       \ TA1 expansion register 0    
-TA1IV=\$36E!        \ TA1 interrupt vector        
-

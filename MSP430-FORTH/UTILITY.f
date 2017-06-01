@@ -20,7 +20,6 @@
 
 \ WIPE        ; remove all previous apps,
 RST_STATE   ; preserve all previous apps,
-\ NOECHO      ; if an error occurs, comment this line before new download to find it.
     \
 
 

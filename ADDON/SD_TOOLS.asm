@@ -30,7 +30,7 @@ SECT_D
 DisplaySector
     mDOCOL                          ;
     .word   UDDOT                   ; ud --            display the double number
-    .word   lit,1E00h,lit,200h,DUMP ;    
+    .word   lit,BUFFER,lit,200h,DUMP;    
     .word   EXIT                    ;
 ; ----------------------------------;
 
@@ -53,12 +53,11 @@ Clust_ClustProcess
 
 ; dump FAT1 sector of last entry
 ; ----------------------------------;
-            FORTHWORD "FAT_D"       ;VWXY Display FATsector
+            FORTHWORD "FAT_D"       ;VWXY Display first FATsector
 ; ----------------------------------;
     SUB     #4,PSP                  ;
     MOV     TOS,2(PSP)              ;
-    MOV     &FATsector,0(PSP)       ; FATsectorLO
-    ADD     &OrgFAT1,0(PSP)         ;
+    MOV     &OrgFAT1,0(PSP)         ;
     MOV     #0,TOS                  ; FATsectorHI = 0
     JMP     SECT_D                  ;
 ; ----------------------------------;
@@ -68,8 +67,7 @@ Clust_ClustProcess
 ;            FORTHWORD "FAT1_D"      ; Display FATsector
 ;; ----------------------------------;
 ;    MOV     &OrgFAT1,Y              ;
-;AddFATsector                        ;
-;    ADD     &FATsector,Y            ; FATsectorLO
+;FAT1_D_Next                         ;
 ;    SUB     #4,PSP                  ;
 ;    MOV     TOS,2(PSP)              ; save TOS
 ;    MOV     Y,0(PSP)                ;
@@ -82,7 +80,7 @@ Clust_ClustProcess
 ;            FORTHWORD "FAT2_D"      ; Display FATsector
 ;; ----------------------------------;
 ;    MOV     &OrgFAT2,Y              ;
-;    JMP     AddFATsector            ;
+;    JMP     FAT1_D_Next             ;
 ;; ----------------------------------;
 
 

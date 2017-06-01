@@ -181,17 +181,39 @@
 ! P4.4 - NC
 ! P4.7 - NC
 
-SD_CDIN=\$221
-SD_CD=4!            P4.2
+! ============================================
+! FORTH I/O :
+! ============================================
+TERM_TX=1!          ; P2.0 = TX
+TERM_RX=2!          ; P2.1 = RX
+TERM_TXRX=3!
 
-SD_CSOUT=\$223
-SD_CSDIR=\$225
-SD_CS=8!            P4.3
+TERM_REN=\$207!
+TERM_SEL=\$20D!
+TERM_IE=\$21B!
+TERM_IFG=\$21D!
+Deep_RST=1!         ; = TX pin
+Deep_RST_IN=\$201!  ; TERMINAL TX  pin as FORTH Deep_RST
 
-SD_SEL1=\$22D
-SD_REN=\$227
-SD_BUS=\$70
+RTS=2!              ; P4.1
+CTS=1!              ; P4.0
+HANDSHAKIN=\$221!
+HANDSHAKOUT=\$223!
 
+SD_CD=4!        ; P4.2 as SD_CD
+SD_CS=8!        ; P4.3 as SD_CS     
+SD_CDIN=\$221!
+SD_CSOUT=\$223!
+SD_CSDIR=\$225!
+
+SD_SEL1=\$20D!  ; to configure UCB0
+SD_REN=\$207!   ; to configure pullup resistors
+SD_BUS=\$70!    ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
+
+
+! ============================================
+! APPLICATION I/O :
+! ============================================
 LED1_OUT=\$223
 LED1=\$40!          P4.6
 

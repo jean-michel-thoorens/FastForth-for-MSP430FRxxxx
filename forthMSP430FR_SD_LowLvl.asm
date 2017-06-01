@@ -25,7 +25,9 @@
 ; CMD frame is sent as big endian.
 
 ; we assume that SDSC Card (up to 2GB) is FAT16 with a byte addressing
-; and that SDHC Card (4GB up to 32GB) is FAT32 with a sector addressing (sector = 512 bytes)
+; and that SDHC Card (4GB up to 64GB) is FAT32 with a sector addressing (sector = 512 bytes)
+; for SDHC Card = 64 GB, cluster = 64 sectors ==> max clusters = 20 0000h ==> FAT size = 16384 sectors
+; ==> FAT1 and FAT2 can be addressed with a single word.
 
 ; ref. https://en.wikipedia.org/wiki/Extended_boot_record
 ; ref. https://en.wikipedia.org/wiki/Partition_type
@@ -98,7 +100,7 @@
 ; 8   |0x08 =  00 20 00 00 : sector offset of logical block             = 8192
 ; 12  |0x0C =  00 40 74 00 : sector size of logical block               = 7618560
 
-; 454 |0x1C6 = 00 20 00 00 : FirstSector (of logical drive 0) BS_FirstSector  = 8192
+; 454 |0x1C6 = 00 20 00 00 : FirstSector (of logical drive 0) = BS_FirstSector = 8192
 
 ; 
 ; FirstSector of logical block (sector 0) content :
@@ -118,15 +120,15 @@
 ; 50  | 0x33 = 06 00        : BPB_BkBootSec             BPB_BkBootSec   = 6
 ; 82  | 0x52 = "FAT32"      : BS_FilSysType             BS_FilSysType   (not used)
 
-
-; all values below are evaluated in sectors
-; FAT1           = BS_FirstSector + BPB_RsvdSecCnt = 8192 + 32 = 8224
-; FAT2           = BS_FirstSector + BPB_RsvdSecCnt + BPB_FATSz32 = 8192 + 32 + 15152 = 23376
-; OrgRootDirL    = BS_FirstSector + BPB_RsvdSecCnt + (BPB_FATSz32 * BPB_NumFATs) = 8192 + 32 + 15152*2 = 38528
-; OrgCluster     = OrgRootDir - 2*BPB_SecPerClus = 38512
+; 
+; all values below are evaluated in logical sectors
+; FAT1           = BPB_RsvdSecCnt = 32
+; FAT2           = BPB_RsvdSecCnt + BPB_FATSz32 = 32 + 15152 = 15184
+; OrgRootDirL    = BPB_RsvdSecCnt + BPB_FATSz32 * BPB_NumFATs = 32 + 15152*2 = 30336
+; OrgCluster     = OrgRootDir - 2*BPB_SecPerClus = 30320
 ; RootDirSize    = BPB_RootEntCnt * 32 / BPB_BytsPerSec         = 0
-; OrgDatas       = OrgRootDir + RootDirSize                     = 38512
-; FirstSectorOfCluster(n) = OrgCluster + n*BPB_SecPerClus       ==> cluster(6) = 38560
+; OrgDatas       = OrgRootDir + RootDirSize                     = 30336
+; FirstSectorOfCluster(n) = OrgCluster + n*BPB_SecPerClus       ==> cluster(6) = 30368
 
 
 
@@ -143,7 +145,7 @@ RW_Sector_CMD                       ;WX <=== CMD17 or CMD24 (read or write Secto
     JZ      ComputePhysicalSector   ; yes
     MOV     #COLD,PC                ; no: force COLD
 ; ----------------------------------;
-ComputePhysicalSector               ;
+ComputePhysicalSector               ; input = logical sector, output = physical sector
 ; ----------------------------------;
     ADD     &BS_FirstSectorL,W      ;3
     ADDC    &BS_FirstSectorH,X      ;3
@@ -152,11 +154,11 @@ ComputePhysicalSector               ;
     CMP     #2,&FATtype             ;3 FAT32 ?          
     JZ      FAT32_CMD               ;2 yes
 FAT16_CMD                           ;  FAT16 : CMD17/24 byte address = Sector * BPB_BytsPerSec
-    ADD     W,W                     ;  shift left one SectorL
+    ADD     W,W                     ;  shift left one Sector
     ADDC.B  X,X                     ;
     MOV     W,&SD_CMD_FRM+2         ;  $(01 00 ll LL xx CMD)
     MOV.B   X,&SD_CMD_FRM+4         ;  $(01 00 ll LL hh CMD) 
-    JMP     SDbusyLoop
+    JMP     WaitIdleBeforeSendCMD   ;
 FAT32_CMD                           ;  FAT32 : CMD17/24 sector address
     MOV.B   W,&SD_CMD_FRM+1         ;3 $(01 ll xx xx xx CMD)
     SWPB    W                       ;1
@@ -165,13 +167,12 @@ FAT32_CMD                           ;  FAT32 : CMD17/24 sector address
     SWPB    X                       ;1
     MOV.B   X,&SD_CMD_FRM+4         ;3 $(01 ll LL hh HH CMD)
 ; ==================================;
-SDbusyLoop                          ; <=== CMD41, CMD1, CMD16 (R1 expected response = 0 = ready)
+WaitIdleBeforeSendCMD               ; <=== CMD41, CMD1, CMD16 (R1 expected response = 0 = ready)
 ; ==================================;
     CALL #SPI_GET                   ;
-    CMP.B   #-1,W                   ; FFh expected value <==> MISO = 1 = not busy
-    JNE SDbusyLoop                  ; loop back while yet busy
-    MOV     #0,W                    ; W = expected R1 response = ready = 0, for CMD41, CMD1, CMD16, CMD17, CMD24
-
+    CMP.B   #-1,W                   ; FFh expected value <==> MISO = 1 = not busy = idle state
+    JNE WaitIdleBeforeSendCMD       ; loop back until idle state
+    MOV     #0,W                    ; W = expected R1 response = ready = 0 for CMD41,CMD16, CMD17, CMD24
 ; ==================================;
 sendCommand                         ;X <=== CMD0, CMD8, CMD55 (W = R1 expected response = 1 = idle)
 ; ==================================;
@@ -202,24 +203,23 @@ FullSpeedSend                       ;
 ;    MOV     #16,X                   ; to pass Transcend SD_Card init
 ;    MOV     #32,X                   ; to pass Panasonic SD_Card init
 ;    MOV     #64,X                   ; to pass SanDisk SD_Card init
-;    MOV     #1000,X                 ; max value
 ; ----------------------------------;
-Wait_Command_Response               ; expect W = return value during X = 255 delay time
+Wait_Command_Response               ; expect W = return value during X = 255 time
 ; ----------------------------------;
     SUB     #1,X                    ;1
     JN      SPI_WAIT_RET            ;2 error on time out with SR(Z) = 0
     MOV.B   #-1,&SD_TXBUF           ;3 PUT FFh
     CMP     #0,&SD_BRW              ;3 full speed ?
     JZ      FullSpeedGET            ;2 yes
-cardResp_Getloop                    ;  no: case of low speed during memCardInit
+cardResp_Getloop                    ;  no: case of low speed during memCardInit (CMD0,CMD8,ACMD41,CMD16)
     BIT     #UCRXIFG,&SD_IFG        ;3
     JZ      cardResp_Getloop        ;2
 FullSpeedGET                        ;
-;    NOP2                           ;2 NOPx adjusted to avoid SD_error
+;    NOP2                           ;  NOPx adjusted to avoid SD_error
     CMP.B   &SD_RXBUF,W             ;3 return value = ExpectedValue ?
-    JNZ     Wait_Command_Response   ;2
+    JNZ     Wait_Command_Response   ;2 18~ full speed loop
 SPI_WAIT_RET                        ; SR(Z) = 1 <==> Return value = expected value
-    RET                             ; expected value = W is unchanged
+    RET                             ; W = expected value, unchanged
 ; ----------------------------------;
 
 
@@ -245,7 +245,7 @@ SPI_PUTWAIT BIT #UCRXIFG,&SD_IFG    ;3
             JZ SPI_PUTWAIT          ;2
             CMP.B #0,&SD_RXBUF      ;3 reset RX flag
 FullSpeedPut
-;           NOP                     ;0 NOPx adjusted to avoid SD error
+;           NOP                     ;  NOPx adjusted to avoid SD error
             SUB #1,X                ;1
             JNZ SPI_PUT             ;2
 SPI_PUT_END MOV.B &SD_RXBUF,W       ;3
@@ -257,7 +257,7 @@ readFAT1SectorW                     ; read a FAT1 sector
 ; ==================================;
     ADD     &OrgFAT1,W              ;
 ; ==================================;
-readSectorW                         ; read a logical sector up to 65535 (case of FAT1,FAT2,RootDIR)
+readSectorW                         ; read a logical sector up to 65535 (case of FAT1,FAT2)
 ; ==================================;
     MOV     #0,X                    ;
 ; ==================================;
@@ -272,23 +272,22 @@ WaitFEhResponse                     ; wait SD_Card response FEh
 ; ----------------------------------;
     CALL #SPI_GET                   ;
     CMP.B   #-2,W                   ; FEh expected value
+    JZ  ReadSectorfirst             ; 2
     JNZ WaitFEhResponse             ;
 ; ----------------------------------;
-ReadSectorLoop                      ; 16 cycles loop read byte, starts with X = 0
+ReadSectorLoop                      ; get 512+1 bytes, write 512 bytes
 ; ----------------------------------;
-    MOV.B   #-1,&SD_TXBUF           ; 3 put FF
-    NOP3                            ; 3 NOPx adjusted to avoid read SD_error
-    ADD     #1,X                    ; 1
-    CMP     #BytsPerSec,X           ; 2
     MOV.B   &SD_RXBUF,BUFFER-1(X)   ; 5
-    JNZ     ReadSectorLoop          ; 2
+ReadSectorfirst                     ;
+    MOV.B   #-1,&SD_TXBUF           ; 3 put FF
+    NOP                             ; 1 NOPx adjusted to avoid read SD_error
+    ADD     #1,X                    ; 1
+    CMP     #BytsPerSec+1,X         ; 2
+    JNZ     ReadSectorLoop          ; 2 14 cycles loop read byte
 ; ----------------------------------;
-ReadSkipCRC16                       ; not used in SPI mode
+    MOV.B   #-1,&SD_TXBUF           ; 3 put only one FF because first CRC byte is already received...
 ; ----------------------------------;
-    MOV     #2,X                    ;
-    CALL    #SPI_X_GET              ;
-; ----------------------------------;
-ReadWriteHappyEnd                   ;
+ReadWriteHappyEnd                   ; <==== WriteSector
 ; ----------------------------------;
     BIC     #3,S                    ; reset read and write errors
     BIS.B   #SD_CS,&SD_CSOUT        ; SD_CS = high  
@@ -298,7 +297,7 @@ ReadWriteHappyEnd                   ;
     .IFDEF SD_CARD_READ_WRITE
 
 ; ==================================;
-WriteSectorW                        ; write a logical sector up to 65535 (FAT1,FAT2,RootDIR)
+WriteSectorW                        ; write a logical sector up to 65535 (FAT1,FAT2)
 ; ==================================;
     MOV     #0,X                    ;
 ; ==================================;
@@ -320,7 +319,7 @@ WriteSectorLoop                     ; 11 cycles loop write, starts with X = 0
     CMP     #BytsPerSec,X           ; 2
     JNZ     WriteSectorLoop         ; 2
 ; ----------------------------------;
-WriteSkipCRC16                      ; not used in SPI mode
+WriteSkipCRC16                      ; CRC not used in SPI mode
 ; ----------------------------------;
     MOV     #3,X                    ; PUT 2 bytes to skip CRC16
     CALL    #SPI_X_GET              ; + 1 byte to get data token in W
@@ -339,10 +338,9 @@ CheckWriteState                     ;
 ; 1  = CMD17    read error
 ; 2  = CMD24    write error 
 ; 4  = CMD0     time out (GO_IDLE_STATE)
-; 8  = CMD1     time out (SEND_OP_COND), reserved for MMC_Card
-; 10 = ACMD41   time out (APP_SEND_OP_COND)
-; 20 = CMD16    time out (SET_BLOCKLEN)
-; 40 = not FAT16/FAT32 media, low byte = partition ID
+; 8  = ACMD41   time out (APP_SEND_OP_COND)
+; 10 = CMD16    time out (SET_BLOCKLEN)
+; 20 = not FAT16/FAT32 media, low byte = partition ID
 
 ; low byte, if CMD R1 response : |0|7|6|5|4|3|2|1|
 ; 1th bit = In Idle state
@@ -354,11 +352,12 @@ CheckWriteState                     ;
 ; 7th bit = parameter error
 
 ; ----------------------------------;
-SD_CARD_ERROR                       ; <=== SD_INIT errors 4,8,10,20,40
+SD_CARD_ERROR                       ; <=== SD_INIT errors 4,8,$10
 ; ----------------------------------;
-    BIS.B #SD_CS,&SD_CSOUT          ; SD_CS = high
     SWPB S                          ; High Level error in High byte
     ADD &SD_RXBUF,S                 ; add SPI(GET) return value to high level error
+SD_CARD_ID_ERROR                    ; <=== SD_INIT error $20
+    BIS.B #SD_CS,&SD_CSOUT          ; SD_CS = high
     mDOCOL                          ;
     .word   XSQUOTE                 ;
     .byte   11,"< SD Error!"        ;

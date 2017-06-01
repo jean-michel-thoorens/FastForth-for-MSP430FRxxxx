@@ -288,17 +288,25 @@ TERM_REN    .equ P3REN
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
-            MOV     #-1,&PBOUT      ; all pins 1
-            BIS     #-1,&PBREN      ; all pins with pull resistors
-
     .IFDEF TERMINALCTSRTS
-CTS         .equ  1      ; P3.0 bit position
-RTS         .equ  2      ; P3.1 bit position
+; RTS output is wired to the CTS input of UART2USB bridge 
+; CTS is not used by FORTH terminal
+; configure RTS as output high to disable RX TERM during start FORTH
+
+RTS         .equ  1 ; P3.0
+;CTS         .equ  2 ; P3.1 
 HANDSHAKOUT .equ  P3OUT
 HANDSHAKIN  .equ  P3IN
-    BIS.B #RTS,&HANDSHAKOUT    ; set RTS output high
-    .ENDIF
 
+            BIS #00001h,&PBDIR  ; all pins as input else P3.0 (RTS)
+            BIS #-1,&PBREN      ; all inputs with resistor
+            MOV #-1,&PBOUT      ; that acts as pull up, P3.0 as output HIGH
+
+    .ELSEIF
+            BIS #-1,&PBREN      ; all inputs with resistor
+            MOV #-1,&PBOUT      ; that acts as pull up
+
+    .ENDIF
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT5/6
 ; ----------------------------------------------------------------------
@@ -382,7 +390,12 @@ HANDSHAKIN  .equ  P3IN
 
             MOV.B   #CSKEY,&CSCTL0_H ;  Unlock CS registers
 
-    .IF FREQUENCY = 0.5
+    .IF FREQUENCY = 0.25
+;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
+            MOV     #DIVA_0 + DIVS_32 + DIVM_32,&CSCTL3
+            MOV     #2,X
+
+    .ELSEIF FREQUENCY = 0.5
             MOV     #0,&CSCTL1                  ; Set 1MHZ DCO setting
             MOV     #DIVA_2 + DIVS_2 + DIVM_2,&CSCTL3             ; set all dividers as 2
             MOV     #4,X

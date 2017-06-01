@@ -147,11 +147,11 @@
 ; P5.2 - UCB0 SDA/SIMO  J2.6    <---> SDA I2C Slave
 ; P5.3 - UCB0 SCL/SOMI  J2.7    <---- SCL I2C Slave
 ;       
-; P5.1 - UCB0 CLK       J1.7    ----> SD_CLK
-; P5.2 - UCB0 SDA/SIMO  J2.6    ----> SD_SDI
-; P5.3 - UCB0 SCL/SOMI  J2.7    <---- SD_SDO
-; P8.0 -                J1.6    <---- SD_CD (Card Detect)
-; P8.1 -                J1.2    ----> SD_CS (Card Select)
+; P5.1 - UCB0 CLK       J1.7    ----> orange    SD_CLK
+; P5.2 - UCB0 SDA/SIMO  J2.6    ----> grey      SD_SDI
+; P5.3 - UCB0 SCL/SOMI  J2.7    <---- purple    SD_SDO
+; P8.0 -                J1.6    <---- violin    SD_CD (Card Detect)
+; P8.1 -                J1.2    ----> brown     SD_CS (Card Select)
 ;       
 ; P8.2 - Soft I2C_Master J1.9   ----> SDA software I2C Master
 ; P8.3 - Soft I2C_Master J1.10  <---> SCL software I2C Master
@@ -197,17 +197,28 @@ TERM_SEL    .equ P1SEL0
 TERM_REN    .equ P1REN
 
 
+    .IFDEF TERMINALCTSRTS
+
+; RTS output is wired to the CTS input of UART2USB bridge 
+; CTS is not used by FORTH terminal
+; configure RTS as output high to disable RX TERM during start FORTH
+
+HANDSHAKOUT .set    P2OUT
+HANDSHAKIN  .set    P2IN
+RTS         .set    8       ; P2.3 bit position
+;CTS         .set    10h     ; P2.4 bit position
+
+            BIS #00800h,&PADIR  ; all pins as input else RTS P2.3
+            BIS #-1,&PAREN      ; all input pins with resistor
+            MOV #-1,&PAOUT      ; that acts as pull up, and P2.3 as output HIGH
+
+    .ELSEIF
+
 ; PORTx default wanted state : pins as input with pullup resistor
 
             MOV #-1,&PAOUT  ; OUT1 for all pins
             BIS #-1,&PAREN  ; all pins with pullup resistors
 
-    .IFDEF TERMINALCTSRTS
-HANDSHAKOUT .set    P2OUT
-HANDSHAKIN  .set    P2IN
-RTS         .set    8       ; P2.3 bit position
-CTS         .set    10h     ; P2.4 bit position
-;            BIS.B #RTS,&HANDSHAKOUT
     .ENDIF
 
 ; ----------------------------------------------------------------------
@@ -285,17 +296,17 @@ CTS         .set    10h     ; P2.4 bit position
 ; (no problem with MSP430FR5xxx families without FLL).
 ; ===================================================================
 
-    .IF FREQUENCY = 0.5
+    .IF     FREQUENCY = 0.5
 
             MOV #0D6h,&CSCTL0          ; preset DCO = 0xD6 (measured value @ 0x180 ; to measure, type 0x180 @ U.)
 
             MOV     #0001h,&CSCTL1      ; Set 1MHZ DCORSEL,disable DCOFTRIM,Modulation
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
-;            MOV     #100Dh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO/2),set FLLN=0Dh
+;            MOV     #100Dh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Dh
                                         ; fCOCLKDIV = 32768 x (13+1) = 0.459 MHz ; measured :  MHz
 ;            MOV     #100Eh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Eh
                                         ; fCOCLKDIV = 32768 x (14+1) = 0.491 MHz ; measured :  MHz
-            MOV     #100Fh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=0Fh
+            MOV     #100Fh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Fh
                                         ; fCOCLKDIV = 32768 x (15+1) = 0.524 MHz ; measured :  MHz
 ; =====================================
             MOV     #2,X

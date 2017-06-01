@@ -2,8 +2,7 @@
 ; RC5toLCD.4th
 ; -----------------------------------
     \
-RST_STATE   ;
-\ NOECHO      ; if an error occurs during download, comment this line then download again
+WIPE    ; remove all previous downloading
     \
 \ Copyright (C) <2016>  <J.M. THOORENS>
 \
@@ -230,13 +229,6 @@ ENDCODE
 \ ******************************\
 ASM WDT_INT                     \ Watchdog interrupt routine, warning : not FORTH executable !
 \ ******************************\
-BIC #$F8,0(RSP)                \ set CPU ON and GIE OFF in retiSR to force fall down to LPM mode
-\ ------------------------------\
-\ define LPM mode for ACCEPT    \
-\ ------------------------------\
-\ MOV #LPM4,&LPM_MODE             \ with MSP430FR59xx
-\ MOV #LPM2,&LPM_MODE             \ with MSP430FR57xx, terminal input don't work for LPMx > 2
-\                                 \ with MSP430FR2xxx, terminal input don't work for LPMx > 0 ; LPM0 is the default value
 BIT.B #SW2,&SW2_IN              \ test switch S2
 0= IF                           \ case of switch S2 pressed
     CMP #38,&TB0CCR2            \ maxi Ton = 34/40 & VDD=3V6 ==> LCD_Vo = -2V2
@@ -252,113 +244,99 @@ ELSE
         THEN                    \
     THEN                        \
 THEN                            \
-RETI                            \ CPU is ON, GIE is OFF
-ENDASM                          \
+\ BIC #$F8,0(RSP)                 \ 4~  SCG1,SCG0,OSCOFF,CPUOFF and GIE are OFF in retiSR to force LPM0_LOOP despite pending interrupt
+\ RETI                            \ 5~ for system OFF / 1 sec. ==> 1mA * 5us = 5nC + 6,5uA
+ADD #2,RSP                      \ 1  smart and fast RETI with GIE=0, but...
+RET                             \ 4 (+ 6 to SLEEP mode) ...Z,N,C,V,UF1,UF2,UF3 flags are not restored.
+ENDASM
     \
 
 
-\ ------------------------------\
-\ IR_RC5 driver                 \ IP,S,T,W,X,Y registers are free for use
 \ ******************************\
 ASM RC5_INT                     \   wake up on Px.RC5 change interrupt
+\ ******************************\
+\ IR_RC5 driver                 \ IP,S,T,W,X,Y registers are free for use
 \ ******************************\
 \                               \ in :  SR(9)=old Toggle bit memory (ADD on)
 \                               \       SMclock = 8|16|24 MHz
 \                               \ use : BASE,TOS,IP,W,X,Y, TA0 timer, TA0R register
 \                               \ out : TOS = 0 C6 C5 C4 C3 C2 C1 C0
 \                               \       SR(9)=new Toggle bit memory (ADD on)
-\ ------------------------------\
-BIC     #$F8,0(RSP)            \ CPU is ON and GIE is OFF in retiSR to force fall down to LPM0_LOOP
-\ ------------------------------\
-\ define LPM mode for ACCEPT    \
-\ ------------------------------\
-\ MOV #LPM4,&LPM_MODE             \ with MSP430FR59xx
-\ MOV #LPM2,&LPM_MODE             \ with MSP430FR57xx, terminal input don't work for LPMx > 2
-\                                 \ with MSP430FR2xxx, terminal input don't work for LPMx > 0 ; LPM0 is the default value
-\ ------------------------------\
+\ ******************************\
 \ RC5_FirstStartBitHalfCycle:   \
-\ ------------------------------\
-MOV     #0,&TA0EX0              \ predivide by 1 in TA0EX0 register ( 8 MHZ), reset value
-\ MOV     #1,&TA0EX0              \ predivide by 2 in TA0EX0 register (16 MHZ)
-\ MOV     #2,&TA0EX0              \ predivide by 3 in TA0EX0 register (24 MHZ)
-MOV     #1778,X                 \ RC5_Period in us
+\ ******************************\
+\ MOV #0,&TA0EX0                  \ predivide by 1 in TA0EX0 register (125kHz/1MHz/4MHZ), reset value
+MOV #1,&TA0EX0                  \ predivide by 2 in TA0EX0 register (250kHZ/2MHz/8MHZ)
+\ MOV #2,&TA0EX0                  \ predivide by 3 in TA0EX0 register (375kHz/3MHz/12MHZ)
+\ MOV #3,&TA0EX0                  \ predivide by 4 in TA0EX0 register (500kHZ/4MHz/16MHZ)
+\ MOV #4,&TA0EX0                  \ predivide by 6 in TA0EX0 register (625kHz/5MHz/20MHZ)
+\ MOV #5,&TA0EX0                  \ predivide by 6 in TA0EX0 register (750kHz/6MHz/24MHZ)
+\ MOV #6,&TA0EX0                  \ predivide by 7 in TA0EX0 register (875kHz/7MHz/28MHZ)
+\ MOV #7,&TA0EX0                  \ predivide by 8 in TA0EX0 register (1MHz/8MHz/32MHZ)
+MOV #1778,X                     \ RC5_Period * 1us
+\ MOV #222,X                      \ RC5_Period * 8us (SMCLK=125kHz/250kHz/375kHz/500kHz/625kHz/750kHz/875kHz/1MHz)
 MOV     #14,W                   \ count of loop
 BEGIN                           \
-\ ------------------------------\
-\ RC5_TopSynchro:               \ <--- loop back ---+ with readjusted RC5_Period
-\ ------------------------------\                   | here, we are just after 1/2 RC5_cycle
-    MOV #%1011100100,&TA0CTL    \ (re)start timer_A | SMCLK/8 : 1us time interval,free running,clear TA0_IFG and TA0R
+\ ******************************\
+\ RC5_HalfCycle                 \ <--- loop back ---+ with readjusted RC5_Period
+\ ******************************\                   |
+\    MOV #%1000100100,&TA0CTL   \ (re)start timer_A | SMCLK/1 time interval,free running,clear TA0_IFG and TA0R
+    MOV #%1010100100,&TA0CTL    \ (re)start timer_A | SMCLK/4 time interval,free running,clear TA0_IFG and TA0R
 \ RC5_Compute_3/4_Period:       \                   |
     RRUM    #1,X                \ X=1/2 cycle       |
-    MOV     X,Y                 \ Y=1/2             ^
+    MOV     X,Y                 \                   ^
     RRUM    #1,Y                \ Y=1/4
-    ADD     X,Y                 \ Y=3/4
-\ RC5_Wait_1_1/4                \ wait 3/4 cycle after 1/2 cycle to sample RC5_Input at 1/4 cycle+1
-    BEGIN   CMP Y,&TA0R         \ CMP &TA0R with 3/4 cycle value 
-    0= UNTIL                    \
-\ ------------------------------\
-\ RC5_Sample:                   \ at 5/4 cycle, we can sample RC5_input, ST2/C6 bit first
-\ ------------------------------\
+    ADD     X,Y                 \ Y=3/4 cycle
+    BEGIN   CMP Y,&TA0R         \3 wait 1/2 + 3/4 cycle = n+1/4 cycles 
+    U>= UNTIL                   \2
+\ ******************************\
+\ RC5_SampleOnFirstQuarter      \ at n+1/4 cycles, we sample RC5_input, ST2/C6 bit first
+\ ******************************\
     BIT.B   #RC5,&IR_IN         \ C_flag = IR bit
     ADDC    IP,IP               \ C_flag <-- IP(15):IP(0) <-- C_flag
-    MOV     &IR_IN,&IR_IES      \ preset Px_IES.y state for next IFG
+    MOV.B   &IR_IN,&IR_IES      \ preset Px_IES.y state for next IFG
     BIC.B   #RC5,&IR_IFG        \ clear Px_IFG.y after 4/4 cycle pin change
     SUB     #1,W                \ decrement count loop
 \                               \  count = 13 ==> IP = x  x  x  x  x  x  x  x |x  x  x  x  x  x  x /C6
 \                               \  count = 0  ==> IP = x  x /C6 Tg A4 A3 A2 A1|A0 C5 C4 C3 C2 C1 C0  1 
 0<> WHILE                       \ ----> out of loop ----+
-\ RC5_compute_7/4_Time_out:     \                       |
-    ADD     X,Y                 \                       |   out of bound = 7/4 period 
-\ RC5_WaitHalfCycleP1.2_IFG:    \                       |
+    ADD X,Y                     \                       |   Y = n+3/4 cycles = time out because n+1/2 cycles edge is always present
     BEGIN                       \                       |
-        CMP     Y,&TA0R         \                       |   TA0R = 5/4 cycle test
-        0>= IF                  \                       |   if cycle time out of bound
-            BIC  #$30,&TA0CTL   \                       |   stop timer_A0
-            RETI                \                       |   then quit to do nothing
-        THEN                    \                       |
-\ ------------------------------\                       |
-        BIT.B   #RC5,&IR_IFG    \                   ^   |   test P1.2_IFG
-    0<> UNTIL                   \                   |   |
-    MOV     &TA0R,X             \                   |   |   get new RC5_period value 
-REPEAT                          \ ----> loop back --+   |
-\ ------------------------------\                       |
+        MOV &TA0R,X             \3                      |   X grows from n+1/4 up to n+3/4 cycles
+        CMP Y,X                 \1                      |   cycle time out of bound ?
+        U>= ?GOTO FW1           \2                  ^   |   yes: quit on truncated RC5 message
+        BIT.B #RC5,&IR_IFG      \3                  |   |   n+1/2 cycles edge is always present
+    0<> UNTIL                   \2                  |   |
+REPEAT                          \ ----> loop back --+   |   with X = new RC5_period value
+\ ******************************\                       |
 \ RC5_SampleEndOf:              \ <---------------------+
-\ ------------------------------\
-BIC     #$30,&TA0CTL            \ stop timer_A0
-RLAM    #1,IP                   \ IP =  x /C6 Tg A4 A3 A2|A1 A0 C5 C4 C3 C2 C1 C0  1  0
-\ ******************************\
-\ Only New_RC5_Command ADD_ON   \ use SR(9) bit as toggle bit
-\ ******************************\
-MOV     @RSP,X                  \ retiSR(9)  = old UF1 = old RC5 toggle bit
-RLAM    #4,X                    \ retiSR(11,10,9)= X(11,10,9) --> X(15,14,13)
-XOR     IP,X                    \ (new XOR old) Toggle bit (13)
-BIT     #BIT13,X                \ X(13) = New_RC5_command
-0= IF RETI                      \ case of repeated RC5_command : RETI without SR(9) change
-THEN                            \
-XOR     #UF1,0(RSP)             \ change Toggle bit memory, UserFlag1 = SR(9) = 1
 \ ******************************\
 \ RC5_ComputeNewRC5word         \
 \ ******************************\
 SUB     #4,PSP                  \
 MOV     &BASE,2(PSP)            \ save variable BASE before use
 MOV     TOS,0(PSP)              \ save TOS before use
-MOV.B   IP,TOS                  \ TOS = C5 C4 C3 C2 C1 C0  0  0
-RRUM    #2,TOS                  \ TOS =  0  0 C5 C4 C3 C2 C1 C0
+RLAM    #1,IP                   \ IP =  x /C6 Tg A4 A3 A2 A1 A0|C5 C4 C3 C2 C1 C0  1  0
+MOV.B   IP,TOS                  \ TOS = C5 C4 C3 C2 C1 C0  1  0
+RRUM    #2,TOS                  \3 TOS =  0  0 C5 C4 C3 C2 C1 C0
 \ ******************************\
 \ RC5_ComputeC6bit              \
 \ ******************************\
-BIT     #$4000,IP               \ test /C6 bit in IP
-0= IF   BIS #$40,TOS            \ set C6 bit in S
+BIT     #BIT14,IP               \ test /C6 bit in IP
+0= IF   BIS #BIT6,TOS           \ set C6 bit in TOS
 THEN                            \ TOS =  0  C6 C5 C4 C3 C2 C1 C0
 \ ******************************\
-\ RC5_CommandByteIsDone         \ RC5_code --
+\ RC5_CommandByteIsDone         \ -- BASE RC5_code
 \ ******************************\
-
-\ ------------------------------\
+\ Only New_RC5_Command ADD_ON   \ use SR(9) bit as toggle bit
+\ ******************************\
+RRUM    #4,IP                   \5 new toggle bit = IP(13) ==> IP(9)
+XOR     SR,IP                   \ (new XOR old) Toggle bits
+BIT     #UF1,IP                 \ repeated RC5_command ?
+0= ?GOTO FW2                    \ yes, RETI without UF1 change
+\ ******************************\
 \ Display IR_RC5 code           \
-\ ------------------------------\
-\ BIS.B #LED1,&LED1_OUT           \ switch ON LED1, comment if no LED
-\ ------------------------------\
+\ ******************************\
 LO2HI                           \ switch from assembler to FORTH
     ['] LCD_CLEAR IS CR         \ redirects CR
     ['] LCD_WrC  IS EMIT        \ redirects EMIT
@@ -367,13 +345,33 @@ LO2HI                           \ switch from assembler to FORTH
     ['] (CR) IS CR              \ restore CR
     ['] (EMIT) IS EMIT          \ restore EMIT
 HI2LO                           \ switch from FORTH to assembler
-\ ------------------------------\
-\ BIC.B #LED1,&LED1_OUT           \ switch OFF LED1, comment if no LED
-\ ------------------------------\
 MOV @PSP+,&BASE                 \ restore variable BASE
-RETI                            \ CPU is ON, GIE is OFF
-ENDASM                          \
+\ ******************************\
+\ XOR #UF1,0(PSP)                 \ 5 toggle bit memory
+\ FW2                             \   endof repeated RC5_command : RETI without UF1 change
+\ FW1                             \   endof truncated RC5 message
+\ BIC #$30,&TA0CTL                \   stop timer_A0
+\ BIC #$F8,0(RSP)                 \ 4  SCG1,SCG0,OSCOFF,CPUOFF and GIE are OFF in retiSR to force LPM0_LOOP despite pending interrupt
+\ RETI                            \ 5 for system OFF / 1 sec. ==> 1mA * 5us = 5nC + 6,5uA
+XOR #UF1,SR                     \ 2 toggle bit memory
+FW2                             \   endof repeated RC5_command : RETI without UF1 change
+FW1                             \   endof truncated RC5 message
+BIC #$30,&TA0CTL                \   stop timer_A0
+ADD #2,RSP                      \ 1  smart and fast RETI with GIE=0, but...
+RET                             \ 4 (+6 to SLEEP mode) ...Z,N,C,V,UF1,UF2,UF3 flags are not restored.
+ENDASM
     \ 
+
+\ ------------------------------\
+ASM BACKGROUND                  \ 
+\ ------------------------------\
+\ ...                           \ insert here your background task
+\ ...                           \
+\ ...                           \
+MOV #(SLEEP),PC                 \ Must be the last statement of BACKGROUND
+ENDASM                          \
+\ ------------------------------\
+    \
 
 CODE START                      \
 \ ------------------------------\
@@ -401,7 +399,7 @@ CODE START                      \
 \ TB0CCRx                         \$3D{2,4,6,8,A,C,E}
 \ TB0EX0                          \$3E0 
 \ ------------------------------\
-\ set TimerB to make 50kHz PWM  \
+\ set TB0 to make 50kHz PWM     \ for LCD_Vo, works without interrupt
 \ ------------------------------\
 \    MOV #%1000010100,&TB0CTL   \ SMCLK/1, up mode, clear timer, no int
 \    MOV #0,&TB0EX0             \ predivide by 1 in TB0EX0 register (1 MHZ) (25 kHz PWM)
@@ -420,7 +418,7 @@ CODE START                      \
 \ ------------------------------\
     MOV #40,&TB0CCR0            \ 40*0.5us=20us (40us @ 1MHz)
 \ ------------------------------\
-\ set TimerB to generate PWM for LCD_Vo
+\ set TB0 to generate PWM for LCD_Vo
 \ ------------------------------\
     MOV #%1100000,&TB0CCTL2     \ output mode = set/reset \ clear CCIFG
 \    MOV #20,&TB0CCR2           \ contrast adjust : 20/40 ==> LCD_Vo = -1V1|+3V6 (Vcc=3V6)
@@ -458,6 +456,13 @@ CODE START                      \
 \    MOV #LPM2,&LPM_MODE         \ with MSP430FR57xx, terminal input don't work for LPMx > 2
 \                               \ with MSP430FR2xxx, terminal input don't work for LPMx > 0 ; LPM0 is the default value
 
+\ ------------------------------\
+\ redirects to background task  \
+\ ------------------------------\
+    MOV #SLEEP,X                \
+    MOV #BACKGROUND,2(X)        \
+\ ------------------------------\
+
 LO2HI                           \ no need to push IP because (WARM) resets the Return Stack ! 
 
 \ ------------------------------\
@@ -483,23 +488,26 @@ LO2HI                           \ no need to push IP because (WARM) resets the R
     CR ." I love you"   
     ['] (CR) IS CR              \ ' (CR) is CR
     ['] (EMIT) IS EMIT          \ ' (EMIT) is EMIT
+\    NOECHO                      \ uncomment to run this app without terminal connexion
     CR
     ."    RC5toLCD is running. Type STOP to quit"
-\    NOECHO                      \ uncomment to run this app without terminal connexion
     LIT RECURSE IS WARM         \ insert this START routine between WARM and (WARM)...
-    (WARM)                      \ ...and continue with (WARM) (very, very usefull after COLD or RESET !:-)
+    (WARM)                      \ ...and continue with (WARM), must be the last statement.
 ;
     \
 
-: STOP                  \ stops multitasking, must to be used before downloading app
-    ['] (WARM) IS WARM  \ remove START app from FORTH init process
-    ECHO COLD           \ reset CPU, interrupt vectors, and start FORTH
+CODE STOP                   \ stops multitasking, must to be used before downloading app
+    MOV #SLEEP,X            \ restore the default background
+    MOV #(SLEEP),2(X)       \
+COLON
+    ['] (WARM) IS WARM      \ remove START app from FORTH init process
+    ECHO COLD               \ reset CPU, interrupt vectors, and start FORTH
 ;
     \
 
 
 
 ECHO
-            ; download is done
-RST_HERE    ; this app is protected against <reset>,
+            ; downloading RC5toLCD.4th is done
+RST_HERE    ; this app is protected against <reset>
 \ START

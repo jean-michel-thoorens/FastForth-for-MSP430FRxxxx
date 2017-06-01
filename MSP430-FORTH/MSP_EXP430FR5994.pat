@@ -142,6 +142,40 @@
 
 
 
+! ============================================
+! FORTH I/O :
+! ============================================
+TERM_TX=1!          ; P2.0 = TX
+TERM_RX=2!          ; P2.1 = RX
+TERM_TXRX=3!
+
+TERM_REN=\$207!
+TERM_SEL=\$20D!
+TERM_IE=\$21B!
+TERM_IFG=\$21D!
+Deep_RST=1!         ; = TX pin
+Deep_RST_IN=\$201!  ; TERMINAL TX  pin as FORTH Deep_RST
+
+RTS=4!              ; P4.2
+CTS=2!              ; P4.1
+HANDSHAKIN=\$221!
+HANDSHAKOUT=\$223!
+
+SD_CD=4!        ; P7.2 as SD_CD
+SD_CDIN=\$260!
+
+SD_CS=1!        ; P4.0 as SD_CS     
+SD_CSOUT=\$223!
+SD_CSDIR=\$225!
+
+SD_SEL1=\$20C!  ; word access, to configure UCB0
+SD_REN=\$206!   ; word access, to configure pullup resistors
+SD_BUS=\$04C0!  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
+
+
+! ============================================
+! APPLICATION I/O :
+! ============================================
 LED1_OUT=\$202!
 led1=1!             P1.0
 
@@ -185,12 +219,6 @@ IR_Vec=\$FFDE!        P1 int
 RC5_=RC5_!
 RC5=4!              P1.2
 
-
-SD_CS=1!            P4.0
-SD_CSIN=\$221!
-
-SD_CD=4!            P7.2
-SD_CDIN=\$260!
 
 I2CSM_IN=\$261!
 I2CSM_OUT=\$263!

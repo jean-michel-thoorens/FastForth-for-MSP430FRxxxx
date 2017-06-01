@@ -142,6 +142,7 @@ RST_ADR  .word  reset       ; $FFFE  -  reset
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : RTC REGISTERS
 ; ----------------------------------------------------------------------
+RTC_B   ; declare RTC type
 RTCCTL01      .equ RTC_B_SFR + 00h
 RTCCTL0       .equ RTC_B_SFR + 00h
 RTCCTL1       .equ RTC_B_SFR + 01h
@@ -305,6 +306,7 @@ RST_ADR  .word  reset       ; $FFFE  -  reset
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : RTC REGISTERS
 ; ----------------------------------------------------------------------
+RTC_B   ; declare RTC type
 RTCCTL01      .equ RTC_B_SFR + 00h
 RTCCTL0       .equ RTC_B_SFR + 00h
 RTCCTL1       .equ RTC_B_SFR + 01h
@@ -577,6 +579,7 @@ P8IV        .equ PD_SFR + 1Eh    ; Port 8 Interrupt Vector word
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : RTC REGISTERS
 ; ----------------------------------------------------------------------
+RTC_C   ; declare RTC type
 RTCCTL0_L     .set RTC_C_SFR + 00h
 RTCCTL0_H     .set RTC_C_SFR + 01h
 RTCCTL1       .set RTC_C_SFR + 02h
@@ -833,6 +836,7 @@ P10SELC      .set PE_SFR + 17h    ; Port 10 Complement Selection
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : RTC_C REGISTERS
 ; ----------------------------------------------------------------------
+RTC_B   ; declare RTC type
 RTCCTL0_L     .set RTC_C_SFR + 00h
 RTCCTL0_H     .set RTC_C_SFR + 01h
 RTCCTL1       .set RTC_C_SFR + 02h

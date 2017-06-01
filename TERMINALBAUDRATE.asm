@@ -1,6 +1,49 @@
 
 ; TERM alias eUSCI_Ax : select baudrate versus frequency
-    .IF FREQUENCY = 0.5
+    .IF FREQUENCY = 0.25
+        .SWITCH TERMINALBAUDRATE
+
+        .CASE 9600
+; Configure UART0 @ 38400 bauds / 1MHz
+; N=1000000/38400=26.04166... ==> UCOS16=1, UCBR0=int(N/16)=1, UCBRF0=int(frac(N/16)*16)=10, UCBRS0= fn(frac(N))=fn(0.04166)=0x00
+; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+            MOV     #1,    &TERMBRW
+            MOV.W   #00A1h, &TERMMCTLW
+
+        .CASE 19200  ; PL2303TA baudrate
+; Configure UART0 @ 38400 bauds / 500kHz
+; N=500000/38400=13.20833 ==> UCOS16=0, UCBR0=int(N)=13, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.20833)=0x11
+; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+            MOV     #13,     &TERMBRW
+            MOV.W   #1100h,&TERMMCTLW
+
+        .CASE 31250  ; MIDI interface
+; Configure UART0 @ 31250 bauds / 250kHz
+; N=250000/31250=8 ==> UCOS16=0, UCBR0=int(N)=8, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0)=0
+; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+            MOV     #8,     &TERMBRW
+            MOV.W   #0000h,&TERMMCTLW
+
+        .CASE 38400
+; Configure UART0 @ 38400 bauds / 250kHz
+; N=250000/38400=6.5124166... ==> UCOS16=0, UCBR0=int(N)=6, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.512416)=0xAA
+; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+            MOV     #6,     &TERMBRW
+            MOV.W   #0AA00h,&TERMMCTLW
+
+        .CASE 57600  ; PL2303TA baudrate
+; Configure UART0 @ 57600 bauds / 250kHz
+; N=250000/57600=4.340277.. ==> UCOS16=0, UCBR0=int(N)=4, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.340277)=0x49
+; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+            MOV     #4,     &TERMBRW
+            MOV.W   #04900h,&TERMMCTLW
+
+        .ELSECASE
+            .error "UART0 / 250 kHz : baudrate not implemented"
+        .ENDCASE
+
+
+    .ELSEIF FREQUENCY = 0.5
         .SWITCH TERMINALBAUDRATE
         .CASE 9600
 ; Configure UART0 @ 19200 bauds / 1MHz
@@ -617,6 +660,13 @@
              MOV     #5,     &TERMBRW
              MOV.W   #04900h,&TERMMCTLW
 
+        .CASE 4000000 ; CP2102 baudrate
+; Configure UART0 @ 4000000 bauds / 16MHz
+; N = 16000000/4000000 = 4... ==> {UCOS16=0, UCBR0=int(N)=0, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.0000000)=0
+; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+             MOV     #4,     &TERMBRW
+             MOV.W   #0,&TERMMCTLW
+
         .ELSECASE
             .error "UART0 / 16 MHz : baudrate not implemented"
         .ENDCASE ; UART0 / 16 MHz baudrates
@@ -734,8 +784,8 @@
             MOV.W   #0000h,&TERMMCTLW
 
         .CASE 6000000 ; PL2303TA baudrate
-; Configure UART0 @ 3000000 bauds / 24MHz
-; N = 24000000/3000000 = 4 ==> {UCOS16=0, UCBR0=int(N)=8, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.00000)=0x00
+; Configure UART0 @ 6000000 bauds / 24MHz
+; N = 24000000/6000000 = 4 ==> {UCOS16=0, UCBR0=int(N)=8, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.00000)=0x00
             MOV     #4,    &TERMBRW
             MOV.W   #0000h,&TERMMCTLW
 

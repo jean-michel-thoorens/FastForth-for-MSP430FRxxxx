@@ -10,11 +10,11 @@
 \ configure TERATERM as indicated in forthMSP430FR.asm
 
 \ if you have a MSP-EXP430FR5994, program your launchpad with MSP_EXP430FR5994_3Mbds_SD_CARD.txt via TI interface:
-\ drag and drop this file onto MSP430FR5994prog.bat
+\   to do, drag and drop this file onto MSP430FR5994prog.bat
 
 \ else edit forthMSP430FR.asm with scite editor
 
-\   with (SHIFT+F8), set param1 as DEVICE and param2 as TARGET
+\   with (SHIFT+F8), set param1 as your DEVICE and param2 as your TARGET
 \   uncomment your target,
 \   set DTC .equ 1
 \       FREQUENCY   .equ 16
@@ -32,7 +32,7 @@
 
 
 \ format FAT16 or FAT32 a SD_CARD memory (max 64GB)
-\ create folder \MISC on this SD_CARD (FastForth don't do yet)
+\ create folder \MISC on this SD_CARD memory (FastForth don't do yet)
 \ put it in the target SD slot wired as described in MSP430-FORTH\target.pat,
 
 \ type COLD from the console input to reset FAST FORTH,

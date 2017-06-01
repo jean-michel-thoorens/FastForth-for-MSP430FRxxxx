@@ -426,6 +426,15 @@ CSCTL8      .equ CS_SFR + 10h   ; Clock System Control Register 8
 
 
 ; ----------------------------------------------------------------------
+; RTC
+; ----------------------------------------------------------------------
+RTC     ; define type of RTC
+RTCCTL      .equ RTC_SFR + 00h  ; Real-Time Clock Control 
+RTCIV       .equ RTC_SFR + 04h  ; Real-Time Clock Interrupt Vector 
+RTCMOD      .equ RTC_SFR + 08h  ; Real-Timer Clock Modulo 
+RTCCNT      .equ RTC_SFR + 0Ch  ; Real-Time Clock Counter 
+
+; ----------------------------------------------------------------------
 ; eUSCI_A0
 ; ----------------------------------------------------------------------
 

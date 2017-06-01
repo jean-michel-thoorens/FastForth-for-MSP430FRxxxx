@@ -18,11 +18,13 @@
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-;X NIP    x1 x2 -- x2
+;https://forth-standard.org/standard/core/NIP
+;CE NIP    x1 x2 -- x2
             FORTHWORD "NIP"
 NIP         ADD     #2,PSP          ; 1
             mNEXT                   ; 4
 
+;https://forth-standard.org/standard/core/StoD
 ;C S>D    n -- d          single -> double prec.
             FORTHWORD "S>D"
 STOD:       SUB     #2,PSP
@@ -31,6 +33,7 @@ STOD:       SUB     #2,PSP
 
     .IFDEF MPY
 
+;https://forth-standard.org/standard/core/UMTimes
 ;C UM*     u1 u2 -- ud   unsigned 16x16->32 mult.
             FORTHWORD "UM*"
 UMSTAR      MOV @PSP,&MPY       ; Load 1st operand
@@ -39,6 +42,7 @@ UMSTAR      MOV @PSP,&MPY       ; Load 1st operand
             MOV &RES1,TOS       ; high result in TOS
             mNEXT
 
+;https://forth-standard.org/standard/core/MTimes
 ;C M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
             FORTHWORD "M*"
 MSTAR       MOV     @PSP,&MPYS
@@ -49,6 +53,7 @@ MSTAR       MOV     @PSP,&MPYS
 
     .ELSE
 
+;https://forth-standard.org/standard/core/MTimes
 ;C M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
             FORTHWORD "M*"
 MSTAR:      MOV     TOS,S           ; TOS= n2
@@ -86,6 +91,7 @@ MSTARend    mNEXT
 ; DVDhi|DVDlo : DIVISOR -> QUOT in Y, REM in DVDhi
 ; RETURN: CARRY = 0: OK CARRY = 1: QUOTIENT > 16 BITS
 
+;https://forth-standard.org/standard/core/UMDivMOD
 ;C UM/MOD   udlo|udhi u1 -- r q   unsigned 32/16->16
             FORTHWORD "UM/MOD"
 UMSLASHMOD  MOV @PSP+,W     ;2 W = DIVIDENDhi
@@ -108,6 +114,7 @@ DIV3        MOV W,0(PSP)    ;3 remainder on stack
             MOV Y,TOS       ;1 quotient in TOS
             mNEXT           ;4 23 words  240 cycles
 
+;https://forth-standard.org/standard/core/SMDivREM
 ;C SM/REM   d1lo d1hi n2 -- n3 n4  symmetric signed div
             FORTHWORD "SM/REM"
 SMSLASHREM  MOV TOS,S           ;1            S=divisor
@@ -143,6 +150,7 @@ SMSLASHREMn3u4
 SMSLASHREMn3n4                  ;   -- n3 n4  S=divisor
             mNEXT               ;4 36 words
 
+;https://forth-standard.org/standard/core/FMDivMOD
 ;C FM/MOD   d1 n1 -- r q   floored signed div'n
             FORTHWORD "FM/MOD"
 FMSLASHMOD  PUSH    IP
@@ -159,31 +167,37 @@ FMSLASHMODEND
             MOV     @RSP+,IP
             mNEXT                   ;
 
+;https://forth-standard.org/standard/core/Times
 ;C *      n1 n2 -- n3       signed multiply
             FORTHWORD "*"
 STAR:       mDOCOL
             .word   MSTAR,DROP,EXIT
 
+;https://forth-standard.org/standard/core/DivMOD
 ;C /MOD   n1 n2 -- n3 n4    signed divide/rem'dr
             FORTHWORD "/MOD"
 SLASHMOD:   mDOCOL
             .word   TOR,STOD,RFROM,FMSLASHMOD,EXIT
 
+;https://forth-standard.org/standard/core/Div
 ;C /      n1 n2 -- n3       signed divide
             FORTHWORD "/"
 SLASH:      mDOCOL
             .word   TOR,STOD,RFROM,FMSLASHMOD,NIP,EXIT
 
+;https://forth-standard.org/standard/core/MOD
 ;C MOD    n1 n2 -- n3       signed remainder
             FORTHWORD "MOD"
 MODD:       mDOCOL
             .word   TOR,STOD,RFROM,FMSLASHMOD,DROP,EXIT
 
+;https://forth-standard.org/standard/core/TimesDivMOD
 ;C */MOD  n1 n2 n3 -- n4 n5    n1*n2/n3, rem&quot
             FORTHWORD "*/MOD"
 SSMOD:      mDOCOL
             .word   TOR,MSTAR,RFROM,FMSLASHMOD,EXIT
 
+;https://forth-standard.org/standard/core/TimesDiv
 ;C */     n1 n2 n3 -- n4        n1*n2/n3
             FORTHWORD "*/"
 STARSLASH   mDOCOL

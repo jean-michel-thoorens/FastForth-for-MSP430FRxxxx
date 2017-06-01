@@ -18,6 +18,7 @@
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+;https://forth-standard.org/standard/tools/DotS
 ;X .S      --           print <number> of cells and stack contents if not empty
             FORTHWORD ".S"
 DOTS        mDOCOL
@@ -33,17 +34,19 @@ DOTS1:      .word   II,FETCH,UDOT
             .word   xploop,DOTS1
 DOTS2:      .word   EXIT
 
+;https://forth-standard.org/standard/tools/q
 ;Z  ?       adr --             display the content of adr
             FORTHWORD "?"
             MOV     @TOS,TOS
             MOV     #UDOT,PC
 
+;https://forth-standard.org/standard/tools/WORDS
 ;X WORDS        --      list all words in all dicts. 53 words
-    .SWITCH THREADS
-    .CASE   1
-
             FORTHWORD "WORDS"
 WORDS       mDOCOL
+
+    .SWITCH THREADS
+    .CASE   1
 
 ; vvvvvvvv   may be skipped    vvvvvvvv
             .word   CR                     ; type # of threads in vocabularies
@@ -74,9 +77,6 @@ WORDS5      .word   DROP
 
 
     .ELSECASE
-
-            FORTHWORD "WORDS"
-WORDS       mDOCOL
 
 ; vvvvvvvv   may be skipped    vvvvvvvv
             .word   FBASE,FETCH             
@@ -133,6 +133,7 @@ WORDS6      .word   DROP
 
     .IFNDEF ANS_CORE_COMPLIANT
 
+;https://forth-standard.org/standard/core/MAX
 ;C MAX    n1 n2 -- n3       signed maximum
             FORTHWORD "MAX"
 MAX:        CMP     @PSP,TOS    ; n2-n1
@@ -140,6 +141,7 @@ MAX:        CMP     @PSP,TOS    ; n2-n1
 SELn2:      ADD     #2,PSP
             mNEXT
 
+;https://forth-standard.org/standard/core/MIN
 ;C MIN    n1 n2 -- n3       signed minimum
             FORTHWORD "MIN"
 MIN:        CMP     @PSP,TOS    ; n2-n1
@@ -149,6 +151,7 @@ SELn1:      MOV     @PSP+,TOS
 
     .ENDIF
 
+;https://forth-standard.org/standard/core/UDotR
 ;X U.R      u n --      display u unsigned in n width
             FORTHWORD "U.R"
 UDOTR       mDOCOL
@@ -156,6 +159,7 @@ UDOTR       mDOCOL
             .word   RFROM,OVER,MINUS,lit,0,MAX,SPACES,TYPE
             .word   EXIT
 
+;https://forth-standard.org/standard/tools/DUMP
             FORTHWORD "DUMP"
 DUMP        PUSH    IP
             PUSH    &BASE

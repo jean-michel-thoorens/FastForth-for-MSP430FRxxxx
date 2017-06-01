@@ -173,7 +173,6 @@ ENDCODE
 \ ******************************\
 ASM WDT_Int                     \ Watchdog interrupt routine, warning : not FORTH executable !
 \ ******************************\
-BIC #$F8,0(RSP)                 \ set CPU ON and GIE OFF in retiSR
 \ ------------------------------\
 \ define LPM mode for ACCEPT    \ LPM0 is the default mode.
 \ ------------------------------\
@@ -196,6 +195,8 @@ ELSE
         THEN                    \
     THEN                        \
 THEN                            \
+BIC #WDTIFG,&SFRIFG1            \ reset WDT_INT flag
+BIC #$F8,0(RSP)                 \ set CPU ON and GIE OFF in retiSR
 RETI                            \ CPU is ON, GIE is OFF
 ENDASM                          \
     \

@@ -152,10 +152,12 @@
 ;  VCC -                        <---- VCC (optional supply from UARTtoUSB bridge - WARNING ! 3.3V !)
 ;  GND -                        <---> GND (optional supply from UARTtoUSB bridge)
 ;        
+; SD_CardAdapter not compatible with HARDWARE flow control for FORTH TERMINAL
+; ---------------------------------------------------------------------------
 ; VCC  -                 RF.2 
 ; VSS  -                 RF.1 
-; P2.2 -                 RF.16  <---- CD  SD_CardAdapter (Card Detect)
-; P2.3 -                 RF.10  ----> CS  SD_CardAdapter (Card Select)
+; P2.2 -                 RF.16  <---- CD  SD_CardAdapter (Card Detect) / RTS
+; P2.3 -                 RF.10  ----> CS  SD_CardAdapter (Card Select) / CTS
 ; P2.4 - UCA1 CLK        RF.14  ----> CLK SD_CardAdapter (SCK)  
 ; P2.5 - UCA1 TXD/SIMO   RF.7   ----> SDI SD_CardAdapter (MOSI)
 ; P2.6 - UCA1 RXD/SOMI   RF.5   <---- SDO SD_CardAdapter (MISO)
@@ -201,20 +203,30 @@ TERM_TXRX   .equ 003h
 TERM_SEL    .equ P2SEL1
 TERM_REN    .equ P2REN
 
+; RTS output is wired to the CTS input of UART2USB bridge 
+; CTS is not used by FORTH terminal
+; configure RTS as output high to disable RX TERM during start FORTH
+
 ; P2.7 is used to power the accelerometer and NTC voltage divider ==> output low = OFF
 
-; PORTx default wanted state : pins as input with pullup resistor
-
-    BIS #08000h,&PADIR  ; all pins as input else P2.7
-    MOV #07FFFh,&PAOUT  ; all pins high else P2.7
-    BIS #07FFFh,&PAREN  ; all pins with pull up resistors else P2.7
-
     .IFDEF TERMINALCTSRTS
-;configure P2.2 as RTS output high
-RTS         .equ  4
+
+RTS         .equ  4 ; P2.2
+;CTS         .equ  8 ; P2.3
 HANDSHAKOUT .equ  P2OUT
 HANDSHAKIN  .equ  P2IN
-            BIS.B #RTS,&HANDSHAKOUT
+    BIS #08400h,&PADIR  ; all pins as input else RTS P2.2 and P2.7
+    BIS #07FFFh,&PAREN  ; all input pins with resistor
+    MOV #07FFFh,&PAOUT  ; that acts as pull up, and P2.7 as output LOW
+
+    .ELSEIF
+
+; PORTx default wanted state : pins as input with pullup resistor
+    BIS #08000h,&PADIR  ; all pins as input else P2.7
+    BIS #07FFFh,&PAREN  ; all input pins with resistor
+    MOV #07FFFh,&PAOUT  ; that acts as pull up, and P2.7 as output LOW
+
+
     .ENDIF
 
 ; ----------------------------------------------------------------------
@@ -269,7 +281,12 @@ S1          .equ 1
 ; CS code for MSP430fr5739
             MOV.B   #CSKEY,&CSCTL0_H ;  Unlock CS registers
 
-    .IF FREQUENCY = 0.5
+    .IF FREQUENCY = 0.25
+;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
+            MOV     #DIVA_0 + DIVS_32 + DIVM_32,&CSCTL3
+            MOV     #2,X
+
+    .ELSEIF FREQUENCY = 0.5
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_16 + DIVM_16,&CSCTL3
             MOV     #4,X

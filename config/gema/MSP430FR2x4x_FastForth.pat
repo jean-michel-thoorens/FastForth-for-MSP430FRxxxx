@@ -48,11 +48,11 @@ BIT15=\$8000!
 ! ============================================
 ! symbolic codes :
 ! ============================================
-RET=MOV \@R1+,R0!
-NOP=MOV 0,R3!       \ one word one cycle
-NOP2=\$3C00 ,!      \ compile JMP 0: one word two cycles
-NOP3=MOV R0,R0!     \ one word three cycles
-NEXT=MOV \@R13+,R0!
+RET=MOV \@R1+,R0!   \ MOV @RSP+,PC
+NOP=MOV 0,R3!       \                one word one cycle
+NOP2=\$3C00 ,!      \ compile JMP 0  one word two cycles
+NOP3=MOV R0,R0!     \ MOV PC,PC      one word three cycles
+NEXT=MOV \@R13+,R0! \ MOV @IP+,PC   
 
 
 
@@ -68,7 +68,7 @@ NEXT=MOV \@R13+,R0!
 ! ----------------------
 INI_THREAD=\$1800!      .word THREADS
 TERMINAL_INT=\$1802!    .word TERMINAL_INT
-FREQ_KHZ=\$1804!        .word FREQUENCY*1000
+FREQ_KHZ=\$1804!        .word FREQUENCY
 HECTOBAUDS=\$1806!      .word TERMINALBAUDRATE/100
 ! ----------------------
 ! SAVED VARIABLES
@@ -89,6 +89,7 @@ WriteSectorWX=\$1816!   call with W = SectorLO  X = SectorHI
 ! FastForth RAM memory map (>= 1k):
 ! ============================================
 LSATCK=\$2000!      \ leave stack,      grow up
+LEAVEPTR=\$2000!    \ Leave-stack pointer, init by QUIT
 PSTACK=\$2080!      \ parameter stack,  grow down
 RSTACK=\$20E0!      \ Return stack,     grow down
 PAD=\$20E2!         \ user scratch pad buffer, grow up
@@ -100,14 +101,13 @@ BASE_HOLD=\$21AA!   \ BASE HOLD area, grow down
 ! ----------------------
 
 HP=\$21AA!              HOLD ptr
-LEAVEPTR=\$21AC!        Leave-stack pointer, init by QUIT
-
+CAPS=\$21AC!            CAPS ON/OFF flag, must be set to -1 before first reset !
 LAST_NFA=\$21AE!
 LAST_THREAD=\$21B0!
 LAST_CFA=\$21B2!
 LAST_CSP=\$21B4!
 
-STATE=\$21B6!           Interpreter state
+!STATE=\$21B6!           Interpreter state
 
 ASM_CURRENT=\$21B8!     preserve CURRENT when create assembler words
 OPCODE=\$21BA!          OPCODE adr
@@ -115,16 +115,17 @@ ASMTYPE=\$21BC!         keep the opcode complement
 
 SOURCE_LEN=\$21BE!      len of input stream
 SOURCE_ADR=\$21C0!      adr of input stream
-\>IN=\$21C2!            >IN
+!\>IN=\$21C2!            >IN
 DP=\$21C4!              dictionary ptr
 LASTVOC=\$21C6!         keep VOC-LINK
 CURRENT=\$21C8!         CURRENT dictionnary ptr
 CONTEXT=\$21CA!         CONTEXT dictionnary space (8 CELLS)
 
-BASE=\$21DA!            numeric base, must be defined before first reset !
-CAPS=\$21DC!            CAPS ON/OFF flag, must be set to -1 before first reset !
+!BASE=\$21DA!            numeric base, must be defined before first reset !
 
+!21DC! 34 RAM bytes free
 
+!BUFFER-2 is reserved
 BUFFER=\$2200!      \ SD_Card buffer
 BUFEND=\$2400!
 
@@ -167,29 +168,28 @@ ClusterL=\$2422!     16 bits wide (FAT16)
 ClusterH=\$2424!     16 bits wide (FAT16)
 NewClusterL=\$2426!  16 bits wide (FAT16) 
 NewClusterH=\$2428!  16 bits wide (FAT16) 
-FATsector=\$242A!   not used
-CurFATsector=\$242C!
+CurFATsector=\$242A!
 
 ! ---------------------------------------
 ! DIR entry
 ! ---------------------------------------
-DIRclusterL=\$242E!  contains the Cluster of current directory ; 1 if FAT16 root directory
-DIRclusterH=\$2430!  contains the Cluster of current directory ; 1 if FAT16 root directory
-EntryOfst=\$2432!  
-pathname=\$2434!    address of pathname string
+DIRclusterL=\$242C!  contains the Cluster of current directory ; 1 if FAT16 root directory
+DIRclusterH=\$242E!  contains the Cluster of current directory ; 1 if FAT16 root directory
+EntryOfst=\$2430!  
+pathname=\$2432!    address of pathname string
 
 ! ---------------------------------------
 ! Handle Pointer
 ! ---------------------------------------
-CurrentHdl=\$2436!  contains the address of the last opened file structure, or 0
+CurrentHdl=\$2434!  contains the address of the last opened file structure, or 0
 
 ! ---------------------------------------
 ! Load file operation
 ! ---------------------------------------
-SAVEtsLEN=\$2438!              of previous ACCEPT
-SAVEtsPTR=\$243A!              of previous ACCEPT
-MemSectorL=\$243C!             double word current Sector of previous LOAD"ed file
-MemSectorH=\$243E!
+SAVEtsLEN=\$2436!              of previous ACCEPT
+SAVEtsPTR=\$2438!              of previous ACCEPT
+MemSectorL=\$243A!             double word current Sector of previous LOAD"ed file
+MemSectorH=\$243C!
 
 ! ---------------------------------------
 ! Handle structure
@@ -215,11 +215,13 @@ HDLL_CurSize=18!    written size / not yet read size (Long)
 HDLH_CurSize=20!    written size / not yet read size (Long)
 HDLW_BUFofst=22!    BUFFER offset ; used by LOAD" and by WRITE"
 
-HandleMax=8!
-HandleLenght=24!
 
 !OpenedFirstFile     ; "openedFile" structure 
+HandleMax=8!
+HandleLenght=24!
 FirstHandle=\$2440!
 HandleOutOfBound=\$2500!
 
 SDIB=\$2500!
+
+SD_END_DATA=\$2554!

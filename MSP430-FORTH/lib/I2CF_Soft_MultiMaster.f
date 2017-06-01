@@ -220,7 +220,7 @@ BEGIN                               \ 4 l
 \       ----------------------------\
 \       I2C_MSendAckOrNack          \ here, SDA is released by slave, SCL is strech low by master
 \       ----------------------------\
-        CMP.B #1,T                  \
+        CMP.B #1,T                  \         bytes count = 1 ?
         0<> IF                      \ 2
           BIS.B #SMMSDA,&I2CSMM_DIR \ 4 l     prepare send Ack if byte count <> 1
         THEN                        \   

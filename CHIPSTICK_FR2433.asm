@@ -160,17 +160,28 @@ TERM_REN    .equ P1REN
 ; PORT3 usage
 ; P3.1 -           LED1
 
-; PORTx default wanted state : pins as input with pullup resistor
-
-            MOV.B #001h,&P3DIR  ; all pins as input else LED1
-            MOV.B #0FDh,&P3OUT  ; all pins with pullup resistors else LED1 = output low
-            BIS.B #0FDh,&P3REN  ; all pins with pull resistors else LED1
+; RTS output is wired to the CTS input of UART2USB bridge 
+; CTS is not used by FORTH terminal
+; configure RTS as output high to disable RX TERM during start FORTH
 
     .IFDEF TERMINALCTSRTS
 HANDSHAKOUT .equ    P3OUT
 HANDSHAKIN  .equ    P3IN
+;CTS         .equ    1       ; P3.0 bit position
 RTS         .equ    4       ; P3.2 bit position
-            BIS.B #RTS,&HANDSHAKOUT
+
+            BIS.B #006h,&P3DIR  ; all pins as input else P3.1 LED1 and P3.2 RTS as output
+            BIS.B #-1,&P3REN    ; all inputs with pull resistors
+            MOV.B #0FDh,&P3OUT  ; all pins with pullup resistors and LED1 = output low
+
+    .ELSEIF
+
+; PORTx default wanted state : pins as input with pullup resistor
+
+            MOV.B #001h,&P3DIR  ; all pins as input else LED1 as output
+            BIS.B #-1,&P3REN    ; all inputs with pull resistors
+            MOV.B #0FDh,&P3OUT  ; all pins with pullup resistors and LED1 = output low
+
     .ENDIF
 
 ; ----------------------------------------------------------------------
@@ -198,7 +209,7 @@ NWAITS            = 1
 
 ; CS code for EXP430FR2433
 
-; to measure REFO frequency, output ACLK on P2.2:
+; to measure REFO frequency, output ACLK on P2.2: 
 ;    BIS.B #4,&P2SEL1
 ;    BIS.B #4,&P2DIR
 ; result : REFO = 32.69kHz

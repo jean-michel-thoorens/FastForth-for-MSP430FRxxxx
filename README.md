@@ -1,52 +1,57 @@
-Fast Forth For MSP430FRxxxx TI's devices
-========================================
+Fast Forth For MSP430FRxxxx TI's chips
+======================================
 
 
-FAST FORTH is the Swiss Army knife you need for your MSP430FRxxxx.
-Usable with all the TI LaunchPads MSP430 FRAM and all MSP430FRxxxx, without moderation!
+FAST FORTH is a fast and well made embedded interpreter/assembler/compiler, very interesting due to it size < 6 kbytes. 
+If your purpose is programming a MSP430FRxxxx in assembler, FAST FORTH is the Swiss army knife you absolutely need! 
 
-	With its embedded assembler the size of FAST FORTH is < 6 kb, else: 4kb.
-    With SD_CARD file Load|Read|Write|Delete, plus a direct file transfer from PC to SD_CARD, its size is under 9Kb.
-    Excepted MSP430FR4133, because no hardware multiplier, works with SD CARD memories from 64MB to 64GB.
-    This enable to make a data logger with a small MSP430FR5738 QFN24 and its RTC and 24MHz SPI CLK. 
+With a load, read,create, write, delete SD_CARD files driver, + source files direct copy from PC to SD_Card, its size is still < 9Kb.
+It works with all SD CARD memories from 64MB to 64GB. Count 14/11 clock cycles to read/write a byte, with SPI_CLK = MCLK...
+This enables to make a fast data logger with a small footprint as a MSP430FR5738 QFN24. 
 
-	Fully tested on MSP-EXP430FR5969, FR5994, FR6989, FR4133 launchpads and CHIPSTICKFR2433, at 0.5, 1, 2, 4, 8, 16 MHz,
-    plus 24MHz on a MSP430FR5738 module.
+	Tested on MSP-EXP430{FR5969,FR5994,FR6989,FR4133} launchpads and CHIPSTICKFR2433, at 0.5, 1, 2, 4, 8, 16 MHz,
+    and 24MHz on a MSP430FR5738 module.
 
-	Files launchpad_3Mbd.txt are 16threads vocabularies 16MHz executables, with 3MBds, XON/XOFF terminal,
+	Files launchpad_3Mbd.txt are 16threads vocabularies 16MHz executables, with 3MBds XON/XOFF terminal,
     Launchpad_115200.txt files are same except 115200Bds for unlucky linux men without TERATERM.    
-    For the launchpad MSP-EXP430FR5994 with SD_CARD, full version with SD_Card driver is available.
-	For others, you must before compile forthMSP430FR.asm with SD_CARD_LOADER and
-    SD_CARD_READ_WRITE switches turned ON (uncomment their line).
+    For the launchpad MSP-EXP430FR5994 with SD_CARD, full version is available. For others, you must recompile 
+    forthMSP430FR.asm with SD_CARD_LOADER and SD_CARD_READ_WRITE switches turned ON (uncomment their line).
 
-    Once the Fast Forth binary is loaded into the target's FRAM memory, you add assembly code or FORTH code, or both,
-    by downloading source files that Fast Forth can interpret and compile. The download channel consists of the TERATERM program
-    on the PC side (the Fast Forth input terminal), and a USB-UART bridge (PL2303TA cable) that you connect between your PC
-    and your target.
+    Once the Fast Forth code is loaded in the target FRAM memory, you can add it assembly code or FORTH code, or both,
+    by downloading your source files that embedded Fast Forth interprets and compiles. To do, you only need teraterm.exe
+    as input terminal and an USBtoUART bridge to connect your target.
     
-    Once your source files (files.f) in symbolic assembler are written, 
-    the preprocessor GEMA translates them into Fast Forth source files (files.4th) ready to download, by
-    using .pat files (equivalent to the C files.h).
+    Beforehand, the preprocessor GEMA, by means of a target.pat file, will have translated your source file.f in a targeted 
+    source file.4th ready to download.
     A set of .bat files is furnished to do this automatically. See it all in the MSP430-FORTH folder.
 
-	The download, interpretation and compilation of a file.4th is done at a throughput of 40/80/120 kbytes/sec
-    with a 8/16/24 MHz clock. Considering a ratio 5/1, that of the compiled code is 8/16/24 kbytes/sec. 
-    To compare with the 8kbytes/s of the FlashPro-MSP programmer in SBW mode.
+	The download, interpretation and compilation of a source file.4th is done at a throughput of 40/80/120 kbytes/sec
+    with a 8/16/24 MHz clock. Considering a ratio 5/1, that of the compiled code is 8/16/24 kbytes/sec.
 
     After downloading of complementary words in COMPxMPY.f, FastForth executes CORETEST.4th without errors
-    which ensures its compatibility with the FORTH ANS94 standard.
-    For MSP430FR4133 choose COMPSMPY.f, for all other COMPHMPY.f.
+    which ensures its compatibility with the FORTH CORE ANS94 standard.
+    For MSP430FR4133 choose COMPSMPY.f, COMPHMPY.f for all others.
 
-    Notice that FAST FORTH interprets only SPACE as delimiter (not TAB), BACKSPACE, and CR+LF (not LF) as end of line.
+    Notice that FAST FORTH interprets only SPACE as delimiter (not TAB), BACKSPACE, and CR+LF as end of line.
+    And that memory access is limited to 64 kbytes. You can always create FORTH words to access data beyond this limit...
 
-    Finally, if you use the scite editor you can do everything from its "tools" menu.
+    Finally, using the SCITE editor as IDE, you can do everything from its "tools" menu.
 
 What is new ?
 -------------
 
+	V161.
+
+    SD_Card driver works also with software multiplier (with MSP430FR4133)
+    added SLEEP and (SLEEP) words enabling user access to background task, see ACCEPT in forthMSP430FR.asm and see use in RC5toLCD.f
+    Typed numbers > 65535 or < -32768 are no longer automatically processed as 32 bits numbers; instead insert a decimal point.
+
+    WARNING! XON/XOFF no longer works with new Prolific driver v3.8.12.0 (03/03/2017)...
+             Waiting next update, get on web previous PL2303_Prolific_DriverInstaller_v1160.exe (or .zip), save it before install.
+
 	FAST FORTH V160, major version.
 
-    Accept SD_Card from 64 MB (FAT16) up to 64 GB (FAT32). 
+    Accept SD_Card from 64 MB (FAT16) up to 64 GB (FAT32), excepted MSP-EXP430FR4133. 
     Note that Windows 10 no longer offers the FAT32 format for the highest sizes of SD_CARD memory.
     So you must use an alternative to do, for example: https://www.partitionwizard.com.
     
@@ -59,11 +64,10 @@ What is new ?
     in SD_TOOLS the word SECT_D (dump sector) use a 32 bits number.
                 added the word CLUST_D (dump first sector of a cluster). Usage (notice the point): number. CLUST_D
 
-
     PREVIOUS versions
 	
-    Added direct file.4th transfer of PC to target SD_CARD. 
-    Measured speed: 90 kbytes/s at 3Mbauds and 16MHz target clock, with "HCI" SD CARD.
+    Added direct file transfer from PC to the target SD_CARD. 
+    Measured throughput with "HCI" SD CARD: 90 kbytes/s at 3Mbauds and 16MHz target clock.
     You can do it from scite editor (menu Tools) or by using specific bat files.
     Double click on these to see how to do.
 	
@@ -75,22 +79,18 @@ What is new ?
     i.e. that are called by {CALL|INTERRUPT} and ended by {RET|RETI}. These so created words can be used only in ASSEMBLER context.
 
 	In the embedded assembler, added 3 backward BW1 BW2 BW3 and 3 forward FW1 FW2 FW3 jump labels to use with GOTO, ?GOTO.
-    These labels are for single use (one jump for one label).
+    These labels are for single use (one jump for one label) but immediately reusable once resolved.
 	
-	you can compile up to 32 threads vocabularies ==> interpretation time is divided by sqrt(threads).
-
-	In root folder you can program files *.txt to any target by using drag and drop on their respective file.bat, 
-	The same applies to MSP430-FORTH\source files .f and .4th to any target by using drag and drop. 
-	Double click on these files.bat to see how to do.
+	you can compile up to 32 threads vocabularies ==> interpretation time is divided by ~sqrt(threads).
 
 	Memory management :
-	Fast Forth defines 4 levels of programm memory :
-		WIPE that resets programm memory as txt file was,
-		RST_HERE / RST_STATE that set / reset the boundary of program protected against <reset>,
-		PWR_HERE / PWR_STATE that set / reset the boundary of program protected against power ON/OFF,
-		and nothing, i.e. volatile memory.
+	Fast Forth defines 4 levels of program memory with this words :
+		WIPE (and any system failure) that resets program memory, vectors interrupts and any DEFERred words,
+		RST_HERE / RST_STATE that sets / resets the boundary of program protected against <reset> and COLD,
+		PWR_HERE / PWR_STATE that sets / resets the boundary of program protected against power ON/OFF,
+		and nothing, i.e. volatile program.
 
-	You can download source files with hardware or software control flow (i.e. without line or char delays) up to:
+	You can download source files with hardware and/or software control flow (i.e. without line or char delays) up to:
 		134400  bds @ 500kHz
         268800  bds @ 1MHz
         614400  bds @ 2MHz
@@ -103,8 +103,8 @@ What is new ?
 	FAST FORTH can be adjusted by selection of SWITCHES in the source file to reduce its size according   
 	to your convenience. To do, comment/uncomment their line.
 
-    You can select mode LPM{0,1,2,3,4} in your application, depending of family, FR2xxx : LPM0,
-    FR57xx : LPM0 to 2, FR59xx : LPM0 to 4.
+    for your application, select the mode LPM{0,1,2,3,4} that enables wake on FAST FORTH input, depending of family:
+    FR2xxx: LPM0, FR57xx : LPM0 to 2, FR59xx : LPM0 to 4.
 
     DEEP_RST (RESET + WIPE) can be hardware performed via the programmation interface (Vcc,RX,TX,RST,TEST,GND).
 
@@ -140,53 +140,47 @@ And that's the magic: After I finished editing (or modify) the source file, I pr
 Content
 -------
 
-With a size about 5.5 kb (enhanced version with vocabularies 16 threads), Fast Forth contains 111 words:
+With a size about 5.5 kb (enhanced version with vocabularies 16 threads), Fast Forth contains 116 words:
 
-    COLD            WARM            (WARM)          WIPE            RST_HERE        RST_STATE       PWR_HERE        PWR_STATE    
-    MOVE            LEAVE           +LOOP           LOOP            DO              REPEAT          WHILE           AGAIN        
-    UNTIL           BEGIN           THEN            ELSE            IF              POSTPONE        [']             IS           
-    IMMEDIATE       ;               :               RECURSE         ]               [               DEFER           DOES>        
-    CREATE          CONSTANT        VARIABLE        \               '               ABORT"          ABORT           QUIT         
-    EVALUATE        COUNT           LITERAL         ,               EXECUTE         >NUMBER         FIND            WORD         
-    ."              S"              TYPE            SPACES          SPACE           CR              (CR)            NOECHO       
-    ECHO            EMIT            (EMIT)          ACCEPT          KEY             (KEY)           C,              ALLOT        
-    HERE            .               D.              U.              UD.             SIGN            HOLD            #>           
-    #S              #               <#              BL              STATE           BASE            >IN             J            
-    I               UNLOOP          U<              >               <               =               0<              0=           
-    ABS             NEGATE          XOR             OR              AND             -               +               C!           
-    C@              !               @               DEPTH           R@              R>              >R              ROT          
-    OVER            SWAP            DROP            ?DUP            DUP             LIT             EXIT
+    ASM             CODE            HI2LO           ASSEMBLER       COLD            WARM            (WARM)          WIPE        
+    RST_HERE        RST_STATE       PWR_HERE        PWR_STATE       MOVE            LEAVE           +LOOP           LOOP        
+    DO              REPEAT          WHILE           AGAIN           UNTIL           BEGIN           THEN            ELSE        
+    IF              POSTPONE        [']             IS              IMMEDIATE       ;               :               RECURSE     
+    ]               [               DEFER           DOES>           CREATE          CONSTANT        VARIABLE        \           
+    '               ABORT"          ABORT           QUIT            EVALUATE        COUNT           LITERAL         ,           
+    EXECUTE         >NUMBER         FIND            WORD            ."              S"              TYPE            SPACES      
+    SPACE           CR              (CR)            NOECHO          ECHO            EMIT            (EMIT)          (ACCEPT)    
+    ACCEPT          KEY             (KEY)           C,              ALLOT           HERE            .               D.          
+    U.              UD.             SIGN            HOLD            #>              #S              #               <#          
+    BL              STATE           BASE            >IN             J               I               UNLOOP          U<          
+    >               <               =               0<              0=              ABS             NEGATE          XOR         
+    OR              AND             -               +               C!              C@              !               @           
+    DEPTH           R@              R>              >R              ROT             OVER            SWAP            DROP        
+    ?DUP            DUP             LIT             EXIT
 
-...size that includes its embedded assembler of 73 words:
+...size that includes its embedded assembler of 71 words:
 
-    ?GOTO           GOTO            FW3             FW2             FW1             BW3             BW2             BW1          
-    ?JMP            JMP             REPEAT          WHILE           AGAIN           UNTIL           ELSE            THEN         
-    IF              0=              0<>             U>=             U<              0<              0>=             S<           
-    S>=             RRUM            RLAM            RRAM            RRCM            POPM            PUSHM           CALL         
-    PUSH.B          PUSH            SXT             RRA.B           RRA             SWPB            RRC.B           RRC          
-    AND.B           AND             XOR.B           XOR             BIS.B           BIS             BIC.B           BIC          
-    BIT.B           BIT             DADD.B          DADD            CMP.B           CMP             SUB.B           SUB          
-    SUBC.B          SUBC            ADDC.B          ADDC            ADD.B           ADD             MOV.B           MOV          
-    RETI            LO2HI           COLON           ENDASM          ENDCODE         ASM             CODE            HI2LO        
-    ASSEMBLER   
+    ?GOTO           GOTO            FW3             FW2             FW1             BW3             BW2             BW1         
+    ?JMP            JMP             REPEAT          WHILE           AGAIN           UNTIL           ELSE            THEN        
+    IF              0=              0<>             U>=             U<              0<              0>=             S<          
+    S>=             RRUM            RLAM            RRAM            RRCM            POPM            PUSHM           CALL        
+    PUSH.B          PUSH            SXT             RRA.B           RRA             SWPB            RRC.B           RRC         
+    AND.B           AND             XOR.B           XOR             BIS.B           BIS             BIC.B           BIC         
+    BIT.B           BIT             DADD.B          DADD            CMP.B           CMP             SUB.B           SUB         
+    SUBC.B          SUBC            ADDC.B          ADDC            ADD.B           ADD             MOV.B           MOV         
+    RETI            LO2HI           COLON           ENDASM          ENDCODE         (SLEEP)         SLEEP
 
 ...everything you need to program effectively in assembly or FORTH or mix, as you want. See examples in \MSP430-FORTH folder.
 
-VOCABULARY ADD-ON swith in forthMSP430.asm adds:
+VOCABULARY ADD-ON switch in forthMSP430.asm adds:
 
     DEFINITIONS     ONLY            PREVIOUS        ALSO            FORTH           VOCABULARY   
-<<<<<<< HEAD
 
-SD\_CARD\_LOADER ADD-ON swith in forthMSP430.asm adds:
+SD\_CARD\_LOADER ADD-ON switch in forthMSP430.asm adds:
 
-=======
-
-SD\_CARD\_LOADER ADD-ON swith in forthMSP430.asm adds:
-
->>>>>>> 4f83c2458a3d0b038b9a82e6290d4818d9ce3447
     LOAD"           (ACCEPT)     
 
-SD\_CARD\_READ\_WRITE ADD-ON swith in forthMSP430.asm adds:
+SD\_CARD\_READ\_WRITE ADD-ON switch in forthMSP430.asm adds:
 
     TERM2SD"        SD_EMIT         WRITE           WRITE"          READ            READ"           CLOSE           DEL"         
 
@@ -237,7 +231,7 @@ If you are under WINDOWS :
 	The next tool is TERATERM.EXE : http://logmett.com/index.php?/products/teraterm.html.
 	
 	As scite is my editor, this github repository is fully configured for scite users.
-    download the single file executable called sc1 (not the full download) :
+    download the single file executable called sc1 (not the full download! ) :
     http://www.scintilla.org/SciTEDownload.html, then save it as \prog\wscite\scite.exe.
 
 	download GEMA preprocessor : https://sourceforge.net/projects/gema/files/gema/gema-1.4-RC/
@@ -248,10 +242,10 @@ If you are under WINDOWS :
 
 	copy last 3 items onto their respective \prog subfolder. 
 
-	ask windows to open .asm, .inc, lst, .map, .4th, .f files with scite.exe
+	ask windows to open .asm, .inc, lst, .mac, .4th, .f, .pat files with scite.exe
 	
 
-If you are linux or OS X men, sorry...
+If you are linux or OS X men, try virtualbox...
 
 
 Build the program file
@@ -261,15 +255,15 @@ Build the program file
 \forthMSP430FR.asm is the main file to compile FastForth. It calls :	
 
 	- mspregister.mac that defines the TI symbolic instructions,
-	- TargetMap.inc that defines for each device the eUSCI used as Terminal
-	  and then selects the declarations file family.map, 
+	- Target.inc that defines for each device the eUSCI used as Terminal
+	  and then selects the declarations file family.inc, 
 	- ForthThreads.mac in case of multithread vocabularies,
 	- optionally, forthMSP430FR_SD.asm file(s) for SD_Card,
 	- optionally, forthMSP430FR_ASM.asm for assembler,
 	- TargetInit.asm that selects the target.asm,
 	- and then TERMINALBAUDRATE.asm.
 
-open it with scite
+open it with scite editor
 
 uncomment the target as you want, i.e. MSP_EXP430fr5969
 
@@ -305,33 +299,37 @@ If you want to program your own MSP430FRxxxx board, wire its pins TST, RST, 3V3 
 Connect the FAST FORTH target to a serial terminal
 -------------------------------------------------
 
-you will need an USBtoUART cable with a PL2303TA or PL2303HXD device that allows XON/XOFF control flow :
+you will need an USBtoUART cable with a PL2303TA or PL2303HXD device that allows both XON/XOFF and hardware control flow :
 
 	http://www.google.com/search?q=PL2303TA
-    http://www.prolific.com.tw/UserFiles/files/PL2303_Prolific_DriverInstaller_v1_14_0.zip
+	http://www.google.com/search?q=PL2303HXD
+    WARNING! XON/XOFF no longer works with new Prolific driver v3.8.12.0 (03/03/2017)...
+             Waiting next update, get on web previous PL2303_Prolific_DriverInstaller_v1160.exe (or .zip), save it before install.
 
-or USBtoUART bridge, with a CP2102 device that allows XON/XOFF control flow :
 
-	http://www.google.com/search?q=cp2102+module+3.3V
+or USBtoUART bridge, with a CP2102 device and 3.3V/5V that allows XON/XOFF control flow :
+
+	http://www.google.com/search?q=cp2102+module
 	http://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx
 
-you must program CP2102 device to access 1382400 and 1843200 bds rates :
-
+    you must program CP2102 device to access 1382400 and 1843200 bds rates :
 	http://www.silabs.com/Support%20Documents/Software/install_USBXpress_SDK.exe
 	http://www.silabs.com/Support%20Documents/TechnicalDocs/an169.pdf
 
-or a USBtoUART bridge, with a FT232RL device for only hardware control flow:
+or a USBtoUART bridge, with a FT232RL device and 3.3V/5V for only hardware control flow:
+	
+    WARNING! buy a FT232RL module with a switch 5V/3V3 and select 3V3.
 
 	http://www.google.com/search?q=FT232RL+module+3.3V
-  	http://www.ftdichip.com/Drivers/CDM/CDM%20v2.12.00%20WHQL%20Certified.exe
+  	http://www.ftdichip.com
 
 
 How to configure the connection ?
 -------------------------------
 
-1-    the best ! Launchpad UARTn  <--> USBtoUART bridge with cp2102|PL2303TA chipset <--> TERATERM
+1-    XON/XOFF control flow: Launchpad UARTn  <--> USBtoUART bridge with cp2102|PL2303TA/HXD chipset <--> TERATERM
 
-       UARTn <--> CP2102 module | PL2303TA cable
+       UARTn <--> UART2USB
          TXn ---> RX    
          RXn <--- TX    
         (GND <--> GND)  
@@ -341,10 +339,9 @@ How to configure the connection ?
 
 If you plan to supply your target vith a PL2303 cable, open its box to weld red wire onto 3.3V pad.
 
-2-    Launchpad UARTn <--> USBtoUART bridge with FT232RL chipset <--> TERATERM
-	  WARNING! buy a FT232RL module with a switch 5V/3V3 and select 3V3.
+2-    hardware control flow: Launchpad UARTn <--> USBtoUART bridge with FT232RL or PL2303TA/HXD <--> TERATERM
  
-       UARTn <--> FT232RL module
+       UARTn <--> UART2USB
          TXn ---> RX    
          RXn <--- TX    
          RTS ---> CTS    
@@ -469,13 +466,13 @@ CAPS ON/OFF add on
 
 ECHO / NOECHO
 
-The words DEFER and IS are implemented. CR, EMIT, KEY and WARM are deferred words.
+The words DEFER and IS are implemented. CR, EMIT, KEY, SLEEP and WARM are deferred words.
 
 Error messages are colored (reverse video on ANSI terminal).
 
 Assembly jumps are as FORTH one's : IF, ELSE, THEN, BEGIN, AGAIN, UNTIL, WHILE.
 Not canonical jumps are also available with JMP|?JMP to a defined word and GOTO|?GOTO to backward labels BW1 BW2 BW3 or forward labels FW1 FW2 FW3.
-These labels are one use.
+These labels are for one use.
 Switch  within definitions between FORTH and Assembly contexts with words HI2LO and LO2HI. See examples in the TstWords.f file. This is perhaps the most interesting feature for development...
 
 

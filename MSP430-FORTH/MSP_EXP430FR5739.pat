@@ -152,6 +152,39 @@
 ! P1.7 - UCB0 SCL/SOMI   SV2.1  <---> SCL I2C MASTER/SLAVE
 ! P1.6 - UCB0 SDA/SIMO   SV2.2  <---> SDA I2C MASTER/SLAVE
 
+! ============================================
+! FORTH I/O :
+! ============================================
+TERM_TX=1!          ; P2.0 = TX
+TERM_RX=2!          ; P2.1 = RX
+TERM_TXRX=3!
+
+TERM_REN=\$207!
+TERM_SEL=\$20D!
+TERM_IE=\$21B!
+TERM_IFG=\$21D!
+Deep_RST=1!         ; = TX pin
+Deep_RST_IN=\$201!  ; TERMINAL TX  pin as FORTH Deep_RST
+
+RTS=4!
+CTS=8!
+HANDSHAKIN=\$201!
+HANDSHAKOUT=\$203!
+
+SD_CD=4!        ; P2.2 as SD_CD
+SD_CS=8!        ; P2.3 as SD_CS     
+SD_CDIN=\$201!
+SD_CSOUT=\$203!
+SD_CSDIR=\$205!
+
+SD_SEL1=\$20D!  ; to configure UCB0
+SD_REN=\$207!   ; to configure pullup resistors
+SD_BUS=\$70!    ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
+
+
+! ============================================
+! APPLICATION I/O :
+! ============================================
 LED1_OUT=\$322!
 LED1=\$01!        PJ.0
 

@@ -191,7 +191,7 @@ ENDASM                              \
 
 
 \ ==================================\
-\ version reduced for TX only
+\ reduced version for TX only
 \ ==================================\
 VARIABLE I2CS_ADR   \ low(I2CS_ADR) = slave I2C address with RW flag
 VARIABLE I2CM_BUF   \ low(I2CM_BUF) = RX or TX lentgh, high(I2CM_BUF) = TX buffer,data0

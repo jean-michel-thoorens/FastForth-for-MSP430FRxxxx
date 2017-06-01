@@ -30,7 +30,7 @@
 ; used variables : BufferPtr, BufferLen
 
 ; ----------------------------------;
-;    FORTHWORD "SD_ACCEPT"          ; TIB TIB len -- SDIB len'
+;    FORTHWORD "SD_ACCEPT"          ; TIB TIB len -- PAD|SDIB len'
 ; ----------------------------------;
 SD_ACCEPT                           ; sequentially move from BUFFER to SDIB (or PAD) a line of chars delimited by CRLF
 ; ----------------------------------;
@@ -41,20 +41,22 @@ StartNewLine                        ;
 ; ----------------------------------;
     MOV     &CurrentHdl,T           ; prepare link for any next LOAD"ed file...
     MOV &BufferPtr,HDLW_BUFofst(T)  ; ...see usage : HandleComplements
+; ----------------------------------; -- TIB TIB len
     .IFDEF RAM_1K                   ; use PAD as SD Input Buffer because the lack of RAM
     MOV     #PAD,W                  ;               W=dst
-    MOV     W,2(PSP)                ; -- PAD TIB max_chars_count
-    MOV     #PAD_SIZE-4,0(PSP)      ; -- StringOrg' len" len
-    .ELSEIF                         ; RAM >= 2k
+    MOV     #PAD_SIZE-4,0(PSP)      ; -- TIB max_count len
+    .ELSEIF                         ; use SDIB as SD Input Buffer
     MOV     #SDIB,W                 ;               W=dst
-    MOV     W,2(PSP)                ; -- SDIB TIB max_chars_count
-    MOV     #SDIB_SIZE-4,0(PSP)     ; -- StringOrg' len" len
+    MOV     #SDIB_SIZE-4,0(PSP)     ; -- TIB max_count len
     .ENDIF
-    MOV     #0,TOS                  ; -- StringOrg' len" Count
+    MOV     W,2(PSP)                ; -- StringOrg' max_count len
+    MOV     #0,TOS                  ; -- StringOrg' max_count Count
 ; ----------------------------------;
-SDA_InitSrcAddr                     ; <== SDA_GetFileNextSector (if BufferLen<>0)
+SDA_InitSrcAddr                     ; <== SDA_GetFileNextSector
 ; ----------------------------------;
-    MOV     &BufferPtr,X            ;               X=src (buf_offset)
+    CMP     #0,&BufferLen           ; test if input buffer is empty (EOF)
+    JZ      SDA_GoToInterpret       ; yes
+    MOV     &BufferPtr,X            ;               X=src
     JMP     SDA_ComputeChar         ;
 ; ----------------------------------;
 SDA_YEMIT_RET                       ;
@@ -76,10 +78,8 @@ SDA_ComputeChar                     ;
 SDA_EndOfLine                       ;
 ; ----------------------------------;
     MOV     X,&BufferPtr            ; yes  save BufferPtr for next line
-;    MOV     &CurrentHdl,T           ; prepare link for case of this line ask to LOAD" a new file...
-;    MOV     X,HDLW_BUFofst(T)       ; to handle update. 
 ; ----------------------------------;
-SDA_GoToInterpret                   ;
+SDA_GoToInterpret                   ; -- StringOrg' max_count len'
 ; ----------------------------------;
     ADD     #2,PSP                  ; -- StringOrg' len'
     MOV     @RSP+,IP                ;
@@ -93,15 +93,13 @@ SDA_MoveChar                        ;
     ADD     #1,W                    ; 1 increment dst addr
     ADD     #1,TOS                  ; 1 increment count of moved chars
     JMP     YEMIT                   ; 9/6~ send echo to terminal if ECHO, do nothing if NOECHO
-; ----------------------------------; 33/30~ char loop
+; ----------------------------------; 33/30~ char loop, add 14~ for readsectorW ==> 47/44~ ==> 21/23 kbytes/s / MHz
 SDA_GetFileNextSector               ;
 ; ----------------------------------;
     PUSH    W                       ; save dst
-    CALL    #Read_File              ; STWXY use
+    CALL    #Read_File              ; that resets BufferPtr
     MOV     @RSP+,W                 ; restore dst
-    CMP     #0,&BufferLen           ; test if input buffer is empty (EOF)
-    JNZ     SDA_InitSrcAddr         ; no : loopback to end the line
-    JMP     SDA_GoToInterpret       ; yes, loopback to interpret the line, then on next SD_ACCEPT goto SDA_RestoreInputBuffer
+    JMP     SDA_InitSrcAddr         ; loopback to end the line
 ; ----------------------------------;
 
 

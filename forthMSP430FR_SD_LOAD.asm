@@ -54,7 +54,6 @@ ClusterToFAT1sectWofstY             ;WXY Input : Cluster ; Output: W = FATsector
     CMP     #2,&FATtype             ;3 FAT32?
     JZ      ClusterToFAT32sector    ;2 yes
     ADD     Y,Y                     ;1 Y = ClusterLoLo << 1
-OpenSubRET
     RET
 
 
@@ -83,23 +82,51 @@ ComputeClusFrstSect                 ; If Cluster = 1 ==> RootDirectory ==> Secto
 ; ----------------------------------; Output: SectorL of Cluster
     MOV     #0,&SectorH             ;
     MOV     &OrgRootDir,&SectorL    ;
-    CMP     #1,&ClusterL            ; clusterL = 1 ? (FAT16 specificity)
-    JNE     CCFS_AllOtherCLuster    ; no
-    CMP.B   #0,&ClusterH            ;     clusterT = 0 ?
-    JZ      OpenSubRET              ; yes, sectorL for FAT16 OrgRootDIR is done
-CCFS_AllOtherCLuster                ;
-    MOV     &OrgClusters,&RES0      ; OrgClusters = sector of virtual cluster 0, word size
-    MOV     #0,&RES1                ;
-    MOV     &ClusterL,&MAC32L       ;3
-    MOV     &ClusterH,&MAC32H       ;3
-    MOV     &SecPerClus,&OP2        ;
-    MOV     &RES0,&SectorL          ;
-    MOV     &RES1,&SectorH          ;
-    RET                             ; 
+    CMP.B   #0,&ClusterH            ; clusterH <> 0 ?
+    JNE     CCFS_AllOthers          ; yes
+    CMP     #1,&ClusterL            ; clusterHL = 1 ? (FAT16 specificity)
+    JZ      CCFS_RET                ; yes, sectorL for FAT16 OrgRootDIR is done
+CCFS_AllOthers                      ;
+; ----------------------------------;
+    .IFDEF MPY                      ; general case
+; ----------------------------------;
+    MOV     &ClusterL,&MPY32L       ;3
+    MOV     &ClusterH,&MPY32H       ;3
+    MOV     &SecPerClus,&OP2        ;5+3
+    MOV     &RES0,&SectorL          ;5
+    MOV     &RES1,&SectorH          ;5
+    ADD     &OrgClusters,&SectorL   ;5 OrgClusters = sector of virtual cluster 0, word size
+    ADDC    #0,&SectorH             ;3 32~
+; ----------------------------------;
+    .ELSEIF                         ; case of no hardware multiplier
+; ----------------------------------; Cluster24<<SecPerClus{1,2,4,8,16,32,64} --> ClusFrstSect
+    .word 0152Ah                    ;6 PUSHM W,X,Y
+    MOV.B &SecPerClus,W             ;3 SecPerClus(5-1) = multiplicator
+    MOV &ClusterL,X                 ;3 Cluster(16-1) --> MULTIPLICANDlo
+    MOV.B &ClusterH,Y               ;3 Cluster(21-17) -->  MULTIPLICANDhi
+    RRA W                           ;1 bit1 test
+    JC  CCFS_NEXT                   ;2 case of SecPerClus=1
+CCFS_LOOP                           ;
+    ADD X,X                         ;1 (RLA) shift one left MULTIPLICANDlo16
+    ADDC Y,Y                        ;1 (RLC) shift one left MULTIPLICANDhi8
+    RRA W                           ;1 shift one right multiplicator
+    JNC CCFS_LOOP                   ;2 C = 0 loop back
+CCFS_NEXT                           ;  C = 1, it's done
+    ADD &OrgClusters,X              ;3 OrgClusters = sector of virtual cluster 0, word size
+    ADDC #0,Y                       ;1
+    MOV X,&SectorL                  ;3 low result
+    MOV Y,&SectorH                  ;3 high result
+    .word 01728h                    ;6 POPM Y,X,W
+; ----------------------------------;34~ + 5~ by loop
+    .ENDIF ; MPY
+; ----------------------------------;
+CCFS_RET                            ;
+    RET                             ;
 ; ----------------------------------;
 
+
 ; ----------------------------------;
-ComputeHDLcurrentSector            ;
+ComputeHDLcurrentSector             ;
 ; ----------------------------------;
     MOV   HDLL_CurClust(T),&ClusterL;
     MOV   HDLH_CurClust(T),&ClusterH;
@@ -117,15 +144,16 @@ ComputeHDLcurrentSector            ;
 ParseEntryNameSpaces                ;XY
 ; ----------------------------------; output: Z flag, Y is set after the last space char
     CMP     #0,X                    ; 
-    JZ      OpenSubRET              ;
+    JZ      PENSL_END               ;
 ; ----------------------------------; input : X = countdown_of_spaces, Y = name pointer in buffer
 ParseEntryNameSpacesLoop            ; here X must be > 0
 ; ----------------------------------; output: Z flag, Y is set after the last space char
     CMP.B   #32,BUFFER(Y)           ; SPACE ? 
-    JNZ     OpenSubRET              ; no: RET
+    JNZ     PENSL_END               ; no: RET
     ADD     #1,Y                    ;
     SUB     #1,X                    ;
     JNZ     ParseEntryNameSpacesLoop;
+PENSL_END                           ;
     RET                             ; 
 ; ----------------------------------; 
 
@@ -659,10 +687,7 @@ OPEN_LOAD                           ;
 ; ----------------------------------;
     CMP     #0,S                    ; open file happy end ?
     JNZ     OPEN_Error              ; no
-; ----------------------------------;
-    MOV     #NEXT,&YEMIT            ; set NOECHO, as does TERATERM before sending a file to the target. 
-; ----------------------------------;
-    mNEXT
+    mNEXT                           ;
 ; ----------------------------------;
 
 

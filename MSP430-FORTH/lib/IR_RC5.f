@@ -247,7 +247,7 @@ RST_HERE    \
 \  idle_____     _s_     _s_     _s_         ___     _____s_     _s_     _s_     _s_     _s_     _s_     _s_     _s_     __idle
 \           |   |   |   |   |   |   |       ^   |   ^       |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
 \           v___|   v___|   v___|   v_____s_|   |_s_|       v___|   v___|   v___|   v___|   v___|   v___|   v___|   v___|
-\           S       R       R       R       R       R       R       R       R       R       R       R       R       ^   ^
+\           I       R       R       R       R       R       R       R       R       R       R       R       R       ^   ^
 \ samples :       1       2       3       4       5       6       4       8       9      10      11      12      13 |   |
 \                                                                                                                   |   | 
 \                                                                                                                   I   I
@@ -260,11 +260,11 @@ RST_HERE    \
 \  idle_____     _s_     _s_     ___         _o_     _o___s_     _s_     _s_     _s_     _s_     _s_     _s_         ______idle
 \           |   |   |   |   |   |   |       ^   |   ^       |   |   |   |   |   |   |   |   |   |   |   |   |       ^   
 \           v___|   v_o_|   v_o_|   v_o___s_|   |_s_|       v_o_|   v_o_|   v_o_|   v_o_|   v_o_|   v_o_|   v_o___s_|
-\           S       R       R       R       R       R       R       R       R       R       R       R       R       ^
+\           I       R       R       R       R       R       R       R       R       R       R       R       R       ^
 \ samples :       1       2       3       4       5       6       7       8       9       10       11     12      13|
 \                                                                                                                   |
-\                                                                                                                   I
-\ good ! but we have too many of RC5_Int...
+\                                                                                                                   i !
+\ good ! but we have too many RC5_Int...
 
 
  
@@ -280,7 +280,7 @@ RST_HERE    \
 \  idle_____     _s_     _s_     _s_         _o_     _o___s_     _s_     _s_     _s_     _s_     _s_     _s_     _s_     _s_idle
 \           |   |   |   |   |   |   |       ^   |   ^       |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
 \           v___|   v_o_|   v_o_|   v_o___s_|   |_s_|       v_o_|   v_o_|   v_o_|   v_o_|   v_o_|   v_o_|   v_o_|   v_o_|
-\           S   i   R   i   R   i   R       R   i   R       R   i   R   i   R   i   R   i   R   i   R   i   R   i   R   i
+\           I   i   R   i   R   i   R       R   i   R       R   i   R   i   R   i   R   i   R   i   R   i   R   i   R   i
 \ samples :       1       2       3       4       5       6       7       8       9       10      11      12      13      14
 \
 \ 
@@ -293,15 +293,16 @@ RST_HERE    \
 \  idle_____     _s_     _s_     ___         _o_     _o___s_     _s_     _s_     _s_     _s_     _s_     _s_         _o___s_idle
 \           |   |   |   |   |   |   |       ^   |   ^       |   |   |   |   |   |   |   |   |   |   |   |   |       ^   
 \           v___|   v_o_|   v_o_|   v_o___s_|   |_s_|       v_o_|   v_o_|   v_o_|   v_o_|   v_o_|   v_o_|   v_o___s_|
-\           S   i   R   i   R   i   R       R   i   R       R   i   R   i   R   i   R   i   R   i   R   i   R       R
+\           I   i   R   i   R   i   R       R   i   R       R   i   R   i   R   i   R   i   R   i   R   i   R       R
 \ samples :       1       2       3       4       5       6       7       8       9       10      11      12      13      14
 
 
 \ S = Wake up on RC5_Int at 1/2 cycle : clear and start timer
+\ I = first interruption
 \ i = useless RC5_Int (not periodic) at 4/4 cycle
-\ s = sample RC5_intput at (1/2+3/4) = 5/4 cycle = 1/4 cycle+1 and clear useless RC5_Int
-\ R = usefull (periodic) RC5_Int at 6/4 cycle = 1/2 cycle+1 : cycle value = timer value then clear it and restart it
-\ o = RC5_Int time out at 7/4 cycle = 3/4 cycle+1, used to detect (samples<14) truncated RC5_message
+\ s = sample RC5_intput at (1/2+3/4) = 5/4 cycle = n+1/4 cycles and clear useless RC5_Int
+\ R = usefull (periodic) RC5_Int at 6/4 cycle = n+1/2 cycles : cycle value = timer value then clear it and restart it
+\ o = RC5_Int time out at 7/4 cycle = n+3/4 cycles, used to detect (samples<14) truncated RC5_message
 
 \ see also : http://www.sbprojects.com/knowledge/ir/rc5.php
 \            http://laurent.deschamps.free.fr/ir/rc5/rc5.htm

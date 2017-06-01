@@ -64,14 +64,47 @@
 ! P1.0  - UCB0 STE    PL1.8  -  <---- TSSOP32236 (IR RC5) 
 
 
+! ============================================
+! FORTH I/O :
+! ============================================
+TERM_TX=\$10!          ; P1.4 = TX
+TERM_RX=\$20!          ; P1.5 = RX
+TERM_TXRX=\$30!
+
+TERM_REN=\$206!
+TERM_SEL=\$20C!
+TERM_IE=\$21A!
+TERM_IFG=\$21C!
+Deep_RST=\$10!         ; = TX pin
+Deep_RST_IN=\$200!  ; TERMINAL TX  pin as FORTH Deep_RST
+
+RTS=4!              ; P3.2
+CTS=1!              ; P3.0
+HANDSHAKIN=\$220!
+HANDSHAKOUT=\$222!
+
+SD_CD=8!        ; P2.3 as SD_CD
+SD_CS=4!        ; P2.2 as SD_CS     
+SD_CDIN=\$201!
+SD_CSOUT=\$203!
+SD_CSDIR=\$205!
+
+SD_SEL1=\$20C!  ; to configure UCB0
+SD_REN=\$206!   ; to configure pullup resistors
+SD_BUS=\$0E!    ; pins P1.1 as UCB0CLK, P1.2 as UCB0SIMO & P1.3 as UCB0SOMI
+
+
+! ============================================
+! APPLICATION I/O :
+! ============================================
 LED1_OUT=\$222!
-LED1=\$02!        P3.1
+LED1=\$02!          P3.1
 
 SW1_IN=\$201!
-SW1=\$02!         P2.1    
+SW1=\$02!           P2.1    
 
 SW2_IN=\$201!
-SW2=\$01!         P2.0
+SW2=\$01!           P2.0
 
 
 IR_IN=\$200!  
@@ -81,24 +114,24 @@ IR_REN=\$208!
 IR_IES=\$218!
 IR_IE=\$21A!
 IR_IFG=\$21C!
-IR_Vec=\$FFDC!    P1 int
+IR_Vec=\$FFDC!      P1 int
 RC5_=RC5_!
-RC5=\$01!       P1.0
+RC5=\$01!           P1.0
 
 I2CSM_IN=\$201!
 I2CSM_OUT=\$203!
 I2CSM_DIR=\$205!
 I2CSM_REN=\$207!
-SMSDA=\$01!       P2.0
-SMSCL=\$04!       P2.2
+SMSDA=\$01!         P2.0
+SMSCL=\$04!         P2.2
 SM_BUS=\$05!    
 
 I2CSMM_IN=\$201!
 I2CSMM_OUT=\$203!
 I2CSMM_DIR=\$205!
 I2CSMM_REN=\$207!
-SMMSDA=\$01!      P2.0
-SMMSCL=\$04!      P2.2
+SMMSDA=\$01!        P2.0
+SMMSCL=\$04!        P2.2
 SMM_BUS=\$05!    
 
 I2CMM_IN=\$200!
@@ -107,8 +140,8 @@ I2CMM_DIR=\$204!
 I2CMM_REN=\$206!
 I2CMM_SEL1=\$20C!
 I2CMM_Vec=\$FFE0!
-MMSDA=\$04!       P1.2
-MMSCL=\$08!       P1.3
+MMSDA=\$04!         P1.2
+MMSCL=\$08!         P1.3
 MM_BUS=\$0C!
 
 I2CM_IN=\$200!
@@ -117,8 +150,8 @@ I2CM_DIR=\$204!
 I2CM_REN=\$206!
 I2CM_SEL1=\$20C!
 I2CM_Vec=\$FFE0!
-MSDA=\$04!        P1.2
-MSCL=\$08!        P1.3
+MSDA=\$04!          P1.2
+MSCL=\$08!          P1.3
 M_BUS=\$0C!
 
 I2CS_IN=\$200!
@@ -127,7 +160,7 @@ I2CS_DIR=\$204!
 I2CS_REN=\$206!
 I2CS_SEL1=\$20C!
 I2CS_Vec=\$FFE0!
-SSDA=\$40!        P1.2
-SSCL=\$80!        P1.3
+SSDA=\$40!          P1.2
+SSCL=\$80!          P1.3
 S_BUS=\$C0!
 

@@ -178,6 +178,40 @@
 ! P8.3 - Soft I2C_Master J1.10  <---> SCL software I2C Master
 
 
+! ============================================
+! FORTH I/O :
+! ============================================
+TERM_TX=1!          ; P1.0 = TX
+TERM_RX=2!          ; P1.1 = RX
+TERM_TXRX=3!
+
+TERM_REN=\$206!
+TERM_SEL=\$20C!
+TERM_IE=\$21A!
+TERM_IFG=\$21C!
+Deep_RST=1!         ; = TX pin
+Deep_RST_IN=\$200!  ; TERMINAL TX  pin as FORTH Deep_RST
+
+RTS=8!              ; P2.3
+CTS=\$10!           ; P2.4
+HANDSHAKIN=\$201!
+HANDSHAKOUT=\$203!
+
+
+SD_CS=2!        ; P8.1 as SD_CS     
+SD_CD=1!        ; P8.0 as SD_CD
+SD_CDIN=\$261!
+SD_CSOUT=\$263!
+SD_CSDIR=\$265!
+
+SD_SEL1=\$24C!  ; to configure UCB0
+SD_REN=\$246!   ; to configure pullup resistors
+SD_BUS=\$0E!    ; pins P5.1 as UCB0CLK, P5.2 as UCB0SIMO & P5.3 as UCB0SOMI
+
+
+! ============================================
+! APPLICATION I/O :
+! ============================================
 !LEDs
 !----
 invert LED numbers because LED1=TXD !

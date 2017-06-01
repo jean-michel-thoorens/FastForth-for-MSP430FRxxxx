@@ -1,10 +1,10 @@
 !MSP430fr57xx.pat
 
-\#LPM4,=\#\$F8,!
-\#LPM3,=\#\$D8,!
-\#LPM2,=\#\$98,!
-\#LPM1,=\#\$58,!
-\#LPM0,=\#\$18,!
+LPM4,=\$F8,! SR(LPM4+GIE)
+LPM3,=\$D8,! SR(LPM3+GIE)
+LPM2,=\$98,! SR(LPM2+GIE)
+LPM1,=\$58,! SR(LPM1+GIE)
+LPM0,=\$18,! SR(LPM0+GIE)
 
 
 
@@ -127,6 +127,13 @@ PJSEL0=\$32A!
 PJSEL1=\$32C!
 PJSELC=\$336!
 
+
+TACLR=4!
+TAIFG=1!
+TBCLR=2!
+TBIFG=1!
+CCIFG=1!
+
 TA0CTL=\$340!       \ TA0 control                 
 TA0CCTL0=\$342!     \ Capture/compare control 0   
 TA0CCTL1=\$344!     \ Capture/compare control 1   
@@ -232,6 +239,8 @@ RES2=\$4E8!         \ 32 × 32 result 2
 RES3=\$4EA!         \ 32 × 32 result 3 – most significant word    
 MPY32CTL0=\$4EC!    \ MPY32 control register 0                    
 
+DMAIFG=8!
+
 DMA0CTL=\$500!      \ DMA channel 0 control                   
 DMA0SAL=\$502!      \ DMA channel 0 source address low        
 DMA0SAH=\$504!      \ DMA channel 0 source address high       
@@ -315,8 +324,8 @@ UCB0IE=\$66A!       \ eUSCI interrupt enable
 UCB0IFG=\$66C!      \ eUSCI interrupt flags           
 UCB0IV=\$66E!       \ eUSCI interrupt vector word     
 
-\#UCTXACK,=\#\$20,!
-\#UCTR,=\#\$10,!
+UCTXACK=\$20!
+UCTR=\$10!
 
 ADC10CTL0=\$700!    \ ADC10_B Control register 0               
 ADC10CTL1=\$702!    \ ADC10_B Control register 1               
@@ -329,8 +338,11 @@ ADC10IE=\$71A!      \ ADC10_B Interrupt Enable
 ADC10IFG=\$71C!     \ ADC10_B Interrupt Flags                  
 ADC10IV=\$71E!      \ ADC10_B Interrupt Vector Word            
 
-\#ADCON,=\#\$10,!
-\#ADCSTART,=\#\$03,!
+ADCON=\$10!
+ADCSTART=\$03!
+
+CDIFG=1!
+CDIIFG=2!
 
 CDCTL0=\$8C0!       \ Comparator_D control register 0     
 CDCTL1=\$8C2!       \ Comparator_D control register 1     

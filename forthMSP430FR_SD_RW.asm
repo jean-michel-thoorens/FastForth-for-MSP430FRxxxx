@@ -663,7 +663,7 @@ TERM2SD                             ;
 T2S_GetSliceLoop                    ;   tranfert by slices of 512 bytes terminal input to file on SD_CARD via BUFFER 
 ; ----------------------------------;
     MOV     #0,Y                    ;1  reset Y = BufferPtr
-    CALL    #XON                    ;   use no registers
+    CALL    #RXON                   ;   use no registers
 ; ----------------------------------;
 T2S_FillBufferLoop                  ;
 ; ----------------------------------;
@@ -685,12 +685,12 @@ T2S_WriteFile                       ;2 Y>511
 ; ----------------------------------;
 T2S_XOFF                            ;  27 cycles between XON and XOFF
 ; ----------------------------------;
-    CALL    #XOFF                   ;4  use no registers
+    CALL    #RXOFF                  ;4  use no registers
     JMP     T2S_FillBufferLoop      ;2  loop back to get 512th char
 ; ----------------------------------;
 T2S_END                             ;
 ; ----------------------------------;
-    CALL    #XOFF                   ;4  use no registers
+    CALL    #RXOFF                  ;4  use no registers
     MOV     Y,&BufferPtr            ;3
     CALL    #CloseHandleT           ;4
     MOV     @RSP+,IP                ;2

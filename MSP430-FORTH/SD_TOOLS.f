@@ -165,10 +165,10 @@ ENDCODE
 ;
     \
 
+\ display content of a sector
 \ ----------------------------------\
-\ read sector and dump it           \ sector. --            don't forget to add decimal point to your sector number (if < 65536)
+CODE SECT_D                         \ sector. --     don't forget to add decimal point to your sector number
 \ ----------------------------------\
-CODE SECT_D                         \
     MOV     TOS,X                   \ X = SectorH
     MOV     @PSP,W                  \ W = sectorL
     CALL    &ReadSectorWX           \ W = SectorLO  X = SectorHI
@@ -178,35 +178,12 @@ COLON                               \
 \ ----------------------------------\
     \
 
-\ TIP : How to identify FAT16 or FAT32 SD_Card ?
-\ 1 CLUSTER <==> FAT16 RootDIR
-\ 2 CLUSTER <==> FAT32 RootDIR
-\ ----------------------------------\
-\ read first sector of Cluster and dump it
-\ ----------------------------------\
-CODE CLUST_D                        \ cluster.  --         don't forget to add decimal point to your cluster number (if < 65536)
-\ ----------------------------------\
-    MOV     TOS,&ClusterH           \
-    MOV     @PSP,&ClusterL          \
-BW1 MOV     &OrgClusters,&RES0      \ OrgClusters = sector of virtual cluster 0, word size
-    MOV     #0,&RES1
-    MOV     &ClusterL,&MAC32L
-    MOV     &ClusterH,&MAC32H
-    MOV     &SecPerClus,&OP2
-    MOV     &RES0,0(PSP)            \ cluster sectorL
-    MOV     &RES1,TOS               \ cluster sectorH
-    JMP     SECT_D                  \ jump to a defined word
-ENDCODE
-\ ----------------------------------\
-    \
-
-\ dump FAT1 sector of last entry
 \ ----------------------------------\
 CODE FAT_D                          \ Display CurFATsector
 \ ----------------------------------\
     SUB     #4,PSP                  \
     MOV     TOS,2(PSP)              \
-    MOV     &FATsector,0(PSP)       \ FATsectorLO
+    MOV     &CurFATsector,0(PSP)    \ FATsectorLO
     ADD     &OrgFAT1,0(PSP)         \
     MOV     #0,TOS                  \ FATsectorHI = 0
     JMP     SECT_D                  \ jump to a defined word
@@ -214,25 +191,36 @@ ENDCODE
 \ ----------------------------------\
     \
 
-\ dump DIR sector of opened file or first sector of current DIR by default
+\ display first sector of a Cluster
 \ ----------------------------------\
-CODE DIR_D                          \ Display DIR sector of CurrentHdl or CurrentDir sector by default 
+CODE CLUST_D                        \ cluster.  --        don't forget to add decimal point to your cluster number
+\ ----------------------------------\
+    MOV.B &SecPerClus,W             \ 3 SecPerClus(5-1) = multiplicator
+    MOV @PSP,X
+    RRA W                           \ 1
+    U< IF                           \ case of SecPerClus>1
+        BEGIN
+            ADD X,X                 \ 5 (RLA) shift one left MULTIPLICANDlo16
+            ADDC TOS,TOS            \ 1 (RLC) shift one left MULTIPLICANDhi8
+            RRA W                   \ 1 shift one right multiplicator
+        U>= UNTIL
+    THEN                            \
+    ADD     &OrgClusters,X          \ add OrgClusters = sector of virtual cluster 0 (word size)
+    MOV     X,0(PSP)      
+    ADDC    #0,TOS                  \ don't forget carry
+    JMP     SECT_D                  \ jump to a defined word
+ENDCODE
+\ ----------------------------------\
+    \
+
+\ ----------------------------------\
+CODE DIR_D                          \ Display CurrentDir first sector
 \ ----------------------------------\
     SUB     #4,PSP                  \
     MOV     TOS,2(PSP)              \           save TOS
-\ ComputeClusFrstSect               \ If Cluster = 1 ==> RootDirectory ==> SectorL = OrgRootDir
-    CMP     #1,&DIRclusterL         \ clusterL = 1 ? (FAT16 specificity)
-    0= IF
-        CMP.B   #0,&DIRclusterH     \     clusterT = 0 ?
-        0=  IF
-            MOV #0,TOS              \
-            MOV &OrgRootDir,0(PSP)  \ sectorL for FAT16 OrgRootDIR is done
-            JMP SECT_D                
-        THEN
-    THEN                            \
-    MOV     &DIRclusterL,&ClusterL  \
-    MOV     &DIRclusterH,&ClusterH  \
-    GOTO    BW1                     \ jump to the backward LABEL BW1
+    MOV     &DIRclusterL,0(PSP)     \
+    MOV     &DIRclusterH,TOS        \
+    JMP     CLUST_D                 \
 ENDCODE
 \ ----------------------------------\
     \
