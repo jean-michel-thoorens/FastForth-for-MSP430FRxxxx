@@ -17,3 +17,33 @@
     .IFDEF CHIPSTICK_FR2433
     .include "CHIPSTICK_FR2433.asm"
     .ENDIF
+    .IFDEF MY_MSP430FR5734
+    .include "MSP430FR5738.asm"
+    .ENDIF
+    .IFDEF MY_MSP430FR5738
+    .include "MSP430FR5738.asm"
+    .ENDIF
+    .IFDEF MY_MSP430FR5738_1
+    .include "MSP430FR5738.asm"
+    .ENDIF
+    .IFDEF MY_MSP430FR5738_2
+    .include "MSP430FR5738.asm"
+    .ENDIF
+    .IFDEF MY_MSP430FR5948
+    .include "MSP430FR5948.asm"
+    .ENDIF
+    .IFDEF MY_MSP430FR5948_1
+    .include "MSP430FR5948.asm"
+    .ENDIF
+    .IFDEF JMJ_BOX
+    .include "MSP430FR5738.asm"
+    .ENDIF
+    .IFDEF PA8_PA_MSP430
+    .include "MSP430FR5738.asm"
+    .ENDIF
+    .IFDEF PA_PA_MSP430
+    .include "MSP430FR5738.asm"
+    .ENDIF
+    .IFDEF PA_Core_MSP430
+    .include "MSP430FR5948.asm"
+    .ENDIF

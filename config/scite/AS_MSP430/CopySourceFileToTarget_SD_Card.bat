@@ -1,0 +1,78 @@
+@ECHO OFF
+
+:: ==============================================================================================
+:: your git copy of fast forth must be the root of a virtual drive
+:: ==============================================================================================
+
+IF "%1" == "" GOTO CopyError
+
+:: ==============================================================================================
+:: source file.f part
+:: %~dpn1.f is the symbolic source file.f described as drive\path\name.f
+:: %~dpn2.pat is the pattern file.pat for preprocessor gema.exe described as drive\path\name.pat
+:: %~dpn1.4th is the source file.4th to be sent to the target
+:: %~d1 is the drive of arg %1
+:: %~nx0 is name.ext of this bat file
+
+IF NOT EXIST %~dpn1.f GOTO 4th
+IF NOT EXIST %~dpn2.pat GOTO errorF
+
+IF /I "%3" == "" GOTO preprocessF
+
+:errorF
+@start %~d1\config\scite\AS_MSP430\Error.bat CopyErrorF %~nx0
+exit
+
+:preprocessF
+@%~d1\prog\gema\gema.exe -nobackup -line -t -f  %~dpn2.pat %~dpn1.f %~dpn1.4th
+
+:DownloadF
+@taskkill /F /IM ttermpro.exe 1> NULL 2>&1
+
+:win32f
+@"C:\Program Files\teraterm\ttpmacro.exe" /V %~d1\config\scite\AS_MSP430\SendToSD.ttl %~dpn1.4th /C    1> NULL 2>&1
+@IF NOT ERRORLEVEL 1 GOTO EndF
+
+:win64f
+del null
+@"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d1\config\scite\AS_MSP430\SendToSD.ttl %~dpn1.4th /C
+
+:EndF
+@del %~dpn1.4th
+exit
+
+:: ==============================================================================================
+:: source file.4th part
+:: %~dpn1.4th is the file to be sent described as drive\path\name.4th
+:: %~d1 is the drive of param %1
+:: %~nx0 is name.ext of this bat file
+:: %2 must not exist
+
+:4th
+
+IF NOT EXIST %~dpn1.4th GOTO CopyError
+
+if /I "%2"=="" GOTO Download4th
+
+:Error4th
+@start %~d1\config\scite\AS_MSP430\Error.bat CopyError4th %~nx0
+exit
+
+:Download4th
+@taskkill /F /IM ttermpro.exe 1> NULL 2>&1
+
+:win324th
+@"C:\Program Files\teraterm\ttpmacro.exe" /V %~d0\config\scite\AS_MSP430\SendtoSD.ttl %~dpn1.4th /C    1> NULL 2>&1
+@IF NOT ERRORLEVEL 1 GOTO End4th
+
+:win644th
+del null
+@"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d0\config\scite\AS_MSP430\SendtoSD.ttl %~dpn1.4th /C
+
+:End4th
+exit
+
+
+:CopyError
+@start %~d1\config\scite\AS_MSP430\Error.bat CopyError %~nx0
+exit

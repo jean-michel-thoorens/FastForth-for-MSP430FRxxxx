@@ -11,7 +11,7 @@ if result=0 connect  param3
 
 sendln '     $0A BASE ! ECHO STOP' ; blanks are added to pass LPMx wake up time...
 
-inputbox 'here you can add a path to the file: ' 'Send a File to SD_CARD target' fname
+inputbox 'here you can modify destination: ' 'Send a File to SD_CARD target' fname
 
 sendln 'TERM2SD" ' inputstr '"'    ; send to FastForth the command TERM2SD" \file.ext" ...with optionnal path added in inputbox
 

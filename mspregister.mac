@@ -168,9 +168,9 @@ CPUOFF        equ 0010h
 OSCOFF        equ 0020h
 SCG0          equ 0040h
 SCG1          equ 0080h
-UF1           equ 0200h ; = SR(9) User Flag 1 used by ?NUMBER --> INTERPRET --> LITERAL to process double numbers, else free for use.  
-UF2           equ 0400h ; = SR(10) User Flag 2  
-UF3           equ 0800h ; = SR(11) User Flag 3  
+UF9           equ 0200h ; = SR(9) User Flag 1 used by ?NUMBER --> INTERPRET --> LITERAL to process double numbers, else free for use.  
+UF10          equ 0400h ; = SR(10) User Flag 2  
+UF11          equ 0800h ; = SR(11) User Flag 3  
 
 ;----------------------------------------------------------------------------
 ; Low-Power-Mode Bitmuster

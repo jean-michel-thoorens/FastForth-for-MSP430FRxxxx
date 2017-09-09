@@ -506,43 +506,56 @@ OPEN_WRITE_APPEND                   ;
 ; ----------------------------------;
 ; 2.1- Compute Sectors count        ; Sectors = HDLL_CurSize/512
 ; ----------------------------------;
-    MOV.B   HDLL_CurSize+1(T),Y     ; Y = 0:CurSizeLoHi
-    MOV.B   HDLH_CurSize(T),S       ; S = 0:CurSizeHiLo 
-    SWPB    S                       ; S = CurSizeHiLo:0 
-    ADD     Y,S                     ; S = CurSizeHiLo:CurSizeLoHi
-    MOV.B   HDLH_CurSize+1(T),W     ; W:S = CurSize / 256
-    RRA     W                       ; W = Sectors number_High
-    RRC     S                       ; S = Sectors number_Low
+    MOV.B   HDLL_CurSize+1(T),Y     ;Y = 0:CurSizeLOHi
+    MOV.B   HDLH_CurSize(T),X       ;X = 0:CurSizeHILo 
+    SWPB    X                       ;X = CurSizeHIlo:0 
+    ADD     Y,X                     ;X = CurSizeHIlo:CurSizeLOhi
+    MOV.B   HDLH_CurSize+1(T),Y     ;Y:X = CurSize / 256
+;    RRA     Y                       ;Y = Sectors number_High
+;    RRC     X                       ;X = Sectors number_Low
 ; ----------------------------------;
-; 2.2- Compute Buffer offset        ; tested with 4100 bytes and SecPerClus=8
+; 2.2 Compute Clusters Count        ;
 ; ----------------------------------;
-    MOV     HDLL_CurSize(T),Y       ; Y = 1004
-    BIC     #01FFh,HDLL_CurSize(T)  ; substract 4 from HDLL_CurSize
-    AND     #01FFh,Y                ; Y = 4
-    MOV     Y,&BufferPtr            ; init Buffer Pointer with 4
+    MOV.B &SecPerClus,T             ;3 T = DIVISOR = SecPerClus = 0:SPClo
+DIVSECPERSPC                        ;
+    MOV #0,W                        ;1 W = 0:REMlo = 0
+    MOV #8,S                        ;1 S = CNT
+;    RRA T                           ;1 0>0:SPClo>C   preshift one right DIVISOR
+DIVSECPERSPC1                       ;
+    RRA Y                           ;1 0>0:SEC_HI>C
+    RRC X                           ;1 C>SEC_LO>C
+    RRC.B W                         ;1 C>REMlo>C
+    SUB #1,S                        ;1 CNT-1
+    RRA T                           ;1 0>SPChi:SPClo>C
+    JNC DIVSECPERSPC1               ;2 7~ loopback if carry clear
+DIVSECPERSPC2                       ;
+    RRA W                           ;1 0>0:REMlo>C
+    SUB #1,S                        ;1 CNT-1
+;   JNZ DIVSECPERSPC2               ;2 4~ loopback     Wlo = OFFSET, X = CLU_LO, Y = CLU_HI
+    JGE DIVSECPERSPC2               ;2 4~ loopback     Wlo = OFFSET, X = CLU_LO, Y = CLU_HI
 ; ----------------------------------;
-ComputeClustersCount                ; with  W:S / T ==> quotient = Y:X, remainder = W
+    MOV &CurrentHDL,T               ;3  reload Handle ptr  
 ; ----------------------------------;
-    MOV.B &SecPerClus,T             ;3 T = DIVISOR = SecPerClus
-    CALL #UDIVQ32                   ; unsigned division 32/16 ==> Q32,R16 i.e. W:S/T ==> Y:X,W     use S,T,W,X,Y
-    MOV &CurrentHDL,T               ;
-; ----------------------------------;
-; 2.3- Compute Cluster offset       ;
-; ----------------------------------;
-    MOV.B W,HDLB_ClustOfst(T)       ;3  update handle with W = R16 (remainder) = sectors offset in cluster
-; ----------------------------------;
-; 2.4- Compute last Cluster         ; X = Q32lo = Clusters numberLO, Y = Q32hi = Clusters numberHI 
+; 2.3- Compute last Cluster         ; X = Clusters numberLO, Y = Clusters numberHI 
 ; ----------------------------------;
     ADD  HDLL_FirstClus(T),X        ;
     ADDC HDLH_FirstClus(T),Y        ;
     MOV X,HDLL_CurClust(T)          ;  update handle
     MOV Y,HDLH_CurClust(T)          ;
 ; ----------------------------------;
+; 2.4- Compute Sectors offset       ;
+; ----------------------------------;
+    MOV.B W,HDLB_ClustOfst(T)       ;3  update handle with W = REMlo = sectors offset in last cluster
+; ----------------------------------;
 ; 3- load last sector in BUFFER     ;
 ; ----------------------------------;
+    MOV     HDLL_CurSize(T),W       ; example : W = 1013
+    BIC     #01FFh,HDLL_CurSize(T)  ; substract 13 from HDLL_CurSize, because loaded in buffer
+    AND     #01FFh,W                ; W = 13
+    MOV     W,&BufferPtr            ; init Buffer Pointer with 13
     CALL    #LoadHDLcurrentSector   ;SWX
-    mNEXT                           ; --
-; ----------------------------------; BufferPtr leaves first free byte offset
+    mNEXT                           ; BufferPtr = first free byte offset
+; ----------------------------------;
 
 
 ; ======================================================================
@@ -675,8 +688,8 @@ T2S_FillBufferLoop                  ;
     MOV.B   X,BUFFER(Y)             ;3
     ADD     #1,Y                    ;1
     CMP     #BytsPerSec-1,Y         ;2
-    JZ      T2S_XOFF                ;2 Y=511    send XOFF after RX 511th char
     JLO     T2S_FillBufferLoop      ;2 Y<511    21 cycles char loop
+    JZ      T2S_XOFF                ;2 Y=511    send XOFF after RX 511th char
 ; ----------------------------------;
 T2S_WriteFile                       ;2 Y>511
 ; ----------------------------------;

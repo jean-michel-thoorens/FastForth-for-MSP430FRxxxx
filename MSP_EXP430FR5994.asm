@@ -341,13 +341,14 @@ ClockWaitY  SUB     #1,Y            ;
             MOV   #8, &REFCTL
 
 ; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : RTC REGISTERS
+; POWER ON RESET AND INITIALIZATION : RTC_C REGISTERS
 ; ----------------------------------------------------------------------
 
     .IFDEF LF_XTAL
 ; LFXIN : PJ.4, LFXOUT : PJ.5
     BIS.B   #010h,&PJSEL0   ; SEL0 for only LFXIN
-    BIC.B   #RTCHOLD,&RTCCTL1 ; Clear RTCHOLD = start RTC_B
+    MOV.B   #0A5h,&RTCCTL0_H ; unlock RTC_C
+    BIC.B   #RTCHOLD,&RTCCTL1 ; Clear RTCHOLD = start RTC_C
     .ENDIF
 
 ; ----------------------------------------------------------------------

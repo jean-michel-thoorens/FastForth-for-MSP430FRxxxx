@@ -1,0 +1,314 @@
+
+FORTH vocabulary
+----------------
+ASM             CODE            HI2LO           COLD            WARM            (WARM)          WIPE            RST_HERE        
+PWR_HERE        RST_STATE       PWR_STATE       MOVE            LEAVE           +LOOP           LOOP            DO              
+REPEAT          WHILE           AGAIN           UNTIL           BEGIN           THEN            ELSE            IF              
+;               :               DEFER           DOES>           CREATE          CONSTANT        VARIABLE        POSTPONE        
+RECURSE         IMMEDIATE       IS              [']             ]               [               \               '               
+ABORT"          ABORT           QUIT            EVALUATE        COUNT           LITERAL         ,               EXECUTE         
+>NUMBER         FIND            WORD            ."              S"              TYPE            SPACES          SPACE           
+CR              (CR)            NOECHO          ECHO            EMIT            (EMIT)          (ACCEPT)        ACCEPT          
+KEY             (KEY)           C,              ALLOT           HERE            .               D.              U.              
+SIGN            HOLD            #>              #S              #               <#              BL              STATE           
+BASE            >IN             CPL             TIB             PAD             J               I               UNLOOP          
+U<              >               <               =               0>              0<              0=              DABS            
+ABS             NEGATE          XOR             OR              AND             -               +               C!              
+C@              !               @               DEPTH           R@              R>              >R              ROT             
+OVER            SWAP            NIP             DROP            ?DUP            DUP             LIT             EXIT
+
+
+ASSEMBLER vocabulary
+--------------------
+?GOTO           GOTO            FW3             FW2             FW1             BW3             BW2             BW1          
+?JMP            JMP             REPEAT          WHILE           AGAIN           UNTIL           ELSE            THEN         
+IF              0=              0<>             U>=             U<              0<              0>=             S<           
+S>=             RRUM            RLAM            RRAM            RRCM            POPM            PUSHM           CALL         
+PUSH.B          PUSH            SXT             RRA.B           RRA             SWPB            RRC.B           RRC          
+AND.B           AND             XOR.B           XOR             BIS.B           BIS             BIC.B           BIC          
+BIT.B           BIT             DADD.B          DADD            CMP.B           CMP             SUB.B           SUB          
+SUBC.B          SUBC            ADDC.B          ADDC            ADD.B           ADD             MOV.B           MOV          
+RETI            LO2HI           COLON           ENDASM          ENDCODE         (SLEEP)         SLEEP
+
+
+CONDCOMP ADD-ON
+---------------
+[DEFINED]       [UNDEFINED]     [IF]            [ELSE]          [THEN]          COMPARE         MARKER        
+
+
+VOCABULARY ADD-ON
+-----------------
+DEFINITIONS     ONLY            PREVIOUS        ALSO            ASSEMBLER       FORTH           VOCABULARY
+
+
+ANS_COMPLEMENT ADD-ON
+---------------------
+>BODY           SOURCE          .(              (               DECIMAL         HEX             FILL            [CHAR]          
+CHAR            +!              MIN             MAX             2/              2*              1-              1+              
+RSHIFT          LSHIFT          INVERT          2OVER           2SWAP           2DROP           2DUP            2!              
+2@              S>D             CELL+           CELLS           CHAR+           CHARS           ALIGN           ALIGNED         
+*/              */MOD           MOD             /               /MOD            *               FM/MOD          SM/REM          
+UM/MOD          M*              UM*             {ANS_COMP}
+
+
+SD_CARD_LOADER ADD-ON
+---------------------
+LOAD"           {SD_LOAD}
+
+
+SD_CARD_READ_WRITE ADD-ON
+-------------------------
+TERM2SD"        SD_EMIT         WRITE           READ            CLOSE           DEL"            WRITE"          READ"
+
+
+UTILITY ADD-ON
+--------------
+DUMP            U.R             WORDS           ?               .RS             .S              {UTILITY}       
+
+
+SD_TOOLS ADD-ON
+---------------
+DIR             FAT             CLUSTER         SECTOR          {SD_TOOLS}
+
+
+; a word within brackets [] is an immediate word. (other words may also be immediate)
+; a word doubled with another word between parentheses () is a DEFERred word, the first being initialised with the second.
+; when ADD-ONs are compiled into the kernel, their respective MARKER word identified with braces {}  does nothing.
+
+; the words that are not commented are ANS94 compliant; search for their definition here: https://forth-standard.org/search
+
+
+FORTH WORDS
+
+ASM <word> --       used to begin an assembler word which is not interpretable by FORTH (because use of CALL ... RET).
+                    this defined <word> must be ended with ENDASM.
+
+CODE <word> --      begins an assembler word interpretable by FORTH (MOV @IP+,PC instead of CALL ... RET)
+                    this defined <word> must be ended with ENDCODE.
+
+HI2LO --            used to switch from a high level (FORTH) to low level (assembler) modes.
+
+COLD --             Software reset
+
+WARM --             DEFERred word initialized by default with (WARM)
+
+(WARM) --           performs a hot start
+
+WIPE --             resets the program memory to its original state before any add.
+
+RST_HERE --         defines the bound of the program memory protected against COLD or hardware reset.
+
+PWR_HERE --         defines the bound of the program memory protected against ON/OFF.
+
+RST_STATE --        remove all words defined after RST_HERE
+
+PWR_STATE --        remove all words defined after PWR_HERE
+
+MOVE
+LEAVE           
++LOOP           
+LOOP            
+DO              
+REPEAT          
+WHILE           
+AGAIN           
+UNTIL           
+BEGIN           
+THEN            
+ELSE            
+IF              
+;               
+:               
+DEFER           
+DOES>           
+CREATE          
+CONSTANT        
+VARIABLE        
+POSTPONE        
+RECURSE         
+IMMEDIATE       
+IS              
+[']             
+]               
+[               
+\               
+'               
+ABORT"          
+ABORT           
+QUIT            
+EVALUATE        
+COUNT           
+LITERAL         
+,               
+EXECUTE         
+>NUMBER         
+FIND            
+WORD            
+."              
+S"              
+TYPE            
+SPACES          
+SPACE           
+CR              
+(CR)            
+NOECHO          
+ECHO            
+EMIT            
+(EMIT)          
+(ACCEPT)        
+ACCEPT          
+KEY             
+(KEY)           
+C,              
+ALLOT           
+HERE            
+.               
+D.              
+U.              
+SIGN            
+HOLD            
+#>              
+#S              
+#               
+<#              
+BL              
+STATE           
+BASE            
+>IN             
+CPL     -- size         of terminal input buffer TIB
+TIB     -- addr         of terminal input buffer TIB            
+PAD     -- addr         of PAD            
+J               
+I               
+UNLOOP          
+U<              
+>               
+<               
+=               
+0>              
+0<              
+0=              
+DABS            
+ABS             
+NEGATE          
+XOR             
+OR              
+AND             
+-               
++               
+C!              
+C@              
+!               
+@               
+DEPTH           
+R@              
+R>              
+>R              
+ROT             
+OVER            
+SWAP            
+NIP             
+DROP            
+?DUP            
+DUP             
+LIT --          execution part of LITERAL            
+EXIT
+
+
+
+ASSEMBLER WORDS see: http://www.ece.utep.edu/courses/web3376/Notes_files/ee3376-isa.pdf
+                     http://www.ti.com/lit/ug/slau367n/slau367n.pdf#page=158
+                     howto.md for symbolic alias of registers, symbolic jumps (IF ELSE THEN...),..
+
+
+
+?GOTO           used after a conditionnal to branch to a label FWx or BWx
+GOTO            used as unconditionnal branch to a label FWx or BWx
+
+FW3             FORWARD branch destination n°3
+FW2             
+FW1             
+
+BW3             BACKWARD branch destination n°3
+BW2             
+BW1          
+
+?JMP            used after a conditionnal to jump to a defined word
+JMP             unconditionnal jump to a defined word
+
+REPEAT          assembler version of the FORTH word REPEAT
+WHILE           idem
+AGAIN           idem
+UNTIL           idem
+ELSE            idem
+THEN            idem
+IF              idem
+
+0=              conditionnal     
+0<>             conditionnal
+U>=             conditionnal
+U<              conditionnal
+0<              conditionnal, to use only with ?JMP ?GOTO
+0>=             conditionnal, to use only with IF UNTIL WHILE
+S<              conditionnal
+S>=             conditionnal
+
+RRUM            used as : RRUM n,REG   with 0 < n < 5
+RLAM            same syntax
+RRAM            same syntax
+RRCM            same syntax
+POPM            POP multiple registers, used as : POPM X,S  to pop X,W,T,S
+PUSHM           PUSH multiple registers, used as : PUSHM S,X   to push S,T,W,X
+
+CALL            see TI assembler
+PUSH.B          
+PUSH            
+SXT             
+RRA.B           
+RRA             
+SWPB            
+RRC.B           
+RRC          
+AND.B           
+AND             
+XOR.B           
+XOR             
+BIS.B           
+BIS             
+BIC.B           
+BIC          
+BIT.B           
+BIT             
+DADD.B          
+DADD            
+CMP.B           
+CMP             
+SUB.B           
+SUB          
+SUBC.B          
+SUBC            
+ADDC.B          
+ADDC            
+ADD.B           
+ADD             
+MOV.B           
+MOV          
+RETI            
+
+LO2HI           switch between low level and high level interpretation mode (counterpart of HI2LO), without saving IP.
+COLON           PUSH IP then performs LO2HI, used as CODE <word> ... assembler cmd ... COLON ... FORTH words ... ;
+ENDASM          to end an ASM definition
+ENDCODE         to end a CODE definition
+(SLEEP)         the default SLEEP definition
+SLEEP           DEFERred word initialised with (SLEEP), which enables to create a background task.
+
+
+CONDCOMP ADD-ON
+---------------
+[DEFINED]  
+[UNDEFINED]
+[IF]
+[ELSE]
+[THEN]
+COMPARE                 
+MARKER        

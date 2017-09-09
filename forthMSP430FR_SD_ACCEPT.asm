@@ -30,32 +30,31 @@
 ; used variables : BufferPtr, BufferLen
 
 ; ----------------------------------;
-;    FORTHWORD "SD_ACCEPT"          ; TIB TIB len -- PAD|SDIB len'
+;    FORTHWORD "SD_ACCEPT"          ; TIB TIB TIB_LEN -- PAD|SDIB len'
 ; ----------------------------------;
 SD_ACCEPT                           ; sequentially move from BUFFER to SDIB (or PAD) a line of chars delimited by CRLF
-; ----------------------------------;
+; ----------------------------------; up to TIB_LEN = 80 chars
     PUSH    IP                      ;
     MOV     #SDA_YEMIT_RET,IP       ; set YEMIT return
 ; ----------------------------------;
 StartNewLine                        ;
 ; ----------------------------------;
-    MOV     &CurrentHdl,T           ; prepare link for any next LOAD"ed file...
+    MOV &CurrentHdl,T               ; prepare a link for the next LOADed file...
     MOV &BufferPtr,HDLW_BUFofst(T)  ; ...see usage : HandleComplements
 ; ----------------------------------; -- TIB TIB len
     .IFDEF RAM_1K                   ; use PAD as SD Input Buffer because the lack of RAM
     MOV     #PAD,W                  ;               W=dst
-    MOV     #PAD_SIZE-4,0(PSP)      ; -- TIB max_count len
     .ELSEIF                         ; use SDIB as SD Input Buffer
     MOV     #SDIB,W                 ;               W=dst
-    MOV     #SDIB_SIZE-4,0(PSP)     ; -- TIB max_count len
     .ENDIF
-    MOV     W,2(PSP)                ; -- StringOrg' max_count len
-    MOV     #0,TOS                  ; -- StringOrg' max_count Count
+    MOV     W,2(PSP)                ; -- StringOrg' TIB TIB_LEN
+    MOV     TOS,0(PSP)              ; -- StringOrg' TIB_LEN TIB_LEN
+    MOV     #0,TOS                  ; -- StringOrg' TIB_LEN Count
 ; ----------------------------------;
 SDA_InitSrcAddr                     ; <== SDA_GetFileNextSector
 ; ----------------------------------;
     CMP     #0,&BufferLen           ; test if input buffer is empty (EOF)
-    JZ      SDA_GoToInterpret       ; yes
+    JZ      SDA_GoToInterpret       ; yes, to interpret an empty line (to do nothing)
     MOV     &BufferPtr,X            ;               X=src
     JMP     SDA_ComputeChar         ;
 ; ----------------------------------;
@@ -72,14 +71,14 @@ SDA_ComputeChar                     ;
     ADD     #1,X                    ; 1 increment input BufferPtr
     CMP.B   #32,Y                   ; 2 ascii printable char ?
     JHS     SDA_MoveChar            ; 2 yes
-    CMP.B   #10,Y                   ; control char = 'LF' ?
-    JNZ     SDA_ComputeChar         ; no
+    CMP.B   #10,Y                   ; 2 control char = 'LF' ?
+    JNZ     SDA_ComputeChar         ; 2 no
 ; ----------------------------------;
 SDA_EndOfLine                       ;
 ; ----------------------------------;
     MOV     X,&BufferPtr            ; yes  save BufferPtr for next line
 ; ----------------------------------;
-SDA_GoToInterpret                   ; -- StringOrg' max_count len'
+SDA_GoToInterpret                   ; -- StringOrg' TIB_LEN len'
 ; ----------------------------------;
     ADD     #2,PSP                  ; -- StringOrg' len'
     MOV     @RSP+,IP                ;
@@ -87,14 +86,14 @@ SDA_GoToInterpret                   ; -- StringOrg' max_count len'
 ; ----------------------------------;
 SDA_MoveChar                        ;
 ; ----------------------------------;
-    CMP     TOS,0(PSP)              ; 3 count = max_chars_count ?
+    CMP     @PSP,TOS                ; 2 count = TIB_LEN ?
     JZ      YEMIT                   ; 2 yes, don't move char to dst
     MOV.B   Y,0(W)                  ; 3 move char to dst
     ADD     #1,W                    ; 1 increment dst addr
     ADD     #1,TOS                  ; 1 increment count of moved chars
     JMP     YEMIT                   ; 9/6~ send echo to terminal if ECHO, do nothing if NOECHO
-; ----------------------------------; 33/30~ char loop, add 14~ for readsectorW ==> 47/44~ ==> 21/23 kbytes/s / MHz
-SDA_GetFileNextSector               ;
+; ----------------------------------; 32/29~ char loop, add 14~ for readsectorW ==> 46/43~ ==> 174/186 kbytes/s @ 8MHz
+SDA_GetFileNextSector               ; StringOrg' TIB_LEN Count --
 ; ----------------------------------;
     PUSH    W                       ; save dst
     CALL    #Read_File              ; that resets BufferPtr
@@ -102,12 +101,4 @@ SDA_GetFileNextSector               ;
     JMP     SDA_InitSrcAddr         ; loopback to end the line
 ; ----------------------------------;
 
-
-;C ACCEPT  addr addr len -- addr' len'  get line at addr to interpret len' chars
-            FORTHWORD "ACCEPT"
-ACCEPT      MOV     #PARENACCEPT,PC
-
-;C (ACCEPT)  addr addr len -- addr len'     get len' (up to len) chars from terminal (TERATERM.EXE) via USBtoUART bridge
-            FORTHWORD "(ACCEPT)"
-PARENACCEPT
 

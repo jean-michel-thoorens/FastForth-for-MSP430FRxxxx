@@ -18,19 +18,6 @@
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-;https://forth-standard.org/standard/core/NIP
-;CE NIP    x1 x2 -- x2
-            FORTHWORD "NIP"
-NIP         ADD     #2,PSP          ; 1
-            mNEXT                   ; 4
-
-;https://forth-standard.org/standard/core/StoD
-;C S>D    n -- d          single -> double prec.
-            FORTHWORD "S>D"
-STOD:       SUB     #2,PSP
-            MOV     TOS,0(PSP)
-            JMP     ZEROLESS
-
     .IFDEF MPY
 
 ;https://forth-standard.org/standard/core/UMTimes

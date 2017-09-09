@@ -309,7 +309,7 @@ RTS         .set    8       ; P2.3 bit position
             MOV     #100Fh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Fh
                                         ; fCOCLKDIV = 32768 x (15+1) = 0.524 MHz ; measured :  MHz
 ; =====================================
-            MOV     #2,X
+;            MOV     #2,X
 
     .ELSEIF FREQUENCY = 1
 
@@ -324,7 +324,7 @@ RTS         .set    8       ; P2.3 bit position
 ;            MOV     #001Fh,&CSCTL2        ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1Fh
                                         ; fCOCLKDIV = 32768 x (31+1) = 1.049 MHz ; measured : 1.046MHz
 ; =====================================
-            MOV     #4,X
+;            MOV     #4,X
 
     .ELSEIF FREQUENCY = 2
 
@@ -339,7 +339,7 @@ RTS         .set    8       ; P2.3 bit position
 ;            MOV     #003Dh,&CSCTL2        ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=3Dh
                                         ; fCOCLKDIV = 32768 x (61+1) = 2.031 MHz ; measured :  MHz
 ; =====================================
-            MOV     #8,X
+;            MOV     #8,X
 
     .ELSEIF FREQUENCY = 4
 
@@ -356,7 +356,7 @@ RTS         .set    8       ; P2.3 bit position
 ;            MOV     #007Ah,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=7Ah
                                         ; fCOCLKDIV = 32768 x (122+1) = 4.030 MHz ; measured : 4.020MHz
 ; =====================================
-            MOV     #16,X
+;            MOV     #16,X
 
     .ELSEIF FREQUENCY = 8
 
@@ -375,7 +375,7 @@ RTS         .set    8       ; P2.3 bit position
                                         ; fCOCLKDIV = 32768 x (245+1) = 8.061 MHz ; measured : 8.042MHz
                                         ; works with cp2102 and pl2303TA
 ; =====================================
-            MOV     #32,X
+;            MOV     #32,X
 
     .ELSEIF FREQUENCY = 16
 
@@ -392,14 +392,16 @@ RTS         .set    8       ; P2.3 bit position
             MOV     #01E9h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E9h
                                         ; fCOCLKDIV = 32768 x 489+1) = 16.056 MHz ; measured : 16.02MHz
 ; =====================================
-            MOV     #64,X
+;            MOV     #64,X
 
     .ELSEIF
     .error "bad frequency setting, only 0.5,1,2,4,8,16 MHz"
     .ENDIF
 
     .IFDEF LF_XTAL
-;            MOV     #0000h,&CSCTL3      ; FLL select XT1, FLLREFDIV=0 (default value)
+; LFXIN : P4.1, LFXOUT : P4.2
+            MOV  #0600h,&PBSEL0         ; SEL0 for only P4.1,P4.2
+;           MOV     #0000h,&CSCTL3      ; FLL select XT1, FLLREFDIV=0 (default value)
             MOV     #0000h,&CSCTL4      ; ACLOCK select XT1, MCLK & SMCLK select DCOCLKDIV
     .ELSE
             MOV     #0010h,&CSCTL3      ; FLL select REFCLOCK, FLLREFDIV=0
@@ -408,26 +410,20 @@ RTS         .set    8       ; P2.3 bit position
 
 
             BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV with preserving a pending request for DEEP_RST
-            CMP #2,&SAVE_SYSRSTIV   ; POWER ON ?
-            JZ      ClockWaitX      ; yes : wait 600ms to stabilize power source
-            .word   0359h           ; no  : RRUM #1,X --> wait still 300 ms...
-                                    ;       ...because FLL lock time = 280 ms
+;             CMP #2,&SAVE_SYSRSTIV   ; POWER ON ?
+;             JZ      ClockWaitX      ; yes : wait 600ms to stabilize power source
+;             .word   0359h           ; no  : RRUM #1,X --> wait still 300 ms...
+;                                     ;       ...because FLL lock time = 280 ms
+; 
+; ClockWaitX  MOV     #50000,Y        ;
+; ClockWaitY  SUB     #1,Y            ; 3 cycles loop
+;             JNZ     ClockWaitY      ; 50000x3 = 150000 cycles delay = 150ms @ 1MHz
+;             SUB     #1,X            ;
+;             JNZ     ClockWaitX      ;
 
-ClockWaitX  MOV     #50000,Y        ;
-ClockWaitY  SUB     #1,Y            ; 3 cycles loop
-            JNZ     ClockWaitY      ; 50000x3 = 150000 cycles delay = 150ms @ 1MHz
-            SUB     #1,X            ;
-            JNZ     ClockWaitX      ;
+WAITFLL     BIT #300,&CSCTL7        ; wait FLL lock
+            JNZ WAITFLL
 
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : RTC REGISTERS
-; ----------------------------------------------------------------------
-
-    .IFDEF LF_XTAL
-; LFXIN : P4.1, LFXOUT : P4.2
-    MOV  #0600h,&PBSEL0   ; SEL0 for only P4.1,P4.2
-    .ENDIF
 
 
 

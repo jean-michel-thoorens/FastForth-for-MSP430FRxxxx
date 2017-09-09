@@ -1,10 +1,10 @@
 !MSP430fr5x6x.pat
 
-LPM4,=\$F8,! SR(LPM4+GIE)
-LPM3,=\$D8,! SR(LPM3+GIE)
-LPM2,=\$98,! SR(LPM2+GIE)
-LPM1,=\$58,! SR(LPM1+GIE)
-LPM0,=\$18,! SR(LPM0+GIE)
+LPM4=\$F8! SR(LPM4+GIE)
+LPM3=\$D8! SR(LPM3+GIE)
+LPM2=\$98! SR(LPM2+GIE)
+LPM1=\$58! SR(LPM1+GIE)
+LPM0=\$18! SR(LPM0+GIE)
 
 
 
@@ -291,33 +291,6 @@ TA3EX0=\$460!       \ TA3 expansion register 0
 TA3IV=\$46E!        \ TA3 interrupt vector  
 
 CAPTIO1CTL=\$47E!   \ Capacitive Touch IO 1 control 
-
-!                   \ RTC_B           / RTC_C
-RTCCTL0=\$4A0!      \ RTC control 0   / RTCCTL0_L                     
-RTCCTL1=\$4A1!      \ RTC control 1   / RTCCTL0_H                                
-RTCCTL2=\$4A2!      \ RTC control 2   / RTCCTL1                                
-RTCCTL3=\$4A3!      \ RTC control 3   / RTCCTL3                       
-RTCPS0CTL=\$4A8!    \ RTC prescaler 0 control                         
-RTCPS1CTL=\$4AA!    \ RTC prescaler 1 control                         
-RTCPS0=\$4AC!       \ RTC prescaler 0                                 
-RTCPS1=\$4AD!       \ RTC prescaler 1                                 
-RTCIV=\$4AE!        \ RTC interrupt vector word                       
-RTCSEC=\$4B0!       \ RTC seconds, RTC counter register 1 RTCSEC,     
-RTCMIN=\$4B1!       \ RTC minutes, RTC counter register 2 RTCMIN,     
-RTCHOUR=\$4B2!      \ RTC hours, RTC counter register 3 RTCHOUR,      
-RTCDOW=\$4B3!       \ RTC day of week, RTC counter register 4 RTCDOW, 
-RTCDAY=\$4B4!       \ RTC days                                        
-RTCMON=\$4B5!       \ RTC month                                       
-RTCYEAR=\$4B6!                                       
-RTCYEARL=\$4B6!     \ RTC year low                                    
-RTCYEARH=\$4B7!     \ RTC year high                                   
-RTCAMIN=\$4B8!      \ RTC alarm minutes                               
-RTCAHOUR=\$4B9!     \ RTC alarm hours                                 
-RTCADOW=\$4BA!      \ RTC alarm day of week                           
-RTCADAY=\$4BB!      \ RTC alarm days                                  
-BIN2BCD=\$4BC!      \ Binary-to-BCD conversion register               
-BCD2BIN=\$4BE!      \ BCD-to-binary conversion register  
-RTCHOLD=\$40!
 
 MPY=\$4C0!          \ 16-bit operand 1 – multiply                     
 MPYS=\$4C2!         \ 16-bit operand 1 – signed multiply              
@@ -640,6 +613,8 @@ ADC12MEM29=\$89A!   \ ADC12_B Memory 29
 ADC12MEM30=\$89C!   \ ADC12_B Memory 30 
 ADC12MEM31=\$89E!   \ ADC12_B Memory 31 
 
+ADCON=\$10!
+ADCSTART=\$03!
 
 CDIFG=1!
 CDIIFG=2!

@@ -154,6 +154,86 @@ SD_CSOUT        .equ  P2OUT
     BIC.B   #00Eh,&P1REN    ; disable pullup resistors for SIMO/SOMI/SCK pins
 
     .ENDIF
+    .IFDEF MY_MSP430FR5738
+
+; COLD default state : Px{DIR,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; PX{OUT,REN} = 1 ; Px{IN,IES} = ?
+
+; P2.3 as SD_CD
+SD_CD           .equ  08h
+SD_CDIN         .equ  P2IN
+; P2.4 as SD_CS
+SD_CS           .equ  10h
+SD_CSOUT        .equ  P2OUT
+    BIS.B #SD_CS,&P2DIR ; SD_CS output high
+
+; P2.2/UCB0CLK                ---> SD_CardAdapter CLK (SCK)   default value
+; P1.6/UCB0SIMO/UCB0SDA/TA0.0 ---> SD_CardAdapter SDI (MOSI)  default value
+; P1.7/UCB0SOMI/UCB0SCL/TA1.0 <--- SD_CardAdapter SDO (MISO)  default value
+    BIS #04C0h,&PASEL1  ; Configure UCB0 pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
+                        ; P2DIR.x is controlled by eUSCI_B0 module
+    BIC #04C0h,&PAREN   ; disable pullup resistors for SIMO/SOMI/CLK pins
+
+    .ENDIF
+    .IFDEF MY_MSP430FR5738_1
+
+; COLD default state : Px{DIR,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; PX{OUT,REN} = 1 ; Px{IN,IES} = ?
+
+; P2.3 as SD_CD
+SD_CD           .equ  08h
+SD_CDIN         .equ  P2IN
+; P2.4 as SD_CS
+SD_CS           .equ  10h
+SD_CSOUT        .equ  P2OUT
+    BIS.B #SD_CS,&P2DIR ; SD_CS output high
+
+; P2.2/UCB0CLK                ---> SD_CardAdapter CLK (SCK)   default value
+; P1.6/UCB0SIMO/UCB0SDA/TA0.0 ---> SD_CardAdapter SDI (MOSI)  default value
+; P1.7/UCB0SOMI/UCB0SCL/TA1.0 <--- SD_CardAdapter SDO (MISO)  default value
+    BIS #04C0h,&PASEL1  ; Configure UCB0 pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
+                        ; P2DIR.x is controlled by eUSCI_B0 module
+    BIC #04C0h,&PAREN   ; disable pullup resistors for SIMO/SOMI/CLK pins
+
+    .ENDIF
+    .IFDEF MY_MSP430FR5948 
+
+; COLD default state : Px{DIR,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; PX{OUT,REN} = 1 ; Px{IN,IES} = ?
+
+; P2.3                <--- SD_CD (Card Detect)
+SD_CD           .equ  08h
+SD_CDIN         .equ  P2IN 
+; P2.7                ---> SD_CS (Card Select)
+SD_CS           .equ  80h
+SD_CSOUT        .equ  P2OUT
+    BIS.B #SD_CS,&P2DIR ; SD_CS output high
+
+; P2.4  UCA1     CLK  ---> SD_CLK
+; P2.5  UCA1 TX/SIMO  ---> SD_SDI
+; P2.6  UCA1 RX/SOMI  <--- SD_SDO
+    BIS.B #070h,&P2SEL1 ; Configure UCA1 pins P2.4 as UCA1CLK, P2.5 as UCA1SIMO & P2.6 as UCA1SOMI
+                        ; P2DIR.x is controlled by eUSCI_A0 module
+    BIC.B #070h,&P2REN  ; disable pullup resistors for SIMO/SOMI/SCK pins
+
+    .ENDIF
+    .IFDEF MY_MSP430FR5948_1 ; = new version of MY_MSP430FR5948
+
+; COLD default state : Px{DIR,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; PX{OUT,REN} = 1 ; Px{IN,IES} = ?
+
+; P2.7                ---> SD_CD (Card Detect)
+SD_CD           .equ  80h
+SD_CDIN         .equ  P2IN
+; P2.3                <--- SD_CS (Card Select)
+SD_CS           .equ  08h
+SD_CSOUT        .equ  P2OUT
+    BIS.B #SD_CS,&P2DIR ; SD_CS output high
+
+; P2.4  UCA1     CLK  ---> SD_CLK
+; P2.5  UCA1 TX/SIMO  ---> SD_SDI
+; P2.6  UCA1 RX/SOMI  <--- SD_SDO
+    BIS.B #070h,&P2SEL1 ; Configure UCA1 pins P2.4 as UCA1CLK, P2.5 as UCA1SIMO & P2.6 as UCA1SOMI
+                        ; P2DIR.x is controlled by eUSCI_A0 module
+    BIC.B #070h,&P2REN  ; disable pullup resistors for SIMO/SOMI/SCK pins
+
+    .ENDIF
 
     BIC     #1,&SD_CTLW0            ; release eUSCI from reset
 

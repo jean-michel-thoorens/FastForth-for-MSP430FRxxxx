@@ -120,16 +120,22 @@ ASSEMBLER_BODY  .word   lastasmword ; here is the structure created by VOCABULAR
                 .word   voclink
 voclink         .set    $-2
 
-             FORTHWORDIMM "HI2LO"    ; immediate, switch to low level, add ASSEMBLER context, set interpretation state
+             FORTHWORDIMM "HI2LO"   ; immediate, switch to low level, add ASSEMBLER context, set interpretation state
             mDOCOL
-            .word   HERE,CELLPLUS,COMMA
+HI2LO       .word   HERE,CELLPLUS,COMMA
             .word   LEFTBRACKET
 HI2LONEXT   .word   ALSO,ASSEMBLER
             .word   EXIT
 
-           FORTHWORD "CODE"    ;
-ASMCODE     CALL #HEADER        ; same as ":" ...
-            SUB #4,&DDP         ; ...but compile nothing
+;             FORTHWORDIMM "SEMIC"   ; same as HI2LO, plus restore IP; counterpart of COLON
+;            mDOCOL
+;            .word   HI2LO
+;            .word   LIT,413Dh,COMMA ; compile MOV @RSP+,IP
+;            .word   EXIT
+
+           FORTHWORD "CODE"     ; a CODE word must be finished with ENDCODE
+ASMCODE     CALL #HEADER        ;
+            SUB #4,&DDP         ;
             mDOCOL
             .word   SAVE_PSP
             .word   BRAN,HI2LONEXT
@@ -142,12 +148,13 @@ ENDCODE     mDOCOL
 
             FORTHWORD "ASM"     ; used to define an assembler word which is not executable by FORTH interpreter
                                 ; i.e. typically an assembler word called by CALL and ended by RET
-                                ; ASM words are only v in ASSEMBLER CONTEXT
+                                ; ASM words are only usable in another ASSEMBLER words
+                                ; an ASM word must be finished with ENDASM
             MOV     &CURRENT,&ASM_CURRENT
             MOV     #ASSEMBLER_BODY,&CURRENT
             JMP     ASMCODE
 
-            asmword "ENDASM"    ; end of ASM word
+            asmword "ENDASM"    ; end of an ASM word
             MOV     &ASM_CURRENT,&CURRENT
             JMP     ENDCODE
 
@@ -218,8 +225,9 @@ SKIPEND:    MOV     W,TOS               ; -- addr
 ; Search ARG of <sep>"xxxx(REG)"            ; <== PARAM210
 SearchARG   ASMtoFORTH                      ; -- separator      search word first
             .word   WORDD,FIND              ; -- c-addr
-            .word   ZEROEQUAL
-            .word   QBRAN,SearchARGW        ; -- c-addr         if found
+;            .word   ZEROEQUAL
+;            .word   QBRAN,SearchARGW        ; -- c-addr         if found
+            .word   QZBRAN,SearchARGW        ; -- c-addr         if found
             .word   QNUMBER                 ;
             .word   QBRAN,NotFound          ; -- c-addr
             .word   AsmSrchEnd              ; -- value          end if number found
@@ -231,7 +239,7 @@ QDOVAR      CMP     #DOVAR,X
             MOV     @RSP+,PC                ; ret
 QDOCON      CMP     #DOCON,X
             JNZ     QDODOES
-            MOV     2(TOS),TOS              ; remplace CFA by [PFA] for CONSTANT and CREATE words
+            MOV     2(TOS),TOS              ; remplace CFA by [PFA] for CONSTANT (and CREATEd) words
             MOV     @RSP+,PC                ; ret
 QDODOES     CMP     #DODOES,X
             JNZ     AsmSrchEnd
@@ -978,88 +986,3 @@ CLRFW3      .word 0
 
 
 
-
-
-
-; ------------------------------------------------------------------------------------------
-; forthMSP430FR ASSEMBLER : .IF .ELSEIF .ENDIF structure
-; ------------------------------------------------------------------------------------------
-; it's borrows leave stack
-; [IF] interpret next word, if false scans line and refill it until [ELSE] or [IF] or [THEN] found, else do nothing
-; [ELSE] tests address, tests flag, remove them and leave [THEN] address, if false scans line and refill it until [THEN] found
-; [THEN] remove one parameter from leave stack
-
-;        ASMWORD ".ELSEIF"        ; fall here if [IF] was true
-;brELSE      PSUH IP
-;            MOV &LEAVEPTR,IP
-;            CMP #brIF,-2(IP)    ; case of [IF] state was true
-;            JZ BrElseNext       ; to skip [ELSE] state
-;            CMP #BrElse,-2(IP)  ; case of [ELSE] state was true
-;            JZ BrThenNext       ; to terminate with [THEN] state
-;            ASMtoFORTH          ; else abort
-;            .word   XSQUOTE
-;            .byte   13,"[IF] missing!"
-;            .word   QABORTYES
-;
-;BrElseNext
-
-
-
-
-;        ASMWORD ".ENDIF"    ; fall here if [IF] without [ELSE] was true, or if [ELSE] was true
-;brTHEN      JMP brELSE      ;
-;BrThenNext  SUB #2,&LEAVEPTR
-;            MOV @RSP+,IP
-;            mNEXT
-;
-;
-;        ASMWORD ".IF"
-;BrIF         mDOCOL
-;BrIf1       .word   FBLANK,WORDD            ; Z = EOL
-;            FORTHtoASM
-;            JZ SrchCndEol
-;            ASMtoFORTH
-;            .word   FIND
-;            .word   ZEROEQUAL
-;            .word   QBRAN,SrchCOND1         ; -- c-addr         if found
-;            .word   QNUMBER                 ;
-;SrchCOND1  FORTHtoASM                       ; -- xt|value|0
-;            MOV     @TOS,IP
-;cDOVAR      CMP     #DOVAR,IP
-;            JNZ     cDOCON
-;            MOV     2(IP),TOS
-;            MOV     @TOS,TOS                ; remplace CFA by value of VARIABLE
-;            JMP     SrchCOND2
-;cDOCON      CMP     #DOCON,IP
-;            JNZ     SrchBrIF
-;            MOV     2(TOS),TOS              ; remplace CFA by value for CONSTANT and CREATEd words
-;SrchBrIF    CMP     #BrIF,IP                ; [IF] found ?
-;            JNZ     SrchBrELSE
-;            ADD     #2,&LEAVEPTR            ; -- flag     LEAVEPTR+2
-;            MOV     &LEAVEPTR,IP            ;
-;            CMP     #0,TOS
-;            JZ      SrchBrIF1               ; to scan
-;            MOV     #BrIf,-2(IP)            ; case of [IF] is true
-;            MOV     @RSP+,IP
-;            mNEXT
-;SrchBrIF1   MOV     #BrElse,-2(IP)          ; case of [IF] is false
-;            MOV     #BrIf1,IP
-;            mNEXT
-
-;SrchBrELSE  CMP     #BrELSE,IP              ; [ELSE] found ?
-;            JZ      BrELSECond
-;SrchBrTHEN  CMP     #BrTHEN,IP              ; [THEN] found ?
-;            JZ      BrTHENCond
-;SrchCOND2
-;
-;SrchCndEol  FORTHtoASM
-;            MOV     @PSP+,TOS
-;            MOV
-
-;SrchCOND3   JZ      BrIF
-;
-;            CMP #0,TOS
-;            JZ  SrchCOND3
-;            .word   QBRAN,SrchCOND4
-;            .word   BRAN,SrchCOND3
-;SrchCOND4   .word   FTOIN,FETCH

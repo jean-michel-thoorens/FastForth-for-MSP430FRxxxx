@@ -35,21 +35,21 @@
 ; Formatage FA16 d'une SDSC Card 2GB
 ; First sector of physical drive (sector 0) content :
 ; ---------------------------------------------------
-; dec@| HEX@ =  HEX                                                        decimal
-; 446 |0x1BE          : partition table first record  ==> logical drive 0       
-; 446 |0x1CE          : partition table 2th record    ==> logical drive 1
-; 446 |0x1DE          : partition table 3th record    ==> logical drive 2
-; 446 |0x1EE          : partition table 4th record    ==> logical drive 3
+; dec@| HEX@
+; 446 |0x1BE    : partition table first record  ==> logical drive 0       
+; 446 |0x1CE    : partition table 2th record    ==> logical drive 1
+; 446 |0x1DE    : partition table 3th record    ==> logical drive 2
+; 446 |0x1EE    : partition table 4th record    ==> logical drive 3
 
 ; partition record content :
 ; ---------------------------------------------------
-; dec@|HEX@ =  HEX                                                        decimal
+; dec@|HEX@ =  HEX                                                           decimal
 ; 0   |0x00 =  0x00     : not bootable
 ; 1   |0x01 =  02 0C 00 : Org Cylinder/Head/Sector offset (CHS-addressing) = not used
 ; 4   |0x04 =  0x0E     : type FAT16 using LBA addressing                  = 14 ==> FAT16
 ; 5   |0x05 =  ED 3F EE : End Cylinder/Head/Sector offset (CHS-addressing) = not used
-; 8   |0x08 =  00 20 00 00 : sector offset of logical drive                = 8192
-; 12  |0x0C =  00 40 74 00 : sector size of logical drive                  = 7618560 sectors
+; 8   |0x08 =  00 20 00 00 : sectors offset of logical drive               = 8192
+; 12  |0x0C =  00 40 74 00 : sectors size of logical drive                 = 7618560 sectors
 
 ; 450 |0x04 =  0x0E     : type FAT16 using LBA addressing                  = 14 ==> set FATtype = FAT16 with byte CMD addressing
 ; 454 |0x1C6 = 89 00    : FirstSector (of logical drive 0) BS_FirstSector  = 137
@@ -59,7 +59,7 @@
 
 ; FirstSector of logical drive (sector 0) content :
 ; -------------------------------------------------
-; dec@| HEX@ =  HEX                                                         decimal
+; dec@| HEX@ =  HEX                                                       decimal
 ; 11  | 0x0B = 00 02        : 512 bytes/sector          BPB_BytsPerSec  = 512
 ; 13  | 0x0D = 40           : 64 sectors/cluster        BPB_SecPerClus  = 64
 ; 14  | 0x0E = 01 00        : 2 reserved sectors        BPB_RsvdSecCnt  = 1
@@ -84,11 +84,11 @@
 ; Formatage FA32 d'une SDSC Card 8GB
 ; First sector of physical drive (sector 0) content :
 ; ---------------------------------------------------
-; dec@| HEX@ =  HEX                                                        decimal
-; 446 |0x1BE          : partition table first record  ==> logical block 0       
-; 446 |0x1CE          : partition table 2th record    ==> logical block 1
-; 446 |0x1DE          : partition table 3th record    ==> logical block 2
-; 446 |0x1EE          : partition table 4th record    ==> logical block 3
+; dec@| HEX@
+; 446 |0x1BE    : partition table first record  ==> logical block 0       
+; 446 |0x1CE    : partition table 2th record    ==> logical block 1
+; 446 |0x1DE    : partition table 3th record    ==> logical block 2
+; 446 |0x1EE    : partition table 4th record    ==> logical block 3
 
 ; partition record content :
 ; ---------------------------------------------------
@@ -97,15 +97,15 @@
 ; 1   |0x01 =  82 03 00 : Org CHS offset (Cylinder/Head/Sector)         = not used
 ; 4   |0x04 =  0x0C     : type FAT32 using LBA addressing               = 12 ==> set FATtype = FAT32 with sector CMD addressing
 ; 5   |0x05 =  82 03 00 : End offset (Cylinder/Head/Sector offset)      = not used
-; 8   |0x08 =  00 20 00 00 : sector offset of logical block             = 8192
-; 12  |0x0C =  00 40 74 00 : sector size of logical block               = 7618560
+; 8   |0x08 =  00 20 00 00 : sectors offset of logical block            = 8192
+; 12  |0x0C =  00 40 74 00 : sectors size of logical block              = 7618560
 
 ; 454 |0x1C6 = 00 20 00 00 : FirstSector (of logical drive 0) = BS_FirstSector = 8192
 
 ; 
 ; FirstSector of logical block (sector 0) content :
 ; -------------------------------------------------
-; dec@| HEX@ =  HEX                                                     decimal
+; dec@| HEX@ =  HEX                                                       decimal
 ; 11  | 0x0B = 00 02        : 512 bytes/sector          BPB_BytsPerSec  = 512
 ; 13  | 0x0D = 08           : 8 sectors/cluster         BPB_SecPerClus  = 8
 ; 14  | 0x0E = 20 00        : 32 reserved sectors       BPB_RsvdSecCnt  = 32
@@ -140,17 +140,19 @@ BytsPerSec      .equ 512
 ; ==================================;
 RW_Sector_CMD                       ;WX <=== CMD17 or CMD24 (read or write Sector CMD)
 ; ==================================;
-    BIC.B   #SD_CS,&SD_CSOUT        ; SD_CS low
-    BIT.B   #SD_CD,&SD_CDIN         ; memory card present ?
+    BIC.B   #SD_CS,&SD_CSOUT        ; set SD_CS low
+    BIT.B   #SD_CD,&SD_CDIN         ; test CD: memory card present ?
     JZ      ComputePhysicalSector   ; yes
     MOV     #COLD,PC                ; no: force COLD
 ; ----------------------------------;
-ComputePhysicalSector               ; input = logical sector, output = physical sector
-; ----------------------------------;
+ComputePhysicalSector               ;
+; ----------------------------------; input = logical sector...
     ADD     &BS_FirstSectorL,W      ;3
     ADDC    &BS_FirstSectorH,X      ;3
+; ----------------------------------; ...output = physical sector
+;Compute CMD                        ;
 ; ----------------------------------;
-    MOV     #1,&SD_CMD_FRM          ;3 $(01 00 xx xx xx CMD) (set stop bit)
+    MOV     #1,&SD_CMD_FRM          ;3 $(01 00 xx xx xx CMD) set stop bit in CMD frame
     CMP     #2,&FATtype             ;3 FAT32 ?          
     JZ      FAT32_CMD               ;2 yes
 FAT16_CMD                           ;  FAT16 : CMD17/24 byte address = Sector * BPB_BytsPerSec
@@ -167,28 +169,28 @@ FAT32_CMD                           ;  FAT32 : CMD17/24 sector address
     SWPB    X                       ;1
     MOV.B   X,&SD_CMD_FRM+4         ;3 $(01 ll LL hh HH CMD)
 ; ==================================;
-WaitIdleBeforeSendCMD               ; <=== CMD41, CMD1, CMD16 (R1 expected response = 0 = ready)
+WaitIdleBeforeSendCMD               ; <=== CMD41, CMD1, CMD16 (forthMSP430FR_SD_INIT.asm)
 ; ==================================;
     CALL #SPI_GET                   ;
-    CMP.B   #-1,W                   ; FFh expected value <==> MISO = 1 = not busy = idle state
+    CMP.B   #-1,W                   ; FFh = expected value <==> MISO = 1 = not busy = idle state
     JNE WaitIdleBeforeSendCMD       ; loop back until idle state
-    MOV     #0,W                    ; W = expected R1 response = ready = 0 for CMD41,CMD16, CMD17, CMD24
+    MOV     #0,W                    ; W = expected R1 response = ready, for CMD41,CMD16, CMD17, CMD24
 ; ==================================;
-sendCommand                         ;X <=== CMD0, CMD8, CMD55 (W = R1 expected response = 1 = idle)
+sendCommand                         ;X <=== CMD0, CMD8, CMD55: W = R1 expected response = idle (forthMSP430FR_SD_INIT.asm)
 ; ==================================;
                                     ; input : SD_CMD_FRM : {CRC,byte_l,byte_L,byte_h,byte_H,CMD} 
                                     ;         W = expected return value
                                     ; output  W is unchanged, flag Z is positionned
                                     ; reverts CMD bytes before send : $(CMD hh LL ll 00 CRC)
-    MOV     #5,X                    ; X = SD_CMD_FRM index AND countdown
+    MOV     #5,X                    ; X = SD_CMD_FRM ptr AND countdown
 ; ----------------------------------;
 Send_CMD_PUT                        ; performs little endian --> big endian conversion
 ; ----------------------------------;
     MOV.B   SD_CMD_FRM(X),&SD_TXBUF ;5 
     CMP     #0,&SD_BRW              ;3 full speed ?
     JZ      FullSpeedSend           ;2 yes
-Send_CMD_Loop                       ;  no: case of low speed during memCardInit
-    BIT     #UCRXIFG,&SD_IFG        ;3
+Send_CMD_Loop                       ;
+    BIT     #UCRXIFG,&SD_IFG        ;3 no: case of low speed during memCardInit
     JZ      Send_CMD_Loop           ;2
     CMP.B   #0,&SD_RXBUF            ;3 to clear UCRXIFG
 FullSpeedSend                       ;
@@ -204,10 +206,10 @@ FullSpeedSend                       ;
 ;    MOV     #32,X                   ; to pass Panasonic SD_Card init
 ;    MOV     #64,X                   ; to pass SanDisk SD_Card init
 ; ----------------------------------;
-Wait_Command_Response               ; expect W = return value during X = 255 time
+Wait_Command_Response               ; expect W = return value during X = 255 times
 ; ----------------------------------;
     SUB     #1,X                    ;1
-    JN      SPI_WAIT_RET            ;2 error on time out with SR(Z) = 0
+    JN      SPI_WAIT_RET            ;2 error on time out with flag Z = 0
     MOV.B   #-1,&SD_TXBUF           ;3 PUT FFh
     CMP     #0,&SD_BRW              ;3 full speed ?
     JZ      FullSpeedGET            ;2 yes
@@ -215,10 +217,10 @@ cardResp_Getloop                    ;  no: case of low speed during memCardInit 
     BIT     #UCRXIFG,&SD_IFG        ;3
     JZ      cardResp_Getloop        ;2
 FullSpeedGET                        ;
-;    NOP2                           ;  NOPx adjusted to avoid SD_error
+;    NOP                            ;  NOPx adjusted to avoid SD_error
     CMP.B   &SD_RXBUF,W             ;3 return value = ExpectedValue ?
-    JNZ     Wait_Command_Response   ;2 18~ full speed loop
-SPI_WAIT_RET                        ; SR(Z) = 1 <==> Return value = expected value
+    JNZ     Wait_Command_Response   ;2 16~ full speed loop
+SPI_WAIT_RET                        ; flag Z = 1 <==> Returned value = expected value
     RET                             ; W = expected value, unchanged
 ; ----------------------------------;
 
@@ -231,14 +233,14 @@ SPI_GET                             ; PUT(FFh)
 ; ==================================; output : W = received byte, X = 0 always
     MOV #1,X                        ;1
 ; ==================================;
-SPI_X_GET                           ; PUT(FFh) X time
+SPI_X_GET                           ; PUT(FFh) X times
 ; ==================================; output : W = last received byte, X = 0
     MOV #-1,W                       ;1
 ; ==================================;
 SPI_PUT                             ; PUT(W) X time
 ; ==================================; output : W = last received byte, X = 0
             SWPB W                  ;1
-            MOV.B W,&SD_TXBUF       ;3 put W high byte then W low byte and so forth that performs little to big endian conversion
+            MOV.B W,&SD_TXBUF       ;3 put W high byte then W low byte and so forth, that performs little to big endian conversion
             CMP #0,&SD_BRW          ;3 full speed ?
             JZ FullSpeedPut         ;2 
 SPI_PUTWAIT BIT #UCRXIFG,&SD_IFG    ;3
@@ -247,7 +249,7 @@ SPI_PUTWAIT BIT #UCRXIFG,&SD_IFG    ;3
 FullSpeedPut
 ;           NOP                     ;  NOPx adjusted to avoid SD error
             SUB #1,X                ;1
-            JNZ SPI_PUT             ;2
+            JNZ SPI_PUT             ;2 12~ loop
 SPI_PUT_END MOV.B &SD_RXBUF,W       ;3
             RET                     ;4
 ; ----------------------------------;
@@ -265,7 +267,7 @@ readSectorWX                        ; read a logical sector
 ; ==================================;
     BIS     #1,S                    ; preset sd_read error
     MOV.B   #51h,&SD_CMD_FRM+5      ; CMD17 = READ_SINGLE_BLOCK
-    CALL    #RW_Sector_CMD          ; which performs logical sector to physical sector then little endian to big endian conversions
+    CALL    #RW_Sector_CMD          ; which performs logical sector to physical sector then little endian to big endian conversion
     JNE     SD_CARD_ERROR           ; time out error if R1 <> 0 
 ; ----------------------------------;
 WaitFEhResponse                     ; wait SD_Card response FEh

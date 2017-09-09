@@ -178,7 +178,7 @@ forthlink31 .set    $
     .endcase
 
             .byte   STRLEN(name),name
-            .align  2
+;            .align  2
             .ENDM
 
 
@@ -293,7 +293,7 @@ forthlink31 .set    $
     .endcase
 
             .byte   STRLEN(name)+128,name
-            .align  2
+;            .align  2
             .ENDM
 
 
@@ -408,7 +408,7 @@ asmlink31 .set    $
     .endcase
 
             .byte   STRLEN(name),name
-            .align  2
+;            .align  2
             .ENDM
 
 

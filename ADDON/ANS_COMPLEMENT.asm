@@ -18,11 +18,14 @@
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-    .IFNDEF ALIGNMENT
-    .include "ADDON\ALIGNMENT.asm"
-    .ENDIF
+    FORTHWORD "{ANS_COMP}"
+    mNEXT
+
     .IFNDEF ARITHMETIC
     .include "ADDON\ARITHMETIC.asm"
+    .ENDIF
+    .IFNDEF ALIGNMENT
+    .include "ADDON\ALIGNMENT.asm"
     .ENDIF
     .IFNDEF PORTABILITY
     .include "ADDON\PORTABILITY.asm"
@@ -65,7 +68,7 @@ RSH_X:      MOV     W,TOS
 ;https://forth-standard.org/standard/core/OnePlus
 ;C 1+      n1/u1 -- n2/u2       add 1 to TOS
             FORTHWORD "1+"
-ONEPLUS     ADD     #1,TOS
+            ADD     #1,TOS
             mNEXT
 
 ;https://forth-standard.org/standard/core/OneMinus

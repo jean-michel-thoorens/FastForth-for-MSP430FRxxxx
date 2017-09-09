@@ -3,6 +3,34 @@
 @define{@read{/config/gema/MSP430FR5x6x.pat}}
 
 
+!                   \ RTC_C
+RTCCTL0_L=\$4A0!    \ RTCCTL0_L                     
+RTCCTL0_H=\$4A1!    \ RTCCTL0_H                                
+RTCCTL1=\$4A2!      \ RTCCTL1                                
+RTCCTL3=\$4A3!      \ RTCCTL3                       
+RTCPS0CTL=\$4A8!    \ RTC prescaler 0 control                         
+RTCPS1CTL=\$4AA!    \ RTC prescaler 1 control                         
+RTCPS0=\$4AC!       \ RTC prescaler 0                                 
+RTCPS1=\$4AD!       \ RTC prescaler 1                                 
+RTCIV=\$4AE!        \ RTC interrupt vector word                       
+RTCSEC=\$4B0!       \ RTC seconds, RTC counter register 1 RTCSEC,     
+RTCMIN=\$4B1!       \ RTC minutes, RTC counter register 2 RTCMIN,     
+RTCHOUR=\$4B2!      \ RTC hours, RTC counter register 3 RTCHOUR,      
+RTCDOW=\$4B3!       \ RTC day of week, RTC counter register 4 RTCDOW, 
+RTCDAY=\$4B4!       \ RTC days                                        
+RTCMON=\$4B5!       \ RTC month                                       
+RTCYEAR=\$4B6!                                       
+RTCYEARL=\$4B6!     \ RTC year low                                    
+RTCYEARH=\$4B7!     \ RTC year high                                   
+RTCAMIN=\$4B8!      \ RTC alarm minutes                               
+RTCAHOUR=\$4B9!     \ RTC alarm hours                                 
+RTCADOW=\$4BA!      \ RTC alarm day of week                           
+RTCADAY=\$4BB!      \ RTC alarm days                                  
+BIN2BCD=\$4BC!      \ Binary-to-BCD conversion register               
+BCD2BIN=\$4BE!      \ BCD-to-binary conversion register  
+RTCHOLD=\$40!
+RTCRDY=\$10!
+
 ! ----------------------------------------------
 ! MSP430FR6989 MEMORY MAP
 ! ----------------------------------------------

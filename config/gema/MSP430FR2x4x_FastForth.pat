@@ -1,5 +1,6 @@
 !MSP430FR2x4x_FastForth.pat
 
+
 ! ===========================================================
 ! MSP430FR2xxx and FR4xxx DEVICES HAVE SPECIFIC RAM ADDRESSES
 ! ===========================================================
@@ -17,9 +18,9 @@ OSCOFF=\$20!    = SR(5) OSCOFF
 SCG0=\$40!      = SR(6) SCG0     
 SCG1=\$80!      = SR(7) SCG1
 V=\$100!        = SR(8) oVerflow flag
-UF1=\$200!      = SR(9) User Flag 1 used by ?NUMBER --> INTERPRET --> LITERAL to process double numbers, else free for use.  
-UF2=\$400!      = SR(10) User Flag 2  
-UF3=\$800!      = SR(11) User Flag 3  
+UF9=\$200!      = SR(9) User Flag 1 used by ?NUMBER --> INTERPRET --> LITERAL to process double numbers, else free for use.  
+UF10=\$400!      = SR(10) User Flag 2  
+UF11=\$800!      = SR(11) User Flag 3  
 
 C\@=C\@
 C\!=C\!
@@ -48,6 +49,8 @@ BIT15=\$8000!
 ! ============================================
 ! symbolic codes :
 ! ============================================
+POP=MOV \@R1+,!         \ MOV @RSP+,
+POP\.B=MOV\.B \@R1+,!   \ MOV.B @RSP+,
 RET=MOV \@R1+,R0!   \ MOV @RSP+,PC
 NOP=MOV 0,R3!       \                one word one cycle
 NOP2=\$3C00 ,!      \ compile JMP 0  one word two cycles
@@ -55,6 +58,13 @@ NOP3=MOV R0,R0!     \ MOV PC,PC      one word three cycles
 NEXT=MOV \@R13+,R0! \ MOV @IP+,PC   
 
 
+! ============================================
+! FORTH DOxxx registers :
+! ============================================
+rDOCOL=R7!
+rDOVAR=R6!
+rDOCON=R5!
+rDODOES=R4!
 
 ! You can check the addresses below by comparing their values in DTCforthMSP430FRxxxx.lst
 ! those addresses are usable with the symbolic assembler
@@ -78,22 +88,32 @@ LPM_MODE=\$180A!        LPM0+GIE is the default mode
 INIDP=\$180C!           define RST_STATE, init by wipe
 INIVOC=\$180E!          define RST_STATE, init by wipe
 
-XON=\$1810!
-XOFF=\$1812!
+RXON=\$1810!
+RXOFF=\$1812!
 
 ReadSectorWX=\$1814!    call with W = SectorLO  X = SectorHI
 WriteSectorWX=\$1816!   call with W = SectorLO  X = SectorHI
 
 
 ! ============================================
+! FORTH RAM areas :
+! ============================================
+LSTACK_SIZE=\#16! words
+PSTACK_SIZE=\#48! words
+RSTACK_SIZE=\#48! words
+PAD_LEN=\#84! bytes
+TIB_LEN=\#80! bytes
+HOLD_SIZE=\#34! bytes
+
+! ============================================
 ! FastForth RAM memory map (>= 1k):
 ! ============================================
-LSATCK=\$2000!      \ leave stack,      grow up
 LEAVEPTR=\$2000!    \ Leave-stack pointer, init by QUIT
+LSATCK=\$2000!      \ leave stack,      grow up
 PSTACK=\$2080!      \ parameter stack,  grow down
 RSTACK=\$20E0!      \ Return stack,     grow down
-PAD=\$20E2!         \ user scratch pad buffer, grow up
-TIB=\$2138!         \ Terminal input buffer, grow up
+PAD_ORG=\$20E2!     \ user scratch pad buffer, grow up
+TIB_ORG=\$2138!     \ Terminal input buffer, grow up
 BASE_HOLD=\$21AA!   \ BASE HOLD area, grow down
 
 ! ----------------------
@@ -223,5 +243,5 @@ FirstHandle=\$2440!
 HandleOutOfBound=\$2500!
 
 SDIB=\$2500!
-
+SDIB_LEN=\#84!
 SD_END_DATA=\$2554!

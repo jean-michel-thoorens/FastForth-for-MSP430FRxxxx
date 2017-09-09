@@ -1,10 +1,10 @@
 !MSP430fr57xx.pat
 
-LPM4,=\$F8,! SR(LPM4+GIE)
-LPM3,=\$D8,! SR(LPM3+GIE)
-LPM2,=\$98,! SR(LPM2+GIE)
-LPM1,=\$58,! SR(LPM1+GIE)
-LPM0,=\$18,! SR(LPM0+GIE)
+LPM4=\$F8! SR(LPM4+GIE)
+LPM3=\$D8! SR(LPM3+GIE)
+LPM2=\$98! SR(LPM2+GIE)
+LPM1=\$58! SR(LPM1+GIE)
+LPM0=\$18! SR(LPM0+GIE)
 
 
 
@@ -80,7 +80,7 @@ P2REN=\$207!
 P2SEL0=\$20B!
 P2SEL1=\$20D!
 P2SELC=\$217!
-P2IES=\$218!
+P2IES=\$219!
 P2IE=\$21B!
 P2IFG=\$21D!
 
@@ -115,7 +115,7 @@ P4REN=\$227!
 P4SEL0=\$22B!
 P4SEL1=\$22D!
 P4SELC=\$237!
-P4IES=\$238!
+P4IES=\$239!
 P4IE=\$23B!
 P4IFG=\$23D!
 
@@ -130,7 +130,7 @@ PJSELC=\$336!
 
 TACLR=4!
 TAIFG=1!
-TBCLR=2!
+TBCLR=4!
 TBIFG=1!
 CCIFG=1!
 
@@ -189,6 +189,7 @@ TB2CCR2=\$456!      \ Capture/compare register 2
 TB2EX0=\$460!       \ TB2 expansion register 0    
 TB2IV=\$46E!        \ TB2 interrupt vector        
 
+! RTC_B
 RTCCTL0=\$4A0!      \ RTC control 0                                   
 RTCCTL1=\$4A1!      \ RTC control 1                                   
 RTCCTL2=\$4A2!      \ RTC control 2                                   
@@ -214,6 +215,7 @@ RTCADAY=\$4BB!      \ RTC alarm days
 BIN2BCD=\$4BC!      \ Binary-to-BCD conversion register               
 BCD2BIN=\$4BE!      \ BCD-to-binary conversion register               
 RTCHOLD=\$40!
+RTCRDY=\$10!
 
 MPY=\$4C0!          \ 16-bit operand 1 – multiply                     
 MPYS=\$4C2!         \ 16-bit operand 1 – signed multiply              

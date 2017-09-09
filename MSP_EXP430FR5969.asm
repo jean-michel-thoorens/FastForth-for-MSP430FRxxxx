@@ -243,11 +243,8 @@ TERM_REN    .equ P2REN
 ; PORT3 usage
 
 ; PORT4 usage
-; switch S1
-SWITCHIN    .set P4IN    ; port
-S1          .set 020h    ; P4.5
-
-; P4.6 as LED1 output low
+; P4.5 - switch S1
+; P4.6 - LED1 red
 
     .IFDEF TERMINALCTSRTS
 

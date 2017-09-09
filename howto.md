@@ -422,9 +422,7 @@ conditionnal backward jump :
 
 FAST FORTH have one pass assembler, not able to make forward jump.
 
-In my (well written) apps I have never used forward jumps.
-
-But I have added possibility of several "non canonical" jumps, up to 3 backward and up to 3 forward imbricated jumps to label :
+I have added possibility of several "non canonical" jumps, up to 3 backward and up to 3 forward imbricated jumps to label :
 
     \ C UM/MOD   udlo|udhi u1 -- ur uq
     CODE UM/MOD
@@ -791,3 +789,16 @@ CPUx instructions RRCM,RRAM,RLAM,RRUM
     example : RRUM #3,R9      \ R9 register is Unsigned Right shifted by n=3
 
     error occurs if 1 > n > 4
+
+
+conditionnal jumps use with symbolic assembler
+
+    0=    { IF UNTIL WHILE ?JMP ?GOTO }
+    0<>   { IF UNTIL WHILE ?JMP ?GOTO }   
+    U>=   { IF UNTIL WHILE ?JMP ?GOTO }   
+    U<    { IF UNTIL WHILE ?JMP ?GOTO }    
+    S<    { IF UNTIL WHILE ?JMP ?GOTO }    
+    S>=   { IF UNTIL WHILE ?JMP ?GOTO }   
+    0>=   { IF UNTIL WHILE }
+    0<    { ?JMP ?GOTO } 
+

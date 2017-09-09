@@ -7,7 +7,7 @@ If your purpose is programming a MSP430FRxxxx in assembler, FAST FORTH is the Sw
 
 With a load, read,create, write, delete SD_CARD files driver, + source files direct copy from PC to SD_Card, its size is still < 9Kb.
 It works with all SD CARD memories from 64MB to 64GB. Count 14/11 clock cycles to read/write a byte, with SPI_CLK = MCLK...
-This enables to make a fast data logger with a small footprint as a MSP430FR5738 QFN24. 
+This enables to make a fast data logger with a small footprint as a MSP430FR5738 QFN24. To compare with a LPC800 ARM entry-level... 
 
 	Tested on MSP-EXP430{FR5969,FR5994,FR6989,FR4133} launchpads and CHIPSTICKFR2433, at 0.5, 1, 2, 4, 8, 16 MHz,
     and 24MHz on a MSP430FR5738 module.
@@ -32,13 +32,26 @@ This enables to make a fast data logger with a small footprint as a MSP430FR5738
     which ensures its compatibility with the FORTH CORE ANS94 standard.
     For MSP430FR4133 choose COMPSMPY.f, COMPHMPY.f for all others.
 
-    Notice that FAST FORTH interprets only SPACE as delimiter (not TAB), BACKSPACE, and CR+LF as end of line.
+    Notice that FAST FORTH interprets lines up to 80 chars, only SPACE as delimiter, only CR+LF as EOL, and BACKSPACE.
     And that memory access is limited to 64 kbytes. You can always create FORTH words to access data beyond this limit...
 
     Finally, using the SCITE editor as IDE, you can do everything from its "tools" menu.
 
 What is new ?
 -------------
+
+	V162.
+
+    Added a set of words to enable conditional interpretation/compilation : MARKER [DEFINED] [UNDEFINED] [IF] [ELSE] [THEN]
+    A MARKER word ( defined as {word} to well see it) allows you to wipe some program even if loaded in memory below RST_STATE boundary.
+    see conditional compilation source files in the new subfolder MSP430_COND.
+
+    All interpretation / compilation errors now execute PWR_STATE, so any incorrect definition will be automatically erased,
+    as well as its source file, if any.
+
+    Added a bootloader option which loads BOOT.4TH from SD_Card memory when the cause of reset in SYSRSTIV register is <> 0 (<> WARM).
+    When you download FAST FORTH (SYSRSTIV = 15), and if a sd_card memory is present, BOOT.4TH will load SD_TOOLS.4TH.
+    You can of course modify BOOT.4TH according to your convenience!
 
 	V161.
 
@@ -140,23 +153,23 @@ And that's the magic: After I finished editing (or modify) the source file, I pr
 Content
 -------
 
-With a size about 5.5 kb (enhanced version with vocabularies 16 threads), Fast Forth contains 116 words:
+With a size < 6 kb (enhanced version with 16 threads vocabularies), Fast Forth contains 119 words:
 
-    ASM             CODE            HI2LO           ASSEMBLER       COLD            WARM            (WARM)          WIPE        
-    RST_HERE        RST_STATE       PWR_HERE        PWR_STATE       MOVE            LEAVE           +LOOP           LOOP        
-    DO              REPEAT          WHILE           AGAIN           UNTIL           BEGIN           THEN            ELSE        
-    IF              POSTPONE        [']             IS              IMMEDIATE       ;               :               RECURSE     
-    ]               [               DEFER           DOES>           CREATE          CONSTANT        VARIABLE        \           
-    '               ABORT"          ABORT           QUIT            EVALUATE        COUNT           LITERAL         ,           
-    EXECUTE         >NUMBER         FIND            WORD            ."              S"              TYPE            SPACES      
-    SPACE           CR              (CR)            NOECHO          ECHO            EMIT            (EMIT)          (ACCEPT)    
-    ACCEPT          KEY             (KEY)           C,              ALLOT           HERE            .               D.          
-    U.              UD.             SIGN            HOLD            #>              #S              #               <#          
-    BL              STATE           BASE            >IN             J               I               UNLOOP          U<          
-    >               <               =               0<              0=              ABS             NEGATE          XOR         
-    OR              AND             -               +               C!              C@              !               @           
-    DEPTH           R@              R>              >R              ROT             OVER            SWAP            DROP        
-    ?DUP            DUP             LIT             EXIT
+    ASM             CODE            HI2LO           COLD            WARM            (WARM)          WIPE            RST_HERE    
+    RST_STATE       PWR_HERE        PWR_STATE       MOVE            LEAVE           +LOOP           LOOP            DO          
+    REPEAT          WHILE           AGAIN           UNTIL           BEGIN           THEN            ELSE            IF          
+    POSTPONE        RECURSE         IMMEDIATE       ;               :               DEFER           DOES>           CREATE      
+    CONSTANT        VARIABLE        IS              [']             ]               [               \               '           
+    ABORT"          ABORT           QUIT            EVALUATE        COUNT           LITERAL         ,               EXECUTE     
+    >NUMBER         FIND            WORD            ."              S"              TYPE            SPACES          SPACE       
+    CR              (CR)            NOECHO          ECHO            EMIT            (EMIT)          (ACCEPT)        ACCEPT      
+    KEY             (KEY)           C,              ALLOT           HERE            .               D.              U.          
+    SIGN            HOLD            #>              #S              #               <#              BL              STATE       
+    BASE            >IN             TIB             PAD             J               I               UNLOOP          U<          
+    >               <               =               0>              0<              0=              DABS            ABS         
+    NEGATE          XOR             OR              AND             -               +               C!              C@          
+    !               @               DEPTH           R@              R>              >R              ROT             OVER        
+    SWAP            NIP             DROP            ?DUP            DUP             LIT             EXIT
 
 ...size that includes its embedded assembler of 71 words:
 
@@ -190,8 +203,8 @@ external ANS\_COMPLEMENT in COMPHMPY.f or COMPSMPY.f adds:
     [CHAR]          CHAR            CELL+           CELLS           CHAR+           CHARS           ALIGN           ALIGNED      
     2OVER           2SWAP           2DROP           2DUP            2!              2@              */              */MOD        
     MOD             /               /MOD            *               FM/MOD          SM/REM          UM/MOD          M*           
-    UM*             S>D             NIP             2/              2*              MIN             MAX             1-           
-    1+              RSHIFT          LSHIFT          INVERT          
+    UM*             S>D             2/              2*              MIN             MAX             1-              1+          
+    RSHIFT          LSHIFT          INVERT          
   
 external SD\_TOOLS ADD-ON in SD\_TOOLS.f adds:
 
@@ -275,11 +288,9 @@ save file.
 
 assemble (CTRL+0). A window asks you for 4 parameters:
 
-set device as first param, i.e. MSP430FR5969,
+set device as first param, i.e. MSP_EXP430FR5969,
 
-set your target as 2th param, i.e. MSP_EXP430fr5969,
-
-then execute. the output is a target.txt file.
+then execute. the output is a target.txt file, i.e. MSP_EXP430FR5969.txt
 
 
 
@@ -355,11 +366,10 @@ If you plan to supply your target vith a PL2303 cable, open its box to weld red 
 Send a source file to the FAST FORH target
 ------------------
 
-Two .bat files are done in the folder \MSP430-FORTH that enable you to send any source file to any target.
+Three .bat files are done in folders \MSP430-FORTH and \CONDCOMP that enable you to do all you want.
+Double clic on them to see how to do.
 
-See how to in the file \MSP430-FORTH\send\_source\_file\_to\_target\_readme.txt. Or double click on .bat file
-
-you can also open any source file with scite, and do all via menu Tools.
+you can also open any source file with scite editor, and do all you want via its Tools menu.
 
 
 SD_Card Load, Read, Write and Delete 
@@ -429,18 +439,17 @@ HowTo delete a file
 HowTo change DIRectory
 ---------------
 
-	READ" \misc". 		    \misc becomes the current folder.
-	READ" ..\"    			parent folder becomes the current folder.
-	READ" \"				Root becomes the current folder.
+	LOAD" \misc". 		    \misc becomes the current folder.
+	LOAD" ..\"    			parent folder becomes the current folder.
+	LOAD" \"				Root becomes the current folder.
 
 Drive letters are always ignored.
 
 Downloading source file to SD_Card
 ------------------------------------------
 
-to download a file.f/file.4th onto SD_CARD, use Send_file.f_to_SD_CARD_targe.bat/Send_file.4th_to_SD_CARD_targe.bat.
-any file.f will be preprocessed by gema before sending to SD_CARD as file.4th.
-
+to download a source file (.f or .4th) onto SD_CARD target, use CopySourceFileToTarget_SD_Card.bat.
+or use scite.
 Double click on one of this bat files to see how to do.
 
 
@@ -458,7 +467,7 @@ Other interesting specificities :
 =====
 
 Management of vocabularies (not ANSI). VOCABULARY, DEFINITIONS, ONLY, ALSO, PREVIOUS, CONTEXT, CURRENT, FORTH, ASSEMBLER. 
-In fact, it's the operation of the assembler that requires the vocabularies management.
+In fact, it's the the assembler that requires the vocabularies management.
 
 Recognizing prefixed numbers %101011 (bin), $00FE (hex) and #220 (decimal).
 
@@ -496,6 +505,11 @@ Here is the FastForth init architecture :
 
 	case 1.1 : when you type PWR_STATE ==> the program beyond PWR_HERE is lost.
 
+	case 1.2 : If an error message (reverse video) occurs, PWR_STATE is automatically executed and the program beyond PWR_HERE is lost.
+               In this way, any compilation error is followed by the complete erasure of the uncompleted word, 
+               or by that of the downloading source file causing this error. 
+               So, it is recommended to finish a source file with at least PWR_HERE to protect it against any subsequent error.
+
 
 	case 2 : <reset>  ==> performs reset and the program beyond RST_HERE is lost.
 		 	 if ECHO is on, the WARM display is preceded by the SYSRSTIV value "4", else no display.
@@ -517,6 +531,8 @@ Here is the FastForth init architecture :
 	
 	case 4.2 : writing -1 in SAVE_SYSRSTIV before COLD = software DEEP_RST ===> same effects
 			   The WARM display is preceded by "-1".
+
+	case 5 : after FAST FORTH core compilation, the WARM displays SAVE_SYSRSTIV = 15. User may use this information before WARM occurs.
 
 
 If SD\_CARD extention and SD\_CARD memory with \BOOT.4TH included, the cases 1 to 4 start it after displaying of WARM message. 
