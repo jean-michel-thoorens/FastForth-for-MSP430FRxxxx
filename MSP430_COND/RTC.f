@@ -130,7 +130,7 @@ CREATE ABUF 20 ALLOT
     ABUF ABUF 20 (ACCEPT) EVALUATE CR 3 SPACES DATE!
     CR CR ."    TIME (HMS or HM): "
     ABUF ABUF 20 (ACCEPT) EVALUATE CR 3 SPACES TIME!
-    CR NOECHO
+    CR
     HI2LO
     MOV #PSTACK,PSP \ to avoid stack empty error if lack of typed values.
     MOV @RSP+,IP

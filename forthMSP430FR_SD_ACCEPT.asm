@@ -43,7 +43,7 @@ StartNewLine                        ;
     MOV &BufferPtr,HDLW_BUFofst(T)  ; ...see usage : HandleComplements
 ; ----------------------------------; -- TIB TIB len
     .IFDEF RAM_1K                   ; use PAD as SD Input Buffer because the lack of RAM
-    MOV     #PAD,W                  ;               W=dst
+    MOV     #PAD_ORG,W              ;               W=dst
     .ELSEIF                         ; use SDIB as SD Input Buffer
     MOV     #SDIB,W                 ;               W=dst
     .ENDIF

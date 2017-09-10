@@ -21,9 +21,9 @@ This enables to make a fast data logger with a small footprint as a MSP430FR5738
     by downloading your source files that embedded Fast Forth interprets and compiles. To do, you only need teraterm.exe
     as input terminal and an USBtoUART bridge to connect your target.
     
-    Beforehand, the preprocessor GEMA, by means of a target.pat file, will have translated your source file.f in a targeted 
-    source file.4th ready to download.
-    A set of .bat files is furnished to do this automatically. See it all in the MSP430-FORTH folder.
+    Beforehand, the preprocessor GEMA, by means of a target.pat file, will have translated your source file.f
+    in a targeted source file.4th ready to download.
+    A set of .bat files is furnished to do this automatically. See it all in the MSP430_COND folder.
 
 	The download, interpretation and compilation of a source file.4th is done at a throughput of 40/80/120 kbytes/sec
     with a 8/16/24 MHz clock. Considering a ratio 5/1, that of the compiled code is 8/16/24 kbytes/sec.
@@ -42,25 +42,30 @@ What is new ?
 
 	V162.
 
-    Added a set of words to enable conditional interpretation/compilation : MARKER [DEFINED] [UNDEFINED] [IF] [ELSE] [THEN]
-    A MARKER word ( defined as {word} to well see it) allows you to wipe some program even if loaded in memory below RST_STATE boundary.
-    see conditional compilation source files in the new subfolder MSP430_COND.
+    Added a set of words to enable conditional interpretation/compilation : MARKER [DEFINED] [UNDEFINED] [IF] [ELSE]
+    [THEN]. A MARKER word ( defined as {word} to well see it) allows you to wipe some program even if loaded in memory
+    below RST_STATE boundary. See conditional compilation source files in the new subfolder MSP430_COND.
 
-    All interpretation / compilation errors now execute PWR_STATE, so any incorrect definition will be automatically erased,
-    as well as its source file, if any.
+    All interpretation / compilation errors now execute PWR_STATE, so any incorrect definition will be automatically
+    erased, as well as its source file, if any.
 
-    Added a bootloader option which loads BOOT.4TH from SD_Card memory when the cause of reset in SYSRSTIV register is <> 0 (<> WARM).
-    When you download FAST FORTH (SYSRSTIV = 15), and if a sd_card memory is present, BOOT.4TH will load SD_TOOLS.4TH.
-    You can of course modify BOOT.4TH according to your convenience!
+    Added a bootloader option which loads BOOT.4TH from SD_Card memory when the cause of reset in SYSRSTIV register
+    is <> 0 (<> WARM). When you download FAST FORTH (SYSRSTIV = 15), and if a sd_card memory is present, BOOT.4TH will
+    load SD_TOOLS.4TH. You can of course modify BOOT.4TH according to your convenience!
+
 
 	V161.
 
     SD_Card driver works also with software multiplier (with MSP430FR4133)
-    added SLEEP and (SLEEP) words enabling user access to background task, see ACCEPT in forthMSP430FR.asm and see use in RC5toLCD.f
-    Typed numbers > 65535 or < -32768 are no longer automatically processed as 32 bits numbers; instead insert a decimal point.
+    added SLEEP and (SLEEP) words enabling user access to background task, see ACCEPT in forthMSP430FR.asm and see use
+    in RC5toLCD.f
+
+    You can type double numbers by inserting a decimal point.
+    Example :   $-12 is processed as 16 bits negative number.
+                $-.12 or $-1.2 or $-12. are processed as 32 bits negative numbers.
 
     WARNING! XON/XOFF no longer works with new Prolific driver v3.8.12.0 (03/03/2017)...
-             Waiting next update, get on web previous PL2303_Prolific_DriverInstaller_v1160.exe (or .zip), save it before install.
+             Waiting next update, get /prog previous PL2303_Prolific_DriverInstaller_v1160.exe (or .zip).
 
 	FAST FORTH V160, major version.
 
@@ -68,12 +73,7 @@ What is new ?
     Note that Windows 10 no longer offers the FAT32 format for the highest sizes of SD_CARD memory.
     So you must use an alternative to do, for example: https://www.partitionwizard.com.
     
-    Added an extension for 32 bits numbers and the words D. UD. to display them.
-        Typed numbers > 65535 or < -32768 are automatically processed as 32 bits numbers,
-        and to force a typed number of 16 bits to 32 bits, insert a decimal point.
-        Example :   $-12 is processed as 16 bits negative number.
-                    $-.12 or $-1.2 or $-12. are processed as 32 bits negative numbers.
-    
+
     in SD_TOOLS the word SECT_D (dump sector) use a 32 bits number.
                 added the word CLUST_D (dump first sector of a cluster). Usage (notice the point): number. CLUST_D
 
@@ -153,63 +153,67 @@ And that's the magic: After I finished editing (or modify) the source file, I pr
 Content
 -------
 
-With a size < 6 kb (enhanced version with 16 threads vocabularies), Fast Forth contains 119 words:
+With a size of 6 kb, Fast Forth contains 120 words:
 
-    ASM             CODE            HI2LO           COLD            WARM            (WARM)          WIPE            RST_HERE    
-    RST_STATE       PWR_HERE        PWR_STATE       MOVE            LEAVE           +LOOP           LOOP            DO          
-    REPEAT          WHILE           AGAIN           UNTIL           BEGIN           THEN            ELSE            IF          
-    POSTPONE        RECURSE         IMMEDIATE       ;               :               DEFER           DOES>           CREATE      
-    CONSTANT        VARIABLE        IS              [']             ]               [               \               '           
-    ABORT"          ABORT           QUIT            EVALUATE        COUNT           LITERAL         ,               EXECUTE     
-    >NUMBER         FIND            WORD            ."              S"              TYPE            SPACES          SPACE       
-    CR              (CR)            NOECHO          ECHO            EMIT            (EMIT)          (ACCEPT)        ACCEPT      
-    KEY             (KEY)           C,              ALLOT           HERE            .               D.              U.          
-    SIGN            HOLD            #>              #S              #               <#              BL              STATE       
-    BASE            >IN             TIB             PAD             J               I               UNLOOP          U<          
-    >               <               =               0>              0<              0=              DABS            ABS         
-    NEGATE          XOR             OR              AND             -               +               C!              C@          
-    !               @               DEPTH           R@              R>              >R              ROT             OVER        
-    SWAP            NIP             DROP            ?DUP            DUP             LIT             EXIT
+    ASM            CODE           HI2LO          COLD           WARM           (WARM)         WIPE           RST_HERE        
+    PWR_HERE       RST_STATE      PWR_STATE      MOVE           LEAVE          +LOOP          LOOP           DO              
+    REPEAT         WHILE          AGAIN          UNTIL          BEGIN          THEN           ELSE           IF              
+    ;              :              DEFER          DOES>          CREATE         CONSTANT       VARIABLE       POSTPONE        
+    RECURSE        IMMEDIATE      IS             [']            ]              [              \              '               
+    ABORT"         ABORT          QUIT           EVALUATE       COUNT          LITERAL        ,              EXECUTE         
+    >NUMBER        FIND           WORD           ."             S"             TYPE           SPACES         SPACE           
+    CR             (CR)           NOECHO         ECHO           EMIT           (EMIT)         (ACCEPT)       ACCEPT          
+    KEY            (KEY)          C,             ALLOT          HERE           .              D.             U.              
+    SIGN           HOLD           #>             #S             #              <#             BL             STATE           
+    BASE           >IN            CPL            TIB            PAD            J              I              UNLOOP          
+    U<             >              <              =              0>             0<             0=             DABS            
+    ABS            NEGATE         XOR            OR             AND            -              +              C!              
+    C@             !              @              DEPTH          R@             R>             >R             ROT             
+    OVER           SWAP           NIP            DROP           ?DUP           DUP            LIT            EXIT
 
 ...size that includes its embedded assembler of 71 words:
 
-    ?GOTO           GOTO            FW3             FW2             FW1             BW3             BW2             BW1         
-    ?JMP            JMP             REPEAT          WHILE           AGAIN           UNTIL           ELSE            THEN        
-    IF              0=              0<>             U>=             U<              0<              0>=             S<          
-    S>=             RRUM            RLAM            RRAM            RRCM            POPM            PUSHM           CALL        
-    PUSH.B          PUSH            SXT             RRA.B           RRA             SWPB            RRC.B           RRC         
-    AND.B           AND             XOR.B           XOR             BIS.B           BIS             BIC.B           BIC         
-    BIT.B           BIT             DADD.B          DADD            CMP.B           CMP             SUB.B           SUB         
-    SUBC.B          SUBC            ADDC.B          ADDC            ADD.B           ADD             MOV.B           MOV         
-    RETI            LO2HI           COLON           ENDASM          ENDCODE         (SLEEP)         SLEEP
+    ?GOTO          GOTO           FW3            FW2            FW1            BW3            BW2            BW1         
+    ?JMP           JMP            REPEAT         WHILE          AGAIN          UNTIL          ELSE           THEN        
+    IF             0=             0<>            U>=            U<             0<             0>=            S<          
+    S>=            RRUM           RLAM           RRAM           RRCM           POPM           PUSHM          CALL        
+    PUSH.B         PUSH           SXT            RRA.B          RRA            SWPB           RRC.B          RRC         
+    AND.B          AND            XOR.B          XOR            BIS.B          BIS            BIC.B          BIC         
+    BIT.B          BIT            DADD.B         DADD           CMP.B          CMP            SUB.B          SUB         
+    SUBC.B         SUBC           ADDC.B         ADDC           ADD.B          ADD            MOV.B          MOV         
+    RETI           LO2HI          COLON          ENDASM         ENDCODE        (SLEEP)        SLEEP
 
-...everything you need to program effectively in assembly or FORTH or mix, as you want. See examples in \MSP430-FORTH folder.
+...everything you need to program effectively in assembly or FORTH or mix, as you want. See examples in \MSP430_COND folder.
+
+CONDCOMP ADD-ON switch in forthMSP430.asm adds:
+
+    [DEFINED]      [UNDEFINED]    [IF]           [ELSE]         [THEN]         COMPARE        MARKER        
 
 VOCABULARY ADD-ON switch in forthMSP430.asm adds:
 
-    DEFINITIONS     ONLY            PREVIOUS        ALSO            FORTH           VOCABULARY   
+    DEFINITIONS    ONLY           PREVIOUS       ALSO           FORTH          VOCABULARY   
 
 SD\_CARD\_LOADER ADD-ON switch in forthMSP430.asm adds:
 
-    LOAD"           (ACCEPT)     
+    LOAD"          {SD_LOAD}     
 
 SD\_CARD\_READ\_WRITE ADD-ON switch in forthMSP430.asm adds:
 
-    TERM2SD"        SD_EMIT         WRITE           WRITE"          READ            READ"           CLOSE           DEL"         
+    TERM2SD"       SD_EMIT        WRITE          WRITE"         READ           READ"          CLOSE          DEL"         
 
 external ANS\_COMPLEMENT in COMPHMPY.f or COMPSMPY.f adds:
 
-    >BODY           SOURCE          .(              (               DECIMAL         HEX             FILL            +!           
-    [CHAR]          CHAR            CELL+           CELLS           CHAR+           CHARS           ALIGN           ALIGNED      
-    2OVER           2SWAP           2DROP           2DUP            2!              2@              */              */MOD        
-    MOD             /               /MOD            *               FM/MOD          SM/REM          UM/MOD          M*           
-    UM*             S>D             2/              2*              MIN             MAX             1-              1+          
-    RSHIFT          LSHIFT          INVERT          
+    >BODY          SOURCE         .(             (              DECIMAL        HEX            FILL           +!           
+    [CHAR]         CHAR           CELL+          CELLS          CHAR+          CHARS          ALIGN          ALIGNED      
+    2OVER          2SWAP          2DROP          2DUP           2!             2@             */             */MOD        
+    MOD            /              /MOD           *              FM/MOD         SM/REM         UM/MOD         M*           
+    UM*            S>D            2/             2*             MIN            MAX            1-             1+          
+    RSHIFT         LSHIFT         INVERT          
   
 external SD\_TOOLS ADD-ON in SD\_TOOLS.f adds:
 
-    DIR_D           FAT_D           CLUST_D         SECT_D          DUMP            U.R             MIN          
-    MAX             WORDS           .S              SP@             ?
+    DIR            FAT            CLUSTER        SECTOR         DUMP           U.R            MIN          
+    MAX            WORDS          .S             SP@            ?
 
 
 Organize your gitlab copy of FastForth
@@ -225,7 +229,7 @@ remember its shared name i.e. : //myPC/users/my/FastForth.
 
 in file explorer then right clic on root to connect a network drive, copy shared name in drive name and choose a free drive letter a:, b: ...
 
-Thus all relative paths will be linked to this drive, except the files.bat links in the folder \MSP430-forth.
+Thus all relative paths will be linked to this drive, except the files.bat links in the folder \MSP430_COND.
 For all of them right clic select, select properties then check drive letter in target.
 
 WARNING! if you erase a file directly in this drive or in one of its subfolders, no trash, the file is lost!
@@ -315,7 +319,7 @@ you will need an USBtoUART cable with a PL2303TA or PL2303HXD device that allows
 	http://www.google.com/search?q=PL2303TA
 	http://www.google.com/search?q=PL2303HXD
     WARNING! XON/XOFF no longer works with new Prolific driver v3.8.12.0 (03/03/2017)...
-             Waiting next update, get on web previous PL2303_Prolific_DriverInstaller_v1160.exe (or .zip), save it before install.
+             Waiting next update, get on /prog folder previous PL2303_Prolific_DriverInstaller_v1160.exe (or .zip)
 
 
 or USBtoUART bridge, with a CP2102 device and 3.3V/5V that allows XON/XOFF control flow :
@@ -366,7 +370,7 @@ If you plan to supply your target vith a PL2303 cable, open its box to weld red 
 Send a source file to the FAST FORH target
 ------------------
 
-Three .bat files are done in folders \MSP430-FORTH and \CONDCOMP that enable you to do all you want.
+Three .bat files are done in folders \MSP430_COND and \MSP430-FORTH that enable you to do all you want.
 Double clic on them to see how to do.
 
 you can also open any source file with scite editor, and do all you want via its Tools menu.
@@ -382,7 +386,7 @@ If you have MSP-EXP430FR5994, nothing to do.
 
 For the choice of a SD card socket be carefull : pin CD (Card Detect) must be present !
 
- 	http://www.ebay.com/itm/2-PCS-SD-Card-Module-Slot-Socket-Reader-For-Arduino-MCU-/181211954262?pt=LH_DefaultDomain_0&hash=item2a3112fc56
+http://www.ebay.com/itm/2-PCS-SD-Card-Module-Slot-Socket-Reader-For-Arduino-MCU-/181211954262?pt=LH_DefaultDomain_0&hash=item2a3112fc56
 
 
 the commands
@@ -425,7 +429,7 @@ HowTo WRITE a file
 
 If the file does not exist, create it, else open it and set the write pointer at the end of the file, ready to append chars.
 
-See example of use in \MSP430-forth\SD_TEST.f.
+See example of use in \MSP430_COND\SD_TEST.f.
 
 To overwrite an existing file: DEL" file" then  WRITE" file".
 
@@ -505,11 +509,11 @@ Here is the FastForth init architecture :
 
 	case 1.1 : when you type PWR_STATE ==> the program beyond PWR_HERE is lost.
 
-	case 1.2 : If an error message (reverse video) occurs, PWR_STATE is automatically executed and the program beyond PWR_HERE is lost.
-               In this way, any compilation error is followed by the complete erasure of the uncompleted word, 
-               or by that of the downloading source file causing this error. 
-               So, it is recommended to finish a source file with at least PWR_HERE to protect it against any subsequent error.
-
+	case 1.2 : If an error message (reverse video) occurs, PWR_STATE is automatically executed and the program beyond
+               PWR_HERE is lost. In this way, any compilation error is followed by the complete erasure of the 
+               uncompleted word, or by that of the downloading source file causing this error. 
+               So, it is recommended to finish a source file with at least PWR_HERE to protect it against any
+               subsequent error.
 
 	case 2 : <reset>  ==> performs reset and the program beyond RST_HERE is lost.
 		 	 if ECHO is on, the WARM display is preceded by the SYSRSTIV value "4", else no display.
@@ -523,8 +527,8 @@ Here is the FastForth init architecture :
 	case 3 : when you type WIPE ==> all programs donwloaded from the terminal or the SD_Card are lost.
 
 
-	case 4 : TERM_TX wired to GND via 4k7 during <reset> = DEEP_RST ===> performs reset, and all programs donwloaded from the terminal or the SD_Card are lost.
-             The WARM display is preceded by "-4". 
+	case 4 : TERM_TX wired to GND via 4k7 during <reset> = DEEP_RST ===> performs reset, and all programs donwloaded
+             from the terminal or the SD_Card are lost. The WARM display is preceded by "-4". 
 	
 	case 4.1 : software reset on failure (SYSRSTIV = 0Ah | SYSRSTIV >= 16h) ===> same effects
 			   The WARM display is preceded by the SYSRSTIV value.
@@ -532,7 +536,8 @@ Here is the FastForth init architecture :
 	case 4.2 : writing -1 in SAVE_SYSRSTIV before COLD = software DEEP_RST ===> same effects
 			   The WARM display is preceded by "-1".
 
-	case 5 : after FAST FORTH core compilation, the WARM displays SAVE_SYSRSTIV = 15. User may use this information before WARM occurs.
+	case 5 : after FAST FORTH core compilation, the WARM displays SAVE_SYSRSTIV = 3. User may use this information
+             before WARM occurs.
 
 
 If SD\_CARD extention and SD\_CARD memory with \BOOT.4TH included, the cases 1 to 4 start it after displaying of WARM message. 
@@ -559,7 +564,7 @@ Or by indexed addressing :
 	MOV.B BUFFER_OUT(R8),R9
 with R8 register as buffer pointer.
 
-see TESTASM.4th in \MSP430-FORTH folder.
+see TESTASM.4th in \MSP430_COND folder.
 
 What is the interest of a very fast baud rate ?
 ---------------------

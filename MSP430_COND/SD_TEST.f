@@ -37,7 +37,7 @@
 
 
 \ format FAT16 or FAT32 a SD_CARD memory (max 64GB) with "FRxxxx" in the disk name
-\ drag and drop \CONDCOMP\MISC folder on the root of this SD_CARD memory (FastForth doesn't do yet)
+\ drag and drop \MSP430_COND\MISC folder on the root of this SD_CARD memory (FastForth doesn't do yet)
 \ put it in your target SD slot
 \ if no reset, type COLD from the console input (teraterm) to reset FAST FORTH
 
@@ -55,6 +55,10 @@
 \   copy SD_TEST.f          to \SD_TEST.4TH
 \   copy PROG10k.f          to \PROG10k.4TH
 \   copy RTC.f              to \RTC.4TH             ( doesn't work with if FR2xxx or FR4xxx)
+
+[UNDEFINED] {SD_TEST} [IF]
+    \
+MARKER {SD_TEST}
 
 
 [UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {ANS_COMP}
@@ -118,7 +122,7 @@ R> OVER - 0 MAX SPACES TYPE
     48 - 
     DUP 1 = 
     IF  .
-        NOECHO LOAD" UTILITY.4TH" \ quiet downloading...
+        LOAD" UTILITY.4TH"
     ELSE DUP 2 =
         IF  .
             LOAD" CORETEST.4TH"
@@ -165,5 +169,6 @@ R> OVER - 0 MAX SPACES TYPE
         THEN
     THEN
 ;
-
+[THEN]
+    \
 SD_TEST

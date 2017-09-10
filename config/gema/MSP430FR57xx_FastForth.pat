@@ -238,6 +238,6 @@ CONTEXT=\$1DCA!         CONTEXT dictionnary space (8 CELLS)
 !1DDC! 34 RAM bytes free
 
 !BUFFER-2 is reserved
-BUFFER=\$1F00!      \ SD_Card buffer
+BUFFER=\$1E00!      \ SD_Card buffer
 BUFEND=\$2000!
 

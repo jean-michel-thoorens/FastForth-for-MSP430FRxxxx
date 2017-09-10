@@ -230,5 +230,4 @@ R> OVER - 0 MAX SPACES TYPE
 [THEN]
 ECHO
             ; added : ? .S .RS WORDS U.R MAX MIN DUMP 
-            ;    v--- use backspaces before hit "CR" to decrease application protection level
 PWR_HERE RST_HERE
