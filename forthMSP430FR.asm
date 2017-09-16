@@ -17,9 +17,9 @@
 ; You should have received a copy of the GNU General Public License
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;-------------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 ; assembled with MACROASSEMBLER AS (http://john.ccac.rwth-aachen.de:8000/as/)
-;-------------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
     .cpu MSP430
     .include "mspregister.mac" ;
 ;    macexp off             ; unrem to hide macro results
@@ -33,44 +33,36 @@
 
 ;===============================================================================
 ;===============================================================================
-;before assembling or programming you must copy your TARGET in param1 (SHIFT+F8)
+; before assembling or programming you must set TARGET in param1 (SHIFT+F8)
+; according to the TARGET "switched" below
 ;===============================================================================
 ;===============================================================================
 
-;-------------------------------------------------------------------------------
-; TARGET configuration SWITCHES ; bytes values are for DTC=1, 8MHz 2457600 bds XON/XOFF
-;-------------------------------------------------------------------------------
-;                                                    TOTAL - SUM of (INFO+RAM +VECTORS) = MAIN PROG
-;MSP_EXP430FR5739   ;; MSP-EXP430FR5739 launchpad    ; 4154 - 160    ( 24 + 86 +  50   ) = 3994 bytes
-;MSP_EXP430FR5969   ; MSP-EXP430FR5969 launchpad    ; 4136 - 162    ( 24 + 86 +  52   ) = 3974 bytes
-MSP_EXP430FR5994   ; MSP-EXP430FR5994 launchpad    ; 4172 - 186    ( 24 + 86 +  76   ) = 3986 bytes
-;MSP_EXP430FR6989   ; MSP-EXP430FR6989 launchpad    ; 4170 - 168    ( 24 + 86 +  58   ) = 4002 bytes
-;MSP_EXP430FR4133   ; MSP-EXP430FR4133 launchpad    ; 4180 - 140    ( 24 + 86 +  30   ) = 4040 bytes
-;CHIPSTICK_FR2433   ; "CHIPSTICK" of M. Ken BOAK    ; 4096 - 148    ( 24 + 86 +  38   ) = 3948 bytes
-;MY_MSP430FR5738    ; my MSP430FR5738 miniboards    ; 4100 - 160    ( 24 + 86 +  50   ) = 3940 bytes
-;MY_MSP430FR5738_1  ; MYMSP430FR5738_1 miniboard    ; 4100 - 160    ( 24 + 86 +  50   ) = 3940 bytes
-;MY_MSP430FR5948    ; my MSP430FR5948 miniboard     ; 4110 - 162    ( 24 + 86 +  52   ) = 3948 bytes
-;MY_MSP430FR5948_1  ; my MSP430FR5948_1 miniboard   ; 4122 - 162    ( 24 + 86 +  52   ) = 3960 bytes
-;JMJ_BOX            ; JMJ_BOX MSP430FR5738          ; 4088 - 160    ( 24 + 86 +  50   ) = 3928 bytes
-;PA8_PA_MSP430      ; PA8_PA_MSP430 MSP430FR5738    ; 4088 - 160    ( 24 + 86 +  50   ) = 3928 bytes
+;-----------------------------------------------------------------------------------------------
+; TARGET configuration SWITCHES ; bytes values are for DTC=1, 8MHz 2457600bds XON/XOFF + RTS
+;-----------------------------------------------------------------------------------------------
+;                                                                     TOTAL - SUM of (INFO+RAM +VECTORS) = MAIN PROG
+;MSP_EXP430FR5739   ; compile for MSP-EXP430FR5739 launchpad        ; 4136  - 160    ( 24 + 86 +  50   ) = 3976 bytes
+;MSP_EXP430FR5969   ; compile for MSP-EXP430FR5969 launchpad        ; 4102  - 162    ( 24 + 86 +  52   ) = 3940 bytes
+MSP_EXP430FR5994   ; compile for MSP-EXP430FR5994 launchpad        ; 4144  - 186    ( 24 + 86 +  76   ) = 3956 bytes
+;MSP_EXP430FR6989   ; compile for MSP-EXP430FR6989 launchpad        ; 4140  - 168    ( 24 + 86 +  58   ) = 3972 bytes
+;MSP_EXP430FR4133   ; compile for MSP-EXP430FR4133 launchpad        ; 4174  - 140    ( 24 + 86 +  30   ) = 4034 bytes
+;CHIPSTICK_FR2433   ; compile for the "CHIPSTICK" of M. Ken BOAK    ; 4070  - 148    ( 24 + 86 +  38   ) = 3928 bytes
 
 ; choose DTC (Direct Threaded Code) model, if you don't know, choose 1
-DTC .equ 2  ; DTC model 1 : DOCOL = CALL rDOCOL           14 cycles 1 word  shortest DTC model
-            ; DTC model 2 : DOCOL = PUSH IP, CALL rEXIT   13 cycles 2 words good compromize for mix FORTH/ASM code
-            ; DTC model 3 : inlined DOCOL                  9 cycles 4 words fastest
+DTC .equ 1  ; DTC model 1 : DOCOL = CALL rDOCOL           14 cycles 1 word      shortest DTC model
+            ; DTC model 2 : DOCOL = PUSH IP, CALL rEXIT   13 cycles 2 words     good compromize for mix FORTH/ASM code
+            ; DTC model 3 : inlined DOCOL                  9 cycles 4 words     fastest
 
 FREQUENCY   .equ 16 ; fully tested at 0.25,0.5,1,2,4,8,16 (and 24 for MSP430FR57xx) MHz
 THREADS     .equ 16 ; 1,   4,   8,  16,   32 search entries in dictionnary. 16 is the good compromise between speed and size.
                     ;    +40, +66, +90, +154 bytes
 
-TERMINALBAUDRATE    .equ 921600    ; choose value considering the frequency and the UART2USB bridge, see choices below.
+TERMINALBAUDRATE    .equ 921600    ; choose value considering the frequency and the UART2USB bridge, see explanations below.
+TERMINALXONXOFF     ; to enable XON/XOFF flow control (PL2303TA/HXD, CP2102)
+TERMINALCTSRTS      ; + 18 bytes to enable hardware flow control with RTS (PL2303TA/HXD, FT232RL)
 
-                    ; select a minima one item below, input terminal don't work if no flow control.
-TERMINALXONXOFF     ; set 3 wires (GND,RX,TX) XON/XOFF software flow control; unselect if you plan to use binary flows
-TERMINALCTSRTS     ; +12 bytes to set 4 wires (GND,RX,TX,RTS) hardware input flow control
-
-    .include "Target.inc"   ; to define target config: I/O, memory, SFR, vectors, TERMINAL eUSCI, SD_Card eUSCI, LF_XTAL,
-                            ; but only for FAST FORTH core use, not for your FAST FORTH application.
+    .include "Target.inc" ; to define target config: I/O, memory, SFR, vectors, TERMINAL eUSCI, SD_Card eUSCI, LF_XTAL,
 
 ;-------------------------------------------------------------------------------
 ; KERNEL ADD-ON SWITCHES
@@ -79,17 +71,17 @@ CONDCOMP           ;; +  354 bytes : add conditionnal compilation : [UNDEFINED] 
 MSP430ASSEMBLER    ;; + 1894 bytes : add embedded assembler with TI syntax; without, you can do all but all much more slowly...
 SD_CARD_LOADER     ;; + 1834 bytes : to LOAD source files from SD_card
 SD_CARD_READ_WRITE ;; + 1176 bytes : to read, create, write and del files + source files direct copy from PC to SD_Card
-BOOTLOADER         ; +   50 bytes : add a bootstrap to SD_CARD\BOOT.4TH.
+;BOOTLOADER         ; +   50 bytes : add a bootstrap to SD_CARD\BOOT.4TH.
 ;VOCABULARY_SET     ; +  108 bytes : add VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83, not ANSI)
-;LOWERCASE          ; +   30 bytes : enable to write strings in lowercase.
+LOWERCASE          ; +   30 bytes : enable to write strings in lowercase.
 ;BACKSPACE_ERASE    ; +   24 bytes : replace BS by ERASE, for visual comfort
 
 ;-------------------------------------------------------------------------------
 ; OPTIONAL KERNELL ADD-ON SWITCHES (can be downloaded later)                    >------------------+
 ; Tip: when switched ON below, ADD-ONs become protected against WIPE and Deep Reset...             |
 ;-------------------------------------------------------------------------------                   v
-;UTILITY            ; +  412/494 bytes : add .S .RS WORDS U.R DUMP ?                                UTILITY.f
-;SD_TOOLS           ; +  126 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, adds UTILITY  SD_TOOLS.f
+UTILITY            ; +  412/494 bytes : add .S .RS WORDS U.R DUMP ?                                UTILITY.f
+SD_TOOLS           ; +  126 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, adds UTILITY  SD_TOOLS.f
 ;ANS_CORE_COMPLIANT ; +  876 bytes : required to pass coretest.4th ; (includes items below)     COMPxMPY.f (x = H or S)
 ;ARITHMETIC         ; +  358 bytes : add S>D M* SM/REM FM/MOD * /MOD / MOD */MOD /MOD */
 ;DOUBLE             ; +  130 bytes : add 2@ 2! 2DUP 2SWAP 2OVER
@@ -101,7 +93,7 @@ BOOTLOADER         ; +   50 bytes : add a bootstrap to SD_CARD\BOOT.4TH.
 ; XON/XOFF control flow configuration ; up to 322kBd/MHz with ECHO
 ;===============================================================================
 
-; Only two usb2uart bridges correctly handle XON/XOFF: cp2102 and pl2303.
+; Only two usb2uart bridges correctly handle XON / XOFF: cp2102 and pl2303.
 
 ; the best and cheapest: UARTtoUSB cable with Prolific PL2303TA (supply current = 8 mA) or PL2303HXD
 ; ...but pl2303HXD cable have not the 3.3V  pin...
@@ -181,9 +173,9 @@ BOOTLOADER         ; +   50 bytes : add a bootstrap to SD_CARD\BOOT.4TH.
 
 
 ; UARTtoUSB module with FTDI FT232RL (FT230X don't work correctly)
-;-------------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 ; WARNING ! buy a FT232RL module with a switch 5V/3V3 and select 3V3 !
-;-------------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 ; 9600,19200,38400,57600,115200 (500kHz)
 ; + 230400 (1MHz)
 ; + 460800 (2MHz)
@@ -201,9 +193,9 @@ BOOTLOADER         ; +   50 bytes : add a bootstrap to SD_CARD\BOOT.4TH.
 ; don't forget : save new TERATERM configuration !
 
 
-;-------------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx Init vocabulary pointers:
-;-------------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
     .IF THREADS = 1
 
@@ -269,10 +261,9 @@ RSTACK_SIZE .equ    48      ; | grows down
 PAD_LEN     .equ    84      ; | grows up    (ans spec. : PAD >= 84 chars)
                             ; |
                             ; v
-                            ; ----- RAMSTART + $136
-;TIB                        ; ----- RAMSTART + $138
+;TIB                        ; ----- RAMSTART + $136
                             ; |
-TIB_LEN     .equ    80      ; | grows up    (ans spec. : TIB >= 80 chars)
+TIB_LEN     .equ    82      ; | grows up    (ans spec. : TIB >= 80 chars)
                             ; |
                             ; v
                             ; ^
@@ -299,7 +290,7 @@ LEAVEPTR    .equ    LSTACK             ; Leave-stack pointer
 PSTACK      .equ    LSTACK+(LSTACK_SIZE*2)+(PSTACK_SIZE*2)
 RSTACK      .equ    PSTACK+(RSTACK_SIZE*2)
 PAD_ORG     .equ    RSTACK+2
-TIB_ORG     .equ    PAD_ORG+PAD_LEN+2
+TIB_ORG     .equ    PAD_ORG+PAD_LEN
 BASE_HOLD   .equ    TIB_ORG+TIB_LEN+HOLD_SIZE
 
 
@@ -1044,32 +1035,6 @@ FBLANK:      mDOCON
 ; MULTIPLY
 ;-------------------------------------------------------------------------------
 
-    .IFNDEF MPY ; if no hardware MPY
-
-; T.I. SIGNED MULTIPLY SUBROUTINE: U1 x U2 -> Ud
-
-;https://forth-standard.org/standard/core/UMTimes
-;C UM*     u1 u2 -- ud   unsigned 16x16->32 mult.
-            FORTHWORD "UM*"
-UMSTAR:     MOV @PSP,S      ;2 U1 = MULTIPLICANDlo
-            MOV #0,W        ;1 0 -> created MULTIPLICANDhi
-            MOV #0,Y        ;1 0 -> created RESULTlo
-            MOV #0,T        ;1 0 -> created RESULThi
-            MOV #1,X        ;1 BIT TEST REGISTER
-UMSTARLOOP  BIT X,TOS       ;1 TEST ACTUAL BIT MULTIPLIER
-            JZ UMSTARNEXT   ;2 IF 0: DO NOTHING
-            ADD S,Y         ;1 IF 1: ADD MULTIPLICAND TO RESULT
-            ADDC W,T        ;1
-UMSTARNEXT  ADD S,S         ;1 (RLA LSBs) MULTIPLICAND x 2
-            ADDC W,W        ;1 (RLC MSBs)
-            ADD X,X         ;1 (RLA) NEXT BIT TO TEST
-            JNC UMSTARLOOP  ;2 IF BIT IN CARRY: FINISHED    10~ loop
-            MOV Y,0(PSP)    ;3 low result on stack
-            MOV T,TOS       ;1 high result in TOS
-            mNEXT
-
-    .ENDIF ; no hardware MPY
-
 ;-------------------------------------------------------------------------------
 ; ANS complement OPTION
 ;-------------------------------------------------------------------------------
@@ -1120,52 +1085,45 @@ UMSTARNEXT  ADD S,S         ;1 (RLA LSBs) MULTIPLICAND x 2
 LESSNUM:    MOV     #BASE_HOLD,&HP
             mNEXT
 
+
 ; unsigned 32-BIT DIVIDEND : 16-BIT DIVISOR --> 32-BIT QUOTIENT, 16-BIT REMAINDER
 ; DVDhi|DVDlo : DIVlo --> QUOThi|QUOTlo REMlo
 ; then REMlo is converted in ASCII char
 ; 2 times faster if DVDhi = 0 (it's the general case)
 
-; Input:  division        NUM
+; reg     division        NUM
 ; -----------------------------
 ; S     = DVDlo (15-0)  = ud1lo
 ; TOS   = DVDhi (31-16) = ud1hi
-; W     = REMAINDER(15-0)
 ; T     = DIVlo         = BASE
-; rDODOES = count
-
-; Output: division        NUM
-; -----------------------------
+; W     = REMlo         = digit --> char --> -[HP]
 ; X     = QUOTlo        = ud2lo
 ; Y     = QUOThi        = ud2hi
-; W     = REMlo         = digit --> char --> -[HP]
+; rDODOES = count
 
 ;https://forth-standard.org/standard/core/num
 ;C #     ud1lo ud1hi -- ud2lo ud2hi          convert 1 digit of output
             FORTHWORD "#"
-NUM         MOV     @PSP,S      ;2  TOS = DVDhi, S = DVDlo
-            MOV.B   &BASE,T     ;3  T = DIVlo 
+NUM         MOV.B   &BASE,T     ;3  T = DIVlo 
+NUM1        CMP     #0,TOS      ;1  DVDhi <> 0 ?
+NUM2        MOV     @PSP,S      ;2  S = DVDlo, TOS = DVDhi
             MOV     #0,W        ;1  W = REMlo = 0
             MOV     #32,rDODOES ;2  init loop count
-            CMP     #0,TOS      ;1  DVDhi <> 0 ?
-            JNZ     MDIV1       ;2  yes
+            JNZ     MDIV        ;2  yes
             RRA     rDODOES     ;1  no: loop count / 2
             MOV     S,TOS       ;1      DVDhi <-- DVDlo
             MOV     #0,S        ;1      DVDlo <-- 0
             MOV     #0,X        ;1      QUOTlo <-- 0 (to do QUOThi = 0 at the end of division)
-MDIV1:      CMP     T,W         ;1  REMlo U>= DIVlo ?
-            JNC     MDIV2       ;2  no
-            SUB     T,W         ;1  REMlo - DIVlo
-MDIV2:      ADDC    X,X         ;1  RLC QUOTlo
-            ADDC    Y,Y         ;1  RLC QUOThi
-            SUB     #1,rDODOES  ;1  Decrement loop counter
-            JN      ENDMDIV     ;2  If 0< --> end
-            ADD     S,S         ;1  RLA DVDlo
+MDIV        ADD     S,S         ;1  RLA DVDlo
             ADDC    TOS,TOS     ;1  RLC DVDhi
             ADDC    W,W         ;1  RLC REMlo
-            JNC     MDIV1       ;2                  14~ loop
-            SUB     T,W         ;1  REMlo - DIVlo
-            BIS     #1,SR       ;1  SETC
-            JMP     MDIV2       ;2                  14~ loop
+            CMP     T,W         ;1  REMlo U>= DIVlo ?
+            JNC     MDIV1       ;2  no : carry is reset
+            SUB     T,W         ;1  yes: REMlo - DIVlo ; carry is set after soustraction!
+MDIV1       ADDC    X,X         ;1  RLC quotLO
+            ADDC    Y,Y         ;1  RLC quotHI
+            SUB     #1,rDODOES  ;1  Decrement loop counter
+            JNZ     MDIV        ;2  (12+10)/2 = 11 cycles loop
 ENDMDIV     MOV #xdodoes,rDODOES;2  restore rDODOES
             MOV     X,0(PSP)    ;3  QUOTlo in 0(PSP)
             MOV     Y,TOS       ;1  QUOThi in TOS
@@ -1176,7 +1134,7 @@ TODIGIT1    ADD     #30h,W      ;2
 HOLDW       SUB     #1,&HP      ;3  store W=char --> -[HP]
             MOV     &HP,Y       ;3
             MOV.B   W,0(Y)      ;3
-            mNEXT               ;4  45 words, about 270/492 cycles/char
+            mNEXT               ;4  41 words, about 214/394 cycles/char
 
 ;https://forth-standard.org/standard/core/numS
 ;C #S    udlo:udhi -- udlo:udhi=0       convert remaining digits
@@ -1186,11 +1144,11 @@ NUMS:       mDOCOL
             FORTHtoASM          ;
             SUB     #2,IP       ;1      restore NUM return
             CMP     #0,X        ;1      test ud2lo first (generally true)
-            JNZ     NUM         ;2
+            JNZ     NUM1        ;2
             CMP     #0,TOS      ;1      then test ud2hi (generally false)
-            JNZ     NUM         ;2
+            JNZ     NUM2        ;2
             MOV     @RSP+,IP    ;2
-            mNEXT               ;4 about 280/505 cycles/char
+            mNEXT               ;4 about 215/397 cycles/char
 
 ;https://forth-standard.org/standard/core/num-end
 ;C #>    udlo:udhi=0 -- c-addr u    end conversion, get string
@@ -1213,7 +1171,7 @@ HOLD:       MOV     TOS,W       ;1
 SIGN:       CMP     #0,TOS
             MOV     @PSP+,TOS
             MOV     #'-',W
-            JN      HOLDW   ; 0<
+            JN      HOLDW       ; 0<
             mNEXT
 
 ;https://forth-standard.org/standard/core/Ud
@@ -1778,11 +1736,11 @@ TWODROP     ADD     #2,PSP
             MOV     @PSP+,TOS
             mNEXT
 
+    .IFDEF MPY
+
 ;https://forth-standard.org/standard/core/toNUMBER
 ;C  convert a string to double number until count2 = 0 or until not convertible char
 ;C >NUMBER  ud1lo|ud1hi addr1 count1 -- ud2lo|ud2hi addr2 count2
-
-    .IFDEF MPY
 
             FORTHWORD ">NUMBER"     ; 23 cycles + 32/34 cycles DEC/HEX char loop
 TONUMBER:   MOV     @PSP+,S         ;2                          S = adr
@@ -1900,6 +1858,32 @@ QNUMEND    mNEXT                    ;4 90 words             TOS=-1 and Z=0 ==> c
 
     .ELSE ; no hardware MPY
 
+; T.I. SIGNED MULTIPLY SUBROUTINE: U1 x U2 -> Ud
+
+;https://forth-standard.org/standard/core/UMTimes
+;C UM*     u1 u2 -- ud   unsigned 16x16->32 mult.
+            FORTHWORD "UM*"
+UMSTAR:     MOV @PSP,S      ;2 MDlo
+            MOV #0,W        ;1 MDhi=0
+            MOV #0,Y        ;1 RES0=0
+            MOV #0,T        ;1 RES1=0
+            MOV #1,X        ;1 BIT TEST REGISTER
+UMSTARLOOP  BIT X,TOS       ;1 TEST ACTUAL BIT MRlo
+            JZ UMSTARNEXT   ;2 IF 0: DO NOTHING
+            ADD S,Y         ;1 IF 1: ADD MDlo TO RES0
+            ADDC W,T        ;1      ADDC MDhi TO RES1
+UMSTARNEXT  ADD S,S         ;1 (RLA LSBs) MDlo x 2
+            ADDC W,W        ;1 (RLC MSBs) MDhi x2
+            ADD X,X         ;1 (RLA) NEXT BIT TO TEST
+            JNC UMSTARLOOP  ;2 IF BIT IN CARRY: FINISHED    10~ loop
+            MOV Y,0(PSP)    ;3 low result on stack
+            MOV T,TOS       ;1 high result in TOS
+            mNEXT
+
+;https://forth-standard.org/standard/core/toNUMBER
+;C  convert a string to double number until count2 = 0 or until not convertible char
+;C >NUMBER  ud1lo|ud1hi addr1 count1 -- ud2lo|ud2hi addr2 count2
+
             FORTHWORD ">NUMBER"
 TONUMBER:   MOV     @PSP,S          ; -- ud1lo ud1hi adr count
             MOV.B   @S,S            ; -- ud1lo ud1hi adr count      S=char
@@ -1914,13 +1898,13 @@ UDSTAR      .word   152Eh           ; -- ud1lo ud1hi adr count          PUSHM TO
             MOV     4(PSP),0(PSP)   ; -- ud1lo ud1hi adr ud1hi count
             MOV     &BASE,TOS       ; -- ud1lo ud1hi adr ud1hi u2=base
             MOV     #UMSTARNEXT1,IP ;
-UMSTAR1     MOV     #UMSTAR,PC      ; ud1hi * base ; UMSTAR use S,T,W,X,Y
+UMSTAR1     JMP     UMSTAR          ; ud1hi * base ; UMSTAR use S,T,W,X,Y
 UMSTARNEXT1 FORTHtoASM              ; -- ud1lo ud1hi adr ud3lo ud3hi
             PUSH    @PSP            ;                                   r-- count ud3lo
             MOV     6(PSP),0(PSP)   ; -- ud1lo ud1hi adr ud1lo ud3hi
             MOV     &BASE,TOS       ; -- ud1lo ud1hi adr ud1lo u=base
-            MOV     #UMSTARNEXT2,IP
-UMSTAR2     MOV     #UMSTAR,PC      ; ud1lo * base ; UMSTAR use S,T,W,X,Y, and S is free for use
+            MOV     #UMSTARNEXT2,IP ;
+UMSTAR2     JMP     UMSTAR          ; ud1lo * base ; UMSTAR use S,T,W,X,Y, and S is free for use
 UMSTARNEXT2 FORTHtoASM              ; -- ud1lo ud1hi adr ud2lo ud2hi    r-- count IP digit ud3lo
             ADD     @RSP+,TOS       ; -- ud1lo ud1hi adr ud2lo ud2hi    r-- count IP digit       add ud3lo to ud2hi
 MPLUS       ADD     @RSP+,0(PSP)    ; -- ud1lo ud1hi adr ud2lo ud2hi    Ud2lo + digit
@@ -1933,7 +1917,6 @@ MPLUS       ADD     @RSP+,0(PSP)    ; -- ud1lo ud1hi adr ud2lo ud2hi    Ud2lo + 
             SUB     #1,TOS          ; -- ud2lo ud2hi adr+1 count-1
             JNZ     TONUMBER
 TONUMEND    mNEXT                   ; 52 words
-
 
 ; convert a string to a signed number
 ;Z ?NUMBER  c-addr -- n -1      if convert ok ; flag Z=0
@@ -2146,7 +2129,7 @@ QUIT:       MOV     #RSTACK,RSP
     MOV &SAVE_SYSRSTIV,TOS          ;
     MOV #0,&SAVE_SYSRSTIV           ;
     ASMtoFORTH                      ;
-    .word NOECHO                    ; warning ! your BOOT.4TH must to be finish with ECHO command! 
+;    .word NOECHO                    ; warning ! your BOOT.4TH must to be finish with ECHO command! 
     .word XSQUOTE                   ; -- addr u
     .byte 15,"LOAD\34 BOOT.4TH\34"  ; issues error 2 if no such file...
     .word BRAN,QUIT4                ;
@@ -2904,6 +2887,7 @@ QAB_DEFER   MOV #PARENEMIT,&EMIT+2   ; always restore default console output
             MOV #0,&CLRFW2
             MOV #0,&CLRFW3
     .ENDIF
+            MOV #10,&BASE
 
             RET
 

@@ -90,6 +90,7 @@ RXOFF=\$1812!
 
 ReadSectorWX=\$1814!    call with W = SectorLO  X = SectorHI
 WriteSectorWX=\$1816!   call with W = SectorLO  X = SectorHI
+GPFLAGS=\$1818!
 
 
 ! ---------------------------------------

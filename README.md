@@ -23,7 +23,7 @@ This enables to make a fast data logger with a small footprint as a MSP430FR5738
     
     Beforehand, the preprocessor GEMA, by means of a target.pat file, will have translated your source file.f
     in a targeted source file.4th ready to download.
-    A set of .bat files is furnished to do this automatically. See it all in the MSP430_COND folder.
+    A set of .bat files is furnished to do this automatically. See it all in the MSP430-FORTH folder.
 
 	The download, interpretation and compilation of a source file.4th is done at a throughput of 40/80/120 kbytes/sec
     with a 8/16/24 MHz clock. Considering a ratio 5/1, that of the compiled code is 8/16/24 kbytes/sec.
@@ -44,7 +44,7 @@ What is new ?
 
     Added a set of words to enable conditional interpretation/compilation : MARKER [DEFINED] [UNDEFINED] [IF] [ELSE]
     [THEN]. A MARKER word ( defined as {word} to well see it) allows you to wipe some program even if loaded in memory
-    below RST_STATE boundary. See conditional compilation source files in the new subfolder MSP430_COND.
+    below RST_STATE boundary. See conditional compilation source files in the subfolder MSP430-FORTH.
 
     All interpretation / compilation errors now execute PWR_STATE, so any incorrect definition will be automatically
     erased, as well as its source file, if any.
@@ -183,7 +183,7 @@ With a size of 6 kb, Fast Forth contains 120 words:
     SUBC.B         SUBC           ADDC.B         ADDC           ADD.B          ADD            MOV.B          MOV         
     RETI           LO2HI          COLON          ENDASM         ENDCODE        (SLEEP)        SLEEP
 
-...everything you need to program effectively in assembly or FORTH or mix, as you want. See examples in \MSP430_COND folder.
+...everything you need to program effectively in assembly or FORTH or mix, as you want. See examples in \MSP430-FORTH folder.
 
 CONDCOMP ADD-ON switch in forthMSP430.asm adds:
 
@@ -229,7 +229,7 @@ remember its shared name i.e. : //myPC/users/my/FastForth.
 
 in file explorer then right clic on root to connect a network drive, copy shared name in drive name and choose a free drive letter a:, b: ...
 
-Thus all relative paths will be linked to this drive, except the files.bat links in the folder \MSP430_COND.
+Thus all relative paths will be linked to this drive, except the files.bat links in the folder \MSP430-FORTH.
 For all of them right clic select, select properties then check drive letter in target.
 
 WARNING! if you erase a file directly in this drive or in one of its subfolders, no trash, the file is lost!
@@ -324,7 +324,7 @@ you will need an USBtoUART cable with a PL2303TA or PL2303HXD device that allows
 
 or USBtoUART bridge, with a CP2102 device and 3.3V/5V that allows XON/XOFF control flow :
 
-	http://www.google.com/search?q=cp2102+module
+	search google: cp2102 module 3.3V
 	http://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx
 
     you must program CP2102 device to access 1382400 and 1843200 bds rates :
@@ -370,7 +370,7 @@ If you plan to supply your target vith a PL2303 cable, open its box to weld red 
 Send a source file to the FAST FORH target
 ------------------
 
-Three .bat files are done in folders \MSP430_COND and \MSP430-FORTH that enable you to do all you want.
+Three .bat files are done in folders \MSP430-FORTH that enable you to do all you want.
 Double clic on them to see how to do.
 
 you can also open any source file with scite editor, and do all you want via its Tools menu.
@@ -384,9 +384,7 @@ First, hardware
 
 If you have MSP-EXP430FR5994, nothing to do.
 
-For the choice of a SD card socket be carefull : pin CD (Card Detect) must be present !
-
-http://www.ebay.com/itm/2-PCS-SD-Card-Module-Slot-Socket-Reader-For-Arduino-MCU-/181211954262?pt=LH_DefaultDomain_0&hash=item2a3112fc56
+For the choice of a SD card socket be carefull, pin CD (Card Detect) must be present ! search google: micro SD card board 9 pin
 
 
 the commands
@@ -429,7 +427,7 @@ HowTo WRITE a file
 
 If the file does not exist, create it, else open it and set the write pointer at the end of the file, ready to append chars.
 
-See example of use in \MSP430_COND\SD_TEST.f.
+See example of use in \MSP430-FORTH\SD_TEST.f.
 
 To overwrite an existing file: DEL" file" then  WRITE" file".
 
@@ -564,7 +562,7 @@ Or by indexed addressing :
 	MOV.B BUFFER_OUT(R8),R9
 with R8 register as buffer pointer.
 
-see TESTASM.4th in \MSP430_COND folder.
+see TESTASM.4th in \MSP430-FORTH folder.
 
 What is the interest of a very fast baud rate ?
 ---------------------
