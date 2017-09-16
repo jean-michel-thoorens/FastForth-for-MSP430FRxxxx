@@ -219,17 +219,32 @@ NWAITS            = 1
 ; (no problem with MSP430FR5xxx families without FLL).
 ; ===================================================================
 
-    .IF FREQUENCY = 0.5
+    .IF FREQUENCY = 0.25
 
             MOV #0D6h,&CSCTL0          ; preset DCO = 0xD6 (measured value @ 0x180 ; to measure, type 0x180 @ U.)
 
             MOV     #0001h,&CSCTL1      ; Set 1MHZ DCORSEL,disable DCOFTRIM,Modulation
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
-;            MOV     #100Dh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO/2),set FLLN=0Dh
+;            MOV     #200Dh,&CSCTL2      ; Set FLLD=2 (DCOCLKCDIV=DCO/4),set FLLN=0Dh
+                                        ; fCOCLKDIV = 32768 x (13+1) = 0.459 MHz ; measured :  MHz
+;            MOV     #200Eh,&CSCTL2      ; Set FLLD=2 (DCOCLKCDIV=DCO/4),set FLLN=0Eh
+                                        ; fCOCLKDIV = 32768 x (14+1) = 0.491 MHz ; measured :  MHz
+            MOV     #200Fh,&CSCTL2      ; Set FLLD=2 (DCOCLKCDIV=DCO/4),set FLLN=0Fh
+                                        ; fCOCLKDIV = 32768 x (15+1) = 0.524 MHz ; measured :  MHz
+; =====================================
+            MOV     #1,X
+
+    .ELSEIF FREQUENCY = 0.5
+
+            MOV #0D6h,&CSCTL0          ; preset DCO = 0xD6 (measured value @ 0x180 ; to measure, type 0x180 @ U.)
+
+            MOV     #0001h,&CSCTL1      ; Set 1MHZ DCORSEL,disable DCOFTRIM,Modulation
+; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
+;            MOV     #100Dh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Dh
                                         ; fCOCLKDIV = 32768 x (13+1) = 0.459 MHz ; measured :  MHz
 ;            MOV     #100Eh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Eh
                                         ; fCOCLKDIV = 32768 x (14+1) = 0.491 MHz ; measured :  MHz
-            MOV     #100Fh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=0Fh
+            MOV     #100Fh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Fh
                                         ; fCOCLKDIV = 32768 x (15+1) = 0.524 MHz ; measured :  MHz
 ; =====================================
             MOV     #2,X
@@ -283,6 +298,7 @@ NWAITS            = 1
 
     .ELSEIF FREQUENCY = 8
 
+
             MOV #00F3h,&CSCTL0          ; preset DCO = 0xF2 (measured value @ 0x180)
 
             MOV     #0007h,&CSCTL1      ; Set 8MHZ DCORSEL,disable DCOFTRIM,Modulation
@@ -299,10 +315,11 @@ NWAITS            = 1
 
 ;            MOV     #00F8h,&CSCTL2      ; don't work with cp2102 (by low value)
 ;            MOV     #00FAh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=FAh
+; ===================================================================
+; CHIPSTICK_FR2433 : TLV area corrupted when welding ? 
+; ===================================================================
             MOV     #00FCh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=FCh
                                         ; fCOCLKDIV = 32768 x (252+1) = 8.290 MHz  <============ why ?
-;            MOV     #00FEh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=FEh
-;            MOV     #0100h,&CSCTL2      ; don't work with cp2102 (by high value)
 
 ; =====================================
             MOV     #32,X
@@ -337,22 +354,17 @@ NWAITS            = 1
     .ENDIF
 
 
-            BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV preserving a pending request for DEEP_RST
+            BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV with preserving a pending request for DEEP_RST
             CMP #2,&SAVE_SYSRSTIV   ; POWER ON ?
-            JZ      ClockWaitX      ; yes : wait 600ms to stabilize power source
-            .word   0359h           ; no  : RRUM #1,X --> wait still 300 ms...
+            JZ      ClockWaitX      ; yes : wait 800ms to stabilize power source
+            .word   0359h           ; no  : RRUM #1,X --> wait still 400 ms...
                                     ;       ...because FLL lock time = 280 ms
 
-ClockWaitX  MOV     #50000,Y        ;
+ClockWaitX  MOV     #-1,Y           ;
 ClockWaitY  SUB     #1,Y            ; 3 cycles loop
-            JNZ     ClockWaitY      ; 50000x3 = 150000 cycles delay = 150ms @ 1MHz
+            JNZ     ClockWaitY      ; 65535 = 196605 cycles delay = 200ms @ 1MHz
             SUB     #1,X            ;
             JNZ     ClockWaitX      ;
 
-
-
-
-
-
-
-
+;WAITFLL     BIT #300h,&CSCTL7         ; wait FLL lock
+;            JNZ WAITFLL

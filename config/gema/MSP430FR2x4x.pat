@@ -39,6 +39,8 @@ CSCTL3=\$186!       \ CS control 3
 CSCTL4=\$188!       \ CS control 4 
 CSCTL5=\$18A!       \ CS control 5 
 CSCTL6=\$18C!       \ CS control 6 
+CSCTL7=\$18E!       \ CS control 7 
+CSCTL8=\$190!       \ CS control 8 
 
 FRCTLCTL0=\$1A0!    \ FRAM control 0    
 GCCTL0=\$1A4!       \ General control 0 

@@ -1,4 +1,4 @@
-; Targe.inc
+; Target.inc
 
 ;-----------------------------------------------------------------------
 ; DEVICE I/O, MEMORY, SFR, vectors and FORTH I/O declarations
@@ -78,86 +78,8 @@ UCB0_SD
     .ENDIF ; CHIPSTICK_FR2433
 
 
-    .IFDEF MY_MSP430FR5738
-    .warning "Code for MY_MSP430FR5738"
-DEVICE = "MSP430FR5738"
-;CHIP  .equ 5738
-LF_XTAL
-UCA0_UART
-UCB0_SD
-    .include "MSP430FR57xx.inc"
-    .ENDIF ; MY_MSP430FR5738
 
-    .IFDEF MY_MSP430FR5734
-    .warning "Code for MY_MSP430FR5734"
-DEVICE = "MSP430FR5734"
-;CHIP  .equ 5734
-UCA0_UART
-    .include "MSP430FR57xx.inc"
-    .ENDIF ; MY_MSP430FR5734_1
-
-    .IFDEF MY_MSP430FR5738_1
-    .warning "Code for MY_MSP430FR5738_1"
-DEVICE = "MSP430FR5738"
-;CHIP  .equ 5738
-LF_XTAL
-UCA0_UART
-UCB0_SD
-    .include "MSP430FR57xx.inc"
-    .ENDIF ; MY_MSP430FR5738_1
-
-    .IFDEF MY_MSP430FR5948
-    .warning "Code for MY_MSP430FR5948"
-DEVICE = "MSP430FR5948"
-;CHIP  .equ 5948
-UCA0_UART
-UCA1_SD
-    .include "MSP430FR5x6x.inc"
-    .ENDIF ; MY_MSP430FR5948
-
-    .IFDEF MY_MSP430FR5948_1
-    .warning "Code for MY_MSP430FR5948_1"
-DEVICE = "MSP430FR5948"
-;CHIP  .equ 5948
-LF_XTAL
-UCA0_UART
-UCA1_SD
-    .include "MSP430FR5x6x.inc"
-    .ENDIF ; MY_MSP430FR5948_1
-
-    .IFDEF JMJ_BOX
-    .warning "Code for JMJ_BOX"
-DEVICE = "MSP430FR5738"
-;CHIP  .equ 5738
-UCA0_UART
-    .include "MSP430FR57xx.inc"
-    .ENDIF ; JMJ_BOX
-
-    .IFDEF PA8_PA_MSP430
-    .warning "Code for PA8_PA_MSP430"
-DEVICE = "MSP430FR5738"
-;CHIP  .equ 5738
-UCA0_UART
-    .include "MSP430FR57xx.inc"
-    .ENDIF ; PA8_PA_MSP430
-
-    .IFDEF PA_PA_MSP430
-    .warning "Code for PA_PA_MSP430"
-DEVICE = "MSP430FR5738"
-;CHIP  .equ 5738
-UCA0_UART
-    .include "MSP430FR57xx.inc"
-    .ENDIF ; PA_PA_MSP430
-
-    .IFDEF PA_Core_MSP430
-    .warning "Code for PA_Core_MSP430"
-DEVICE = "MSP430FR5948"
-;CHIP  .equ 5948
-LF_XTAL
-UCA0_UART
-    .include "MSP430FR5x6x.inc"
-    .ENDIF ; PA_Core_MSP430
-
+; define RAM = 1k for MSP430FR57xx devices
     .IF (charfromstr(DEVICE,8) = '5') & (charfromstr(DEVICE,9) = '7') 
 RAM_1K
     .ENDIF

@@ -24,6 +24,7 @@ PSP=R15
 ! forth words filter
 U\.R=U\.R
 R\>=R\>
+R\@=R\@
 \>R=\>R
 S\>D=S\>D
 S\<=S\<
@@ -31,6 +32,9 @@ S\>\==S\>\=
 \.S=\.S
 \#S=\#S
 S\"=S\"
+
+T\{=T\{
+\}T=\}T
 !_R=_R
 !_S=_S
 !_T=_T
