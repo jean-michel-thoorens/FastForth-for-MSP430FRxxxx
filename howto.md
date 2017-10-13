@@ -703,15 +703,15 @@ REGISTERS correspondence
     R1      SP      RSP         Return Stack Pointer
     R2      SR/CG1  SR          Status Register/Constant Generator 1
     R3      CG2                 Constant Generator 2
-    R4      R4      rDODOES     contents address of xdodoes
-    R5      R5      rDOCON      contents address of xdocon
-    R6      R6      rDOVAR      contents address of RFROM
-    R7      R7      rEXIT       contents address of EXIT
+    R4      R4      rDODOES     contents address of xdodoes   
+    R5      R5      rDOCON      contents address of xdocon    
+    R6      R6      rDOVAR      contents address of RFROM           
+    R7      R7      rEXIT       contents address of EXIT            
     R8      R8      Y           scratch register
     R9      R9      X           scratch register
     R10     R10     W           scratch register
     R11     R11     T           scratch register
-    R12     R12     S           scratch register
+    R12     R12     S           scratch register      
     R13     R13     IP          Interpretation Pointer
     R14     R14     TOS         Top Of parameters Stack
     R15     R15     PSP         Parameters Stack Pointer
@@ -722,10 +722,7 @@ REGISTERS correspondence
 REGISTERS use
 
     The FASTFORTH registers rDOCOL, rDOVAR, rDOCON and rDODOES must be preserved. 
-    PUSHM R7,R4 before use and POPM R4,R7 after.
-
-    Under interrupt, the use of scratch registers and IP is free.
-    Else, only scratch registers.
+    PUSHM R13,R10 before use and POPM R10,R13 after.
 
 
 PARAMETERS STACK use
@@ -742,9 +739,10 @@ PARAMETERS STACK use
 
     to pop one cell from the PSP stack :
 
-        MOV @PSP+,TOS               \ first cell is lost
+        MOV @PSP+,TOS               \ first cell TOS is lost
         ...
 
+    don't never pop a byte with instruction MOV.B @PSP+, ...
 
 RETURN STACK use
 
@@ -760,6 +758,9 @@ RETURN STACK use
         MOV @RSP+,<where you want>   \
         ...
 
+    don't never pop a byte with instruction MOV.B @RSP+, ...
+
+
     to push multiple registers on the RSP stack :
 
         PUSHM Rx,Ry                 \ x > y 
@@ -772,21 +773,21 @@ RETURN STACK use
 
 CPUx instructions PUSHM / POPM (my own syntax, not the TI's one, too bad :-)
 
-    PUSHM order : PSP,TOS, IP, S, T, W, X, Y, R7, R6, R5, R4
+    PUSHM order : PSP,TOS,IP, S, T, W, X, Y, R7, R6, R5, R4
 
     example : PUSHM IP,Y    \ push IP, S, T, W, X, Y registers onto the stack RSP
 
 
-    POPM  order :  R4, R5, R6, R7, Y, X, W, T, S, IP,TOS,PSP
+    POPM  order : R4, R5, R6, R7, Y, X, W, T, S, IP,TOS,PSP
 
-    example : POPM Y,IP         \ pop Y, X, W, T, S, IP registers from the stack RSP
+    example : POPM Y,IP     \ pop Y, X, W, T, S, IP registers from the stack RSP
 
     error occurs if bad order (PUSHM Y,IP for example)
 
 
 CPUx instructions RRCM,RRAM,RLAM,RRUM
     
-    example : RRUM #3,R9      \ R9 register is Unsigned Right shifted by n=3
+    example : RRUM #3,R8      \ R8 register is Unsigned Right shifted by n=3
 
     error occurs if 1 > n > 4
 

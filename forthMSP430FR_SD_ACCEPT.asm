@@ -32,7 +32,7 @@
 ; ----------------------------------;
 ;    FORTHWORD "SD_ACCEPT"          ; TIB TIB TIB_LEN -- PAD|SDIB len'
 ; ----------------------------------;
-SD_ACCEPT                           ; sequentially move from BUFFER to SDIB (or PAD) a line of chars delimited by CRLF
+SD_ACCEPT                           ; sequentially move from BUFFER to SDIB (PAD if RAM=1k) a line of chars delimited by CRLF
 ; ----------------------------------; up to TIB_LEN = 80 chars
     PUSH    IP                      ;
     MOV     #SDA_YEMIT_RET,IP       ; set YEMIT return
@@ -42,19 +42,13 @@ StartNewLine                        ;
     MOV &CurrentHdl,T               ; prepare a link for the next LOADed file...
     MOV &BufferPtr,HDLW_BUFofst(T)  ; ...see usage : HandleComplements
 ; ----------------------------------; -- TIB TIB len
-    .IFDEF RAM_1K                   ; use PAD as SD Input Buffer because the lack of RAM
-    MOV     #PAD_ORG,W              ;               W=dst
-    .ELSEIF                         ; use SDIB as SD Input Buffer
     MOV     #SDIB,W                 ;               W=dst
-    .ENDIF
     MOV     W,2(PSP)                ; -- StringOrg' TIB TIB_LEN
     MOV     TOS,0(PSP)              ; -- StringOrg' TIB_LEN TIB_LEN
     MOV     #0,TOS                  ; -- StringOrg' TIB_LEN Count
 ; ----------------------------------;
 SDA_InitSrcAddr                     ; <== SDA_GetFileNextSector
 ; ----------------------------------;
-    CMP     #0,&BufferLen           ; test if input buffer is empty (EOF)
-    JZ      SDA_GoToInterpret       ; yes, to interpret an empty line (to do nothing)
     MOV     &BufferPtr,X            ;               X=src
     JMP     SDA_ComputeChar         ;
 ; ----------------------------------;
@@ -77,9 +71,6 @@ SDA_ComputeChar                     ;
 SDA_EndOfLine                       ;
 ; ----------------------------------;
     MOV     X,&BufferPtr            ; yes  save BufferPtr for next line
-; ----------------------------------;
-SDA_GoToInterpret                   ; -- StringOrg' TIB_LEN len'
-; ----------------------------------;
     ADD     #2,PSP                  ; -- StringOrg' len'
     MOV     @RSP+,IP                ;
     MOV     @IP+,PC                 ; ===> unique output
@@ -100,5 +91,14 @@ SDA_GetFileNextSector               ; StringOrg' TIB_LEN Count --
     MOV     @RSP+,W                 ; restore dst
     JMP     SDA_InitSrcAddr         ; loopback to end the line
 ; ----------------------------------;
+
+;https://forth-standard.org/standard/core/ACCEPT
+;C ACCEPT  addr addr len -- addr' len'  get line at addr to interpret len' chars
+            FORTHWORD "ACCEPT"
+ACCEPT      MOV     #PARENACCEPT,PC
+
+;C (ACCEPT)  addr addr len -- addr len'     get len' (up to len) chars from terminal (TERATERM.EXE) via USBtoUART bridge
+            FORTHWORD "(ACCEPT)"
+PARENACCEPT
 
 

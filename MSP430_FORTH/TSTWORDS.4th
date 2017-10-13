@@ -29,15 +29,12 @@ LOOP_TEST   \ you should see 0 1 2 3 4 5 6 7 -->
     0= UNTIL 
 ;
 
-
 : LOOP_MAX      \ FIND_NOTHING      --
     0 0
     DO
     LOOP            \ 14 cycles by loop
     ABORT" 65536 LOOP " 
 ;
-
-
 
  : FIND_TEST            \ FIND_TEST <word>     --
     BL WORD             \ -- c-addr
@@ -82,7 +79,6 @@ LOOP_TEST   \ you should see 0 1 2 3 4 5 6 7 -->
 \ 2,8 second with only FORTH vocabulary in CONTEXT
 \ 56 us for one search ( which gives the delay for QNUMBER in INTERPRET routine)
 \ 0,278 us / word, 2,22 cycles / word  
-
 
 \ --------
 \ KEY test

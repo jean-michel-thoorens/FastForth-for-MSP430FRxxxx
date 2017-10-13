@@ -64,11 +64,13 @@
 \   copy RTC.f              to \RTC.4TH             ( doesn't work with if FR2xxx or FR4xxx)
 
 PWR_STATE
-
-[DEFINED] ASM [DEFINED] TERM2SD" AND [UNDEFINED] {SD_TEST} AND [IF]
+    \
+[DEFINED] {SD_TEST} [IF] {SD_TEST} [THEN]   \ remove {SD_TEST} 
+    \
+[DEFINED] ASM [DEFINED] TERM2SD" AND [IF]   \ requirements test
     \
 MARKER {SD_TEST}
-
+    \
 
 [UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {ANS_COMP}
     CODE MAX    \    n1 n2 -- n3       signed maximum
@@ -99,19 +101,24 @@ R> OVER - 0 MAX SPACES TYPE
 
 [UNDEFINED] DUMP [IF]    \ defined in {UTILITY}
 \ https://forth-standard.org/standard/tools/DUMP
-: DUMP                      \ adr n  --   dump memory
-  BASE @ >R $10 BASE !
-  SWAP $FFF0 AND SWAP
-  OVER + SWAP
+CODE DUMP                   \ adr n  --   dump memory
+PUSH IP
+PUSH &BASE                  \ save current base
+MOV #$10,&BASE              \ HEX base
+ADD @PSP,TOS                \ -- ORG END
+LO2HI
+  SWAP OVER OVER            \ -- END ORG END ORG 
+  U. 1 - U.                 \ -- END ORG        display org end-1  
+  $FFF0 AND                 \ -- END ORG_modulo_16
   DO  CR                    \ generate line
     I 7 U.R SPACE           \ generate address
-      I $10 + I            \ display 16 bytes
+      I $10 + I             \ display 16 bytes
       DO I C@ 3 U.R LOOP  
       SPACE SPACE
-      I $10 + I            \ display 16 chars
+      I $10 + I             \ display 16 chars
       DO I C@ $7E MIN BL MAX EMIT LOOP
   $10 +LOOP
-  R> BASE !
+  R> BASE !                 \ restore current base
 ;
 [THEN]
     \
@@ -153,6 +160,7 @@ R> OVER - 0 MAX SPACES TYPE
                             DEL" YOURFILE.TXT"
                             WRITE" YOURFILE.TXT"
                             ['] SD_EMIT IS EMIT
+                            ." DUMP "
                             PROGRAMSTART HERE OVER - DUMP
                             ['] (EMIT) IS EMIT
                             CLOSE
@@ -160,6 +168,7 @@ R> OVER - 0 MAX SPACES TYPE
                             IF  .
                                 WRITE" YOURFILE.TXT"
                                 ['] SD_EMIT IS EMIT
+                                CR ." DUMP "
                                 PROGRAMSTART HERE OVER - DUMP
                                 ['] (EMIT) IS EMIT
                                 CLOSE
@@ -182,6 +191,7 @@ R> OVER - 0 MAX SPACES TYPE
             THEN
         THEN
     THEN
+." it's done"
 ;
     \
 

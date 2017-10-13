@@ -1,4 +1,4 @@
-; -*- coding: utf-8 -*-
+ ; -*- coding: utf-8 -*-
 ; DTCforthMSP430FR5xxxSD_RW.asm
 
 ; and only for FR5xxx and FR6xxx with RTC_B or RTC_C hardware if you want write file with date and time.
@@ -47,7 +47,7 @@ OPEN_READ                           ;
 ; when the last sector of file is loaded in buffer, the handle is automatically closed and flag is true (<>0).
 
 ; ----------------------------------;
-    FORTHWORD "READ"                ; -- fl     closed ?
+    FORTHWORD "READ"                ; -- fl     closed flag
 ; ----------------------------------;
 READ
     SUB     #2,PSP                  ;
@@ -396,7 +396,7 @@ OPWW_UpdateEntryFileSize            ;
     MOV     #WriteSectorWX,PC       ;SWX then RET
 ; ----------------------------------;
 
-; this subroutine is called by Write_File and CloseHandleT
+; this subroutine is called by Write_File (bufferPtr=512) and CloseHandleT (0 =< BufferPtr =< 512)
 ; ==================================; 
 WriteBuffer                         ;SWXY input: T = CurrentHDL
 ; ==================================; 
@@ -461,7 +461,7 @@ Write_File_End
 ; ----------------------------------;
 
 ;Z WRITE            -- 
-; sequentially write the BUFFER in a file opened by WRITE"
+; sequentially write the entire BUFFER in a file opened by WRITE"
 ; ----------------------------------;
     FORTHWORD "WRITE"               ;
 ; ----------------------------------;
@@ -478,12 +478,12 @@ SD_EMIT                             ;
     JLO     SD_EmitNext             ; 2
     CALL    #Write_File             ;   BufferPtr = 0
 SD_EmitNext                         ;
-    MOV     &BufferPtr,Y            ; Y 
+    MOV     &BufferPtr,Y            ; 3 
     MOV.B   TOS,BUFFER(Y)           ; 3
     ADD     #1,&BufferPtr           ; 4
     MOV     @PSP+,TOS               ; 2
     mNEXT                           ; 4
-; ----------------------------------; 19~ for SD_EMIT, 22~ for EMIT
+; ----------------------------------; 22~ for SD_EMIT, 22~ for EMIT
 
 
 

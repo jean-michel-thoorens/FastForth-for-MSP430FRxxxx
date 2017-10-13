@@ -2,6 +2,13 @@
 ; RTC.f
 ; --------------------
 
+\ ==============================================================================
+\ routines RTC for MSP430fr5xxx and MSP430FR6xxx families only
+\ your target must have a LF_XTAL 32768Hz
+\ add a LF_XTAL line for your target in target.inc.
+\ ==============================================================================
+
+
 \ TARGET SELECTION (MSP430FR5xxx or MSP430FR6xxx only)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MY_MSP430FR5738_1 MY_MSP430FR5738     MY_MSP430FR5948     MY_MSP430FR5948_1   
@@ -25,29 +32,24 @@
 \ FORTH conditionnal usage after IF UNTIL WHILE : 0= 0< = < > U<
 
 
-\ ==============================================================================
-\ routines RTC for MSP430fr5xxx and MSP430FR6xxx families only
-\ your target must have a LF_XTAL 32768Hz
-\ add a LF_XTAL line for your target in target.inc.
-\ ==============================================================================
-
 
 \ use :
-\ to set date, type : dd mm yyyy DATE!
+\ to set date, type : d m y DATE!
 \ to view date, type DATE?
-\ to set time, type : hh mm ss TIME!, or hh mm TIME!
+\ to set time, type : h m s TIME!, or h m TIME!
 \ to view time, type TIME?
  
-\ allow to write on a SD_Card file with a valid date and a valid time
+\ allow to write a file on a SD_Card with a valid date and a valid time
 
 
 PWR_STATE
-
-[DEFINED] ASM [UNDEFINED] {RTC} AND [IF]
     \
-
+[DEFINED] {RTC} [IF] {RTC} [THEN]     \ remove application
+    \
+[DEFINED] ASM [IF]      \ security test
+    \
 MARKER {RTC}
-
+    \
 [UNDEFINED] MAX [IF]
     \
 CODE MAX    \    n1 n2 -- n3       signed maximum
@@ -57,15 +59,14 @@ BW1 ADD #2,PSP
     MOV @IP+,PC
 ENDCODE
     \
-
 CODE MIN    \    n1 n2 -- n3       signed minimum
     CMP @PSP,TOS     \ n2-n1
     S<  ?GOTO BW1    \ n2<n1
 FW1 MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE
-
-[THEN]
+    \
+[THEN]  \ MAX
     \
 
 [UNDEFINED] U.R [IF]
@@ -73,7 +74,7 @@ ENDCODE
   >R  <# 0 # #S #>  
   R> OVER - 0 MAX SPACES TYPE
 ;
-[THEN]
+[THEN]  \ U.R
     \
 
 CODE DATE?
@@ -139,9 +140,15 @@ CREATE ABUF 20 ALLOT
 : GET_TIME
     ECHO
     CR CR ."    DATE (DMY): "
+[DEFINED] LOAD" [IF]    \ ACCEPT is a dEFERed word and redirected to SD_ACCEPT!
     ABUF ABUF 20 (ACCEPT) EVALUATE CR 3 SPACES DATE!
     CR CR ."    TIME (HMS or HM): "
     ABUF ABUF 20 (ACCEPT) EVALUATE CR 3 SPACES TIME!
+[ELSE]                  \ ACCEPT is not a DEFERed word
+    ABUF ABUF 20 ACCEPT EVALUATE CR 3 SPACES DATE!
+    CR CR ."    TIME (HMS or HM): "
+    ABUF ABUF 20 ACCEPT EVALUATE CR 3 SPACES TIME!
+[THEN]
     CR
     HI2LO
     MOV #PSTACK,PSP \ to avoid stack empty error if lack of typed values.
@@ -149,7 +156,9 @@ CREATE ABUF 20 ALLOT
     MOV @IP+,PC
 ENDCODE
     \
+    \
+[THEN]  \ ASM
+    \
 PWR_HERE
-[THEN]
     \
 GET_TIME

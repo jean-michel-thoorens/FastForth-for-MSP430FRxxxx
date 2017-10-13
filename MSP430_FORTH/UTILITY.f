@@ -1,4 +1,6 @@
+\ ------------------------------------------------------------------------------
 \ UTILITY.f
+\ ------------------------------------------------------------------------------
 
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
@@ -27,16 +29,17 @@
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  <0
 
 PWR_STATE
-
-[DEFINED] ASM [UNDEFINED] {UTILITY} AND [IF]
     \
-
+[DEFINED] {UTILITY} [IF] {UTILITY} [THEN]     \ remove {UTILITY} if outside core 
+    \
+[DEFINED] ASM [UNDEFINED] {UTILITY} AND [IF]  \ required test and don't replicate {UTILITY} if inside core
+    \
 MARKER {UTILITY} 
     \
-
 [UNDEFINED] ? [IF]    \
 \ https://forth-standard.org/standard/tools/q
-CODE ?          \ adr --            display the content of adr
+\ ?         adr --            display the content of adr
+CODE ?          
     MOV @TOS,TOS
     MOV #U.,PC  \ goto U.
 ENDCODE
@@ -45,7 +48,8 @@ ENDCODE
 
 [UNDEFINED] .S [IF]    \
 \ https://forth-standard.org/standard/tools/DotS
-CODE .S                 \ --            display <depth> of Param Stack and stack contents if not empty
+\ .S            --            display <depth> of param Stack and stack contents if not empty
+CODE .S
     MOV     TOS,-2(PSP) \ -- TOS ( tos x x )
     MOV     PSP,TOS
     SUB     #2,TOS      \ to take count that TOS is first cell
@@ -73,7 +77,8 @@ COLON
     \
 
 [UNDEFINED] .RS [IF]    \
-CODE .RS                \ --           display <depth> of Return Stack and stack contents if not empty
+\ .S            --            display <depth> of Return Stack and stack contents if not empty
+CODE .RS
     MOV     TOS,-2(PSP) \ -- TOS ( tos x x ) 
     MOV     RSP,-6(PSP) \ -- TOS ( tos x  RSP )
     MOV     #RSTACK,TOS \ -- R0  ( tos x  RSP )
@@ -84,66 +89,6 @@ ENDCODE
 
 [UNDEFINED] WORDS [IF]
     \
-
-\ \ list all words of all dictionaries in CONTEXT.
-\ : WORDS                            \ --            
-\ 
-\ \ vvvvvvv  may be skipped   vvvvvvv
-\ \ BASE @                           \ -- BASE
-\ \ #10 BASE !
-\ \ CR ."    "
-\ \ INI_THREAD @ DUP
-\ \ 1 = IF DROP ." monothread"
-\ \     ELSE . ." threads"
-\ \     THEN ."  vocabularies"
-\ \ BASE !                           \ --
-\ \ ^^^^^^^  may be skipped   ^^^^^^^
-\ 
-\ CONTEXT                             \ -- CONTEXT
-\ BEGIN                               \ -- CONTEXT                             search dictionnary
-\     DUP                             \ -- CONTEXT CONTEXT 
-\     2 + SWAP                        \ -- CONTEXT+2 CONTEXT
-\     @ ?DUP                          \ -- CONTEXT+2 VOC_BODY VOC_BODY | -- CONTEXT+2 0
-\ WHILE                               \ -- CONTEXT+2 VOC_BODY                  dictionnary found
-\ CR ."    "                          \
-\ \   MOVE all threads of VOC_BODY in PAD
-\     PAD INI_THREAD @ DUP +          \ -- CONTEXT+2 VOC_BODY PAD THREAD*2
-\     MOVE                            \                                       char MOVE
-\ 
-\     BEGIN                           \ -- CONTEXT+2 
-\         0.                          \ -- CONTEXT+2 ptr=0 MAX=0
-\ \   select the MAX of NFA in threads
-\         INI_THREAD @ DUP + 0 DO     \                                         ptr = thread*2
-\         DUP I PAD + @               \ -- CONTEXT+2 ptr MAX MAX NFAx
-\         U< IF 
-\             DROP DROP I DUP PAD + @ \ -- CONTEXT+2 ptr MAX          if MAX U< NFAx replace adr and MAX
-\         THEN                        \ 
-\         2 +LOOP                     \ -- CONTEXT+2 ptr MAX
-\         ?DUP                        \ -- CONTEXT+2 ptr MAX          max NFA = 0 ? end of vocabulary ?
-\     WHILE                           \ -- CONTEXT+2 ptr MAX
-\ \   replace it by its LFA
-\         DUP                         \ -- CONTEXT+2 ptr MAX MAX
-\         2 - @                       \ -- CONTEXT+2 ptr MAX [LFA]
-\         ROT                         \ -- CONTEXT+2 MAX [LFA] ptr
-\         PAD +                       \ -- CONTEXT+2 MAX [LFA] thread
-\         !                           \ -- CONTEXT+2 MAX
-\ \   type it in 16 chars format
-\                 DUP                 \ -- CONTEXT+2 MAX MAX
-\             COUNT $7F AND TYPE      \ -- CONTEXT+2 MAX
-\                 C@ $0F AND          \ -- 
-\                 $10 SWAP - SPACES   \ -- CONTEXT+2 
-\ \   search next MAX of NFA 
-\     REPEAT
-\                                     \ -- CONTEXT+2 0
-\     DROP                            \ -- CONTEXT+2
-\     CR         
-\ \   repeat for each CONTEXT vocabulary
-\ 
-\ REPEAT                              \ -- CONTEXT+2
-\ DROP                                \ --
-\ ;
-
-
 \ https://forth-standard.org/standard/tools/WORDS
 \ list all words of vocabulary first in CONTEXT.
 : WORDS                             \ --            
@@ -160,13 +105,12 @@ ENDCODE
 \ \ ^^^^^^^^   may be skipped    ^^^^^^^^
 
 CR ."    "                          \
-CONTEXT @                           \ -- VOC_BODY
-\   MOVE all threads of VOC_BODY in PAD
+CONTEXT @                           \ -- VOC_BODY                   MOVE all threads of VOC_BODY in PAD
     PAD INI_THREAD @ DUP +          \ -- VOC_BODY PAD THREAD*2
     MOVE                            \
     BEGIN                           \ -- 
+\        0 DUP                       \ -- ptr=0 MAX=0                select the MAX of NFAs in all vocabulary threads
         0.                          \ -- ptr=0 MAX=0
-\   select the MAX of NFAs in all vocabulary threads
         INI_THREAD @ DUP + 0        \ -- ptr=0 MAX=0 THREADS*2 0
             DO                      \ -- ptr MAX            I =  PAD_ptr = thread*2
             DUP I PAD + @           \ -- ptr MAX MAX NFAx
@@ -176,14 +120,12 @@ CONTEXT @                           \ -- VOC_BODY
                 THEN                \ 
             2 +LOOP                 \ -- ptr MAX
         ?DUP                        \ -- ptr MAX MAX | -- ptr 0  
-    WHILE                           \ -- ptr MAX
-\   replace it by its LFA
+    WHILE                           \ -- ptr MAX                    replace it by its LFA
         DUP                         \ -- ptr MAX MAX
         2 - @                       \ -- ptr MAX [LFA]
         ROT                         \ -- MAX [LFA] ptr
         PAD +                       \ -- MAX [LFA] thread
-        !                           \ -- MAX                [LFA]=new_NFA --> PAD+ptr
-\   type it in 16 chars format
+        !                           \ -- MAX                [LFA]=new_NFA --> PAD+ptr   type it in 16 chars format
         DUP                         \ -- MAX MAX
         COUNT $7F AND               \ -- MAX addr count (with suppr. of immediate bit)
         TYPE                        \ -- MAX
@@ -213,7 +155,7 @@ CONTEXT @                           \ -- VOC_BODY
 [THEN]
     \
 
-[UNDEFINED] U.R [IF]    \ MAX and MIN are defined in {ANS_COMP}
+[UNDEFINED] U.R [IF]
 : U.R                       \ u n --           display u unsigned in n width (n >= 2)
 >R  <# 0 # #S #>  
 R> OVER - 0 MAX SPACES TYPE
@@ -223,19 +165,24 @@ R> OVER - 0 MAX SPACES TYPE
 
 [UNDEFINED] DUMP [IF]    \
 \ https://forth-standard.org/standard/tools/DUMP
-: DUMP                      \ adr n  --   dump memory
-  BASE @ >R $10 BASE !
-  SWAP $FFF0 AND SWAP
-  OVER + SWAP
+CODE DUMP                   \ adr n  --   dump memory
+PUSH IP
+PUSH &BASE                  \ save current base
+MOV #$10,&BASE              \ HEX base
+ADD @PSP,TOS                \ -- ORG END
+LO2HI
+  SWAP OVER OVER            \ -- END ORG END ORG 
+  U. U.                     \ -- END ORG        display org end 
+  $FFF0 AND                 \ -- END ORG_modulo_16
   DO  CR                    \ generate line
     I 7 U.R SPACE           \ generate address
-      I $10 + I            \ display 16 bytes
+      I $10 + I             \ display 16 bytes
       DO I C@ 3 U.R LOOP  
       SPACE SPACE
-      I $10 + I            \ display 16 chars
+      I $10 + I             \ display 16 chars
       DO I C@ $7E MIN BL MAX EMIT LOOP
   $10 +LOOP
-  R> BASE !
+  R> BASE !                 \ restore current base
 ;
 [THEN]
     \
@@ -243,4 +190,4 @@ R> OVER - 0 MAX SPACES TYPE
 [THEN]
     \
 ECHO
-PWR_HERE    ; added : ? .S .RS WORDS U.R MAX MIN DUMP 
+PWR_HERE   ; added : ? .S .RS WORDS U.R MAX MIN DUMP 

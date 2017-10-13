@@ -192,9 +192,3 @@ ENDCODE
 
 ; CODE TEST7
 ;            MOV 0(PSP),0(R16)  ; display an error "out of bounds" -->
-
-
-
-
-
-

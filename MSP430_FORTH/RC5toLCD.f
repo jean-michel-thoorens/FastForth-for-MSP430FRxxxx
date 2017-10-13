@@ -88,9 +88,9 @@
 
 \ rc5   <--- OUT IR_Receiver (1 TSOP32236)
 
+[DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]     \ remove application
 
-
-[DEFINED] ASM [UNDEFINED] {RC5TOLCD} AND [IF]
+[DEFINED] ASM [IF]      \ security test
     \
 MARKER {RC5TOLCD}
     \
@@ -268,7 +268,7 @@ THEN                            \
 BW1                             \ from quit on truncated RC5 message
 BW2                             \ from repeated RC5 command
 BW3                             \ from end of RC5_INT
-BIC #$78,0(RSP)                 \4  SCG1,SCG0,OSCOFF,CPUOFF and GIE are OFF in retiSR to force LPM0_LOOP despite pending interrupt
+BIC #$78,0(RSP)                 \4  SCG0,OSCOFF,CPUOFF and GIE are OFF in retiSR to force LPM0_LOOP despite pending interrupt
 RETI                            \5
 ENDASM
     \
@@ -365,7 +365,7 @@ XOR #UF10,0(RSP)                \ 5 toggle bit memory
 \ ******************************\
 SUB #4,PSP                      \
 MOV &BASE,2(PSP)                \ save current base
-MOV #$0A,&BASE                  \ set hex base
+MOV #$10,&BASE                  \ set hex base
 MOV TOS,0(PSP)                  \ save TOS
 MOV X,TOS                       \
 LO2HI                           \ switch from assembler to FORTH
@@ -375,7 +375,8 @@ LO2HI                           \ switch from assembler to FORTH
     ['] (CR) IS CR              \ restore CR
     ['] (EMIT) IS EMIT          \ restore EMIT
 HI2LO                           \ switch from FORTH to assembler
-MOV @PSP+,&BASE                 \ restore current BASE
+MOV TOS,&BASE                   \ restore current BASE
+MOV @PSP+,TOS                   \
 \ ******************************\
 GOTO BW3
 \ ******************************\
@@ -549,6 +550,6 @@ ECHO
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
-[THEN]
+[THEN]      \ ASM
     \
 START

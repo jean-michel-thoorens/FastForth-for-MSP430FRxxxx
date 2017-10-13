@@ -1,6 +1,8 @@
 
 ECHO 
 
+[DEFINED] {ANS_COMP} [IF]
+
 ; ===============================================================
 ;
 ;  #####  ####### ######  ####### ####### #######  #####  ####### 
@@ -1071,13 +1073,22 @@ TESTING INPUT: ACCEPT
 
 CREATE ABUF 80 CHARS ALLOT
 
+[DEFINED] LOAD" [IF]
 : ACCEPT-TEST
     CR ." PLEASE TYPE UP TO 80 CHARACTERS:" CR
-\    ABUF 80 ACCEPT
-    ABUF 80 (ACCEPT) \ JMT: because ACCEPT is DEFERred to SD_ACCEPT
+    ABUF 80 (ACCEPT)                \ JMT: because ACCEPT is DEFERred to SD_ACCEPT
     CR ." RECEIVED: " [CHAR] " EMIT
     ABUF SWAP TYPE [CHAR] " EMIT CR
 ;
+[ELSE]
+: ACCEPT-TEST
+    CR ." PLEASE TYPE UP TO 80 CHARACTERS:" CR
+    ABUF 80 ACCEPT
+    CR ." RECEIVED: " [CHAR] " EMIT
+    ABUF SWAP TYPE [CHAR] " EMIT CR
+;
+
+[THEN]      \ LOAD"
 
 T{ ACCEPT-TEST -> }T
 \ ------------------------------------------------------------------------
@@ -1089,6 +1100,8 @@ T{ GDX -> 123 234 }T
 
 CR .( End of Core word set tests) CR
 
+
+[DEFINED] COMPARE [IF]
 \ ------------------------------------------------------------------------
 TESTING COMPARE
 : CMOVE MOVE ;
@@ -1117,8 +1130,13 @@ T{ s1 "abcdee" COMPARE ->  1 }T
 : s11 S" 0abc" ; 
 : s12 S" 0aBc" ;
 
-\ you must set compilation switch "LOWERCASE" ON to pass these tests below
+[DEFINED] CAPS_ON [IF]  \ you must set ON compilation switch "LOWERCASE" to pass these tests
 T{ s11 s12 COMPARE ->  1 }T 
 T{ s12 s11 COMPARE -> -1 }T
+[THEN]      \ CAPS_ON
 
-$0A BASE !     ; happy end of core test
+[THEN]      \ COMPARE
+
+$0A BASE !  \ happy end of core test
+
+[THEN]      \ ANS_COMP

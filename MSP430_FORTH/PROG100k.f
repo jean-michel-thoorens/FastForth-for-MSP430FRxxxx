@@ -1,6 +1,6 @@
-; -----------------------------------
-; prog100k.4th, to test speed of downloading
-; -----------------------------------
+; --------------------------------------------------------------
+; prog100k.4th, compile 100 kbytes, to test speed of compilation
+; --------------------------------------------------------------
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133  CHIPSTICK_FR2433
@@ -8,12 +8,6 @@
 \ MY_MSP430FR5738_1 MY_MSP430FR5738     MY_MSP430FR5948     MY_MSP430FR5948_1   
 \ JMJ_BOX
 
-
-    \
-PWR_STATE
-
-[DEFINED] ASM [IF]
-    \
 \ Copyright (C) <2016>  <J.M. THOORENS>
 \
 \ This program is free software: you can redistribute it and/or modify
@@ -94,6 +88,10 @@ PWR_STATE
 \ rc5   <--- OUT IR_Receiver (1 TSOP32236)
 
 
+PWR_STATE
+    \
+[DEFINED] ASM [IF]
+    \
 CODE MAX    \    n1 n2 -- n3       signed maximum
             CMP     @PSP,TOS    \ n2-n1
             S<      ?GOTO FW1   \ n2<n1
@@ -45959,6 +45957,6 @@ LO2HI                           \ no need to push IP because (WARM) resets the R
     ECHO COLD           \ reset CPU, interrupt vectors, and start FORTH
 ;
     \
-
+[THEN]  \ ASM
+    \
 ECHO
-            ; download is done

@@ -29,7 +29,9 @@
     \
 
 PWR_STATE
-
+    \
+[DEFINED] {SD_TOOLS} [IF] {SD_TOOLS} [THEN]     \ remove {SD_TOOLS} if outside core 
+    \
 [DEFINED] ASM [DEFINED] LOAD" AND [UNDEFINED] {SD_TOOLS} AND [IF]
     \
 MARKER {SD_TOOLS}
@@ -140,11 +142,11 @@ CODE DIR                            \ Display CurrentDir first sector
 ENDCODE
 \ ----------------------------------\
     \
+[THEN]
+    \
+ECHO
             ; added : FAT to DUMP first sector of FAT1 and DIR for that of current DIRectory.
             ; added : SECTOR to DUMP a sector and CLUSTER for first sector of a cluster:
             ;         include a decimal point to force 32 bits number, example : .2 CLUSTER
-    \
-[THEN]
-ECHO
 
 PWR_HERE

@@ -18,6 +18,10 @@
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+    .IFNDEF ARITHMETIC
+ARITHMETIC
+    .ENDIF
+
     .IFDEF MPY
 
 ;https://forth-standard.org/standard/core/UMTimes

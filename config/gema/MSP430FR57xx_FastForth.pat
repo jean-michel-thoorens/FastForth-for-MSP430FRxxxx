@@ -11,19 +11,15 @@
 \#C=\#1!        = SR(0) Carry flag
 \#Z=\#2!        = SR(1) Zero flag
 \#N=\#4!        = SR(2) Negative flag
-GIE=8!          = SR(3) Enable Int
-CPUOFF=\$10!    = SR(4) CPUOFF    
-OSCOFF=\$20!    = SR(5) OSCOFF
-SCG0=\$40!      = SR(6) SCG0     
-SCG1=\$80!      = SR(7) SCG1
-V=\$100!        = SR(8) oVerflow flag
-UF9=\$200!      = SR(9) User Flag 1 used by ?NUMBER --> INTERPRET --> LITERAL to process double numbers, else free for use.  
-UF10=\$400!      = SR(10) User Flag 2  
-UF11=\$800!      = SR(11) User Flag 3  
-
-C\@=C\@
-C\!=C\!
-C\,=C\,
+\#GIE=\#8!      = SR(3) Enable Int
+\#CPUOFF=\#\$10!= SR(4) CPUOFF    
+\#OSCOFF=\#\$20!= SR(5) OSCOFF
+\#SCG0=\#\$40!  = SR(6) SCG0     
+\#SCG1=\#\$80!  = SR(7) SCG1
+\#V=\#\$100!    = SR(8) oVerflow flag
+\#UF9=\#\$200!  = SR(9) User Flag 1 used by ?NUMBER --> INTERPRET --> LITERAL to process double numbers, else free for use.  
+\#UF10=\#\$400! = SR(10) User Flag 2  
+\#UF11=\#\$800! = SR(11) User Flag 3  
 
 ! ============================================
 ! PORTx, Reg  bits :
@@ -53,15 +49,8 @@ NOP=MOV \#0,R3!     \                one word one cycle
 NOP2=\$3C00 ,!      \ compile JMP 0  one word two cycles
 NOP3=MOV R0,R0!     \ MOV PC,PC      one word three cycles
 NEXT=MOV \@R13+,R0! \ MOV @IP+,PC   
-SEMI=MOV \@R1+,R13 \n MOV \@R13+,R0!
+SEMI=MOV \@R1+,R13\nMOV \@R13+,R0!
 
-! ============================================
-! FORTH DOxxx registers :
-! ============================================
-rDOCOL=R7!
-rDOVAR=R6!
-rDOCON=R5!
-rDODOES=R4!
 
 ! You can check the addresses below by comparing their values in DTCforthMSP430FRxxxx.lst
 ! those addresses are usable with the symbolic assembler
@@ -152,8 +141,6 @@ CurrentHdl=\$184C!  contains the address of the last opened file structure, or 0
 ! ---------------------------------------
 SAVEtsLEN=\$184E!              of previous ACCEPT
 SAVEtsPTR=\$1850!              of previous ACCEPT
-MemSectorL=\$1852!             double word current Sector of previous LOAD"ed file
-MemSectorH=\$1854!
 
 ! ---------------------------------------
 ! Handle structure
@@ -195,18 +182,23 @@ LSTACK_SIZE=\#16! words
 PSTACK_SIZE=\#48! words
 RSTACK_SIZE=\#48! words
 PAD_LEN=\#84! bytes
-TIB_LEN=\#80! bytes
+!TIB_LEN=\#80! bytes
+TIB_LEN=\#82! bytes
 HOLD_SIZE=\#34! bytes
 
 ! ============================================
 ! FastForth RAM memory map (= 1k):
 ! ============================================
 LEAVEPTR=\$1C00!    \ Leave-stack pointer, init by QUIT
-LSATCK=\$1C00!      \ leave stack,      grow up
-PSTACK=\$1C80!      \ parameter stack,  grow down
-RSTACK=\$1CE0!      \ Return stack,     grow down
+LOADPTR=\$1C00!     \ LOAD return pointer, init by SD_INIT
+LSATCK=\$1C00!      \ leave stack, grow up
+LOAD_STACK=\$1C00!  \ LOAD return stack, grow up
+PSTACK=\$1C80!      \ parameter stack, grow down
+RSTACK=\$1CE0!      \ Return stack, grow down
 PAD_ORG=\$1CE2!     \ user scratch pad buffer, grow up
-TIB_ORG=\$1D38!     \ Terminal input buffer, grow up
+!TIB_ORG=\$1D38!     \ Terminal input buffer, grow up
+TIB_ORG=\$1D36!     \ Terminal input buffer, grow up
+HOLDS_ORG=\$1D88!   \ a good address for HOLDS
 BASE_HOLD=\$1DAA!   \ BASE HOLD area, grow down
 
 ! ----------------------

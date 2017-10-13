@@ -18,22 +18,18 @@
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-    FORTHWORD "{SD_LOAD}"   ; SD_LOAD words mark
-    mNEXT
-
 ;-----------------------------------------------------------------------
 ; SD card OPEN, LOAD subroutines
 ;-----------------------------------------------------------------------
 
-;Z S">HERE  addr u -- HERE            move in-line string to a counted string at HERE
-SQUOTE2HERE MOV     @PSP+,X     ; X = src
+;Z S">HERE  addr u -- HERE      ; move in-line string to a counted string at HERE
+SQUOTE2HERE MOV.B   TOS,W       ; W = count
+            MOV     @PSP+,X     ; X = src
             MOV     &DDP,Y      ; Y = dst = HERE
-            MOV.B   TOS,W       ; W = count
             MOV     Y,TOS       ; -- HERE
-            MOV.B   W,0(Y)      ; count at HERE
-            ADD     #1,Y        ; inc dst
+            SUB     #1,X        ; X = c-addr
+            ADD     #1,W        ; W = count+1
             MOV #MOVEDOWN,PC    ;
-
 
 ; rules for registers use
 ; S = error
@@ -44,7 +40,7 @@ SQUOTE2HERE MOV     @PSP+,X     ; X = src
 
 
 ; ----------------------------------;
-HDLCurClusToFAT1sectWofstY          ;WXY Input: HDL_CurCluster, Output: W=FATsector, Y=FAToffset, Cluster=HDL_CurCluster
+HDLCurClusToFAT1sectWofstY          ;WXY Input: T=currentHandle, Output: W=FATsector, Y=FAToffset, Cluster=HDL_CurCluster
 ; ----------------------------------;
     MOV HDLL_CurClust(T),&ClusterL  ;
     MOV HDLH_CurClust(T),&ClusterH  ;
@@ -53,17 +49,12 @@ ClusterToFAT1sectWofstY             ;WXY Input : Cluster ; Output: W = FATsector
 ; ----------------------------------;
     MOV.B   &ClusterL+1,W           ;3 W = ClusterLoHI
     MOV.B   &ClusterL,Y             ;3 Y = ClusterLoLo
-    CMP     #2,&FATtype             ;3 FAT32?
-    JNZ      CTF1S_end              ;2 no
-;    JZ      ClusterToFAT32sector    ;2 yes
-;    ADD     Y,Y                     ;1 Y = ClusterLoLo << 1
-;    RET
+    CMP     #1,&FATtype             ;3 FAT16?
+    JZ      CTF1S_end               ;2 yes
 
-; input : Cluster n, max = 7FFFFF ==> SDcard up to 256 GB
+; input : Cluster n, max = 7FFFFF (SDcard up to 256 GB)
 ; ClusterLoLo*4 = displacement in 512 bytes sector   ==> FAToffset
 ; ClusterHiLo&ClusterLoHi +C  << 1 = relative FATsector + orgFAT1       ==> FATsector
-; ----------------------------------;
-ClusterToFAT32sector                ; Input : Cluster ; Output: W=FATsector, Y=FAToffset
 ; ----------------------------------;
     MOV.B   &ClusterH,X             ;  X = 0:ClusterHiLo
     SWPB    X                       ;  X = ClusterHiLo:0
@@ -80,7 +71,7 @@ CTF1S_end
 
 
 ; use no registers
-; ----------------------------------; Input : Cluster
+; ----------------------------------; Input : Cluster, output: Sector = Cluster_first_sector
 ComputeClusFrstSect                 ; If Cluster = 1 ==> RootDirectory ==> SectorL = OrgRootDir
 ; ----------------------------------; Output: SectorL of Cluster
     MOV     #0,&SectorH             ;
@@ -107,11 +98,13 @@ CCFS_AllOthers                      ;
     MOV.B &SecPerClus,W             ;3 SecPerClus(5-1) = multiplicator
     MOV &ClusterL,X                 ;3 Cluster(16-1) --> MULTIPLICANDlo
     MOV.B &ClusterH,Y               ;3 Cluster(21-17) -->  MULTIPLICANDhi
-    RRA W                           ;1 bit1 test
-    JC  CCFS_NEXT                   ;2 case of SecPerClus=1
+;    RRA W                           ;1 bit1 test
+;    JC  CCFS_NEXT                   ;2 case of SecPerClus=1
+    JMP CCFS_ENTRY
 CCFS_LOOP                           ;
     ADD X,X                         ;1 (RLA) shift one left MULTIPLICANDlo16
     ADDC Y,Y                        ;1 (RLC) shift one left MULTIPLICANDhi8
+CCFS_ENTRY
     RRA W                           ;1 shift one right multiplicator
     JNC CCFS_LOOP                   ;2 C = 0 loop back
 CCFS_NEXT                           ;  C = 1, it's done
@@ -129,7 +122,7 @@ CCFS_RET                            ;
 
 
 ; ----------------------------------;
-ComputeHDLcurrentSector             ;
+ComputeHDLcurrentSector             ; input: currentHandle, output: Cluster, Sector
 ; ----------------------------------;
     MOV   HDLL_CurClust(T),&ClusterL;
     MOV   HDLH_CurClust(T),&ClusterH;
@@ -193,8 +186,6 @@ Read_File                           ; <== SD_ACCEPT, READ
 ; ==================================;
 SetBufLenAndLoadCurSector           ;WXY <== previous handle reLOAD
 ; ==================================;
-;ComputeBufferLen                   ;
-; ----------------------------------;
     MOV     #bytsPerSec,&BufferLen  ; preset BufferLen
     CMP     #0,HDLH_CurSize(T)      ; CurSize > 65535 ?
     JNZ     LoadHDLcurrentSector    ; yes
@@ -228,7 +219,7 @@ GetFreeHandle                       ;STWXY init handle(HDLL_DIRsect,HDLW_DIRofst
 ; ----------------------------------; output : T = new CurrentHdl
     MOV     #8,S                    ; prepare file already open error
     MOV     #FirstHandle,T          ;
-    MOV     #0,X                    ; X = previous handle,  init = 0
+    MOV     #0,X                    ; X = init previous handle as 0
 ; ----------------------------------;
 SearchHandleLoop                    ;
 ; ----------------------------------;
@@ -244,30 +235,30 @@ SearchNextHandle                    ;
     ADD     #HandleLenght,T         ;
     CMP     #HandleEnd,T            ;
     JNZ     SearchHandleLoop        ;
-; ----------------------------------;
     ADD     S,S                     ; 16 = no more handle error, abort ===>
 InitHandleRET                       ;
     RET                             ;
 ; ----------------------------------;
 FreeHandleFound                     ; T = new handle, X = previous handle
 ; ----------------------------------;
-    MOV     #0,S                    ; prepare HappyEnd
+    MOV     #0,S                    ; prepare Happy End (no error)
     MOV     T,&CurrentHdl           ;
     MOV     X,HDLW_PrevHDL(T)       ; link to previous handle
 ; ----------------------------------;
 CheckCaseOfLoadFileToken            ;
 ; ----------------------------------;
-    CMP.B   #0,W                    ; open_type is LOAD?
-    JGE     InitHandle              ; W>0, no
     CMP.B   #0,X                    ; existing previous handle?
     JZ      InitHandle              ; no
+    ADD     &TOIN,HDLW_BUFofst(X)   ; in previous handle, add interpret offset to Buffer offset
+    CMP.B   #0,W                    ; open_type is LOAD (-1) ?
+    JGE     InitHandle              ; W>=0, no
     CMP.B   #0,HDLB_Token(X)        ; previous token is negative? (open_load type)
     JGE     InitHandle              ; no
     ADD.B   HDLB_Token(X),W         ; LOAD token = previous LOAD token -1
 ; ----------------------------------;
 InitHandle                          ;
 ; ----------------------------------;
-    MOV.B   W,HDLB_Token(T)         ; marks handle as open type
+    MOV.B   W,HDLB_Token(T)         ; marks handle as open type: <0=LOAD, 1=READ, 2=WRITE, 4=DEL
     MOV.B   #0,HDLB_ClustOfst(T)    ; clear ClustOfst
     MOV     &SectorL,HDLL_DIRsect(T); init handle DIRsectorL
     MOV     &SectorH,HDLH_DIRsect(T); 
@@ -284,16 +275,12 @@ InitHandle                          ;
     JZ      ComputeHDLcurrentSector ; = 2, is a WRITE file
     JGE     InitHandleRET           ; > 2, is a file to be deleted
     MOV     #0,HDLW_BUFofst(T)      ; < 2, is a READ or a LOAD file
+    CMP.B   #-1,W                   ;
+    JZ      FirstLoadedFileHandle   ; case of first loaded file
+    JL      AllLoadedFileHandle     ; case of other loaded file
+    JMP SetBufLenAndLoadCurSector   ; case of READ file
 ; ----------------------------------;
-HandleComplements                   ;
-; ----------------------------------;
-    CMP.B   #-1,W                   ; is the first loaded file?
-    JZ  FirstLoadFileHandle         ; = -1, is the first LOADed file
-    JGE SetBufLenAndLoadCurSector   ; > -1, is a READ file
-    ADD     &TOIN,HDLW_BUFofst(X)   ; < -1, is not the first LOADed file: in previous handle, add interpret offset to Buffer offset
-    JMP SetBufLenAndLoadCurSector   ; thus, the return to this previous LOADed file will be on next char after current LOAD" cmd.
-; ----------------------------------;
-FirstLoadFileHandle                 ;
+FirstLoadedFileHandle               ;
 ; ----------------------------------;
     MOV     &TOIN,X                 ;3
     MOV     &SOURCE_LEN,W           ;3
@@ -302,26 +289,29 @@ FirstLoadFileHandle                 ;
     ADD     &SOURCE_ADR,X           ;3
     MOV     X,&SAVEtsPTR            ;3 save new input org address
     MOV     #SD_ACCEPT,&ACCEPT+2    ; redirect ACCEPT to SD_ACCEPT
+; ----------------------------------;
+AllLoadedFileHandle                 ;
+; ----------------------------------;
+    ADD     #2,&LOADPTR             ;4
+    MOV     &LOADPTR,X              ;3
+    MOV     IP,0(X)                 ;3
     JMP SetBufLenAndLoadCurSector   ;
 ; ----------------------------------;
 
 
-; If closed token = -1, restore DefaultInputStream
-; if closed token < -1, restore previous context
 ; ==================================;
 CloseHandleT                        ; <== CLOSE, Read_File, TERM2SD", OPEN_DEL
 ; ==================================;
     MOV     &CurrentHdl,T           ;
-    MOV     #0,&BufferLen           ; to inform the user that file is closed
     CMP     #0,T                    ; no handle?
     JZ      InitHandleRET           ; RET
 ; ----------------------------------;
     .IFDEF SD_CARD_READ_WRITE
-    CMP.B   #2,HDLB_Token(T)        ; updated file ?
+    CMP.B   #2,HDLB_Token(T)        ; open as write (updated) file ?
     JNZ     CloseHandleHere         ; no
     CALL    #WriteBuffer            ;SWXY
-    CALL    #OPWW_UpdateDirectory   ;SWXY 
-    .ENDIF
+    CALL    #OPWW_UpdateDirectory   ;SWXY
+    .ENDIF                          ;
 ; ----------------------------------;
 CloseHandleHere                     ;
 ; ----------------------------------;
@@ -333,21 +323,36 @@ CloseHandleHere                     ;
 ; ----------------------------------;
 CheckCaseOfClosedLoadedFile         ;
 ; ----------------------------------;
-    ADD.B   #1,W                    ;
-    JZ      CloseFirstLoadedFile    ; W=0, this closed LOADed file had not a paren
-    JGE     InitHandleRET           ; W>0, for READ, WRITE, DEL files
+    CMP.B   #-1,W                   ;
+    JNZ     CheckPreviousLoadedFile ;
 ; ----------------------------------;
-RestorePreviousLoadedFileContext    ; W<0, this closed LOADed file had a paren
-; ----------------------------------;
-    MOV HDLW_BUFofst(T),&BufferPtr  ; restore BufferPtr saved by SD_ACCEPT before interpreting LOAD cmd line 
-    JMP SetBufLenAndLoadCurSector   ;
-; ----------------------------------;
-CloseFirstLoadedFile                ;
+CloseFirstLoadedFile                ; W=-1, this closed LOADed file had not a parent file
 ; ----------------------------------;
     MOV     &SAVEtsLEN,TOS          ; restore lenght
     MOV     &SAVEtsPTR,2(PSP)       ; restore pointer for interpret
     MOV     #PARENACCEPT,&ACCEPT+2  ; restore (ACCEPT)
-    RET                             ; RET
+    JMP     RestorePreviousReturn   ;
+; ----------------------------------;
+CheckPreviousLoadedFile             ;
+; ----------------------------------;
+    CMP     #0,T                    ; previous handle ?
+    JZ      InitHandleRET           ; no
+    CMP.B   #0,HDLB_Token(T)        ; test previous handle token
+    JGE     InitHandleRET           ; case of READ, WRITE, DEL previous files
+; ----------------------------------;
+RestorePreviousLoadedFileContext    ;
+; ----------------------------------;
+    MOV HDLW_BUFofst(T),&BufferPtr  ; restore BufferPtr
+    CALL #SetBufLenAndLoadCurSector ;
+; ----------------------------------;
+RestorePreviousReturn               ; -- StringOrg' TIB_LEN len'    R-- SDIB_PTR SD_ACCEPT_RET
+; ----------------------------------;
+    ADD     #2,PSP                  ; -- StringOrg' len'
+    ADD     #4,RSP                  ; R--           remove SD_ACCEPT_RET and SDIB ptr saved by SD_ACCEPT
+    MOV     &LOADPTR,X              ;3
+    MOV     @X,IP                   ;2 restore IP as it was when load" file" open
+    SUB     #2,&LOADPTR             ;4
+    mNEXT                           ;
 ; ----------------------------------;
 
 
@@ -416,12 +421,6 @@ DELDQ
 ; ----------------------------------;
 
 
-    .ENDIF ; SD_CARD_READ_WRITE
-
-;-----------------------------------------------------------------------
-; SD_CARD_LOADER FORTH word
-;-----------------------------------------------------------------------
-
 ;Z CLOSE      --     
 ; close current handle
 ; ----------------------------------;
@@ -431,13 +430,18 @@ DELDQ
     mNEXT                           ;
 ; ----------------------------------;
 
+    .ENDIF ; SD_CARD_READ_WRITE
+
+;-----------------------------------------------------------------------
+; SD_CARD_LOADER FORTH word
+;-----------------------------------------------------------------------
+
 ;Z LOAD" pathame"   --       immediate
 ; compile state : compile LOAD" pathname"
 ; exec state : open a file from SD card via its pathname
 ; see Open_File primitive for pathname conventions 
 ; the opened file becomes the new input stream for INTERPRET
 ; this command is recursive, limited only by the count of free handles (up to 8)
-
 ; LOAD" acts also as dos command "CD" : 
 ;     - LOAD" \misc\" set a:\misc as current directory
 ;     - LOAD" \" reset current directory to root
@@ -465,7 +469,6 @@ DELDQ
 ;                   ...open the file as read and return the handle in CurrentHdl.
 ;               if the pathname is a directory, change current directory, no handle is set.
 ;               if an error is encountered, no handle is set, an error message is displayed.
-
 ; ----------------------------------;
 Open_File                           ; --
 ; ----------------------------------;
@@ -491,9 +494,7 @@ OPEN_EXEC                           ;
     FORTHtoASM                      ;
     MOV     @RSP+,IP                ;
 ; ----------------------------------;
-ParenOpen                           ; open_type HERE --
-; ----------------------------------;
-;    SUB     #2,PSP                  ; make room for DIRsector
+ParenOpen                           ; -- open_type HERE             HERE as pathname ptr
 ; ----------------------------------;
 OPN_CountedToStringZ                ;
 ; ----------------------------------;
@@ -527,14 +528,12 @@ OPN_SearchDirSector                 ;
 ; ----------------------------------;
     MOV     TOS,&Pathname           ; save name addr
     CALL    #ComputeClusFrstSect    ; output: SectorHL
-;    MOV     #32,0(PSP)              ; preset countdown for FAT16 RootDIR sectors
-    MOV     #32,rDODOES              ; preset countdown for FAT16 RootDIR sectors
+    MOV     #32,rDODOES             ; preset countdown for FAT16 RootDIR sectors
     CMP     #2,&FATtype             ; FAT32?
     JZ      OPN_SetDirSectors       ; yes
     CMP     &ClusterL,&FATtype      ; FAT16 AND RootDIR ?
     JZ      OPN_LoadSectorDir       ; yes
 OPN_SetDirSectors                   ;
-;    MOV     &SecPerClus,0(PSP)      ;
     MOV     &SecPerClus,rDODOES     ;
 ; ----------------------------------;
 OPN_LoadSectorDir                   ; <=== Dir Sector loopback
@@ -586,7 +585,6 @@ OPN_EntryMismatch                   ;
 ; ----------------------------------;
     ADD     #1,&SectorL             ;
     ADDC    #0,&SectorH             ;
-;    SUB     #1,0(PSP)               ; dec count of Dir sectors
     SUB     #1,rDODOES              ; dec count of Dir sectors
     JNZ     OPN_LoadSectorDir       ; ===> loopback for next DIR sector
 ; ----------------------------------;
@@ -637,17 +635,15 @@ OPN_DIRfoundNext                    ;
     CMP.B   #0,-1(TOS)              ; FirstNotEqualChar =  0  ?
     JNZ     OPN_EndOfDIRstringZtest ; no : FirstNotEqualChar = "\"
 ; ----------------------------------;
-OPN_SetCurrentDIR                   ; -- open_type DIRsector ptr
+OPN_SetCurrentDIR                   ; -- open_type ptr
 ; ----------------------------------;
     MOV     &ClusterL,&DIRClusterL  ;
     MOV     &ClusterH,&DIRclusterH  ;
-;    MOV     #THREEDROP,PC           ; 3drop
-    MOV     #0,0(PSP)
+    MOV     #0,0(PSP)               ; -- open_type ptr      open_type = 0 
     JMP     OPN_Dir
 ; ----------------------------------;
-OPN_FileFound                       ; -- open_type DIRsector ptr
+OPN_FileFound                       ; -- open_type ptr
 ; ----------------------------------;
-;    MOV     2(PSP),W                ;   
     MOV     @PSP,W                  ;   
     CALL    #GetFreeHandle          ;STWXY init handle(HDLL_DIRsect,HDLW_DIRofst,HDLL_FirstClus = HDLL_CurClust,HDLL_CurSize)
 ; ----------------------------------; output : T = CurrentHdl*, S = ReturnError, Y = DIRentry offset
@@ -657,9 +653,8 @@ OPN_EndOfDIR                        ; S = error 4
 OPN_NoSuchFile                      ; S = error 2
 OPN_NoPathName                      ; S = error 1
 OPN_Dir
-;    ADD     #2,PSP                  ; -- open_type ptr
+    MOV     #xdodoes,rDODOES        ;                   restore rDODOES
     MOV     @PSP+,W                 ; -- ptr            W = open_type
-    MOV     #xdodoes,rDODOES        ; -- open_type ptr
     MOV     @PSP+,TOS               ; --
 ; ----------------------------------; then go to selected OpenType subroutine (OpenType = W register)
 

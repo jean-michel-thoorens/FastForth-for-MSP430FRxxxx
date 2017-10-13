@@ -7,8 +7,8 @@
 
 
 
-\ SYSRSTIV decimal values for MSP430FR5994
-\ ----------------------------------------
+\ SYSRSTIV decimal values for MSP430FR5994 (device specific)
+\ ----------------------------------------------------------
 \ 00 No interrupt pending                                      
 \ 02 Brownout (BOR)                                            
 \ 04 RSTIFG RST/NMI (BOR)                                      
@@ -34,21 +34,36 @@
 \ 44 MPUSEG2IFG segment 2 memory violation (PUC)               
 \ 46 MPUSEG3IFG segment 3 memory violation (PUC)   
 
-\ values added by FAST FORTH 
-\ --------------------------
-\ 05 reset after compilation of FAST FORTH kernel
-\ -1 hardware DEEP RESET    
-             
-; ================
-; BOOTSTRAP
-; ================
-     
-\ Causes of reset (device specific) are kept in SYSRSTIV register.
-\ WARM displays the content of SYSRSTIV register.
-\ When BOOT.4TH is called by the FastForth bootstrap, this SYSRSTIV value is on
-\ the paramater stack, ready to test:
 
-$05 =  [IF]         ; if new kernel
+
+
+
+\ SYSRSTIV values added by FAST FORTH 
+\ -----------------------------------
+\ 05 reset after compilation of FAST FORTH kernel
+\ -1 hardware DEEP RESET: restores state of the lastest FastForth flashed   
+             
+
+\ note
+\ Origin of reset is kept in SYSRSTIV register. Their values are device specific.
+\ WARM displays the content of SYSRSTIV register.
+\ When BOOT.4TH is called by the FastForth bootstrap, the SYSRSTIV value is on
+\ the paramater stack, ready to test
+
+\ --------------------------------------------------------------------------------
+\ WARNING !
+\ --------------------------------------------------------------------------------
+\ it is not recommended to compile then execute a word to perform the bootstrap 
+\ because the risk of crushing thereafter. Interpreting mode as below is required: 
+\ --------------------------------------------------------------------------------
+
+
+\ it's an example:
+
+DUP $06 =  [IF]     \ origin of reset = COLD
 LOAD" SD_TEST.4TH"
 [THEN]
-ECHO                ; in all case, don't forget to set ECHO !
+$02 = [IF]          \ origin of reset = power ON
+LOAD" RTC.4TH" NOECHO
+[THEN]
+ECHO                \ in all case, don't forget to set ECHO! (cf. QUIETMODE in forthMSP430FR.asm)

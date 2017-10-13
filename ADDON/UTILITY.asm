@@ -163,26 +163,28 @@ UDOTR       mDOCOL
             .word   RFROM,OVER,MINUS,lit,0,MAX,SPACES,TYPE
             .word   EXIT
 
+
 ;https://forth-standard.org/standard/tools/DUMP
             FORTHWORD "DUMP"
 DUMP        PUSH    IP
-            PUSH    &BASE
-            MOV     #10h,&BASE
-            ADD     @PSP,TOS                ; compute end address
-            AND     #0FFF0h,0(PSP)          ; compute start address
+            PUSH    &BASE                   ; save current base
+            MOV     #10h,&BASE              ; HEX base
+            ADD     @PSP,TOS                ; -- ORG END
             ASMtoFORTH
-            .word   SWAP,xdo                ; generate line
+            .word   SWAP,OVER,OVER          ; -- END ORG END ORG
+            .word   UDOT,LIT,1,MINUS,UDOT   ; -- END ORG          display org end-1
+            .word   LIT,0FFF0h,ANDD,xdo     ; -- END ORG_modulo_16
 DUMP1       .word   CR
             .word   II,lit,7,UDOTR,SPACE    ; generate address
             .word   II,lit,10h,PLUS,II,xdo  ; display 16 bytes
 DUMP2       .word   II,CFETCH,lit,3,UDOTR
-            .word   xloop,DUMP2
+            .word   xloop,DUMP2             ; bytes display loop
             .word   SPACE,SPACE
             .word   II,lit,10h,PLUS,II,xdo  ; display 16 chars
 DUMP3       .word   II,CFETCH
             .word   lit,7Eh,MIN,FBLANK,MAX,EMIT
-            .word   xloop,DUMP3
-            .word   lit,10h,xploop,DUMP1
-            .word   RFROM,FBASE,STORE
+            .word   xloop,DUMP3             ; chars display loop
+            .word   lit,10h,xploop,DUMP1    ; line loop
+            .word   RFROM,FBASE,STORE       ; restore current base
             .word   EXIT
 

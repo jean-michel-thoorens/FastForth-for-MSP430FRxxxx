@@ -80,149 +80,151 @@ DIR             FAT             CLUSTER         SECTOR          {SD_TOOLS}
 
 FORTH WORDS
 
-ASM <word> --       used to begin an assembler word which is not interpretable by FORTH (because use of CALL ... RET).
-                    this defined <word> must be ended with ENDASM.
+ASM <word>      creates an assembler word which is not interpretable by FORTH (because use of CALL ... RET).
+                this defined <word> must be ended with ENDASM.
 
-CODE <word> --      begins an assembler word interpretable by FORTH (MOV @IP+,PC instead of CALL ... RET)
-                    this defined <word> must be ended with ENDCODE.
+CODE <word>     creates an assembler word interpretable by FORTH (MOV @IP+,PC instead of CALL ... RET)
+                this defined <word> must be ended with ENDCODE.
 
-HI2LO --            used to switch from a high level (FORTH) to low level (assembler) modes.
+HI2LO           used to switch from a high level (FORTH) to low level (assembler) modes.
 
-COLD --             Software reset
+COLD            Software reset
 
-WARM --             DEFERred word initialized by default with (WARM)
+WARM            DEFERed word, initially executes (WARM)
 
-(WARM) --           performs a hot start
+(WARM)          performs a hot start
 
-WIPE --             resets the program memory to its original state before any add.
+WIPE            resets the program memory to its original state.
 
-RST_HERE --         defines the bound of the program memory protected against COLD or hardware reset.
+RST_HERE        defines the bound of the program memory protected against COLD or hardware reset.
 
-PWR_HERE --         defines the bound of the program memory protected against ON/OFF.
+PWR_HERE        defines the bound of the program memory protected against ON/OFF and against any error occurring.
 
-RST_STATE --        remove all words defined after RST_HERE
+RST_STATE       remove all words defined after RST_HERE
 
-PWR_STATE --        remove all words defined after PWR_HERE
+PWR_STATE       remove all words defined after PWR_HERE
 
-MOVE
-LEAVE           
-+LOOP           
-LOOP            
-DO              
-REPEAT          
-WHILE           
-AGAIN           
-UNTIL           
-BEGIN           
-THEN            
-ELSE            
-IF              
-;               
-:               
-DEFER           
-DOES>           
-CREATE          
-CONSTANT        
-VARIABLE        
-POSTPONE        
-RECURSE         
-IMMEDIATE       
-IS              
-[']             
-]               
-[               
-\               
-'               
-ABORT"          
-ABORT           
-QUIT            
-EVALUATE        
-COUNT           
-LITERAL         
-,               
-EXECUTE         
->NUMBER         
-FIND            
-WORD            
-."              
-S"              
-TYPE            
-SPACES          
-SPACE           
-CR              
-(CR)            
-NOECHO          
-ECHO            
-EMIT            
-(EMIT)          
-(ACCEPT)        
-ACCEPT          
-KEY             
-(KEY)           
-C,              
-ALLOT           
-HERE            
-.               
-D.              
-U.              
-SIGN            
-HOLD            
-#>              
-#S              
-#               
-<#              
-BL              
-STATE           
-BASE            
->IN             
-CPL     -- size         of terminal input buffer TIB
-TIB     -- addr         of terminal input buffer TIB            
-PAD     -- addr         of PAD            
-J               
-I               
-UNLOOP          
-U<              
->               
-<               
-=               
-0>              
-0<              
-0=              
-DABS            
-ABS             
-NEGATE          
-XOR             
-OR              
-AND             
--               
-+               
-C!              
-C@              
-!               
-@               
-DEPTH           
-R@              
-R>              
->R              
-ROT             
-OVER            
-SWAP            
-NIP             
-DROP            
-?DUP            
-DUP             
-LIT --          execution part of LITERAL            
-EXIT
+MOVE            https://forth-standard.org/standard/core/MOVE
+LEAVE           https://forth-standard.org/standard/core/LEAVE
++LOOP           https://forth-standard.org/standard/core/PlusLOOP
+LOOP            https://forth-standard.org/standard/core/LOOP
+DO              https://forth-standard.org/standard/core/DO        
+REPEAT          https://forth-standard.org/standard/core/REPEAT
+WHILE           https://forth-standard.org/standard/core/WHILE
+AGAIN           https://forth-standard.org/standard/core/AGAIN
+UNTIL           https://forth-standard.org/standard/core/UNTIL
+BEGIN           https://forth-standard.org/standard/core/BEGIN
+THEN            https://forth-standard.org/standard/core/THEN
+ELSE            https://forth-standard.org/standard/core/ELSE
+IF              https://forth-standard.org/standard/core/IF
+;               https://forth-standard.org/standard/core/Semi
+:               https://forth-standard.org/standard/core/Colon
+DEFER           https://forth-standard.org/standard/core/DEFER
+DOES>           https://forth-standard.org/standard/core/DOES
+CREATE          https://forth-standard.org/standard/core/CREATE
+CONSTANT        https://forth-standard.org/standard/core/CONSTANT
+VARIABLE        https://forth-standard.org/standard/core/VARIABLE
+POSTPONE        https://forth-standard.org/standard/core/POSTPONE
+RECURSE         https://forth-standard.org/standard/core/RECURSE
+IMMEDIATE       https://forth-standard.org/standard/core/IMMEDIATE
+IS              https://forth-standard.org/standard/core/IS
+[']             https://forth-standard.org/standard/core/BracketTick
+]               https://forth-standard.org/standard/core/right-bracket
+[               https://forth-standard.org/standard/core/Bracket
+\               https://forth-standard.org/standard/block/bs
+'               https://forth-standard.org/standard/core/Tick
+ABORT"          https://forth-standard.org/standard/core/ABORTq
+ABORT           https://forth-standard.org/standard/core/ABORT
+QUIT            https://forth-standard.org/standard/core/QUIT
+EVALUATE        https://forth-standard.org/standard/core/EVALUATE
+COUNT           https://forth-standard.org/standard/core/COUNT
+LITERAL         https://forth-standard.org/standard/core/LITERAL
+,               https://forth-standard.org/standard/core/Comma
+EXECUTE         https://forth-standard.org/standard/core/EXECUTE
+>NUMBER         https://forth-standard.org/standard/core/toNUMBER
+FIND            https://forth-standard.org/standard/core/FIND
+WORD            https://forth-standard.org/standard/core/WORD
+."              https://forth-standard.org/standard/core/Dotq
+S"              https://forth-standard.org/standard/core/Sq
+TYPE            https://forth-standard.org/standard/core/TYPE
+SPACES          https://forth-standard.org/standard/core/SPACES
+SPACE           https://forth-standard.org/standard/core/SPACE
+CR              DEFERed word, initially executes (CR)
+(CR)            https://forth-standard.org/standard/core/CR
+NOECHO          stop display on output 
+ECHO            start display on output
+EMIT            DEFERed word, initially executes (EMIT)
+(EMIT)          https://forth-standard.org/standard/core/EMIT
+(ACCEPT)        https://forth-standard.org/standard/core/ACCEPT
+ACCEPT          DEFERed word, initially executes (ACCEPT)
+KEY             DEFERed word, initially executes (KEY)
+(KEY)           https://forth-standard.org/standard/core/KEY
+C,              https://forth-standard.org/standard/core/CComma
+ALLOT           https://forth-standard.org/standard/core/ALLOT
+HERE            https://forth-standard.org/standard/core/HERE
+.               https://forth-standard.org/standard/core/d
+D.              https://forth-standard.org/standard/double/Dd
+U.              https://forth-standard.org/standard/core/Ud
+SIGN            https://forth-standard.org/standard/core/SIGN
+HOLD            https://forth-standard.org/standard/core/HOLD
+#>              https://forth-standard.org/standard/core/num-end
+#S              https://forth-standard.org/standard/core/numS
+#               https://forth-standard.org/standard/core/num
+<#              https://forth-standard.org/standard/core/num-start
+BL              https://forth-standard.org/standard/core/BL
+STATE           https://forth-standard.org/standard/core/STATE
+BASE            https://forth-standard.org/standard/core/BASE
+>IN             https://forth-standard.org/standard/core/toIN
+CPL  -- size    of terminal input buffer TIB
+TIB  -- addr    of terminal input buffer TIB            
+PAD  -- addr    of PAD            
+J               https://forth-standard.org/standard/core/J
+I               https://forth-standard.org/standard/core/I
+UNLOOP          https://forth-standard.org/standard/core/UNLOOP
+U<              https://forth-standard.org/standard/core/Uless
+>               https://forth-standard.org/standard/core/more
+<               https://forth-standard.org/standard/core/less
+=               https://forth-standard.org/standard/core/Equal
+0>              https://forth-standard.org/standard/core/Zeromore
+0<              https://forth-standard.org/standard/core/Zeroless
+0=              https://forth-standard.org/standard/core/ZeroEqual
+DABS            https://forth-standard.org/standard/double/DABS
+ABS             https://forth-standard.org/standard/core/ABS
+NEGATE          https://forth-standard.org/standard/core/NEGATE
+XOR             https://forth-standard.org/standard/core/XOR
+OR              https://forth-standard.org/standard/core/OR
+AND             https://forth-standard.org/standard/core/AND
+-               https://forth-standard.org/standard/core/Minus
++               https://forth-standard.org/standard/core/Plus
+C!              https://forth-standard.org/standard/core/CStore
+C@              https://forth-standard.org/standard/core/CFetch
+!               https://forth-standard.org/standard/core/Store
+@               https://forth-standard.org/standard/core/Fetch
+DEPTH           https://forth-standard.org/standard/core/DEPTH
+R@              https://forth-standard.org/standard/core/RFetch
+R>              https://forth-standard.org/standard/core/Rfrom
+>R              https://forth-standard.org/standard/core/toR
+ROT             https://forth-standard.org/standard/core/ROT
+OVER            https://forth-standard.org/standard/core/OVER
+SWAP            https://forth-standard.org/standard/core/SWAP
+NIP             https://forth-standard.org/standard/core/NIP
+DROP            https://forth-standard.org/standard/core/DROP
+?DUP            https://forth-standard.org/standard/core/qDUP
+DUP             https://forth-standard.org/standard/core/DUP
+LIT             execution part of LITERAL            
+EXIT            https://forth-standard.org/standard/core/EXIT
 
 
 
-ASSEMBLER WORDS see: http://www.ece.utep.edu/courses/web3376/Notes_files/ee3376-isa.pdf
-                     http://www.ti.com/lit/ug/slau367n/slau367n.pdf#page=158
+ASSEMBLER vocabulary
+--------------------
+ASSEMBLER WORDS set see: http://www.ece.utep.edu/courses/web3376/Notes_files/ee3376-isa.pdf
+                     http://www.ti.com/lit/ug/slau367n/slau367n.pdf#page=157
                      howto.md for symbolic alias of registers, symbolic jumps (IF ELSE THEN...),..
 
 
 
-?GOTO           used after a conditionnal to branch to a label FWx or BWx
+?GOTO           used after a conditionnal (0=,0<>,U>=,U<,0<,S<,S>=) to branch to a label FWx or BWx
 GOTO            used as unconditionnal branch to a label FWx or BWx
 
 FW3             FORWARD branch destination n°3
@@ -233,7 +235,7 @@ BW3             BACKWARD branch destination n°3
 BW2             
 BW1          
 
-?JMP            used after a conditionnal to jump to a defined word
+?JMP            used after a conditionnal (0=,0<>,U>=,U<,0<,S<,S>=) to jump to a defined word
 JMP             unconditionnal jump to a defined word
 
 REPEAT          assembler version of the FORTH word REPEAT
@@ -253,62 +255,120 @@ U<              conditionnal
 S<              conditionnal
 S>=             conditionnal
 
-RRUM            used as : RRUM n,REG   with 0 < n < 5
-RLAM            same syntax
-RRAM            same syntax
-RRCM            same syntax
-POPM            POP multiple registers, used as : POPM X,S  to pop X,W,T,S
-PUSHM           PUSH multiple registers, used as : PUSHM S,X   to push S,T,W,X
+ASSEMBLER WORDS set: http://www.ti.com/lit/ug/slau367n/slau367n.pdf
 
-CALL            see TI assembler
-PUSH.B          
-PUSH            
-SXT             
-RRA.B           
-RRA             
-SWPB            
-RRC.B           
-RRC          
-AND.B           
-AND             
-XOR.B           
-XOR             
-BIS.B           
-BIS             
-BIC.B           
-BIC          
-BIT.B           
-BIT             
-DADD.B          
-DADD            
-CMP.B           
-CMP             
-SUB.B           
-SUB          
-SUBC.B          
-SUBC            
-ADDC.B          
-ADDC            
-ADD.B           
-ADD             
-MOV.B           
-MOV          
-RETI            
+
+RRUM            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=218
+RLAM            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=208
+RRAM            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=211
+RRCM            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=214
+POPM            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=204    syntax: POPM X,S    to pop X,W,T,S
+PUSHM           http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=205    syntax: PUSHM S,X   to push S,T,W,X
+
+CALL            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=142
+PUSH.B  PUSH    http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=168
+SXT             http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=182
+RRA.B   RRA     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=173
+SWPB            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=181
+RRC.B   RRC     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=174
+AND.B   AND     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=137
+XOR.B   XOR     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=184
+BIS.B   BIS     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=139
+BIC.B   BIC     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=138
+BIT.B   BIT     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=140
+DADD.B  DADD    http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=149
+CMP.B   CMP     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=147
+SUB.B   SUB     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=179
+SUBC.B  SUBC    http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=180
+ADDC.B  ADDC    http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=136
+ADD.B   ADD     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=135
+MOV.B   MOV     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=165
+RETI            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=170
 
 LO2HI           switch between low level and high level interpretation mode (counterpart of HI2LO), without saving IP.
-COLON           PUSH IP then performs LO2HI, used as CODE <word> ... assembler cmd ... COLON ... FORTH words ... ;
+COLON           pushes IP then performs LO2HI, used as: CODE <word> ... assembler cmd ... COLON ... FORTH words ... ;
 ENDASM          to end an ASM definition
 ENDCODE         to end a CODE definition
 (SLEEP)         the default SLEEP definition
-SLEEP           DEFERred word initialised with (SLEEP), which enables to create a background task.
+SLEEP           DEFERed word, initially executes (SLEEP), which enables to create a background task.
 
 
 CONDCOMP ADD-ON
 ---------------
-[DEFINED]  
-[UNDEFINED]
-[IF]
-[ELSE]
-[THEN]
-COMPARE                 
-MARKER        
+[DEFINED]       https://forth-standard.org/standard/tools/BracketDEFINED
+[UNDEFINED]     https://forth-standard.org/standard/tools/BracketUNDEFINED
+[IF]            https://forth-standard.org/standard/tools/BracketIF
+[ELSE]          https://forth-standard.org/standard/tools/BracketELSE
+[THEN]          https://forth-standard.org/standard/tools/BracketTHEN
+COMPARE         https://forth-standard.org/standard/string/COMPARE
+MARKER          https://forth-standard.org/standard/core/MARKER
+
+VOCABULARY ADD-ON (not ANS)
+-----------------
+DEFINITIONS     https://forth-standard.org/standard/search/DEFINITIONS
+ONLY            https://forth-standard.org/standard/search/ONLY
+PREVIOUS        https://forth-standard.org/standard/search/PREVIOUS
+ALSO            https://forth-standard.org/standard/search/ALSO
+ASSEMBLER       assembler VOCABULARY
+FORTH           FORTH VOCABULARY
+VOCABULARY <word>     creates a new VOCABULARY named word
+
+ANS_COMPLEMENT ADD-ON
+---------------------
+>BODY           https://forth-standard.org/standard/core/toBODY
+SOURCE          https://forth-standard.org/standard/core/SOURCE
+.(              https://forth-standard.org/standard/core/Dotp
+(               https://forth-standard.org/standard/core/p
+DECIMAL         https://forth-standard.org/standard/core/DECIMAL
+HEX             https://forth-standard.org/standard/core/HEX
+FILL            https://forth-standard.org/standard/core/FILL
+[CHAR]          https://forth-standard.org/standard/core/BracketCHAR
+CHAR            https://forth-standard.org/standard/core/CHAR
++!              https://forth-standard.org/standard/core/PlusStore
+2/              https://forth-standard.org/standard/core/TwoDiv
+2*              https://forth-standard.org/standard/core/TwoTimes
+MIN             https://forth-standard.org/standard/core/MIN
+MAX             https://forth-standard.org/standard/core/MAX
+1-              https://forth-standard.org/standard/core/OneMinus
+1+              https://forth-standard.org/standard/core/OnePlus
+RSHIFT          https://forth-standard.org/standard/core/RSHIFT
+LSHIFT          https://forth-standard.org/standard/core/LSHIFT
+INVERT          https://forth-standard.org/standard/core/INVERT
+2OVER           https://forth-standard.org/standard/core/TwoOVER
+2SWAP           https://forth-standard.org/standard/core/TwoSWAP
+2DROP           https://forth-standard.org/standard/core/TwoDROP
+2DUP            https://forth-standard.org/standard/core/TwoDUP
+2!              https://forth-standard.org/standard/core/TwoStore
+2@              https://forth-standard.org/standard/core/TwoFetch
+S>D             https://forth-standard.org/standard/core/StoD
+CELL+           https://forth-standard.org/standard/core/CELLPlus
+CELLS           https://forth-standard.org/standard/core/CELLS
+CHAR+           https://forth-standard.org/standard/core/CHARPlus
+CHARS           https://forth-standard.org/standard/core/CHARS
+ALIGN           https://forth-standard.org/standard/core/ALIGN
+ALIGNED         https://forth-standard.org/standard/core/ALIGNED
+*/              https://forth-standard.org/standard/core/TimesDiv
+*/MOD           https://forth-standard.org/standard/core/TimesDivMOD
+MOD             https://forth-standard.org/standard/core/MOD
+/               https://forth-standard.org/standard/core/Div
+/MOD            https://forth-standard.org/standard/core/DivMOD
+*               https://forth-standard.org/standard/core/Times
+FM/MOD          https://forth-standard.org/standard/core/FMDivMOD
+SM/REM          https://forth-standard.org/standard/core/SMDivREM
+UM/MOD          https://forth-standard.org/standard/core/UMDivMOD
+M*              https://forth-standard.org/standard/core/MTimes
+UM*             https://forth-standard.org/standard/core/UMTimes
+{ANS_COMP}      
+
+
+UTILITY ADD-ON
+--------------
+DUMP            https://forth-standard.org/standard/tools/DUMP  
+U.R               
+WORDS           https://forth-standard.org/standard/tools/WORDS 
+?               https://forth-standard.org/standard/tools/q
+.RS             
+.S              https://forth-standard.org/standard/tools/DotS
+{UTILITY}       
+
+

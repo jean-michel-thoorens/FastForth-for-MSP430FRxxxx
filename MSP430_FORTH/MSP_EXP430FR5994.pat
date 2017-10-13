@@ -81,12 +81,12 @@
 ! P3.6/TB0.5                          
 ! P3.5/TB0.4/COUT                     
 ! P3.4/TB0.3/SMCLK
-! P7.3/UCB2STE/TA4.1       RTS ----> CTS  UARTtoUSB bridge (optional hardware control flow)
+! P7.3/UCB2STE/TA4.1
 ! P2.6/TB0.1/UCA1RXD/UCA1SOMI 
 ! P2.5/TB0.0/UCA1TXD/UCA1SIMO 
 ! P4.3/A11
-! P4.2/A10
-! P4.1/A9
+! P4.2/A10       RTS ----> CTS  UARTtoUSB bridge (optional hardware control flow)
+! P4.1/A9        CTS <---- RTS  UARTtoUSB bridge (optional hardware control flow)
 
 ! J2 - right ext.
 ! GND
