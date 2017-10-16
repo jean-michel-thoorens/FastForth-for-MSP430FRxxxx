@@ -25,5 +25,4 @@ Log/log.txt
 *.lst
 *.exe
 *.dll
-*.pdf
 *.msg

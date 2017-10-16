@@ -43,6 +43,7 @@ What is new ?
     FastForth V2.0, major version.
 
     Added fixed point s15q16 numbers. Thus FAST FORTH recognises : 
+    unsigned/signed numbers u/n (u <= 65535)/(-32768 <= n <= 32767), 
     unsigned/signed double numbers ud/d by adding a decimal point (ud <= .4294967295)/(-.2147483648 <= d <= .2147483647),
     and s15q16 signed numbers by adding a comma (-32768,00000 <= s15q16 <= 32767,00000).
     The internal or external words set {FIXPOINT} adds the words: HOLDS F+ F- F/ F#S F* F. S>F, D>F and 2CONSTANT.
@@ -339,7 +340,7 @@ then execute. the output is a target.txt file, i.e. MSP_EXP430FR5969.txt
 Load Txt file (TI format) to target
 -----------------------------------
 
-	drag your target.txt file and drop it on TARGETprog.bat
+	drag your target.txt file and drop it on \prog.bat
 
     or use scite internal command TOOLS:FET prog (CTRL+1).
 
@@ -350,17 +351,19 @@ If you want to program your own MSP430FRxxxx board, wire its pins TST, RST, 3V3 
 
 
 Connect the FAST FORTH target to a serial terminal
--------------------------------------------------
+--------------------------------------------------
 
-you will need an USBtoUART cable with a PL2303TA or PL2303HXD device that allows both XON/XOFF and hardware control flow :
-
+the eZFET uart doesn't work correctly, impossible to send reliably a source file 
+So, you will need an USBtoUART cable with a PL2303TA or PL2303HXD device that allows both XON/XOFF and/or hardware control flow :
+with (only) it, we reach 6Mbds file transfert with XON/XOFF or hardware control flow! 
 	http://www.google.com/search?q=PL2303TA
 	http://www.google.com/search?q=PL2303HXD
     WARNING! XON/XOFF no longer works with new Prolific driver v3.8.12.0 (03/03/2017)...
-             Waiting next update, get on web previous PL2303_Prolific_DriverInstaller_v1160.exe (or .zip)
+             Waiting next update, get on web the previous version PL2303_Prolific_DriverInstaller_v1160.exe (or .zip),
+             install it then use DriveStoreExplorer to wipe any trace of other prolific driver versions:
+             https://driverstoreexplorer.codeplex.com/, that is to avoid windows 10 automatic driver update... 
 
-
-or USBtoUART bridge, with a CP2102 device and 3.3V/5V that allows XON/XOFF control flow :
+or USBtoUART bridge, with a CP2102 device and 3.3V/5V that allows XON/XOFF control flow up to 921600bds:
 
 	search google: cp2102 module 3.3V
 	http://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx
@@ -369,7 +372,7 @@ or USBtoUART bridge, with a CP2102 device and 3.3V/5V that allows XON/XOFF contr
 	http://www.silabs.com/Support%20Documents/Software/install_USBXpress_SDK.exe
 	http://www.silabs.com/Support%20Documents/TechnicalDocs/an169.pdf
 
-or a USBtoUART bridge, with a FT232RL device and 3.3V/5V for only hardware control flow:
+or a USBtoUART bridge, with a FT232RL device and 3.3V/5V for only hardware control flow up to 921600bds:
 	
     WARNING! buy a FT232RL module with a switch 5V/3V3 and select 3V3.
 
@@ -411,7 +414,7 @@ Send a source file to the FAST FORH target
 Three .bat files are done in \MSP430-FORTH that enable you to do all you want.
 Double clic on them to see how to do.
 
-you can also open any source file with scite editor, and do all you want via its Tools menu.
+you can also open any source file with scite editor, and do all via its Tools menu.
 
 
 SD_Card Load, Read, Write and Delete 
