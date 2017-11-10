@@ -60,10 +60,13 @@
 
 \ it's an example:
 
-DUP $06 =  [IF]     \ origin of reset = COLD
-LOAD" SD_TEST.4TH"
+DUP $06 =
+[IF]                \ origin of reset = COLD
+    LOAD" SD_TEST.4TH"
+[ELSE] DUP $02 = 
+    [IF]            \ origin of reset = power ON
+        LOAD" RTC.4TH"
+    [THEN]
 [THEN]
-$02 = [IF]          \ origin of reset = power ON
-LOAD" RTC.4TH" NOECHO
-[THEN]
-ECHO                \ in all case, don't forget to set ECHO! (cf. QUIETMODE in forthMSP430FR.asm)
+DROP
+ECHO                \ don't forget!

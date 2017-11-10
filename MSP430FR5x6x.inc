@@ -142,6 +142,7 @@ RST_ADR  .word  reset       ; $FFFE  -  reset
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : RTC REGISTERS
 ; ----------------------------------------------------------------------
+    .include "RTC_B.inc"
 RTC_B   ; declare RTC type
 RTCCTL01      .equ RTC_B_SFR + 00h
 RTCCTL0       .equ RTC_B_SFR + 00h
@@ -588,16 +589,19 @@ RTCOCAL       .set RTC_C_SFR + 04h
 RTCTCMP       .set RTC_C_SFR + 06h
 RTCPS0CTL     .set RTC_C_SFR + 08h
 RTCPS1CTL     .set RTC_C_SFR + 0Ah
-RTCPS         .set RTC_C_SFR + 0Ch
+RTCPS         .set RTC_C_SFR + 0Ch ; = RT1PS:RT0PS
 RTCIV         .set RTC_C_SFR + 0Eh
 RTCSEC        .set RTC_C_SFR + 10h
+RTCCNT1       .set RTC_C_SFR + 10h     
 RTCMIN        .set RTC_C_SFR + 11h
+RTCCNT2       .set RTC_C_SFR + 11h
 RTCHOUR       .set RTC_C_SFR + 12h
+RTCCNT3       .set RTC_C_SFR + 12h
 RTCDOW        .set RTC_C_SFR + 13h
+RTCCNT4       .set RTC_C_SFR + 13h
 RTCDAY        .set RTC_C_SFR + 14h
 RTCMON        .set RTC_C_SFR + 15h
 RTCYEAR       .set RTC_C_SFR + 16h
-
 
 RTCHOLD       .set 40h
 RTCRDY        .set 10h
@@ -836,7 +840,7 @@ P10SELC      .set PE_SFR + 17h    ; Port 10 Complement Selection
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : RTC_C REGISTERS
 ; ----------------------------------------------------------------------
-RTC_B   ; declare RTC type
+RTC_C   ; declare RTC type
 RTCCTL0_L     .set RTC_C_SFR + 00h
 RTCCTL0_H     .set RTC_C_SFR + 01h
 RTCCTL1       .set RTC_C_SFR + 02h
@@ -845,19 +849,22 @@ RTCOCAL       .set RTC_C_SFR + 04h
 RTCTCMP       .set RTC_C_SFR + 06h
 RTCPS0CTL     .set RTC_C_SFR + 08h
 RTCPS1CTL     .set RTC_C_SFR + 0Ah
-RTCPS         .set RTC_C_SFR + 0Ch
+RTCPS         .set RTC_C_SFR + 0Ch ; = RT1PS:RT0PS
 RTCIV         .set RTC_C_SFR + 0Eh
 RTCSEC        .set RTC_C_SFR + 10h
+RTCCNT1       .set RTC_C_SFR + 10h     
 RTCMIN        .set RTC_C_SFR + 11h
+RTCCNT2       .set RTC_C_SFR + 11h
 RTCHOUR       .set RTC_C_SFR + 12h
+RTCCNT3       .set RTC_C_SFR + 12h
 RTCDOW        .set RTC_C_SFR + 13h
+RTCCNT4       .set RTC_C_SFR + 13h
 RTCDAY        .set RTC_C_SFR + 14h
 RTCMON        .set RTC_C_SFR + 15h
 RTCYEAR       .set RTC_C_SFR + 16h
 
 RTCHOLD       .set 40h
 RTCRDY        .set 10h
-
 
     .ENDIF ; MSP430FR6989
 

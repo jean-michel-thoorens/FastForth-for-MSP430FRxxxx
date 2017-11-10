@@ -164,15 +164,25 @@ TERM_REN    .equ P1REN
 ; CTS is not used by FORTH terminal
 ; configure RTS as output high to disable RX TERM during start FORTH
 
-    .IFDEF TERMINALCTSRTS
+    .IFDEF TERMINAL4WIRES
 HANDSHAKOUT .equ    P3OUT
 HANDSHAKIN  .equ    P3IN
-;CTS         .equ    1       ; P3.0 bit position
 RTS         .equ    4       ; P3.2 bit position
 
             BIS.B #006h,&P3DIR  ; all pins as input else P3.1 LED1 and P3.2 RTS as output
             BIS.B #-1,&P3REN    ; all inputs with pull resistors
+
+        .IFDEF TERMINAL5WIRES
+
+CTS         .equ    1       ; P3.0 bit position
+
+            MOV.B #0FCh,&P3OUT  ; all pins with pullup resistors and LED1 output low, CTS input low
+
+        .ELSEIF
+
             MOV.B #0FDh,&P3OUT  ; all pins with pullup resistors and LED1 = output low
+
+        .ENDIF  ; TERMINAL5WIRES
 
     .ELSEIF
 
@@ -182,7 +192,7 @@ RTS         .equ    4       ; P3.2 bit position
             BIS.B #-1,&P3REN    ; all inputs with pull resistors
             MOV.B #0FDh,&P3OUT  ; all pins with pullup resistors and LED1 = output low
 
-    .ENDIF
+    .ENDIF  ; TERMINAL4WIRES
 
 ; ----------------------------------------------------------------------
 ; FRAM config

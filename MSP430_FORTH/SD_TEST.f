@@ -50,7 +50,7 @@
 
 \ with MSP430FR5xxx or MSP430FR6xxx targets, you can first set RTC:
 \ by downloading RTC.f with SendSourceFileToTarget.bat
-\ then terminal input asks you to type (with spaces) (DMY), then (HMS) (or (HM)),
+\ then terminal input asks you to type (with spaces) (DMY), then (HMS),
 \ So, subsequent copied files will be dated:
 
 \ with CopySourceFileToTarget_SD_Card.bat (or better, from scite editor, menu tools):
@@ -123,65 +123,73 @@ LO2HI
 [THEN]
     \
 
+
 : SD_TEST
+\ BEGIN
     ECHO CR
+    ."    0 Set date and time" CR
     ."    1 Load {UTILITY} words" CR
-    ."    2 Load {ANS_COMP} words" CR
-    ."    3 Load ANS core tests" CR
-    ."    4 Load a 100k program " CR
-    ."    5 Read only this source file" CR
-    ."    6 Write a dump of FORTH to YOURFILE.TXT" CR
-    ."    7 append a dump of FORTH to YOURFILE.TXT" CR
-    ."    8 Load truc (test error)" CR
-    ."    9 Set date and time" CR
+    ."    2 Load {SD_TOOLS} words" CR
+    ."    3 Load {ANS_COMP} words" CR
+    ."    4 Load ANS core tests" CR
+    ."    5 Load a 100k program " CR
+    ."    6 Read only this source file" CR
+    ."    7 Write a dump of FORTH to YOURFILE.TXT" CR
+    ."    8 append a dump of FORTH to YOURFILE.TXT" CR
+    ."    9 Load TST_WORDS" CR
     ."    your choice : "
-    KEY
-    48 - 
-    DUP 1 = 
-    IF  .
-        LOAD" UTILITY.4TH"
-    ELSE DUP 2 =
-        IF  .
-            LOAD" ANS_COMP.4TH"
-        ELSE DUP 3 =
-            IF  .
-                LOAD" CORETEST.4TH"
-            ELSE DUP 4 =
-                IF  .
-                    NOECHO LOAD" PROG100K.4TH"
-                ELSE DUP 5 =
-                    IF  .
-                        READ" PROG100K.4TH"
-                        BEGIN
-                            READ    \ sequentially read 512 bytes
-                        UNTIL       \ prog10k.4TH is closed
-                    ELSE DUP 6 =
-                        IF  .
-                            DEL" YOURFILE.TXT"
-                            WRITE" YOURFILE.TXT"
-                            ['] SD_EMIT IS EMIT
-                            ." DUMP "
-                            PROGRAMSTART HERE OVER - DUMP
-                            ['] (EMIT) IS EMIT
-                            CLOSE
-                        ELSE DUP 7 =
-                            IF  .
-                                WRITE" YOURFILE.TXT"
-                                ['] SD_EMIT IS EMIT
-                                CR ." DUMP "
-                                PROGRAMSTART HERE OVER - DUMP
-                                ['] (EMIT) IS EMIT
-                                CLOSE
-                            ELSE DUP 8 =
-                                IF  .
-                                    LOAD" truc"
-                                ELSE DUP 9 =
-                                    IF  .
-                                        NOECHO LOAD" RTC.4TH" \ quiet downloading...
-                                    ELSE 
-                                        DROP ." ?"
-                                        CR ."    loading TSTWORDS.4TH..."
-                                        LOAD" TSTWORDS.4TH"
+    KEY CR
+    
+    48 - ?DUP
+    0= IF
+        LOAD" RTC.4TH"
+    ELSE 1 - ?DUP
+        0= IF
+            LOAD" UTILITY.4TH"
+        ELSE 1 - ?DUP
+            0= IF
+                LOAD" SD_TOOLS.4TH"
+            ELSE 1 - ?DUP
+                0= IF
+                    LOAD" ANS_COMP.4TH"
+                ELSE 1 - ?DUP
+                    0= IF
+                        LOAD" CORETEST.4TH"
+                        PWR_STATE   \ remove words
+                    ELSE 1 - ?DUP
+                        0= IF
+                            NOECHO
+                            LOAD" PROG100K.4TH"
+                            PWR_STATE   \ remove words
+                            ECHO
+                        ELSE 1 - ?DUP
+                            0= IF
+                                READ" PROG100K.4TH"
+                                BEGIN
+                                    READ    \ sequentially read 512 bytes
+                                UNTIL       \ prog10k.4TH is closed
+                            ELSE 1 - ?DUP
+                                0= IF
+                                    DEL" YOURFILE.TXT"
+                                    WRITE" YOURFILE.TXT"
+                                    ['] SD_EMIT IS EMIT
+                                    PROGRAMSTART HERE OVER - DUMP
+                                    ['] (EMIT) IS EMIT
+                                    CLOSE
+                                ELSE 1 - ?DUP
+                                    0= IF
+                                        WRITE" YOURFILE.TXT"
+                                        ['] SD_EMIT IS EMIT
+                                        CR
+                                        PROGRAMSTART HERE OVER - DUMP
+                                        ['] (EMIT) IS EMIT
+                                        CLOSE
+                                    ELSE 1 - ?DUP
+                                        0= IF
+                                            LOAD" TSTWORDS.4TH"
+                                        ELSE
+                                            DROP EXIT
+                                        THEN                                        
                                     THEN
                                 THEN
                             THEN
@@ -191,13 +199,13 @@ LO2HI
             THEN
         THEN
     THEN
-." it's done"
+    ECHO ."    it's done" NOECHO
+
+\ AGAIN          \ LOAD" don't work with loop tests.......
 ;
     \
-
-
-[THEN]
+PWR_HERE \ to don't forget, otherwise SD_TEST destroys itself by downloading files comprising "PWR_HERE" command...
     \
-PWR_HERE
+[THEN]
     \
 SD_TEST

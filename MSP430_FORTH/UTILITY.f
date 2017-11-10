@@ -190,4 +190,4 @@ LO2HI
 [THEN]
     \
 ECHO
-PWR_HERE   ; added : ? .S .RS WORDS U.R MAX MIN DUMP 
+PWR_HERE

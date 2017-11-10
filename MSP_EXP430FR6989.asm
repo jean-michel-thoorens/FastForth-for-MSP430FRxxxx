@@ -288,25 +288,34 @@ TERM_REN    .equ P3REN
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
-    .IFDEF TERMINALCTSRTS
+    .IFDEF TERMINAL4WIRES
 ; RTS output is wired to the CTS input of UART2USB bridge 
-; CTS is not used by FORTH terminal
 ; configure RTS as output high to disable RX TERM during start FORTH
 
-RTS         .equ  1 ; P3.0
-;CTS         .equ  2 ; P3.1 
 HANDSHAKOUT .equ  P3OUT
 HANDSHAKIN  .equ  P3IN
+RTS         .equ  1 ; P3.0
 
             BIS #00001h,&PBDIR  ; all pins as input else P3.0 (RTS)
             BIS #-1,&PBREN      ; all inputs with resistor
+
+        .IFDEF TERMINAL5WIRES
+
+CTS         .equ  2 ; P3.1
+
+            MOV #0FFFDh,&PBOUT  ; that acts as pull up, P3.0 as output HIGH, P3.1 input low
+
+        .ELSEIF
+
             MOV #-1,&PBOUT      ; that acts as pull up, P3.0 as output HIGH
+
+        .ENDIF  ; TERMINAL5WIRES
 
     .ELSEIF
             BIS #-1,&PBREN      ; all inputs with resistor
             MOV #-1,&PBOUT      ; that acts as pull up
 
-    .ENDIF
+    .ENDIF  ; TERMINAL4WIRES
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT5/6
 ; ----------------------------------------------------------------------

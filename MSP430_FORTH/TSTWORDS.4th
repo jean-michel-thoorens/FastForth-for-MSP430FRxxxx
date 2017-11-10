@@ -12,7 +12,7 @@ LOAD" \misc\TestASM.4th"
 \ -------------------------------------
 \ here we returned in the TestWords.4th
 \ -------------------------------------
-
+ECHO
 \ ----------
 \ LOOP tests
 \ ----------

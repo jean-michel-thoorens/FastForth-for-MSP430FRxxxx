@@ -209,15 +209,25 @@ TERM_REN    .equ P2REN
 
 ; P2.7 is used to power the accelerometer and NTC voltage divider ==> output low = OFF
 
-    .IFDEF TERMINALCTSRTS
+    .IFDEF TERMINAL4WIRES
 
 RTS         .equ  4 ; P2.2
-;CTS         .equ  8 ; P2.3
 HANDSHAKOUT .equ  P2OUT
 HANDSHAKIN  .equ  P2IN
     BIS #08400h,&PADIR  ; all pins as input else RTS P2.2 and P2.7
     BIS #07FFFh,&PAREN  ; all input pins with resistor
+
+        .IFDEF TERMINAL5WIRES
+
+CTS         .equ  8 ; P2.3
+
+    MOV #077FFh,&PAOUT  ; that acts as pull up, and P2.7 as output LOW, CTS input low
+
+        .ELSEIF
+
     MOV #07FFFh,&PAOUT  ; that acts as pull up, and P2.7 as output LOW
+
+        .ENDIF  ; TERMINAL5WIRES
 
     .ELSEIF
 
@@ -227,7 +237,7 @@ HANDSHAKIN  .equ  P2IN
     MOV #07FFFh,&PAOUT  ; that acts as pull up, and P2.7 as output LOW
 
 
-    .ENDIF
+    .ENDIF  ; TERMINAL4WIRES
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4

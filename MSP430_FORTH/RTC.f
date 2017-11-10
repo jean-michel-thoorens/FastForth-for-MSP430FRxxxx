@@ -122,8 +122,7 @@ COLON
 ;
     \
 : TIME!
-DEPTH 1 > IF
-    DEPTH 2 = IF 0 THEN     \ to allow "hour min TIME!" scheme
+DEPTH 2 > IF
     HI2LO
     MOV     TOS,&RTCSEC     \ seconds
     MOV.B   @PSP,&RTCMIN    \ minutes   \ @PSP+ don't work because byte format !
@@ -142,20 +141,15 @@ CREATE ABUF 20 ALLOT
     CR CR ."    DATE (DMY): "
 [DEFINED] LOAD" [IF]    \ ACCEPT is a dEFERed word and redirected to SD_ACCEPT!
     ABUF ABUF 20 (ACCEPT) EVALUATE CR 3 SPACES DATE!
-    CR CR ."    TIME (HMS or HM): "
+    CR CR ."    TIME (HMS): "
     ABUF ABUF 20 (ACCEPT) EVALUATE CR 3 SPACES TIME!
 [ELSE]                  \ ACCEPT is not a DEFERed word
     ABUF ABUF 20 ACCEPT EVALUATE CR 3 SPACES DATE!
-    CR CR ."    TIME (HMS or HM): "
+    CR CR ."    TIME (HMS): "
     ABUF ABUF 20 ACCEPT EVALUATE CR 3 SPACES TIME!
 [THEN]
     CR
-    HI2LO
-    MOV #PSTACK,PSP \ to avoid stack empty error if lack of typed values.
-    MOV @RSP+,IP
-    MOV @IP+,PC
-ENDCODE
-    \
+;
     \
 [THEN]  \ ASM
     \

@@ -162,7 +162,7 @@
 ; PORT2 FastForth usage
 
 Deep_RST_IN .equ P2IN   ; TERMINAL TX  pin as FORTH Deep_RST 
-Deep_RST    .equ 1      ; P2.0 = TX
+Deep_RST    .equ 2      ; P2.0 = TX
 TERM_TXRX   .equ 003h   ; P2.1 = RX
 TERM_SEL    .equ P2SEL1
 TERM_REN    .equ P2REN
@@ -184,27 +184,39 @@ TERM_REN    .equ P2REN
 ; PORT4 FastForth usage
 
 
-        .IFDEF TERMINALCTSRTS
+    .IFDEF TERMINAL4WIRES
 
 ; RTS output is wired to the CTS input of UART2USB bridge 
 ; CTS is not used by FORTH terminal
 ; configure RTS as output high to disable RX TERM during start FORTH
 
-RTS         .equ  4 ; P4.2
-;CTS         .equ  8 ; P4.3
 HANDSHAKOUT .equ  P4OUT
 HANDSHAKIN  .equ  P4IN
-            BIS     #00400h,&PBDIR  ; all pins as input else P4.2
+
+RTS         .equ  4 ; P4.2
+
+            BIS     #00400h,&PBDIR  ; all pins as input else P4.2 (RTS)
             BIS     #-1,&PBREN      ; all input pins with resistor
-            MOV     #-1,&PBOUT      ; that acts as pull up, and P4.2 as output HIGH
+
+        .IFDEF TERMINAL5WIRES
+
+CTS         .equ  8 ; P4.3
+
+            MOV     #0F7FFh,&PBOUT  ; P4.2 (RTS) as output HIGH, P4.3 (CTS) I pull down, others I pull up, 
 
         .ELSEIF
+
+            MOV     #-1,&PBOUT      ; P4.2 (RTS) as output HIGH, others I pull up, 
+
+        .ENDIF  ; TERMINAL5WIRES
+
+    .ELSEIF
 
 ; PORTx default wanted state : pins as input with pullup resistor
             MOV     #-1,&PBOUT   ; OUT1
             BIS     #-1,&PBREN   ; REN1 all pullup resistors
 
-          .ENDIF
+    .ENDIF  ; TERMINAL4WIRES
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT5/6

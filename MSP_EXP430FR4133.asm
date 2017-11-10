@@ -197,20 +197,30 @@ TERM_SEL    .equ P1SEL0
 TERM_REN    .equ P1REN
 
 
-    .IFDEF TERMINALCTSRTS
+    .IFDEF TERMINAL4WIRES
 
 ; RTS output is wired to the CTS input of UART2USB bridge 
-; CTS is not used by FORTH terminal
 ; configure RTS as output high to disable RX TERM during start FORTH
 
 HANDSHAKOUT .set    P2OUT
 HANDSHAKIN  .set    P2IN
-RTS         .set    8       ; P2.3 bit position
-;CTS         .set    10h     ; P2.4 bit position
+
+RTS         .set    8           ; P2.3 bit position
 
             BIS #00800h,&PADIR  ; all pins as input else RTS P2.3
             BIS #-1,&PAREN      ; all input pins with resistor
-            MOV #-1,&PAOUT      ; that acts as pull up, and P2.3 as output HIGH
+
+        .IFDEF TERMINAL5WIRES
+
+CTS         .set    10h         ; P2.4 bit position
+
+            MOV #0EFFFh,&PAOUT  ; P2.3 (RTS) as output HIGH, P2.4 (CTS) I pull down, others I pull up, 
+
+        .ELSEIF
+
+            MOV #-1,&PAOUT      ; that acts as pull up resistor, and P2.3 (RTS) as output HIGH
+
+        .ENDIF  ; TERMINAL5WIRES
 
     .ELSEIF
 
@@ -219,7 +229,7 @@ RTS         .set    8       ; P2.3 bit position
             MOV #-1,&PAOUT  ; OUT1 for all pins
             BIS #-1,&PAREN  ; all pins with pullup resistors
 
-    .ENDIF
+    .ENDIF  ; TERMINAL4WIRES
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4

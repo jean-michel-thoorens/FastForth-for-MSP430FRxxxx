@@ -515,15 +515,8 @@ ADD #4,TOS
 MOV @IP+,PC
 ENDCODE
     \
-
-( added ANS_COMPLEMENT: INVERT LSHIFT RSHIFT 1+ 1- MAX MIN 2* 2/ CHAR [CHAR] +! FILL HEX DECIMAL ( .( SOURCE >BODY
-(                       ARITHMETIC: UM* M* UM/MOD SM/REM FM/MOD * /MOD / MOD */MOD */
-(                       DOUBLE: S>D 2@ 2! 2DUP 2DROP 2SWAP 2OVER
-(                       ALIGMENT: ALIGNED ALIGN
-(                       PORTABIITY: CHARS CHAR+ CELLS CELL+ ) 
-    \
 [THEN]
     \
 PWR_HERE
-
+    \
 ECHO 

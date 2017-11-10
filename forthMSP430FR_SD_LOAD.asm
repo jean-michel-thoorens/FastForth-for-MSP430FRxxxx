@@ -276,26 +276,28 @@ InitHandle                          ;
     JGE     InitHandleRET           ; > 2, is a file to be deleted
     MOV     #0,HDLW_BUFofst(T)      ; < 2, is a READ or a LOAD file
     CMP.B   #-1,W                   ;
-    JZ      FirstLoadedFileHandle   ; case of first loaded file
-    JL      AllLoadedFileHandle     ; case of other loaded file
+    JZ      ReplaceInputBuffer      ; case of first loaded file
+    JL      SaveBufferContext       ; case of other loaded file
     JMP SetBufLenAndLoadCurSector   ; case of READ file
 ; ----------------------------------;
-FirstLoadedFileHandle               ;
+ReplaceInputBuffer                  ;
 ; ----------------------------------;
-    MOV     &TOIN,X                 ;3
-    MOV     &SOURCE_LEN,W           ;3
-    SUB     X,W                     ;1
-    MOV     W,&SAVEtsLEN            ;3 save remaining lenght  
-    ADD     &SOURCE_ADR,X           ;3
-    MOV     X,&SAVEtsPTR            ;3 save new input org address
-    MOV     #SD_ACCEPT,&ACCEPT+2    ; redirect ACCEPT to SD_ACCEPT
+    MOV     #SDIB_ORG,&FCIB+2       ; set SD Input Buffer as Current Input Buffer before return to QUIT
+    MOV     #SD_ACCEPT,&ACCEPT+2    ; redirect ACCEPT to SD_ACCEPT before return to QUIT
+    MOV     #LOAD_STACK,&LOADPTR    ; init LOADPTR
 ; ----------------------------------;
-AllLoadedFileHandle                 ;
+SaveBufferContext                   ;           CPL is same, not saved
 ; ----------------------------------;
-    ADD     #2,&LOADPTR             ;4
-    MOV     &LOADPTR,X              ;3
-    MOV     IP,0(X)                 ;3
-    JMP SetBufLenAndLoadCurSector   ;
+    MOV     &LOADPTR,Y              ;
+    ADD     #6,&LOADPTR             ;
+    MOV     &TOIN,X                 ;3 X = >IN (pointing after the file to load filename)
+    MOV     &SOURCE_LEN,W           ;3 W = CPL
+    SUB     X,W                     ;1 W = CPL - >IN
+    MOV     W,0(Y)                  ;3 save remaining lenght to be interpreted (see CloseHandleT) 
+    ADD     &SOURCE_ADR,X           ;3 X = CIB + >IN
+    MOV     X,2(Y)                  ;5 save ORG
+    MOV     IP,4(Y)                 ;3 save IP
+    JMP SetBufLenAndLoadCurSector   ;           then RET
 ; ----------------------------------;
 
 
@@ -318,42 +320,65 @@ CloseHandleHere                     ;
     MOV.B   HDLB_Token(T),W         ; to test W=token below
     MOV.B   #0,HDLB_Token(T)        ; close handle
 ; ----------------------------------;
+    MOV     T,X                     ; X = closed handle
     MOV     @T,T                    ; T = previous handle
     MOV     T,&CurrentHdl           ; becomes current handle
 ; ----------------------------------;
-CheckCaseOfClosedLoadedFile         ;
+CheckCaseOfCloseLoadedFile          ;
 ; ----------------------------------;
     CMP.B   #-1,W                   ;
     JNZ     CheckPreviousLoadedFile ;
 ; ----------------------------------;
-CloseFirstLoadedFile                ; W=-1, this closed LOADed file had not a parent file
+RestorePreviousBuffer               ; W=-1: this LOADed file to close had not a parent file
 ; ----------------------------------;
-    MOV     &SAVEtsLEN,TOS          ; restore lenght
-    MOV     &SAVEtsPTR,2(PSP)       ; restore pointer for interpret
-    MOV     #PARENACCEPT,&ACCEPT+2  ; restore (ACCEPT)
-    JMP     RestorePreviousReturn   ;
+    MOV     #TIB_ORG,&FCIB+2        ;     restore TIB as Current Input Buffer for next line (next QUIT)
+    MOV     #PARENACCEPT,&ACCEPT+2  ;     restore (ACCEPT) for next line (next QUIT)
+    JMP     RestoreBufferContext    ;
 ; ----------------------------------;
 CheckPreviousLoadedFile             ;
 ; ----------------------------------;
     CMP     #0,T                    ; previous handle ?
     JZ      InitHandleRET           ; no
     CMP.B   #0,HDLB_Token(T)        ; test previous handle token
-    JGE     InitHandleRET           ; case of READ, WRITE, DEL previous files
+    JGE     InitHandleRET           ; case of READ, WRITE, DEL without previous loaded file
 ; ----------------------------------;
-RestorePreviousLoadedFileContext    ;
+RestorePreviousLoadedFileContext    ; here the calling routine is always SD_ACCEPT
 ; ----------------------------------;
-    MOV HDLW_BUFofst(T),&BufferPtr  ; restore BufferPtr
+    MOV HDLW_BUFofst(T),&BufferPtr  ; restore previous BufferPtr
     CALL #SetBufLenAndLoadCurSector ;
 ; ----------------------------------;
-RestorePreviousReturn               ; -- StringOrg' TIB_LEN len'    R-- SDIB_PTR SD_ACCEPT_RET
+RestoreBufferContext                ; -- org CPL len'   R-- CIB_PTR RET_to_SD_ACCEPT
 ; ----------------------------------;
-    ADD     #2,PSP                  ; -- StringOrg' len'
-    ADD     #4,RSP                  ; R--           remove SD_ACCEPT_RET and SDIB ptr saved by SD_ACCEPT
-    MOV     &LOADPTR,X              ;3
-    MOV     @X,IP                   ;2 restore IP as it was when load" file" open
-    SUB     #2,&LOADPTR             ;4
-    mNEXT                           ;
+    ADD     #4,RSP                  ;                   remove RET_to_SD_ACCEPT and CIB ptr from return stack
+    ADD     #2,PSP                  ; -- org len'       current values
 ; ----------------------------------;
+    SUB     #6,&LOADPTR             ;
+    MOV     &LOADPTR,W              ;
+    MOV     @W+,TOS                 ;
+    MOV     @W+,0(PSP)              ; -- org len'       previous values
+    MOV     @W+,IP                  ;
+    mNEXT                           ;                   return to interpret
+; ----------------------------------;
+;; ----------------------------------;
+;RestoreBufferContext                ; -- org CPL len'   R-- CIB_PTR RET_to_SD_ACCEPT
+;; ----------------------------------;
+;    ADD     #4,RSP                  ;                   remove RET_to_SD_ACCEPT and CIB ptr from return stack
+;    ADD     #2,PSP                  ; -- org len'
+;; ----------------------------------;
+;    SUB     #6,&LOADPTR             ;
+;    MOV     &LOADPTR,W              ;
+;    MOV     @W+,TOS                 ;                   TOS = SAVE_LEN
+;    MOV     @W+,X                   ;                   X = SAVE_ORG
+;    MOV     X,0(PSP)                ;
+;    MOV     @W+,IP                  ;
+;; ----------------------------------;
+;    MOV     &SOURCE_LEN,W
+;    SUB     TOS,W
+;    MOV     W,&TOIN
+;    SUB     W,X
+;    MOV     X,&SOURCE_ADR
+;    mNEXT                           ;                       return to interpret
+;; ----------------------------------;
 
 
     .IFDEF SD_CARD_READ_WRITE
@@ -684,7 +709,8 @@ OPEN_LOAD                           ;
 ; ----------------------------------;
     CMP     #0,S                    ; open file happy end ?
     JNZ     OPEN_Error              ; no
-    MOV     #INTLOOP,IP             ; return to sender (QUIT) to get new line.
+;    MOV     #INTLOOP,IP             ; return to sender (INTERPRET)
+    MOV     @RSP+,IP                ; return to sender (QUIT) to get new line.
 OPEN_LOAD_END
     mNEXT                           ;
 ; ----------------------------------;

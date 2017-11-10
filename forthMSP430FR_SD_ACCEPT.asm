@@ -30,10 +30,10 @@
 ; used variables : BufferPtr, BufferLen
 
 ; ----------------------------------;
-;    FORTHWORD "SD_ACCEPT"          ; TIB TIB TIB_LEN -- PAD|SDIB len'
+;    FORTHWORD "SD_ACCEPT"          ; CIB CIB CPL -- CIB len
 ; ----------------------------------;
 SD_ACCEPT                           ; sequentially move from BUFFER to SDIB (PAD if RAM=1k) a line of chars delimited by CRLF
-; ----------------------------------; up to TIB_LEN = 80 chars
+; ----------------------------------; up to CPL = 80 chars
     PUSH    IP                      ;
     MOV     #SDA_YEMIT_RET,IP       ; set YEMIT return
 ; ----------------------------------;
@@ -41,11 +41,10 @@ StartNewLine                        ;
 ; ----------------------------------;
     MOV &CurrentHdl,T               ; prepare a link for the next LOADed file...
     MOV &BufferPtr,HDLW_BUFofst(T)  ; ...see usage : HandleComplements
-; ----------------------------------; -- TIB TIB len
-    MOV     #SDIB,W                 ;               W=dst
-    MOV     W,2(PSP)                ; -- StringOrg' TIB TIB_LEN
-    MOV     TOS,0(PSP)              ; -- StringOrg' TIB_LEN TIB_LEN
-    MOV     #0,TOS                  ; -- StringOrg' TIB_LEN Count
+; ----------------------------------; -- CIB CIB CPL
+    MOV     2(PSP),W                ;               W=dst
+    MOV     TOS,0(PSP)              ; -- CIB CPL CPL
+    MOV     #0,TOS                  ; -- CIB CPL Count
 ; ----------------------------------;
 SDA_InitSrcAddr                     ; <== SDA_GetFileNextSector
 ; ----------------------------------;
@@ -71,20 +70,20 @@ SDA_ComputeChar                     ;
 SDA_EndOfLine                       ;
 ; ----------------------------------;
     MOV     X,&BufferPtr            ; yes  save BufferPtr for next line
-    ADD     #2,PSP                  ; -- StringOrg' len'
+    ADD     #2,PSP                  ; -- CIB len
     MOV     @RSP+,IP                ;
     MOV     @IP+,PC                 ; ===> unique output
 ; ----------------------------------;
 SDA_MoveChar                        ;
 ; ----------------------------------;
-    CMP     @PSP,TOS                ; 2 count = TIB_LEN ?
-    JZ      YEMIT                   ; 2 yes, don't move char to dst
+    CMP     @PSP,TOS                ; 2 count = CPL ?
+    JZ      YEMIT1                  ; 2 yes, don't move char to dst
     MOV.B   Y,0(W)                  ; 3 move char to dst
     ADD     #1,W                    ; 1 increment dst addr
     ADD     #1,TOS                  ; 1 increment count of moved chars
-    JMP     YEMIT                   ; 9/6~ send echo to terminal if ECHO, do nothing if NOECHO
+    JMP     YEMIT1                  ; 9/6~ send echo to terminal if ECHO, do nothing if NOECHO
 ; ----------------------------------; 32/29~ char loop, add 14~ for readsectorW ==> 46/43~ ==> 174/186 kbytes/s @ 8MHz
-SDA_GetFileNextSector               ; StringOrg' TIB_LEN Count --
+SDA_GetFileNextSector               ; CIB CPL Count --
 ; ----------------------------------;
     PUSH    W                       ; save dst
     CALL    #Read_File              ; that resets BufferPtr

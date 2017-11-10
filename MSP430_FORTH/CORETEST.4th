@@ -1,6 +1,4 @@
 
-ECHO 
-
 [DEFINED] {ANS_COMP} [IF]
 
 ; ===============================================================
@@ -1140,3 +1138,5 @@ T{ s12 s11 COMPARE -> -1 }T
 $0A BASE !  \ happy end of core test
 
 [THEN]      \ ANS_COMP
+
+ECHO

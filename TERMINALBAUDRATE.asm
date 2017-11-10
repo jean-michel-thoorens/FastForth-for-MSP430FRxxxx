@@ -290,7 +290,7 @@
             MOV     #4,     &TERMBRW
             MOV.W   #0FE00h,&TERMMCTLW
 
-        .CASE 460800 ; CP2102 baudrate (with programming)
+        .CASE 460800 ; CP2102 baudrate
 ; Configure UART0 @ 921600 bauds / 4MHz
 ; N = 4000000/460800 = 4.34027... ==> {UCOS16=0, UCBR1=int(N)=4, UCBRF1=dont_care=0  UCBRS1=fn(frac(N))=fn(0.34027)=0x49
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
@@ -304,12 +304,19 @@
              MOV     #3,     &TERMBRW
              MOV.W   #04400h,&TERMMCTLW
 
-;        .CASE 806400  ; PL2303TA baudrate
-;; Configure UART0 @ 403200 bauds / 1MHz
-;; N=1000000/403200=2.48016 ==> UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.48016)=0x55
+        .CASE 806400  ; PL2303TA baudrate
+; Configure UART0 @ 403200 bauds / 1MHz
+; N=1000000/403200=2.48016 ==> UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.48016)=0x55
+; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+            MOV     #2,     &TERMBRW
+            MOV.W   #05500h,&TERMMCTLW
+
+;        .CASE 921600
+;; Configure UART0 @ 921600 bauds / 2MHz
+;; N = 2000000/921600 = 2.170138... ==> {UCOS16=0, UCBR1=int(N)=2, UCBRF1=dont_care=0  UCBRS1=fn(frac(N))=fn(0.170138)=0x11
 ;; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
-;            MOV     #2,     &TERMBRW
-;            MOV.W   #05500h,&TERMMCTLW
+;             MOV     #2,     &TERMBRW
+;             MOV.W   #01100h,&TERMMCTLW
 
 
         .ELSECASE
@@ -387,7 +394,7 @@
             MOV     #4,     &TERMBRW
             MOV.W   #0FE00h,&TERMMCTLW
 
-        .CASE 921600 ; CP2102 baudrate (with programming)
+        .CASE 921600 ; CP2102 baudrate
 ; Configure UART0 @ 921600 bauds / 4MHz
 ; N = 8000000/921600 = 4.34027... ==> {UCOS16=0, UCBR1=int(N)=4, UCBRF1=dont_care=0  UCBRS1=fn(frac(N))=fn(0.34027)=0x49
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
@@ -523,6 +530,12 @@
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
              MOV     #3,     &TERMBRW
              MOV.W   #04400h,&TERMMCTLW
+
+;        .CASE 3000000 ; PL2303TA baudrate
+;; Configure UART0 @ 6000000 bauds / 16MHz
+;; N = 16000000/6000000 = 2.6666.. ==> {UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.6666)=0xD6
+;            MOV     #2,    &TERMBRW
+;            MOV.W   #0D600h,&TERMMCTLW
 
         .ELSECASE
             .error "UART0 / 8 MHz : baudrate not implemented"
@@ -667,6 +680,12 @@
              MOV     #4,     &TERMBRW
              MOV.W   #0,&TERMMCTLW
 
+;        .CASE 6000000 ; PL2303TA baudrate
+;; Configure UART0 @ 6000000 bauds / 24MHz
+;; N = 16000000/6000000 = 2.6666.. ==> {UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.6666)=0xD6
+;            MOV     #2,    &TERMBRW
+;            MOV.W   #0D600h,&TERMMCTLW
+
         .ELSECASE
             .error "UART0 / 16 MHz : baudrate not implemented"
         .ENDCASE ; UART0 / 16 MHz baudrates
@@ -785,7 +804,7 @@
 
         .CASE 6000000 ; PL2303TA baudrate
 ; Configure UART0 @ 6000000 bauds / 24MHz
-; N = 24000000/6000000 = 4 ==> {UCOS16=0, UCBR0=int(N)=8, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.00000)=0x00
+; N = 24000000/6000000 = 4 ==> {UCOS16=0, UCBR0=int(N)=4, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.00000)=0x00
             MOV     #4,    &TERMBRW
             MOV.W   #0000h,&TERMMCTLW
 

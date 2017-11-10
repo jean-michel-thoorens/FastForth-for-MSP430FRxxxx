@@ -42,14 +42,21 @@ What is new ?
 
     FastForth V2.0, major version.
 
+    Word TIB is deprecated and replaced by CIB (Current Input Buffer).
+    Word CR generates CR+LF instead of CR. TYPE is rewritten in assembly.
+    Added half duplex input terminal for Bluetooth or wifi bridge use.
+    To do, set HALFDUPLEX switch in forthMSP430FR.asm before compiling.
+    If you set half duplex mode, add also echo local in teraterm terminal configuration.
+    tested with bluesmirf RN42 module at 921600bds with 4 and 5 wires config.
+
     Added fixed point s15q16 numbers. Thus FAST FORTH recognises : 
-    unsigned/signed numbers u/n (u <= 65535)/(-32768 <= n <= 32767), 
+    unsigned/signed numbers u/n (u <= 65535)/(-32768 <=нн n <= 32767), 
     unsigned/signed double numbers ud/d by adding a decimal point (ud <= .4294967295)/(-.2147483648 <= d <= .2147483647),
     and s15q16 signed numbers by adding a comma (-32768,00000 <= s15q16 <= 32767,00000).
     The internal or external words set {FIXPOINT} adds the words: HOLDS F+ F- F/ F#S F* F. S>F, D>F and 2CONSTANT.
     
     Fixed issue about the word LOAD": when called from a word, returns well into this calling word.
-    Note that with MSP430FR57xx family, LOAD return stack borrows LEAVE stack and SDIB uses PAD, due to lack of RAM.
+    Note that with MSP430FR57xx family, SDIB uses PAD, due to lack of RAM.
     
     With the BOOTLOADER option, QUIT becomes a DEFERed word to easily enable/disable bootloader:
     ' BOOT IS QUIT     enables bootloader.
@@ -183,7 +190,7 @@ With a size of about 6 kb, Fast Forth contains 119 words:
     CR             (CR)           NOECHO         ECHO           EMIT           (EMIT)         ACCEPT         KEY         
     (KEY)          C,             ALLOT          HERE           .              D.             U.             SIGN        
     HOLD           #>             #S             #              <#             BL             STATE          BASE        
-    >IN            CPL            TIB            PAD            J              I              UNLOOP         U<         
+    >IN            CPL            CIB            PAD            J              I              UNLOOP         U<         
     >              <              =              0>             0<             0=             DABS           ABS        
     NEGATE         XOR            OR             AND            -              +              C!             C@          
     !              @              DEPTH          R@             R>             >R             ROT            OVER        
@@ -340,7 +347,7 @@ then execute. the output is a target.txt file, i.e. MSP_EXP430FR5969.txt
 Load Txt file (TI format) to target
 -----------------------------------
 
-	drag your target.txt file and drop it on \prog.bat
+	drag your target.txt file and drop it on TARGETprog.bat
 
     or use scite internal command TOOLS:FET prog (CTRL+1).
 
@@ -351,19 +358,17 @@ If you want to program your own MSP430FRxxxx board, wire its pins TST, RST, 3V3 
 
 
 Connect the FAST FORTH target to a serial terminal
---------------------------------------------------
+-------------------------------------------------
 
-the eZFET uart doesn't work correctly, impossible to send reliably a source file 
-So, you will need an USBtoUART cable with a PL2303TA or PL2303HXD device that allows both XON/XOFF and/or hardware control flow :
-with (only) it, we reach 6Mbds file transfert with XON/XOFF or hardware control flow! 
+you will need an USBtoUART cable with a PL2303TA or PL2303HXD device that allows both XON/XOFF and hardware control flow :
+
 	http://www.google.com/search?q=PL2303TA
 	http://www.google.com/search?q=PL2303HXD
     WARNING! XON/XOFF no longer works with new Prolific driver v3.8.12.0 (03/03/2017)...
-             Waiting next update, get on web the previous version PL2303_Prolific_DriverInstaller_v1160.exe (or .zip),
-             install it then use DriveStoreExplorer to wipe any trace of other prolific driver versions:
-             https://driverstoreexplorer.codeplex.com/, that is to avoid windows 10 automatic driver update... 
+             Waiting next update, get on web previous PL2303_Prolific_DriverInstaller_v1160.exe (or .zip)
 
-or USBtoUART bridge, with a CP2102 device and 3.3V/5V that allows XON/XOFF control flow up to 921600bds:
+
+or USBtoUART bridge, with a CP2102 device and 3.3V/5V that allows XON/XOFF control flow :
 
 	search google: cp2102 module 3.3V
 	http://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx
@@ -372,7 +377,7 @@ or USBtoUART bridge, with a CP2102 device and 3.3V/5V that allows XON/XOFF contr
 	http://www.silabs.com/Support%20Documents/Software/install_USBXpress_SDK.exe
 	http://www.silabs.com/Support%20Documents/TechnicalDocs/an169.pdf
 
-or a USBtoUART bridge, with a FT232RL device and 3.3V/5V for only hardware control flow up to 921600bds:
+or a USBtoUART bridge, with a FT232RL device and 3.3V/5V for only hardware control flow:
 	
     WARNING! buy a FT232RL module with a switch 5V/3V3 and select 3V3.
 
@@ -414,7 +419,7 @@ Send a source file to the FAST FORH target
 Three .bat files are done in \MSP430-FORTH that enable you to do all you want.
 Double clic on them to see how to do.
 
-you can also open any source file with scite editor, and do all via its Tools menu.
+you can also open any source file with scite editor, and do all you want via its Tools menu.
 
 
 SD_Card Load, Read, Write and Delete 

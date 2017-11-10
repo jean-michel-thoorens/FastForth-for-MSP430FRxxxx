@@ -387,12 +387,5 @@ FATxx_SetFileSystemNext             ;
     MOV     X,&OrgClusters          ; X = virtual cluster 0 address (clusters 0 and 1 don't exist)
     MOV     &FATtype,&DIRClusterL   ; init DIRcluster as RootDIR
 ; ----------------------------------;
-    .IFNDEF RAM_1K                  ; 
-; ----------------------------------;
-INIT_LOADSATCK                      ; Load" IP return stack 
-; ----------------------------------;
-    MOV     #LOAD_STACK,&LOADPTR    ;
-; ----------------------------------;
-    .ENDIF
 
 
