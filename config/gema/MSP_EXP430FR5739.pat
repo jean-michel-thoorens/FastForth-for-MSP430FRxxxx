@@ -24,10 +24,10 @@
 ! MSP430FR5739 Config
 ! ======================================================================
 
-@define{@read{/config/gema/MSP430FR5739.pat}}
-@define{@read{/config/gema/MSP430FR57xx_FastForth.pat}}
-@define{@read{/config/gema/FastForthREGtoTI.pat}}
-@define{@read{/config/gema/RemoveComments.pat}}
+@define{@read{@mergepath{@inpath{};MSP430FR5739.pat;}}}
+@define{@read{@mergepath{@inpath{};MSP430FR57xx_FastForth.pat;}}}
+@define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
+@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 
 ! ======================================================================
 ! MSP_EXP430FR5739 board
@@ -177,7 +177,7 @@ SD_CDIN=\$201!
 SD_CSOUT=\$203!
 SD_CSDIR=\$205!
 
-SD_SEL1=\$20D!  ; to configure UCB0
+SD_SEL=\$20D!   ; to configure UCB0
 SD_REN=\$207!   ; to configure pullup resistors
 SD_BUS=\$70!    ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
 

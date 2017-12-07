@@ -24,10 +24,10 @@
 ! MSP430FR2433 Config
 ! ======================================================================
 
-@define{@read{/config/gema/MSP430FR2433.pat}}
-@define{@read{/config/gema/MSP430FR2x4x_FastForth.pat}}
-@define{@read{/config/gema/FastForthREGtoTI.pat}}
-@define{@read{/config/gema/RemoveComments.pat}}
+@define{@read{@mergepath{@inpath{};MSP430FR2433.pat;}}}
+@define{@read{@mergepath{@inpath{};MSP430FR2x4x_FastForth.pat;}}}
+@define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
+@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 
 ! ---------------------------------------------------
 ! CHIPSTICK_FR2433 <--> OUTPUT WORLD
@@ -89,7 +89,7 @@ SD_CDIN=\$201!
 SD_CSOUT=\$203!
 SD_CSDIR=\$205!
 
-SD_SEL1=\$20C!  ; to configure UCB0
+SD_SEL=\$20C!   ; to configure UCB0
 SD_REN=\$206!   ; to configure pullup resistors
 SD_BUS=\$0E!    ; pins P1.1 as UCB0CLK, P1.2 as UCB0SIMO & P1.3 as UCB0SOMI
 

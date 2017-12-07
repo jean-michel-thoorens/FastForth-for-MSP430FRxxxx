@@ -39,15 +39,16 @@
 ;===============================================================================
 
 ;-----------------------------------------------------------------------------------------------
-; TARGET configuration SWITCHES ; bytes values are for DTC=1, 8MHz 2457600 bds XON/XOFF
+; TARGET configuration SWITCHES ; bytes values are for DTC=1, 8MHz 2457600 bds TERMINAL3WIRES
 ;-----------------------------------------------------------------------------------------------
 ;                                                                     TOTAL - SUM of (INFO+RAM +VECTORS) = MAIN PROG
-;MSP_EXP430FR5739   ; compile for MSP-EXP430FR5739 launchpad        ; 4244  - 160    ( 24 + 86 +  50   ) = 4084 bytes
-;MSP_EXP430FR5969   ; compile for MSP-EXP430FR5969 launchpad        ; 4210  - 162    ( 24 + 86 +  52   ) = 4048 bytes
-MSP_EXP430FR5994   ; compile for MSP-EXP430FR5994 launchpad        ; 4258  - 186    ( 24 + 86 +  76   ) = 4072 bytes
-;MSP_EXP430FR6989   ; compile for MSP-EXP430FR6989 launchpad        ; 4226  - 168    ( 24 + 86 +  58   ) = 4058 bytes
-;MSP_EXP430FR4133   ; compile for MSP-EXP430FR4133 launchpad        ; 4264  - 140    ( 24 + 86 +  30   ) = 4124 bytes
-;CHIPSTICK_FR2433   ; compile for the "CHIPSTICK" of M. Ken BOAK    ; 4176  - 148    ( 24 + 86 +  38   ) = 4028 bytes
+;MSP_EXP430FR5739   ; compile for MSP-EXP430FR5739 launchpad        ; 4248  - 160    ( 24 + 86 +  50   ) = 4088 bytes
+;MSP_EXP430FR5969   ; compile for MSP-EXP430FR5969 launchpad        ; 4238  - 162    ( 24 + 86 +  52   ) = 4076 bytes
+MSP_EXP430FR5994   ;; compile for MSP-EXP430FR5994 launchpad        ; 4280  - 186    ( 24 + 86 +  76   ) = 4094 bytes
+;MSP_EXP430FR6989   ; compile for MSP-EXP430FR6989 launchpad        ; 4272  - 168    ( 24 + 86 +  58   ) = 4104 bytes
+;MSP_EXP430FR4133   ; compile for MSP-EXP430FR4133 launchpad        ; 4286  - 140    ( 24 + 86 +  30   ) = 4146 bytes
+;MSP_EXP430FR2433   ; compile for MSP-EXP430FR2433 launchpad        ; 4200  - 140    ( 24 + 86 +  30   ) = 4060 bytes
+;CHIPSTICK_FR2433   ; compile for the "CHIPSTICK" of M. Ken BOAK    ; 4204  - 148    ( 24 + 86 +  38   ) = 4064 bytes
 
 ; choose DTC (Direct Threaded Code) model, if you don't know, choose 1
 DTC .equ 1  ; DTC model 1 : DOCOL = CALL rDOCOL           14 cycles 1 word      shortest DTC model
@@ -70,10 +71,10 @@ TERMINAL4WIRES      ; + 18 bytes    enable 4 wires with hardware flow control on
 ;-------------------------------------------------------------------------------
 ; KERNEL ADD-ON SWITCHES
 ;-------------------------------------------------------------------------------
-CONDCOMP           ;; +  354 bytes : add conditionnal compilation : [UNDEFINED] [DEFINED] [IF] [ELSE] [THEN], strongly recommended. 
-MSP430ASSEMBLER    ;; + 1894 bytes : add embedded assembler with TI syntax; without, you can do all but all much more slowly...
-SD_CARD_LOADER     ;; + 1816 bytes : to LOAD source files from SD_card
-SD_CARD_READ_WRITE ;; + 1190 bytes : to read, create, write and del files + source files direct copy from PC to SD_Card
+CONDCOMP           ; +  354 bytes : add conditionnal compilation : [UNDEFINED] [DEFINED] [IF] [ELSE] [THEN], strongly recommended. 
+MSP430ASSEMBLER    ; + 1894 bytes : add embedded assembler with TI syntax; without, you can do all but all much more slowly...
+SD_CARD_LOADER     ; + 1832 bytes : to LOAD source files from SD_card
+SD_CARD_READ_WRITE ; + 1196 bytes : to read, create, write and del files + source files direct copy from PC to SD_Card
 BOOTLOADER         ; +   52 bytes : add to <reset> a bootstrap to SD_CARD\BOOT.4TH.
 ;QUIETBOOT          ; +    2 bytes : to perform bootload without displaying.
 VOCABULARY_SET     ; +  108 bytes : add VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83, not ANSI)
@@ -85,7 +86,7 @@ LOWERCASE          ; +   30 bytes : enable to write strings in lowercase.
 ;-------------------------------------------------------------------------------                   v
 UTILITY            ; +  426/508 bytes : add .S .RS WORDS U.R DUMP ?                            UTILITY.f
 ;FIXPOINT           ; +   40 bytes : add fixed point S15Q16 conversion words F#, F#S, F.        FIXPOINT.f
-;SD_TOOLS           ; +  126 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, adds UTILITY  SD_TOOLS.f
+SD_TOOLS           ; +  126 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, adds UTILITY  SD_TOOLS.f
 ;ANS_CORE_COMPLIANT ; +  876 bytes : required to pass coretest.4th ; (includes items below)     COMPxMPY.f (x = H or S)
 ;ARITHMETIC         ; +  358 bytes : add S>D M* SM/REM FM/MOD * /MOD / MOD */MOD /MOD */
 ;DOUBLE             ; +  130 bytes : add 2@ 2! 2DUP 2SWAP 2OVER
@@ -241,38 +242,28 @@ asmlink     .set    $
 ;LSTACK = L0 = LEAVEPTR     ; ----- RAMSTART
                             ; |
 LSTACK_SIZE .equ    16      ; | grows up
-                            ; |
                             ; V
-                            ;
                             ; ^
-                            ; |
 PSTACK_SIZE .equ    48      ; | grows down
                             ; |
 ;PSTACK=S0                  ; ----- RAMSTART + $80
-                            ;
                             ; ^
-                            ; |
 RSTACK_SIZE .equ    48      ; | grows down
                             ; |
 ;RSTACK=R0                  ; ----- RAMSTART + $E0
 
-                            ; aligned buffers only required for terminal tasks.
-
 ; names             bytes   ; comments
 
-;PAD                        ; ----- RAMSTART + $E2
+;PAD                        ; ----- RAMSTART + $E0
                             ; |
 PAD_LEN     .equ    84      ; | grows up    (ans spec. : PAD >= 84 chars)
-                            ; |
                             ; v
-;TIB                        ; ----- RAMSTART + $136
+;TIB                        ; ----- RAMSTART + $134
                             ; |
-TIB_LEN     .equ    82      ; | grows up    (ans spec. : TIB >= 80 chars)
-                            ; |
+TIB_LEN     .equ    84      ; | grows up    (ans spec. : TIB >= 80 chars)
                             ; v
 ;HOLDS_ORG                  ; ------RAMSTART + $188
                             ; ^
-                            ; |
 HOLD_SIZE   .equ    34      ; | grows down  (ans spec. : HOLD_SIZE >= (2*n) + 2 char, with n = 16 bits/cell
                             ; |
 ;BASE_HOLD                  ; ----- RAMSTART + $1AA
@@ -294,7 +285,7 @@ LSTACK          .equ RAMSTART
 LEAVEPTR        .equ LSTACK             ; Leave-stack pointer
 PSTACK          .equ LSTACK+(LSTACK_SIZE*2)+(PSTACK_SIZE*2)
 RSTACK          .equ PSTACK+(RSTACK_SIZE*2)
-PAD_ORG         .equ RSTACK+2
+PAD_ORG         .equ RSTACK
 TIB_ORG         .equ PAD_ORG+PAD_LEN
 HOLDS_ORG       .equ TIB_ORG+TIB_LEN
 BASE_HOLD       .equ HOLDS_ORG+HOLD_SIZE
@@ -360,10 +351,10 @@ FREQ_KHZ        .word FREQUENCY*1000        ; user use
     .ENDIF
 HECTOBAUDS      .word TERMINALBAUDRATE/100  ; user use
 
-SAVE_SYSRSTIV   .word 05                ; value to identify FAST FORTH first start after core recompiling
-LPM_MODE        .word CPUOFF+GIE        ; LPM0 is the default mode
-INIDP           .word ROMDICT           ; define RST_STATE
-INIVOC          .word lastvoclink       ; define RST_STATE
+SAVE_SYSRSTIV   .word 05                    ; value to identify first start after core recompiling
+LPM_MODE        .word CPUOFF+GIE            ; LPM0 is the default mode
+INIDP           .word ROMDICT               ; define RST_STATE
+INIVOC          .word lastvoclink           ; define RST_STATE
 
                 .word RXON                   ; user use
                 .word RXOFF                  ; user use
@@ -431,7 +422,6 @@ CurFATsector    .word 0   ; current FATSector of last free cluster
 DIRClusterL     .word 0     ; contains the Cluster of current directory ; = 1 as FAT16 root directory
 DIRClusterH     .word 0     ; contains the Cluster of current directory ; = 1 as FAT16 root directory
 EntryOfst       .word 0
-pathname        .word 0     ; address of pathname string
 
 ; ---------------------------------------
 ; Handle Pointer
@@ -441,12 +431,13 @@ CurrentHdl      .word 0     ; contains the address of the last opened file struc
 ; ---------------------------------------
 ; Load file operation
 ; ---------------------------------------
-SAVE_SOURCE
-SAVE_LEN        .word 0     ; of previous ACCEPT
-SAVE_ORG        .word 0     ; of previous ACCEPT
-SAVE_IN         .word 0     ; of previous ACCEPT
-                .word 0     ;
-                .word 0
+
+pathname        .word 0     ; or any string...
+EndOfPath       .word 0     ; or of any string...
+
+; ---------------------------------------
+
+                .word 0,0,0,0
 
 ; ---------------------------------------
 ; Handle structure
@@ -471,15 +462,12 @@ HDLH_CurClust   .equ 16 ; Current ClusterHi
 HDLL_CurSize    .equ 18 ; written size / not yet read size (Long)
 HDLH_CurSize    .equ 20 ; written size / not yet read size (Long)
 HDLW_BUFofst    .equ 22 ; BUFFER offset ; used by LOAD"
-;HDLW_ORG        .equ 24 ; BUFFER offset ; used by LOAD"
-;HDLW_TOIN       .equ 26 ; BUFFER offset ; used by LOAD"
-;HDLW_IP         .equ 28 ; BUFFER offset ; used by LOAD"
 
 
     .IFDEF RAM_1K ; RAM_Size = 1k: due to the lack of RAM PAD is SDIB
 
 FirstHandle
-HandleMax       .equ 5
+HandleMax       .equ 5 ; and not 8 because lack of RAM
 HandleLenght    .equ 24
 HandleEnd       .equ FirstHandle+handleMax*HandleLenght
 
@@ -487,7 +475,7 @@ HandleEnd       .equ FirstHandle+handleMax*HandleLenght
 
 LOADPTR         .equ HandleEnd
 LOAD_STACK      .equ HandleEnd+2
-LOADSTACK_SIZE  .equ HandleMax    ; make room for LOADPTR and for 6 cells LOADSTACK
+LOADSTACK_SIZE  .equ HandleMax+1    ; make room for 3 words * handles
 LoadStackEnd    .equ LOAD_STACK+LOADSTACK_SIZE*6
 
     .org LoadStackEnd
@@ -499,15 +487,15 @@ SDIB_ORG        .equ PAD_ORG
 
 FirstHandle
 HandleMax       .equ 8
-HandleLenght    .equ 32
+HandleLenght    .equ 24
 HandleEnd       .equ FirstHandle+handleMax*HandleLenght
 
     .org HandleEnd
 
 LOADPTR         .equ HandleEnd
 LOAD_STACK      .equ HandleEnd+2
-LOADSTACK_SIZE  .equ HandleMax    ; make room for LOADPTR and for 8 cells LOADSTACK
-LoadStackEnd    .equ LOAD_STACK+LOADSTACK_SIZE*6
+LOADSTACK_SIZE  .equ HandleMax+1    ; make room for 3 words * handles
+LoadStackEnd    .equ LOAD_STACK+LOADSTACK_SIZE*6 ; 3 words by handle
 
     .org LoadStackEnd
 
@@ -1069,10 +1057,6 @@ FSTATE:     mDOCON
             .word   STATE   ; VARIABLE address in RAM space
 
 ;-------------------------------------------------------------------------------
-; MULTIPLY
-;-------------------------------------------------------------------------------
-
-;-------------------------------------------------------------------------------
 ; ANS complement OPTION
 ;-------------------------------------------------------------------------------
     .IFDEF ANS_CORE_COMPLIANT
@@ -1122,62 +1106,6 @@ FSTATE:     mDOCON
 LESSNUM:    MOV     #BASE_HOLD,&HP
             mNEXT
 
-
-;;https://forth-standard.org/standard/core/num
-;;C #     ud1lo ud1hi -- ud2lo ud2hi          convert 1 digit of output
-;            FORTHWORD "#"
-;NUM         MOV.B   &BASE,T     ;3  T = DIVlo 
-;NUM1        CMP     #0,TOS      ;1  DVDhi <> 0 ?
-;NUM2        MOV     @PSP,S      ;2  S = DVDlo, TOS = DVDhi
-;            MOV     #0,W        ;1  W = REMlo = 0
-;            MOV     #32,rDODOES ;2  init loop count
-;            JNZ     MDIV        ;2  yes
-;            RRA     rDODOES     ;1  no: loop count / 2
-;            MOV     S,TOS       ;1      DVDhi <-- DVDlo
-;            MOV     #0,S        ;1      DVDlo <-- 0
-;            MOV     #0,X        ;1      QUOTlo <-- 0 (to do QUOThi = 0 at the end of division)
-;MDIV1       CMP     T,W         ;1  REMlo U>= DIVlo ?
-;            JNC     MDIV2       ;2  no : carry is reset
-;            SUB     T,W         ;1  yes: REMlo - DIVlo ; carry is set after soustraction!
-;MDIV2       ADDC    X,X         ;1  RLC quotLO
-;            ADDC    Y,Y         ;1  RLC quotHI
-;            SUB     #1,rDODOES  ;1  Decrement loop counter
-;            JN      ENDMDIV     ;2
-;            ADD     S,S         ;1  RLA DVDlo
-;            ADDC    TOS,TOS     ;1  RLC DVDhi
-;            ADDC    W,W         ;1  RLC REMlo
-;            JNC     MDIV1       ;2
-;            SUB     T,W         ;1  REMlo - DIVlo
-;            BIS     #1,SR       ;1  SETC
-;            JMP     MDIV2       ;2   
-;ENDMDIV     MOV #xdodoes,rDODOES;2  restore rDODOES
-;            MOV     X,0(PSP)    ;3  QUOTlo in 0(PSP)
-;            MOV     Y,TOS       ;1  QUOThi in TOS
-;TODIGIT     CMP.B   #10,W       ;2  W = REMlo
-;            JLO     TODIGIT1    ;2  U<
-;            ADD     #7,W        ;2
-;TODIGIT1    ADD     #30h,W      ;2
-;HOLDW       SUB     #1,&HP      ;3  store W=char --> -[HP]
-;            MOV     &HP,Y       ;3
-;            MOV.B   W,0(Y)      ;3
-;            mNEXT               ;4  41 words, about 214/394 cycles/char
-;
-;;https://forth-standard.org/standard/core/numS
-;;C #S    udlo:udhi -- udlo:udhi=0       convert remaining digits
-;            FORTHWORD "#S"
-;NUMS:       mDOCOL
-;            .word   NUM         ;
-;            FORTHtoASM          ;
-;            SUB     #2,IP       ;1      restore NUM return
-;            CMP     #0,X        ;1      test ud2lo first (generally true)
-;            JNZ     NUM1        ;2
-;            CMP     #0,TOS      ;1      then test ud2hi (generally false)
-;            JNZ     NUM2        ;2
-;            MOV     @RSP+,IP    ;2
-;            mNEXT               ;4 about 215/397 cycles/char
-
-
-
 ; unsigned 32-BIT DIVIDEND : 16-BIT DIVISOR --> 32-BIT QUOTIENT, 16-BIT REMAINDER
 ; 2 times faster if DVDhi = 0 (it's the general case)
 
@@ -1197,9 +1125,9 @@ LESSNUM:    MOV     #BASE_HOLD,&HP
 MUSMOD      MOV     TOS,T       ;1 T = DIVlo
             MOV     @PSP,TOS    ;2 TOS = DVDhi
             MOV     2(PSP),S    ;3 S = DVDlo
-MUSMOD1     CMP     #0,TOS      ;1  DVDhi=0 ?
-            MOV     #0,W        ;1  W = REMlo = 0
-            MOV     #32,rDODOES ;2  init loop count
+MUSMOD1     MOV     #0,W        ;1  W = REMlo = 0
+MUSMOD2     MOV     #32,rDODOES ;2  init loop count
+            CMP     #0,TOS      ;1  DVDhi=0 ?
             JNZ     MDIV1       ;2  no
             RRA     rDODOES     ;1  yes:loop count / 2
             MOV     S,TOS       ;1      DVDhi <-- DVDlo
@@ -1255,7 +1183,6 @@ NUMS:       mDOCOL
             JNZ     NUM1        ;2
             MOV     @RSP+,IP    ;2
             mNEXT               ;4 10 words, about 241/417 cycles/char
-
 
 ;https://forth-standard.org/standard/core/num-end
 ;C #>    udlo:udhi=0 -- c-addr u    end conversion, get string
@@ -1336,9 +1263,10 @@ CCOMMA:     MOV     &DDP,W
 ; TERMINAL I/O, input part
 ; ------------------------------------------------------------------------------
 
-;Z (KEY?)   -- c      get character from the terminal
-;            FORTHWORD "(KEY?)"
-PARENKEYTST: SUB     #2,PSP              ; 1  push old TOS..
+;Z (KEY)    -- c      get character from the terminal
+            FORTHWORD "(KEY)"
+PARENKEY    MOV     &TERMRXBUF,Y        ; empty buffer
+            SUB     #2,PSP              ; 1  push old TOS..
             MOV     TOS,0(PSP)          ; 4  ..onto stack
             CALL    #RXON
 KEYLOOP     BIT     #UCRXIFG,&TERMIFG   ; loop if bit0 = 0 in interupt flag register
@@ -1347,20 +1275,10 @@ KEYLOOP     BIT     #UCRXIFG,&TERMIFG   ; loop if bit0 = 0 in interupt flag regi
             CALL    #RXOFF              ;
             mNEXT
 
-;F KEY?     -- c      get character from input device ; deferred word
-;            FORTHWORD "KEY?"
-;KEYTST:     MOV     #PARENKEYTST,PC
-
-
-;Z (KEY)    -- c      get character from the terminal
-            FORTHWORD "(KEY)"
-PARENKEY:   MOV     &TERMRXBUF,Y        ; empty buffer
-            JMP     PARENKEYTST
-
 ;https://forth-standard.org/standard/core/KEY
 ;C KEY      -- c      wait character from input device ; deferred word
             FORTHWORD "KEY"
-KEY:        MOV     #PARENKEY,PC
+KEY         MOV     #PARENKEY,PC
 
 ;-------------------------------------------------------------------------------
 ; INTERPRETER INPUT, the kernel of kernel !
@@ -1380,7 +1298,7 @@ ACCEPT
 
 ; =========================================================================================================
 ; =========================================================================================================
-    .IFDEF  HALFDUPLEX  ; to use FAST FORTH with half duplex input terminal (bluetooth or wifi)
+    .IFDEF  HALFDUPLEX  ; to use FAST FORTH with half duplex input terminal (bluetooth or wifi connexion)
 ; =========================================================================================================
 ; =========================================================================================================
 
@@ -1390,7 +1308,7 @@ ACCEPT
 ; 3- the time between sending XON/RTS_low and clearing UCRXIFG on first received char,
 ; everything must be done to reduce these times, taking into account the necessity of switching to SLEEP (LPMx mode).
 ; --------------------------------------;
-; (ACCEPT) part I: prepare TERMINAL_INT ;
+; (ACCEPT) part I: prepare TERMINAL_INT ; -- addr len
 ; --------------------------------------;
             MOV     #ENDACCEPT,S        ;2              S = ACCEPT XOFF return
             MOV     #AKEYREAD1,T        ;2              T = default XON return
@@ -1416,7 +1334,7 @@ RXON_LOOP   BIT     #UCTXIFG,&TERMIFG   ;3  wait the sending end of XON, useless
             JZ      RXON_LOOP           ;2
             MOV     #17,&TERMTXBUF      ;4  move char XON into TX_buf
     .ENDIF                              ;
-    .IFDEF TERMINALCTSRTS               ;
+    .IFDEF TERMINAL4WIRES               ;
             BIC.B   #RTS,&HANDSHAKOUT   ;4  set RTS low
     .ENDIF                              ;
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
@@ -1433,7 +1351,7 @@ RXOFF_LOOP  BIT     #UCTXIFG,&TERMIFG   ;3  wait the sending end of XOFF, useles
             JZ      RXOFF_LOOP          ;2
             MOV     #19,&TERMTXBUF      ;4 move XOFF char into TX_buf
     .ENDIF                              ;
-    .IFDEF TERMINALCTSRTS               ;
+    .IFDEF TERMINAL4WIRES               ;
             BIS.B   #RTS,&HANDSHAKOUT   ;4 set RTS high
     .ENDIF                              ;
             RET                         ;4 to ENDACCEPT
@@ -1532,8 +1450,7 @@ WAITaKEY    BIT     #UCRXIFG,&TERMIFG   ; 3 new char in TERMRXBUF ?
 ENDACCEPT                               ; <--- XOFF return address
 ; --------------------------------------;
             MOV     #LPM0+GIE,&LPM_MODE ; reset LPM_MODE to default mode LPM0 for next line of input stream
-DROPEXIT
-            SUB     @PSP+,TOS           ; Org Ptr -- len'
+DROPEXIT    SUB     @PSP+,TOS           ; Org Ptr -- len'
             MOV     @RSP+,IP            ; 2 and continue with INTERPRET with GIE=0.
                                         ; So FORTH machine is protected against any interrupt...
             mNEXT                       ; ...until next falling down to LPMx mode of (ACCEPT) part1,
@@ -1599,7 +1516,7 @@ RXON_LOOP   BIT     #UCTXIFG,&TERMIFG   ;3  wait the sending end of XON, useless
             JZ      RXON_LOOP           ;2
             MOV     #17,&TERMTXBUF      ;4  move char XON into TX_buf
     .ENDIF                              ;
-    .IFDEF TERMINALCTSRTS               ;
+    .IFDEF TERMINAL4WIRES               ;
             BIC.B   #RTS,&HANDSHAKOUT   ;4  set RTS low
     .ENDIF                              ;
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
@@ -1617,7 +1534,7 @@ RXOFF_LOOP  BIT     #UCTXIFG,&TERMIFG   ;3  wait the sending end of XOFF, useles
             JZ      RXOFF_LOOP          ;2
             MOV     #19,&TERMTXBUF      ;4 move XOFF char into TX_buf
     .ENDIF                              ;
-    .IFDEF TERMINALCTSRTS               ;
+    .IFDEF TERMINAL4WIRES               ;
             BIS.B   #RTS,&HANDSHAKOUT   ;4 set RTS high
     .ENDIF                              ;
             RET                         ;4 to ENDACCEPT, ...or user defined
@@ -1725,8 +1642,7 @@ WAITaKEY    BIT     #UCRXIFG,&TERMIFG   ; 3 new char in TERMRXBUF ?
 ENDACCEPT                               ; <--- XOFF return address
 ; --------------------------------------;
             MOV     #LPM0+GIE,&LPM_MODE ; reset LPM_MODE to default mode LPM0 for next line of input stream
-DROPEXIT
-            SUB     @PSP+,TOS           ; Org Ptr -- len'
+DROPEXIT    SUB     @PSP+,TOS           ; Org Ptr -- len'
             MOV     @RSP+,IP            ; 2 and continue with INTERPRET with GIE=0.
                                         ; So FORTH machine is protected against any interrupt...
             mNEXT                       ; ...until next falling down to LPMx mode of (ACCEPT) part1,
@@ -1808,9 +1724,9 @@ SPACESEND   MOV     @PSP+,TOS
 ;https://forth-standard.org/standard/core/TYPE
 ;C TYPE    adr len --     type line to terminal
             FORTHWORD "TYPE"
-TYPE:       CMP     #0,TOS
+TYPE        CMP     #0,TOS
             JZ      TWODROP     ; abort fonction
-            .word   0151Eh      ;5 R-- len,IP 
+            .word   0151Eh      ;5 PUSM TOS,IP      R-- len,IP 
             MOV     #TYPE_NEXT,IP
 TYPELOOP    MOV     @PSP,Y      ;2 -- adr adr       ; 30~ char loop
             MOV.B   @Y+,TOS     ;2
@@ -1823,7 +1739,6 @@ TYPE_NEXT   FORTHtoASM
             JNZ     TYPELOOP    ;2
             .word   0171Dh      ;5 POPM IP,TOS
             JMP     TWODROP     ;2+7
-
 
 ; ------------------------------------------------------------------------------
 ; STRINGS PROCESSING
@@ -1946,7 +1861,6 @@ EOL_END     MOV     &DDP,TOS        ;3 -- c-addr
             MOV.B   Y,0(TOS)        ;3
             mNEXT                   ;4 -- c-addr     40 words      Z=1 <==> lenght=0 <==> EOL
 
-
 ;https://forth-standard.org/standard/core/FIND
 ;C FIND   c-addr -- c-addr 0   if not found ; flag Z=1
 ;C                  xt -1      if found     ; flag Z=0
@@ -1989,6 +1903,7 @@ CHARCOMP    CMP.B   @X+,0(W)        ;4                      compare chars
             JNZ     WORDLOOP        ;2 -- ???? NFA          21~ word loop on first char mismatch
             SUB.B   #1,Y            ;1                      decr count
             JNZ     CHARLOOP        ;2 -- ???? NFA          10~ char loop
+
 WORDFOUND   BIT     #1,X            ;1
             ADDC    #0,X            ;1
             MOV     X,S             ;1                      S=aligned CFA
@@ -2085,23 +2000,19 @@ QSIGN       CMP.B   #1,W            ;1
             MOV     #-1,2(RSP)      ;3                          R-- IP sign base
             JMP     TONUMPLUS       ;2
 ; ----------------------------------; 39
-QNUMNEXT    FORTHtoASM              ;  -- c-addr ud2lo-hi addr2 cnt2
-            CMP     #0,TOS          ;1 -- c-addr ud2lo-hi addr2 cnt2    cnt2=0 ? conversion is ok ?
+QNUMNEXT    FORTHtoASM              ;  -- c-addr ud2lo-hi addr2 cnt2    R-- IP sign BASE    S=addr2
+            CMP     #0,TOS          ;1                                  cnt2=0 ? conversion is ok ?
             JZ      QNUMNEXT1       ;2                                  yes
-; ----------------------------------;  -- c-addr ud2lo-hi addr2 cnt2 R-- IP sign BASE    S=addr2
-            BIS     #UF9,SR         ;2                               set double number flag
-; ----------------------------------;  -- c-addr ud2lo-hi addr2 cnt2 R-- IP sign BASE    S=addr2
-QNUMDP      CMP.B   #'.',0(S)       ;4                               rejected char by >NUMBER = decimal point ?
-            JNZ     QS15Q16         ;2                               no
+            BIS     #UF9,SR         ;2                                  set double number flag
+QNUMDP      CMP.B   #'.',0(S)       ;4                                  rejected char by >NUMBER = decimal point ?
+            JNZ     QS15Q16         ;2                                  no
+QNUMDPFOUND SUB     #2,IP           ;1                                      set >NUMBER return address
+            JMP     TONUMPLUS       ;2                                      loop back to terminate conversion
+QS15Q16     CMP.B   #',',0(S)       ;5                                  rejected char by >NUMBER is a comma ?
+            JNZ     QNUMNEXT1       ;2                                  no
 ; ----------------------------------;
-QNUMDPFOUND SUB     #2,IP           ;1                                   set >NUMBER return address
-            JMP     TONUMPLUS       ;2                                   to terminate conversion
-; ----------------------------------;
-QS15Q16     CMP.B   #',',0(S)       ;5                               rejected char by >NUMBER is a comma ?
-            JNZ     QNUMNEXT1       ;2                               no
-; ----------------------------------;
-S15Q16      MOV     TOS,W           ;1 -- c-addr ud2lo x x x         W=cnt2
-            MOV     #0,X            ;1 -- c-addr ud2lo x 0 x         init ud2lo' = 0
+S15Q16      MOV     TOS,W           ;1 -- c-addr ud2lo x x x            W=cnt2
+            MOV     #0,X            ;1 -- c-addr ud2lo x 0 x            init ud2lo' = 0
 S15Q16LOOP  MOV     X,2(PSP)        ;3 -- c-addr ud2lo ud2lo' ud2lo' x  X = 0(PSP) = ud2lo'   
             SUB.B   #1,W            ;1                                  decrement cnt2
             MOV     W,X             ;1                                  X = cnt2-1
@@ -2125,41 +2036,7 @@ S15Q16EOC   MOV     4(PSP),2(PSP)   ;5 -- c-addr ud2lo ud2hi uqlo x     ud2lo fr
             MOV     @PSP,4(PSP)     ;4 -- c-addr ud2lo ud2hi x x        uqlo becomes ud2lo
             MOV     W,TOS           ;1 -- c-addr ud2lo ud2hi x cnt2
             CMP.B   #0,TOS          ;1                                  TOS = 0 if end of conversion char = ',' (happy end)
-; ----------------------------------;
-;S11Q20      ;BIS     #UF9,SR         ;2                              set double number flag
-;            MOV     TOS,W           ;1 -- c-addr ud2lo x x x         W=cnt2
-;            MOV     #0,X            ;1 -- c-addr ud2lo x 0 x         init ud2lo' = 0
-;            MOV     #0,TOS          ;1 -- c-addr ud2lo x 0 0         init ud2hi' = 0
-;S11Q20LOOP  MOV     X,2(PSP)        ;3 -- c-addr ud2lo ud2lo' ud2lo' ud2hi'
-;            MOV     TOS,0(PSP)      ;3 -- c-addr ud2lo ud2lo' ud2hi' x
-;            SUB.B   #1,W            ;1                                  decrement cnt2
-;            MOV     W,X             ;1                                  X = cnt2-1
-;            ADD     S,X             ;1                                  X = end_of_string-1, first...
-;            MOV.B   @X,X            ;2                                  X = last char of string, first...
-;            SUB     #30h,X          ;2                                  char --> digit conversion
-;            CMP.B   #10,X           ;2
-;            JLO     QS11Q20DIGI     ;2
-;            SUB.B   #7,X            ;2
-;            CMP.B   #10,X           ;2
-;            JLO     S11Q20EOC       ;2
-;QS11Q20DIGI CMP     T,X             ;1                                          R-- IP sign BASE    is X a digit ?
-;            JHS     S11Q20EOC       ;2 -- c-addr ud2lo ud2lo' x ud2lo'          if char is not a valid digit ==> End Of Conversion
-;            .word   0F5Bh           ;                                           RRUM #4,X
-;            ADD     X,0(PSP)        ;3 -- c-addr ud2lo ud2lo' digit&ud2hi' x 
-;            MOV     T,TOS           ;1 -- c-addr ud2lo ud2lo' digit&ud2hi' base     R-- IP sign base
-;            .word   152Ch           ;6                                              PUSH S,T,W: R-- IP sign base addr2 base cnt2     
-;            CALL    #MUSMOD         ;4 -- c-addr ud2lo ur uqlo uqhi     X = QUOTlo
-;            .word   172Ah           ;6                                  restore W,T,S: R-- IP sign BASE     
-;            JMP     S11Q20LOOP      ;2                                  W=cnt
-;S11Q20EOC   MOV     4(PSP),X        ;
-;            .word   0F5Bh           ;                                   RRUM #4,X
-;            MOV     X,2(PSP)        ;5 -- c-addr ud2lo ud2hi uqlo x     ud2lo from >NUMBER part1 becomes here ud2hi=S11 part2
-;            AND     #0Fh,TOS        ;
-;            ADD     TOS,2(PSP)
-;            MOV     @PSP,4(PSP)     ;4 -- c-addr ud2lo ud2hi x x        uqlo becomes ud2lo
-;            MOV     W,TOS           ;1 -- c-addr ud2lo ud2hi x cnt2
-;            CMP.B   #0,TOS          ;1                                  if end of string is reached, happy end of conversion
-;; ----------------------------------;88
+; ----------------------------------;88
 QNUMNEXT1   .word   0172Bh          ;4 -- c-addr ud2lo-hi x cnt2        POPM T,S,IP  S = sign flag = {-1;0}
             MOV     S,TOS           ;1 -- c-addr ud2lo-hi x sign
             MOV     T,&BASE         ;3
@@ -2183,7 +2060,6 @@ QDOUBLE     BIT     #UF9,SR         ;2                      decimal point added 
             ADD     #2,PSP          ;1                      leave number
 QNUMEND    mNEXT                    ;4                      TOS=-1 and Z=0 ==> conversion ok
 ; ----------------------------------;119 words 
-
 
     .ELSE ; no hardware MPY
 
@@ -2290,24 +2166,20 @@ QSIGN       CMP.B   #1,X            ;1
             MOV     #-1,2(RSP)      ;3                      R-- IP sign base
             JMP     TONUMPLUS       ;2
 ; ----------------------------------;45
-QNUMNEXT    FORTHtoASM              ;  -- c-addr ud2lo ud2hi addr2 count2
-            CMP     #0,TOS          ;1 -- c-addr ud2lo-hi addr2 cnt2    cnt2=0 ? conversion is ok ?
+QNUMNEXT    FORTHtoASM              ;  -- c-addr ud2lo-hi addr2 cnt2    R-- IP sign BASE    S=addr2,T=cnt2
+            CMP     #0,TOS          ;1                                  cnt2=0 ? conversion is ok ?
             JZ      QNUMNEXT1       ;2                                  yes
-; ----------------------------------;
             BIS     #UF9,SR         ;2                                  set double number flag
-; ----------------------------------;
 QNUMDP      CMP.B   #'.',0(S)       ;4                                  rejected char by >NUMBER is a decimal point ?
             JNZ     QS15Q16         ;2                                  no
-; ----------------------------------;  -- c-addr ud2lo-hi addr2 cnt2    R-- IP sign BASE    S=addr2,T=cnt2
 QNUMDPFOUND SUB     #2,IP           ;1                                      set >NUMBER return address
             JMP     TONUMPLUS       ;2                                      to terminate conversion
-; ----------------------------------;56
 QS15Q16     CMP.B   #',',0(S)       ;5                                  rejected char by >NUMBER is a comma ?
             JNZ     QNUMNEXT1       ;2                                  no
 ; ----------------------------------;
 S15Q16      MOV     T,W             ;1 -- c-addr ud2lo x x x            W=cnt2
             MOV     &BASE,T         ;3                                  T=current base
-            MOV     #0,X            ;1 -- c-addr ud2lo x 0 x         init ud2lo' = 0
+            MOV     #0,X            ;1 -- c-addr ud2lo x 0 x            init ud2lo' = 0
 S15Q16LOOP  MOV     X,2(PSP)        ;3 -- c-addr ud2lo ud2lo' ud2lo' x  X = 0(PSP) = ud2lo'   
             SUB.B   #1,W            ;1                                  decrement cnt2
             MOV     W,X             ;1                                  X = cnt2-1
@@ -2364,7 +2236,6 @@ QNUMEND     mNEXT                   ;4                           TOS=-1 and Z=0 
 EXECUTE:    MOV     TOS,W       ; 1 put word address into W
             MOV     @PSP+,TOS   ; 2 fetch new TOS
             MOV     W,PC        ; 3 fetch code address into PC
-                                ; 6 = ITC - 1
 
 ;https://forth-standard.org/standard/core/Comma
 ;C ,    x --           append cell to dict
@@ -2377,7 +2248,7 @@ COMMA:      MOV     &DDP,W      ;3
 
 ;https://forth-standard.org/standard/core/LITERAL
 ;C LITERAL  (n|d) --        append single numeric literal if compiling state
-;           (n|d) --        append double numeric literal if compiling state and if DP<>0 (not ANS)
+;           (n|d) --        append double numeric literal if compiling state and if UF9<>0 (not ANS)
             FORTHWORDIMM "LITERAL"      ; immediate
 LITERAL:    CMP     #0,&STATE   ;3
             JZ      LITERALEND  ;2
@@ -2414,8 +2285,8 @@ INTLOOP     .word   FBLANK,WORDD        ; -- c-addr     Z = End Of Line
             FORTHtoASM                  ;
             MOV     #INTFINDNEXT,IP     ;2              define INTFINDNEXT as FIND return
             JNZ     FIND                ;2              if EOL not reached
-            MOV     @RSP+,IP            ; -- c-addr
             MOV     @PSP+,TOS           ; --            else EOL is reached
+            MOV     @RSP+,IP            ; -- c-addr
             mNEXT                       ;               return to QUIT on EOL
 
 INTFINDNEXT FORTHtoASM                  ; -- c-addr fl  Z = not found
@@ -2426,7 +2297,7 @@ INTFINDNEXT FORTHtoASM                  ; -- c-addr fl  Z = not found
             MOV     #INTLOOP,IP         ;2              define (EXECUTE | COMMA) return
             XOR     &STATE,W            ;3
             JZ      COMMA               ;2 c-addr --    if W xor STATE = 0 compile xt then loop back to INTLOOP
-            JNZ     EXECUTE             ;2 c-addr --    if W xor STATE <> 0 execute then loop back to INTLOOP
+            JNZ     EXECUTE             ;2 c-addr --    if W xor STATE <>0 execute xt then loop back to INTLOOP
 
 INTQNUMNEXT FORTHtoASM                  ;  -- n|c-addr fl   Z = not a number, SR(UF9) double number request
             MOV     @PSP+,TOS           ;2
@@ -3144,10 +3015,10 @@ FORTH_BODY  .word   lastforthword
             .word   lastforthword30
             .word   lastforthword31
 
-    .ELSECASE
+    .ELSECASE   ; = CASE 1
     .ENDCASE
-            .word   voclink
-voclink     .set    $-2
+            .word   voclink         ; voclink = 0
+voclink         .set    $-2
 
 ;X  ALSO    --                  make room to put a vocabulary as first in context
     .IFDEF VOCABULARY_SET
@@ -3495,7 +3366,7 @@ PARENWARM:
 ;            .word   DOT                 ; display SYSSNIV
 ;            .word   DOT                 ; display SYSUNIV
             .word   XSQUOTE
-            .byte   39," FastForth V2.0",FREQ," (C) J.M.Thoorens "
+            .byte   39," FastForth V201",FREQ," (C) J.M.Thoorens "
             .word   TYPE
             .word   LIT,FRAM_FULL,HERE,MINUS,UDOT
             .word   XSQUOTE         ;
@@ -3652,7 +3523,7 @@ COLD_END
     ; SD TOOLS
     ;---------------------------------------------------------------------------
         .IFDEF SD_TOOLS
-        .include "ADDON\SD_TOOLS.asm"
+        .include "ADDON/SD_TOOLS.asm"
         .ENDIF ;  SD_READ_WRITE_TOOLS
     .ENDIF ; SD_CARD_LOADER
 
@@ -3660,14 +3531,14 @@ COLD_END
 ; UTILITY WORDS OPTION
 ;-------------------------------------------------------------------------------
     .IFDEF UTILITY
-    .include "ADDON\UTILITY.asm"
+    .include "ADDON/UTILITY.asm"
     .ENDIF ; UTILITY
 
 ;-------------------------------------------------------------------------------
 ; FIXED POINT OPERATORS OPTION
 ;-------------------------------------------------------------------------------
         .IFDEF FIXPOINT
-        .include "ADDON\FIXPOINT.asm"
+        .include "ADDON/FIXPOINT.asm"
         .ENDIF ; FIXPOINT
 
 ;-------------------------------------------------------------------------------

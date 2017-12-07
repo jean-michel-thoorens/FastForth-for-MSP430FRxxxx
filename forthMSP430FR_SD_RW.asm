@@ -202,11 +202,8 @@ SD_RW_RET                           ;
 
 
 ; when create filename, forbidden chars are skipped
-ForbiddenChars ; 15 forbidden chars + dot char table
-;          "  *  +  ,  /  :  ;  <  =  >  ?  [  \  ]  |  .
-    .byte 34,42,43,44,47,58,59,60,61,62,63,91,92,93,124,46
-
-
+ForbiddenChars ; 15 forbidden chars table + dot char
+    .byte '"','*','+',',','/',':',';','<','=','>','?','[','\\',']','|','.'
 
 ; ----------------------------------;
 OPWC_SkipDot                        ;
@@ -223,8 +220,10 @@ FillDIRentryName                    ;SWXY use
 ; ----------------------------------;
     MOV.B   @T+,W                   ; W = char of pathname
     MOV.B   W,BUFFER(Y)             ;     to DIRentry
-    CMP     #0,W                    ; end of stringZ ?
-    JZ      OPWC_CompleteWithSpaces ;
+;    CMP     #0,W                    ; end of stringZ ?
+;    JZ      OPWC_CompleteWithSpaces ;
+    CMP     T,&EndOfPath            ; EOS < PTR ?
+    JLO     OPWC_CompleteWithSpaces ; yes
 ; ----------------------------------;
 SkipForbiddenChars                  ;
 ; ----------------------------------;
@@ -254,7 +253,7 @@ OPWC_CompleteWithSpaces             ; 0 to n spaces !
 ; ----------------------------------;
 OPWC_CompleteWithSpaceloop          ;
 ; ----------------------------------;
-    MOV.B   #32,BUFFER(Y)           ; remplace dot by char space
+    MOV.B   #' ',BUFFER(Y)          ; remplace dot by char space
     ADD     #1,Y                    ; increment DIRentry ptr in buffer 
     SUB     #1,X                    ; dec countdown of chars space
     JNZ OPWC_CompleteWithSpaceloop  ;
@@ -351,7 +350,8 @@ OPWC_SetEntryAttribute              ; (cluster=DIRcluster!)
 ; ----------------------------------;
     MOV     #1,S                    ; preset pathname error
     MOV     &Pathname,T             ; here, pathname is "xxxxxxxx.yyy" format
-    CMP.B   #0,0(T)                 ; forbidden null string
+;    CMP.B   #0,0(T)                 ; forbidden null string
+    CMP     T,&EndOfPath            ;
     JZ      OPWC_InvalidPathname    ; write error 1
     CMP.B   #'.',0(T)               ; forbidden "." in first
     JZ      OPWC_InvalidPathname    ; write error 1
@@ -659,18 +659,15 @@ OPND_End                            ;
 ; then when XON is sent below, TERATERM sends "file.ext" by slices of 512 bytes,
 ; until it sends char ETX that closes the file on SD_CARD.
 
+
     FORTHWORD "TERM2SD\34"
     mDOCOL
-    .word   DELDQ                   ;   DEL file if already exist
-    .word   HERE                    ;
+    .word   DELDQ                   ;                   DEL filepath if already exist
+    .word   lit,2                   ; -- open_type
+    .word   HERE,COUNT              ; -- open_type addr cnt
+    .word   PARENOPEN               ;                   reopen same filepath but as write
     FORTHtoASM                      ;
-    ADD     #2,RSP                  ; pop IP of OPEN
-    SUB     #2,PSP                  ;
-    MOV     #2,0(PSP)               ; -- open_type HERE     open_type = open as write
-    MOV     #TERM2SD,IP             ;                       IP = ParenOpen return address
-    MOV     #PARENOPEN,PC           ; open_type HERE --     open as write the file whose HERE is the c-addr of pathname
-TERM2SD                             ;
-    FORTHtoASM                      ; T = CurrentHdl
+    MOV     @RSP+,IP                ;
     BIC     #UCRXIFG,&TERMIFG       ;   clean up RX buffer  
 ; ----------------------------------;
 T2S_GetSliceLoop                    ;   tranfert by slices of 512 bytes terminal input to file on SD_CARD via BUFFER 

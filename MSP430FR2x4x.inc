@@ -450,6 +450,17 @@ TERMIFG         .equ eUSCI_A0_SFR + 1Ch    ; eUSCI_A0 Interrupt Flags Register
 
 
 ; ----------------------------------------------------------------------
+; eUSCI_A1
+; ----------------------------------------------------------------------
+    .IFDEF UCA1_SD
+SD_CTLW0       .equ eUSCI_A1_SFR + 00h    ; USCI_B0 Control Word Register 0
+SD_BRW         .equ eUSCI_A1_SFR + 06h    ; USCI_B0 Baud Word Rate 0
+SD_RXBUF       .equ eUSCI_A1_SFR + 0Ch    ; USCI_B0 Receive Buffer 8
+SD_TXBUF       .equ eUSCI_A1_SFR + 0Eh    ; USCI_B0 Transmit Buffer 8
+SD_IFG         .equ eUSCI_A1_SFR + 2Ch    ; USCI_B0 Interrupt Flags Register
+    .ENDIF ;UCA1_SD
+
+; ----------------------------------------------------------------------
 ; eUSCI_B0
 ; ----------------------------------------------------------------------
     .IFDEF UCB0_SD

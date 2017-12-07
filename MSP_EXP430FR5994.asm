@@ -155,9 +155,16 @@
 
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
+; PORTA usage
+SD_SEL      .equ PASEL1  ; word access, to configure UCB0
+SD_REN      .equ PAREN   ; word access, to configure pullup resistors
+SD_BUS      .equ 04C0h   ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
+
+
 ; PORT1 FastForth usage
 ; P1.0    - led1 red
 ; P1.1    - led2 green
+
 
 ; PORT2 FastForth usage
 
@@ -182,6 +189,10 @@ TERM_REN    .equ P2REN
 ; PORT3 FastForth usage
 
 ; PORT4 FastForth usage
+SD_CS       .equ 1        ; P4.0 as SD_CS     
+SD_CSOUT    .equ P4OUT
+SD_CSDIR    .equ P4DIR
+
 
 
     .IFDEF TERMINAL4WIRES
@@ -225,7 +236,7 @@ CTS         .equ  8 ; P4.3
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
 ; PORT5 FastForth usage
-; P5.6 Switch S1  used for hard reset (WIPE+COLD)
+; P5.6 Switch S1
 ; P5.5 Switch S2
 SWITCHIN    .set P5IN    ; port
 s1          .set 020h    ; P5.5 bit position
@@ -245,6 +256,9 @@ s1          .set 020h    ; P5.5 bit position
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
 ; PORT7 FastForth usage
+SD_CD       .equ 4        ; P7.2 as SD_CD
+SD_CDIN     .equ P7IN
+
 
 ; PORT8 FastForth usage
 

@@ -1,6 +1,7 @@
 !MSP430fr5969.pat
 
-@define{@read{/config/gema/MSP430FR5x6x.pat}}
+!@define{@read{/config/gema/MSP430FR5x6x.pat}}
+@define{@read{@mergepath{@inpath{};MSP430FR5x6x.pat;}}}
 
 
 !                   \ RTC_B

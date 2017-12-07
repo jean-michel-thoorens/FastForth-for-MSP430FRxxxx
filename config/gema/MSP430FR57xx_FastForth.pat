@@ -129,18 +129,17 @@ CurFATsector=\$1842!
 DIRclusterL=\$1844!  contains the Cluster of current directory ; 1 if FAT16 root directory
 DIRclusterH=\$1846!  contains the Cluster of current directory ; 1 if FAT16 root directory
 EntryOfst=\$1848!  
-pathname=\$184A!    address of pathname string
 
 ! ---------------------------------------
 ! Handle Pointer
 ! ---------------------------------------
-CurrentHdl=\$184C!  contains the address of the last opened file structure, or 0
+CurrentHdl=\$184A!  contains the address of the last opened file structure, or 0
 
 ! ---------------------------------------
 ! Load file operation
 ! ---------------------------------------
-SAVEtsLEN=\$184E!              of previous ACCEPT
-SAVEtsPTR=\$1850!              of previous ACCEPT
+pathname=\$184C!    address of pathname string
+EndOfPath=\$184E!
 
 ! ---------------------------------------
 ! Handle structure
@@ -168,12 +167,15 @@ HDLW_BUFofst=22!    BUFFER offset ; used by LOAD" and by WRITE"
 
 
 !OpenedFirstFile     ; "openedFile" structure 
-HandleMax=7!
+HandleMax=5!
 HandleLenght=24!
 FirstHandle=\$1858!
-HandleOutOfBound=\$1900!
+HandleEnd=\$18D0!
 
-
+!Stack of return IP for LOADed files, preincrement stack structure
+LOADPTR=\$18D0!
+LOAD_STACK=\$18D2!
+LOAD_STACK_END=\$18F6!
 
 ! ============================================
 ! FORTH RAM areas :
@@ -182,22 +184,19 @@ LSTACK_SIZE=\#16! words
 PSTACK_SIZE=\#48! words
 RSTACK_SIZE=\#48! words
 PAD_LEN=\#84! bytes
-!TIB_LEN=\#80! bytes
-TIB_LEN=\#82! bytes
+TIB_LEN=\#84! bytes
 HOLD_SIZE=\#34! bytes
 
 ! ============================================
 ! FastForth RAM memory map (= 1k):
 ! ============================================
 LEAVEPTR=\$1C00!    \ Leave-stack pointer, init by QUIT
-LOADPTR=\$1C00!     \ LOAD return pointer, init by SD_INIT
-LSATCK=\$1C00!      \ leave stack, grow up
-LOAD_STACK=\$1C00!  \ LOAD return stack, grow up
-PSTACK=\$1C80!      \ parameter stack, grow down
-RSTACK=\$1CE0!      \ Return stack, grow down
-PAD_ORG=\$1CE2!     \ user scratch pad buffer, grow up
-!TIB_ORG=\$1D38!     \ Terminal input buffer, grow up
-TIB_ORG=\$1D36!     \ Terminal input buffer, grow up
+LSATCK=\$1C00!      \ leave stack,      grow up
+PSTACK=\$1C80!      \ parameter stack,  grow down
+RSTACK=\$1CE0!      \ Return stack,     grow down
+PAD_ORG=\$1CE0!     \ user scratch pad buffer, grow up
+SDIB_ORG=\$1CE0!    \ borrows PAD because lack of RAM
+TIB_ORG=\$1D34!     \ Terminal input buffer, grow up
 HOLDS_ORG=\$1D88!   \ a good address for HOLDS
 BASE_HOLD=\$1DAA!   \ BASE HOLD area, grow down
 

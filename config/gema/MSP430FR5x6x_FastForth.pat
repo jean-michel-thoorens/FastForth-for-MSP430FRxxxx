@@ -88,8 +88,7 @@ LSTACK_SIZE=\#16! words
 PSTACK_SIZE=\#48! words
 RSTACK_SIZE=\#48! words
 PAD_LEN=\#84! bytes
-!TIB_LEN=\#80! bytes
-TIB_LEN=\#82! bytes
+TIB_LEN=\#84! bytes
 HOLD_SIZE=\#34! bytes
 
 ! ============================================
@@ -99,9 +98,8 @@ LEAVEPTR=\$1C00!    \ Leave-stack pointer, init by QUIT
 LSATCK=\$1C00!      \ leave stack,      grow up
 PSTACK=\$1C80!      \ parameter stack,  grow down
 RSTACK=\$1CE0!      \ Return stack,     grow down
-PAD_ORG=\$1CE2!     \ user scratch pad buffer, grow up
-!TIB_ORG=\$1D38!     \ Terminal input buffer, grow up
-TIB_ORG=\$1D36!     \ Terminal input buffer, grow up
+PAD_ORG=\$1CE0!     \ user scratch pad buffer, grow up
+TIB_ORG=\$1D34!     \ Terminal input buffer, grow up
 HOLDS_ORG=\$1D88!   \ a good address for HOLDS
 BASE_HOLD=\$1DAA!   \ BASE HOLD area, grow down
 
@@ -185,18 +183,17 @@ CurFATsector=\$202A!
 DIRclusterL=\$202C!  contains the Cluster of current directory ; 1 if FAT16 root directory
 DIRclusterH=\$202E!  contains the Cluster of current directory ; 1 if FAT16 root directory
 EntryOfst=\$2030!  
-pathname=\$2032!    address of pathname string
 
 ! ---------------------------------------
 ! Handle Pointer
 ! ---------------------------------------
-CurrentHdl=\$2034!  contains the address of the last opened file structure, or 0
+CurrentHdl=\$2032!  contains the address of the last opened file structure, or 0
 
 ! ---------------------------------------
 ! Load file operation
 ! ---------------------------------------
-SAVEtsLEN=\$2036!              of previous ACCEPT
-SAVEtsPTR=\$2038!              of previous ACCEPT
+pathname=\$2034!
+EndOfPath=\$2436!
 
 ! ---------------------------------------
 ! Handle structure
@@ -227,13 +224,14 @@ HDLW_BUFofst=22!    BUFFER offset ; used by LOAD" and by WRITE"
 HandleMax=8!
 HandleLenght=24!
 FirstHandle=\$2040!
-HandleOutOfBound=\$2100!
+HandleEnd=\$2100!
 
 !Stack of return IP for LOADed files, preincrement stack structure
-LOAD_STACK=\$2100!
 LOADPTR=\$2100!
+LOAD_STACK=\$2102!
+LOAD_STACK_END=\$2138!
 
-!SD_card Input Buffer
-SDIB=\$2112!
-SDIB_LEN=\#84!
-SD_END_DATA=\$2166!
+!SD_card Input Buffer, lenght = CPL
+SDIB_ORG=\$2138!
+
+SD_END_DATA=\$218C!

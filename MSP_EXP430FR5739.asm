@@ -152,6 +152,7 @@
 ;  VCC -                        <---- VCC (optional supply from UARTtoUSB bridge - WARNING ! 3.3V !)
 ;  GND -                        <---> GND (optional supply from UARTtoUSB bridge)
 ;        
+; ---------------------------------------------------------------------------
 ; SD_CardAdapter not compatible with HARDWARE flow control for FORTH TERMINAL
 ; ---------------------------------------------------------------------------
 ; VCC  -                 RF.2 
@@ -192,9 +193,14 @@
 
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
+; PORTA usage
+SD_SEL      .equ PASEL1 ; to configure UCB0
+SD_REN      .equ PAREN  ; to configure pullup resistors
+SD_BUS      .equ 7000h  ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
+
+
 ; PORT 1  usage
-; P1.4 is used as analog input from NTC voltage divider ==> switch to ADC to disable digital input
-    BIS.B #10h,&P1SELC
+; P1.4 is used as analog input from NTC voltage divider
 
 
 Deep_RST_IN .equ P2IN  ; TERMINAL TX  pin as FORTH Deep_RST 
@@ -203,39 +209,33 @@ TERM_TXRX   .equ 003h
 TERM_SEL    .equ P2SEL1
 TERM_REN    .equ P2REN
 
+SD_CD       .equ 4         ; P2.2 as SD_CD
+SD_CS       .equ 8         ; P2.3 as SD_CS     
+SD_CDIN     .equ P2IN
+SD_CSOUT    .equ P2OUT
+SD_CSDIR    .equ P2DIR
+
 ; RTS output is wired to the CTS input of UART2USB bridge 
-; CTS is not used by FORTH terminal
 ; configure RTS as output high to disable RX TERM during start FORTH
 
-; P2.7 is used to power the accelerometer and NTC voltage divider ==> output low = OFF
+; P2.7 is used to power the accelerometer and NTC voltage divider ==> output low = power OFF
+    BIS #07FEFh,&PAREN  ; all input pins with pull up resistor else P2.7 and P1.4 with pull down
 
     .IFDEF TERMINAL4WIRES
 
-RTS         .equ  4 ; P2.2
 HANDSHAKOUT .equ  P2OUT
 HANDSHAKIN  .equ  P2IN
-    BIS #08400h,&PADIR  ; all pins as input else RTS P2.2 and P2.7
-    BIS #07FFFh,&PAREN  ; all input pins with resistor
+
+RTS         .equ  4 ; P2.2
+    BIS #00400h,&PADIR  ; RTS P2.2 output high
 
         .IFDEF TERMINAL5WIRES
 
 CTS         .equ  8 ; P2.3
 
-    MOV #077FFh,&PAOUT  ; that acts as pull up, and P2.7 as output LOW, CTS input low
-
-        .ELSEIF
-
-    MOV #07FFFh,&PAOUT  ; that acts as pull up, and P2.7 as output LOW
+    BIS #00800h,&PAOUT  ; CTS input low
 
         .ENDIF  ; TERMINAL5WIRES
-
-    .ELSEIF
-
-; PORTx default wanted state : pins as input with pullup resistor
-    BIS #08000h,&PADIR  ; all pins as input else P2.7
-    BIS #07FFFh,&PAREN  ; all input pins with resistor
-    MOV #07FFFh,&PAOUT  ; that acts as pull up, and P2.7 as output LOW
-
 
     .ENDIF  ; TERMINAL4WIRES
 
@@ -247,13 +247,12 @@ CTS         .equ  8 ; P2.3
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
 ; P3 FastForth usage
-; P3.0 to P3.2 are accelerometer analog outputs ==> switch to ADC to disable digital input
-    BIS.B   #07h,&P3SELC
+; P3.0 to P3.2 are accelerometer analog outputs
 
 ; P3.4 to P3.7 are blues LEDs : set output low = OFF
 
 ; P4 FastForth usage
-; P4.0 Switch S1  used for hard reset (WIPE+COLD)
+; P4.0 Switch S1
 ; P4.1 switch S2
 
 SWITCHIN    .equ P4IN
@@ -261,9 +260,9 @@ S1          .equ 1
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
+    MOV #0FF08h,&PAOUT      ; all pins inputs hifh else blues LEDs and ADC inputs
+    BIS #0FF08h,&PAREN      ; all pins with pull resistors else blues LEDs and ADC inputs
     BIS #000F0h,&PADIR      ; all pins as input else blues LEDs
-    MOV #0FF0Fh,&PAOUT      ; all pins high else blues LEDs
-    BIS #0FF0Fh,&PAREN      ; all pins 1 with pull resistors else blues LEDs
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORTJ
@@ -277,9 +276,9 @@ S1          .equ 1
 
 ; PORTx default wanted state : pins as input with pullup resistor else leds output low
 
-    BIS.B #00Fh,&PJDIR      ; all pins as input else blues LEDs
     MOV.B #0F0h,&PJOUT      ; all pins high else blues LEDs
     BIS.B #0F0h,&PJREN      ; all pins 1 with pull resistors else blues LEDs
+    BIS.B #00Fh,&PJDIR      ; all pins as input else blues LEDs
 
 
 ; ----------------------------------------------------------------------

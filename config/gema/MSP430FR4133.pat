@@ -1,6 +1,7 @@
 !MSP430FR4133.pat
 
-@define{@read{/config/gema/MSP430FR2x4x.pat}}
+!@define{@read{/config/gema/MSP430FR2x4x.pat}}
+@define{@read{@mergepath{@inpath{};MSP430FR2x4x.pat;}}}
 
 ! ----------------------------------------------
 ! MSP430FR5739 MEMORY MAP

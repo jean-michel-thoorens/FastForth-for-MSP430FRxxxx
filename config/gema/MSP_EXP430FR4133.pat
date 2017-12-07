@@ -24,10 +24,10 @@
 ! MSP430FR4133 Config
 ! ======================================================================
 
-@define{@read{/config/gema/MSP430FR4133.pat}}
-@define{@read{/config/gema/MSP430FR2x4x_FastForth.pat}}
-@define{@read{/config/gema/FastForthREGtoTI.pat}}
-@define{@read{/config/gema/RemoveComments.pat}}
+@define{@read{@mergepath{@inpath{};MSP430FR4133.pat;}}}
+@define{@read{@mergepath{@inpath{};MSP430FR2x4x_FastForth.pat;}}}
+@define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
+@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 
 ! ======================================================================
 ! MSP_EXP430FR4133 board

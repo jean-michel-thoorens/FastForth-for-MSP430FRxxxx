@@ -214,6 +214,12 @@
 
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
+; PORTA usage
+SD_SEL      .equ PASEL1 ; to configure UCB0
+SD_REN      .equ PAREN  ; to configure pullup resistors
+SD_BUS      .equ 7000h  ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
+
+
 ; PORT1 usage
 ; P1.0 - LED2 green   output low
 ; P1.1 - Switch S2    input with pullup resistor
@@ -243,6 +249,12 @@ TERM_REN    .equ P2REN
 ; PORT3 usage
 
 ; PORT4 usage
+SD_CD       .equ 4        ; P4.2 as SD_CD
+SD_CS       .equ 8        ; P4.3 as SD_CS     
+SD_CDIN     .equ P4IN
+SD_CSOUT    .equ P4OUT
+SD_CSDIR    .equ P4DIR
+
 ; P4.5 - switch S1
 ; P4.6 - LED1 red
 

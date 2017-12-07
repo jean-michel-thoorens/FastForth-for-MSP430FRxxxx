@@ -256,6 +256,11 @@ CTS         .set    10h         ; P2.4 bit position
 
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
+; PORTC usage
+SD_SEL      .equ PCSEL0 ; to configure UCB0
+SD_REN      .equ PCREN  ; to configure pullup resistors
+SD_BUS      .equ 000Eh  ; pins P5.1 as UCB0CLK, P5.2 as UCB0SIMO & P5.3 as UCB0SOMI
+
 ; PORTx default wanted state : pins as input with pullup resistor
 
             MOV     #-1,&PCOUT    ; all pins OUT1
@@ -264,6 +269,12 @@ CTS         .set    10h         ; P2.4 bit position
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT7/8
 ; ----------------------------------------------------------------------
+
+SD_CS       .equ 2        ; P8.1 as SD_CS     
+SD_CD       .equ 1        ; P8.0 as SD_CD
+SD_CDIN     .equ P8IN
+SD_CSOUT    .equ P8OUT
+SD_CSDIR    .equ P8DIR
 
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 

@@ -1,6 +1,7 @@
 !MSP430fr6989.pat
 
-@define{@read{/config/gema/MSP430FR5x6x.pat}}
+!@define{@read{/config/gema/MSP430FR5x6x.pat}}
+@define{@read{@mergepath{@inpath{};MSP430FR5x6x.pat;}}}
 
 
 !                   \ RTC_C
@@ -9,14 +10,19 @@ RTCCTL0_H=\$4A1!    \ RTCCTL0_H
 RTCCTL1=\$4A2!      \ RTCCTL1                                
 RTCCTL3=\$4A3!      \ RTCCTL3                       
 RTCPS0CTL=\$4A8!    \ RTC prescaler 0 control                         
-RTCPS1CTL=\$4AA!    \ RTC prescaler 1 control                         
-RTCPS0=\$4AC!       \ RTC prescaler 0                                 
-RTCPS1=\$4AD!       \ RTC prescaler 1                                 
+RTCPS1CTL=\$4AA!    \ RTC prescaler 1 control 
+RTCPS=\$4AC!        \ RTC prescaler                        
+RT0PS=\$4AC!        \ RTC prescaler 0                                 
+RT1PS=\$4AD!        \ RTC prescaler 1                                 
 RTCIV=\$4AE!        \ RTC interrupt vector word                       
 RTCSEC=\$4B0!       \ RTC seconds, RTC counter register 1 RTCSEC,     
+RTCCNT1=\$4B0!      \ Real-Time Counter 1    
 RTCMIN=\$4B1!       \ RTC minutes, RTC counter register 2 RTCMIN,     
+RTCCNT2=\$4B1!      \ Real-Time Counter 2    
 RTCHOUR=\$4B2!      \ RTC hours, RTC counter register 3 RTCHOUR,      
+RTCCNT3=\$4B2!      \ Real-Time Counter 3      
 RTCDOW=\$4B3!       \ RTC day of week, RTC counter register 4 RTCDOW, 
+RTCCNT4=\$4B3!      \ Real-Time Counter 4 
 RTCDAY=\$4B4!       \ RTC days                                        
 RTCMON=\$4B5!       \ RTC month                                       
 RTCYEAR=\$4B6!                                       
@@ -28,6 +34,7 @@ RTCADOW=\$4BA!      \ RTC alarm day of week
 RTCADAY=\$4BB!      \ RTC alarm days                                  
 BIN2BCD=\$4BC!      \ Binary-to-BCD conversion register               
 BCD2BIN=\$4BE!      \ BCD-to-binary conversion register  
+
 RTCHOLD=\$40!
 RTCRDY=\$10!
 

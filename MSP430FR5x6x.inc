@@ -142,7 +142,6 @@ RST_ADR  .word  reset       ; $FFFE  -  reset
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : RTC REGISTERS
 ; ----------------------------------------------------------------------
-    .include "RTC_B.inc"
 RTC_B   ; declare RTC type
 RTCCTL01      .equ RTC_B_SFR + 00h
 RTCCTL0       .equ RTC_B_SFR + 00h

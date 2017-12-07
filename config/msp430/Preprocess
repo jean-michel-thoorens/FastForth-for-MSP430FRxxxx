@@ -1,0 +1,1 @@
+gema -nobackup -line -t -f  $FF/config/gema/$2.pat $1.f $1.4th 

@@ -1,6 +1,7 @@
 !MSP430fr5739.pat
 
-@define{@read{/config/gema/MSP430FR57xx.pat}}
+!@define{@read{/config/gema/MSP430FR57xx.pat}}
+@define{@read{@mergepath{@inpath{};MSP430FR57xx.pat;}}}
 
 
 ! ----------------------------------------------

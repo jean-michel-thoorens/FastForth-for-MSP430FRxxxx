@@ -2,47 +2,65 @@ Fast Forth For MSP430FRxxxx TI's chips
 ======================================
 
 
-FAST FORTH is a fast and well made embedded interpreter/assembler/compiler, very interesting due to it size < 6 kbytes. 
+FAST FORTH is a fast and well made embedded interpreter/assembler/compiler, very interesting due to it size of 6 kbytes. 
 If your purpose is programming a MSP430FRxxxx in assembler, FAST FORTH is the Swiss army knife you absolutely need! 
 
-With a load, read,create, write, delete SD_CARD files driver, + source files direct copy from PC to SD_Card, its size is still < 9Kb.
-It works with all SD CARD memories from 64MB to 64GB. Count 14/11 clock cycles to read/write a byte, with SPI_CLK = MCLK...
-This enables to make a fast data logger with a small footprint as a MSP430FR5738 QFN24. To compare with a LPC800 ARM entry-level... 
+For only 3 kbytes in addition, you have the primitives to access the sd\_card FAT16 and FAT32: read, write, del + load source files + direct copy from PC to SD\_Card.
+It works with all SD CARD memories from 64MB to 64GB. Count 14/11 clock cycles (MCLK!) to read/write a byte...
+This enables to make a fast data logger with a small footprint as a MSP430FR5738 QFN24. To compare with a LPC800 ARM entry-level...
 
-	Tested on MSP-EXP430{FR5969,FR5994,FR6989,FR4133} launchpads and CHIPSTICKFR2433, at 0.5, 1, 2, 4, 8, 16 MHz,
-    and 24MHz on a MSP430FR5738 module.
+With all options its size is < 10kb. 
 
-	Files launchpad_3Mbd.txt are 16threads vocabularies 16MHz executables, with 3MBds XON/XOFF terminal,
+	Tested on MSP-EXP430{FR5969,FR5994,FR6989,FR4133,FR2433} launchpads and CHIPSTICKFR2433,
+    at 0.5, 1, 2, 4, 8, 16 MHz and 24MHz on a MSP430FR5738 module.
+
+    For the moment, the IDE works under WINDOWS...
+	
+    Files launchpad_3Mbds.txt are 16threads vocabularies 16MHz executables, with 3MBds XON/XOFF terminal,
     Launchpad_115200.txt files are same except 115200Bds for unlucky linux men without TERATERM.    
     For the launchpad MSP-EXP430FR5994 with SD_CARD, full version is available. For others, you must recompile 
     forthMSP430FR.asm with SD_CARD_LOADER and SD_CARD_READ_WRITE switches turned ON (uncomment their line).
 
-    Once the Fast Forth code is loaded in the target FRAM memory, you can add it assembly code or FORTH code, or both,
-    by downloading your source files that embedded Fast Forth interprets and compiles. To do, you only need teraterm.exe
-    as input terminal and an USBtoUART bridge to connect your target.
+    Once the Fast Forth code is loaded in the target FRAM memory, you can add it assembly code or FORTH code,
+    or both, by downloading your source files that embedded Fast Forth interprets and compiles. 
+    To do, you only need teraterm.exe as input terminal and an USBtoUART bridge to connect your target.
     
     Beforehand, the preprocessor GEMA, by means of a target.pat file, will have translated your source file.f
     in a targeted source file.4th ready to download.
     A set of .bat files is furnished to do this automatically. See it all in the \MSP430-FORTH folder.
 
-	The download, interpretation and compilation of a source file.4th is done at a throughput of 40/80/120 kbytes/sec
-    with a 8/16/24 MHz clock. Considering a ratio 5/1, that of the compiled code is 8/16/24 kbytes/sec.
+	The download, interpretation and compilation of a source file.4th is done at a throughput
+    of 40/80/120 kbytes/sec with a 8/16/24 MHz clock. 
+    Considering a ratio 5/1, that of the compiled code is 8/16/24 kbytes/sec.
 
     After downloading of complementary words in COMPxMPY.f, FastForth executes CORETEST.4th without errors
     which ensures its compatibility with the FORTH CORE ANS94 standard.
     For MSP430FR4133 choose COMPSMPY.f, COMPHMPY.f for all others.
 
-    Notice that FAST FORTH interprets lines up to 80 chars, only SPACE as delimiter, only CR+LF as EOL, and BACKSPACE.
-    And that memory access is limited to 64 kbytes. You can always create FORTH words to access data beyond this limit...
+    Notice that FAST FORTH interprets lines up to 80 chars, only SPACE as delimiter, only CR+LF as EOL
+    and BACKSPACE. And that memory access is limited to 64 kbytes. 
+    You can always create FORTH words to access data beyond this limit...
 
     Finally, using the SCITE editor as IDE, you can do everything from its "tools" menu.
 
 What is new ?
 -------------
 
+    FastForth V201
+
+    added MSP-EXP430FR2433 Launchpad.
+    
+    modified forthMSP430FR_SD_INIT.asm and all target.asm files, 
+            OPEN file primitive in forthMSP430FR_SD_LOAD.asm,
+            TERM2SD" word in forthMSP430FR_SD_RW.asm.
+    reordered files preprocessor in only one gema folder.
+    
+    You can now compile FastForth from Linux, see FastForth.pdf
+    ...But desperately searching for the linux equivalent of TERATERM !
+
     FastForth V2.0, major version.
 
-    Word TIB is deprecated and replaced by CIB (Current Input Buffer).
+    Word TIB is deprecated and replaced by CIB (Current Input Buffer)
     Word CR generates CR+LF instead of CR. TYPE is rewritten in assembly.
     Added half duplex input terminal for Bluetooth or wifi bridge use.
     To do, set HALFDUPLEX switch in forthMSP430FR.asm before compiling.
@@ -51,9 +69,11 @@ What is new ?
 
     Added fixed point s15q16 numbers. Thus FAST FORTH recognises : 
     unsigned/signed numbers u/n (u <= 65535)/(-32768 <=нн n <= 32767), 
-    unsigned/signed double numbers ud/d by adding a decimal point (ud <= .4294967295)/(-.2147483648 <= d <= .2147483647),
+    unsigned/signed double numbers ud/d by adding a decimal point 
+    (ud <= .4294967295)/(-.2147483648 <= d <= .2147483647),
     and s15q16 signed numbers by adding a comma (-32768,00000 <= s15q16 <= 32767,00000).
-    The internal or external words set {FIXPOINT} adds the words: HOLDS F+ F- F/ F#S F* F. S>F, D>F and 2CONSTANT.
+    The internal or external words set {FIXPOINT} adds the words: 
+    HOLDS F+ F- F/ F#S F* F. S>F, D>F and 2CONSTANT.
     
     Fixed issue about the word LOAD": when called from a word, returns well into this calling word.
     Note that with MSP430FR57xx family, SDIB uses PAD, due to lack of RAM.
@@ -496,7 +516,7 @@ Drive letters are always ignored.
 Downloading source file to SD_Card
 ------------------------------------------
 
-to download a source file (.f or .4th) onto SD_CARD target, use CopySourceFileToTarget_SD_Card.bat.
+to download a source file (.f or .4th) onto SD_CARD target, use CopySourceFileToTarget\_SD\_Card.bat.
 or use scite.
 Double click on one of this bat files to see how to do.
 

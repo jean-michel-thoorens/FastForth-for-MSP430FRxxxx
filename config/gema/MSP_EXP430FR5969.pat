@@ -24,10 +24,10 @@
 ! MSP430FR5969 Config
 ! ======================================================================
 
-@define{@read{/config/gema/MSP430FR5969.pat}}
-@define{@read{/config/gema/MSP430FR5x6x_FastForth.pat}}
-@define{@read{/config/gema/FastForthREGtoTI.pat}}
-@define{@read{/config/gema/RemoveComments.pat}}
+@define{@read{@mergepath{@inpath{};MSP430FR5969.pat;}}}
+@define{@read{@mergepath{@inpath{};MSP430FR5x6x_FastForth.pat;}}}
+@define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
+@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 
 ! ======================================================================
 ! MSP_EXP430FR5969 board
@@ -216,7 +216,7 @@ SD_CDIN=\$221!
 SD_CSOUT=\$223!
 SD_CSDIR=\$225!
 
-SD_SEL1=\$20D!  ; to configure UCB0
+SD_SEL=\$20D!   ; to configure UCB0
 SD_REN=\$207!   ; to configure pullup resistors
 SD_BUS=\$70!    ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
 

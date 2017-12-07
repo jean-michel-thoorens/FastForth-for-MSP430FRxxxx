@@ -199,7 +199,7 @@ LO2HI
             THEN
         THEN
     THEN
-    ECHO ."    it's done" NOECHO
+    ECHO ."    it's done"
 
 \ AGAIN          \ LOAD" don't work with loop tests.......
 ;

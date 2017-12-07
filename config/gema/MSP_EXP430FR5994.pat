@@ -24,10 +24,10 @@
 ! MSP430FR5994 Config
 ! ======================================================================
 
-@define{@read{/config/gema/MSP430FR5994.pat}}
-@define{@read{/config/gema/MSP430FR5x6x_FastForth.pat}}
-@define{@read{/config/gema/FastForthREGtoTI.pat}}
-@define{@read{/config/gema/RemoveComments.pat}}
+@define{@read{@mergepath{@inpath{};MSP430FR5994.pat;}}}
+@define{@read{@mergepath{@inpath{};MSP430FR5x6x_FastForth.pat;}}}
+@define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
+@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 
 ! ======================================================================
 ! MSP_EXP430FR5994 board

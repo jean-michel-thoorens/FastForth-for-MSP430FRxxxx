@@ -22,15 +22,6 @@
 ; SD card OPEN, LOAD subroutines
 ;-----------------------------------------------------------------------
 
-;Z S">HERE  addr u -- HERE      ; move in-line string to a counted string at HERE
-SQUOTE2HERE MOV.B   TOS,W       ; W = count
-            MOV     @PSP+,X     ; X = src
-            MOV     &DDP,Y      ; Y = dst = HERE
-            MOV     Y,TOS       ; -- HERE
-            SUB     #1,X        ; X = c-addr
-            ADD     #1,W        ; W = count+1
-            MOV #MOVEDOWN,PC    ;
-
 ; rules for registers use
 ; S = error
 ; T = CurrentHdl, pathname
@@ -141,9 +132,9 @@ ParseEntryNameSpaces                ;XY
 ; ----------------------------------; output: Z flag, Y is set after the last space char
     CMP     #0,X                    ; 
     JZ      PENSL_END               ;
-; ----------------------------------; input : X = countdown_of_spaces, Y = name pointer in buffer
-ParseEntryNameSpacesLoop            ; here X must be > 0
-; ----------------------------------; output: Z flag, Y is set after the last space char
+; ----------------------------------;
+ParseEntryNameSpacesLoop            ;
+; ----------------------------------;
     CMP.B   #32,BUFFER(Y)           ; SPACE ? 
     JNZ     PENSL_END               ; no: RET
     ADD     #1,Y                    ;
@@ -359,27 +350,6 @@ RestoreBufferContext                ; -- org CPL len'   R-- CIB_PTR RET_to_SD_AC
     MOV     @W+,IP                  ;
     mNEXT                           ;                   return to interpret
 ; ----------------------------------;
-;; ----------------------------------;
-;RestoreBufferContext                ; -- org CPL len'   R-- CIB_PTR RET_to_SD_ACCEPT
-;; ----------------------------------;
-;    ADD     #4,RSP                  ;                   remove RET_to_SD_ACCEPT and CIB ptr from return stack
-;    ADD     #2,PSP                  ; -- org len'
-;; ----------------------------------;
-;    SUB     #6,&LOADPTR             ;
-;    MOV     &LOADPTR,W              ;
-;    MOV     @W+,TOS                 ;                   TOS = SAVE_LEN
-;    MOV     @W+,X                   ;                   X = SAVE_ORG
-;    MOV     X,0(PSP)                ;
-;    MOV     @W+,IP                  ;
-;; ----------------------------------;
-;    MOV     &SOURCE_LEN,W
-;    SUB     TOS,W
-;    MOV     W,&TOIN
-;    SUB     W,X
-;    MOV     X,&SOURCE_ADR
-;    mNEXT                           ;                       return to interpret
-;; ----------------------------------;
-
 
     .IFDEF SD_CARD_READ_WRITE
 
@@ -388,8 +358,8 @@ RestoreBufferContext                ; -- org CPL len'   R-- CIB_PTR RET_to_SD_AC
 ;-----------------------------------------------------------------------
 
 ;Z READ"         --
-; parse string until " is encountered, convert counted string in StringZ
-; then parse stringZ until char '0'.
+; parse string until " is encountered, convert counted string in String
+; then parse string until char '0'.
 ; media identifiers "A:", "B:" ... are ignored (only one SD_Card),
 ; char "\" as first one initializes rootDir as SearchDir.
 ; if file found, if not already open and if free handle...
@@ -487,7 +457,7 @@ DELDQ
 ; store OpenType on TOS,
 ; compile state : compile OpenType, compile SQUOTE and the string of provided pathname
 ; exec state :  open a file from SD card via its pathname
-;               convert counted string found at HERE in a StringZ then parse it
+;               convert counted string found at HERE in a String then parse it
 ;                   media identifiers "A:", "B:" ... are ignored (only one SD_Card),
 ;                   char "\" as first one initializes rootDir as SearchDir.
 ;               if file found, if not already open and if free handle...
@@ -502,73 +472,75 @@ Open_File                           ; --
     MOV     W,TOS                   ; -- Open_type (0=LOAD", 1=READ", 2=WRITE", 4=DEL")
     CMP     #0,&STATE               ;
     JZ      OPEN_EXEC               ;
+; ----------------------------------;
 OPEN_COMP                           ;
     mDOCOL                          ; if compile state
     .word   lit,lit,COMMA,COMMA     ; compile open_type as literal
-    .IFDEF LOWERCASE
-    .word   CAPS_ON
-    .ENDIF
+    .IFDEF LOWERCASE                ;
+    .word   CAPS_ON                 ;
+    .ENDIF                          ;
     .word   SQUOTE                  ; compile string_exec + string
-    .word   lit,SQUOTE2HERE,COMMA   ; compile move in-line string to a counted string at HERE 
     .word   lit,ParenOpen,COMMA     ; compile (OPEN)
-    .word   EXIT    
-
+    .word   EXIT                    ;
+; ----------------------------------;
 OPEN_EXEC                           ;
     mDOCOL                          ; if exec state
-    .word   lit,34,WORDD            ; -- open_type HERE
+    .word   lit,'"',WORDD,COUNT     ; -- open_type addr u
     FORTHtoASM                      ;
     MOV     @RSP+,IP                ;
 ; ----------------------------------;
 ParenOpen                           ; -- open_type HERE             HERE as pathname ptr
 ; ----------------------------------;
-OPN_CountedToStringZ                ;
-; ----------------------------------;
-    MOV.B   @TOS+,Y                 ; Y=count, TOS = HERE+1
-    ADD     TOS,Y                   ; Y = end of counted string      
-    MOV.B   #0,0(Y)                 ; open_type address_of_stringZ --
+    MOV     @PSP+,rDOCON            ; rDOCON = addr = pathname PTR
+    ADD     rDOCON,TOS              ; TOS = EOS (End Of String) = pathname end
+    .IFDEF SD_CARD_READ_WRITE       ;
+    MOV     TOS,&EndOfPath          ; for WRITE CREATE part
+    .ENDIF
 ; ----------------------------------;
 OPN_PathName                        ;
 ; ----------------------------------;
     MOV     #1,S                    ; error 1
     MOV     &DIRClusterL,&ClusterL  ;
     MOV     &DIRclusterH,&ClusterH  ;
-    CMP.B   #0,0(TOS)               ; first char = 0 ? 
-    JZ      OPN_NoPathName          ; error 1 ===>
-    CMP.B   #':',1(TOS)             ; A: B: C: ... in pathname ?
+    CMP     rDOCON,TOS              ; PTR = EOS ? (end of pathname ?)
+    JZ      OPN_NoPathName          ; yes: error 1 ===>
+; ----------------------------------;
+    CMP.B   #':',1(rDOCON)          ; A: B: C: ... in pathname ?
     JNZ     OPN_AntiSlashStartTest  ; no
-    ADD     #2,TOS                  ; yes : skip drive because not used, only one SD_card
+    ADD     #2,rDOCON               ; yes : skip drive because not used, only one SD_card
+; ----------------------------------;
 OPN_AntiSlashStartTest              ;
-    CMP.B   #5Ch,0(TOS)             ; "\" as first char ?
+    CMP.B   #'\\',0(rDOCON)          ; "\" as first char ?
     JNZ     OPN_SearchDirSector     ; no
-    ADD     #1,TOS                  ; yes : skip '\' char
+    ADD     #1,rDOCON               ; yes : skip '\' char
     MOV     &FATtype,&ClusterL      ;       FATtype = 1 as FAT16 RootDIR, FATtype = 2 = FAT32RootDIR
     MOV     #0,&ClusterH            ;
 ; ----------------------------------;
-OPN_EndOfDIRstringZtest             ; <=== dir found in path
+OPN_EndOfStringTest                 ; <=== dir found in path
 ; ----------------------------------;
-    CMP.B   #0,0(TOS)               ;   End of pathname ?
+    CMP     rDOCON,TOS              ; PTR = EOS ? (end of pathname ?)
     JZ      OPN_SetCurrentDIR       ; yes
 ; ----------------------------------;
 OPN_SearchDirSector                 ;
 ; ----------------------------------;
-    MOV     TOS,&Pathname           ; save name addr
+    MOV     rDOCON,&Pathname        ; save Pathname ptr
     CALL    #ComputeClusFrstSect    ; output: SectorHL
     MOV     #32,rDODOES             ; preset countdown for FAT16 RootDIR sectors
     CMP     #2,&FATtype             ; FAT32?
     JZ      OPN_SetDirSectors       ; yes
     CMP     &ClusterL,&FATtype      ; FAT16 AND RootDIR ?
-    JZ      OPN_LoadSectorDir       ; yes
+    JZ      OPN_LoadDIRsector       ; yes
 OPN_SetDirSectors                   ;
     MOV     &SecPerClus,rDODOES     ;
 ; ----------------------------------;
-OPN_LoadSectorDir                   ; <=== Dir Sector loopback
+OPN_LoadDIRsector                   ; <=== Dir Sector loopback
 ; ----------------------------------;
     CALL    #ReadSector             ;SWX
 ; ----------------------------------;
     MOV     #2,S                    ; prepare no such file error
     MOV     #0,W                    ; init entries count
 ; ----------------------------------;
-OPN_SearchEntryInSector             ; <=== DIR Entry loopback
+OPN_SearchDIRentry                  ; <=== DIR Entry loopback
 ; ----------------------------------;
     MOV     W,Y                     ; 1
     .word   0E58h                   ; 5 RLAM #4,Y --> * 16
@@ -577,41 +549,41 @@ OPN_SearchEntryInSector             ; <=== DIR Entry loopback
     CMP.B   #0,BUFFER(Y)            ; free entry ? (end of entries in DIR)
     JZ      OPN_NoSuchFile          ; error 2 NoSuchFile, used by create ===>
     MOV     #8,X                    ; count of chars in entry name
+; ----------------------------------;
 OPN_CompareName8chars               ;
-    CMP.B   @TOS+,BUFFER(Y)         ; compare Pathname(char) with DirEntry(char)
+; ----------------------------------;
+    CMP.B   @rDOCON+,BUFFER(Y)      ; compare Pathname(char) with DirEntry(char)
     JNZ     OPN_FirstCharMismatch   ;
     ADD     #1,Y                    ;
     SUB     #1,X                    ;
-    JNZ     OPN_CompareName8chars   ; loopback if chars 1 to 7 of stringZ and DirEntry are equal
-    ADD     #1,TOS                  ; 9th char of Pathname is always a dot
+    JNZ     OPN_CompareName8chars   ; loopback if chars 1 to 7 of string and DirEntry are equal
+    ADD     #1,rDOCON               ; 9th char of Pathname is always a dot
 ; ----------------------------------;
 OPN_FirstCharMismatch               ;
-    CMP.B   #'.',-1(TOS)            ; FirstNotEqualChar of Pathname = dot ?
+    CMP.B   #'.',-1(rDOCON)         ; FirstNotEqualChar of Pathname = dot ?
     JZ      OPN_DotFound            ;
 ; ----------------------------------;
 OPN_DotNotFound                     ; 
 ; ----------------------------------;
     ADD     #3,X                    ; for next cases not equal chars of entry until 11 must be spaces
-    CALL #ParseEntryNameSpaces      ; for X + 3 chars
-    JNZ     OPN_EntryMismatch       ; if a char entry <> space  
-OPN_AntiSlashTest                   ;
-    CMP.B   #5Ch,-1(TOS)            ; FirstNotEqualChar of Pathname = "\" ?
+    CALL    #ParseEntryNameSpaces   ; for X + 3 chars
+    JNZ     OPN_DIRentryMismatch    ; if a char entry <> space  
+    CMP.B   #'\\',-1(rDOCON)        ; FirstNotEqualChar of Pathname = "\" ?
     JZ      OPN_EntryFound          ;
-OPN_EndOfStringZtest                ;
-    CMP.B   #0,-1(TOS)              ; FirstNotEqualChar of Pathname =  0  ?
-    JZ      OPN_EntryFound          ;
+    CMP     rDOCON,TOS              ; EOS exceeded ?
+    JLO     OPN_EntryFound          ; yes
 ; ----------------------------------;
-OPN_EntryMismatch                   ;
+OPN_DIRentryMismatch                ;
 ; ----------------------------------;
-    MOV     &pathname,TOS           ; reload Pathname
+    MOV     &pathname,rDOCON        ; reload Pathname
     ADD     #1,W                    ; inc entry
     CMP     #16,W                   ; 16 entry in a sector
-    JNZ     OPN_SearchEntryInSector ; ===> loopback for search same sector next entry
+    JNZ     OPN_SearchDIRentry      ; ===> loopback for search next DIR entry
 ; ----------------------------------;
     ADD     #1,&SectorL             ;
     ADDC    #0,&SectorH             ;
     SUB     #1,rDODOES              ; dec count of Dir sectors
-    JNZ     OPN_LoadSectorDir       ; ===> loopback for next DIR sector
+    JNZ     OPN_LoadDIRsector       ; ===> loopback for search next DIR sector
 ; ----------------------------------;
     MOV     #4,S                    ;
     JMP     OPN_EndOfDIR            ; error 4 ===> 
@@ -620,25 +592,27 @@ OPN_EntryMismatch                   ;
 ; ----------------------------------;
 OPN_DotFound                        ; not equal chars of entry name until 8 must be spaces
 ; ----------------------------------;
-    CMP.B   #'.',-2(TOS)            ; LastCharEqual = dot ?
-    JZ      OPN_EntryMismatch       ; case of first DIR entry = "." and Pathname = "..\" 
+    CMP.B   #'.',-2(rDOCON)         ; LastCharEqual = dot ?
+    JZ      OPN_DIRentryMismatch    ; case of first DIR entry = "." and Pathname = "..\" 
     CALL    #ParseEntryNameSpaces   ; parse X spaces, X{0,...,7}
-    JNZ     OPN_EntryMismatch       ; if a char entry <> space
+    JNZ     OPN_DIRentryMismatch    ; if a char entry <> space
     MOV     #3,X                    ;
-OPN_CompareExtChars                 ;
-    CMP.B   @TOS+,BUFFER(Y)         ; compare stringZ(char) with DirEntry(char)
+; ----------------------------------;
+OPN_CompareExt3chars                ;
+; ----------------------------------;
+    CMP.B   @rDOCON+,BUFFER(Y)      ; compare string(char) with DirEntry(char)
     JNZ     OPN_ExtNotEqualChar     ;
     ADD     #1,Y                    ;
     SUB     #1,X                    ;
-    JNZ     OPN_CompareExtChars     ; nothing to do if chars equal
+    JNZ     OPN_CompareExt3chars    ; nothing to do if chars equal
     JMP     OPN_EntryFound          ;
 OPN_ExtNotEqualChar                 ;
-    CMP.B   #0,-1(TOS)              ;
-    JNZ     OPN_EntryMismatch       ;     
-    CMP.B   #5Ch,-1(TOS)            ; FirstNotEqualChar = "\" ?
-    JNZ     OPN_EntryMismatch       ;
+    CMP     rDOCON,TOS              ; EOS exceeded ?
+    JHS     OPN_DIRentryMismatch    ; no, loop back   
+    CMP.B   #'\\',-1(rDOCON)        ; FirstNotEqualChar = "\" ?
+    JNZ     OPN_DIRentryMismatch    ;
     CALL    #ParseEntryNameSpaces   ; parse X spaces, X{0,...,3}
-    JNZ     OPN_EntryMismatch       ; if a char entry <> space
+    JNZ     OPN_DIRentryMismatch    ; if a char entry <> space, loop back
 ; ----------------------------------;
 OPN_EntryFound                      ; Y points on the file attribute (11th byte of entry)
 ; ----------------------------------;
@@ -657,8 +631,8 @@ OPN_DIRfound                        ; entry is a DIRECTORY
     JNZ     OPN_DIRfoundNext        ;
     MOV     &FATtype,&ClusterL      ; set cluster as RootDIR cluster
 OPN_DIRfoundNext                    ;
-    CMP.B   #0,-1(TOS)              ; FirstNotEqualChar =  0  ?
-    JNZ     OPN_EndOfDIRstringZtest ; no : FirstNotEqualChar = "\"
+    CMP     rDOCON,TOS              ; EOS exceeded ?
+    JHS     OPN_EndOfStringTest     ; no: (we presume that FirstNotEqualChar = "\") ==> loop back
 ; ----------------------------------;
 OPN_SetCurrentDIR                   ; -- open_type ptr
 ; ----------------------------------;
@@ -679,6 +653,7 @@ OPN_NoSuchFile                      ; S = error 2
 OPN_NoPathName                      ; S = error 1
 OPN_Dir
     MOV     #xdodoes,rDODOES        ;                   restore rDODOES
+    MOV     #xdocon,rDOCON          ;                   restore rDODOES
     MOV     @PSP+,W                 ; -- ptr            W = open_type
     MOV     @PSP+,TOS               ; --
 ; ----------------------------------; then go to selected OpenType subroutine (OpenType = W register)
@@ -709,7 +684,6 @@ OPEN_LOAD                           ;
 ; ----------------------------------;
     CMP     #0,S                    ; open file happy end ?
     JNZ     OPEN_Error              ; no
-;    MOV     #INTLOOP,IP             ; return to sender (INTERPRET)
     MOV     @RSP+,IP                ; return to sender (QUIT) to get new line.
 OPEN_LOAD_END
     mNEXT                           ;
