@@ -150,12 +150,12 @@ ENDCODE     mDOCOL
                                 ; i.e. typically an assembler word called by CALL and ended by RET
                                 ; ASM words are only usable in another ASSEMBLER words
                                 ; an ASM word must be finished with ENDASM
-            MOV     &CURRENT,&ASM_CURRENT
+            MOV     &CURRENT,&SAV_CURRENT
             MOV     #ASSEMBLER_BODY,&CURRENT
             JMP     ASMCODE
 
             asmword "ENDASM"    ; end of an ASM word
-            MOV     &ASM_CURRENT,&CURRENT
+            MOV     &SAV_CURRENT,&CURRENT
             JMP     ENDCODE
 
 
@@ -231,19 +231,19 @@ SearchARG   ASMtoFORTH                      ; -- separator      search word firs
             .word   QNUMBER                 ;
             .word   QBRAN,NotFound          ; -- c-addr
             .word   AsmSrchEnd              ; -- value          end if number found
-SearchARGW  FORTHtoASM                      ; -- xt
+SearchARGW  FORTHtoASM                      ; -- xt             xt = CFA
             MOV     @TOS,X
 QDOVAR      CMP     #DOVAR,X
             JNZ     QDOCON
             ADD     #2,TOS                  ; remplace CFA by PFA for VARIABLE words
-            MOV     @RSP+,PC                ; ret
+            RET
 QDOCON      CMP     #DOCON,X
             JNZ     QDODOES
             MOV     2(TOS),TOS              ; remplace CFA by [PFA] for CONSTANT (and CREATEd) words
-            MOV     @RSP+,PC                ; ret
+            RET
 QDODOES     CMP     #DODOES,X
             JNZ     AsmSrchEnd
-            ADD     #4,TOS                  ; leave BODY for DOES words (but don't execute !)
+            ADD     #4,TOS                  ; leave BODY address for DOES words
 AsmSrchEnd  RET                             ;
 
 ; ----------------------------------------------------------------------

@@ -96,45 +96,101 @@ HOLD_SIZE=\#34! bytes
 ! ============================================
 ! FastForth RAM memory map (>= 1k):
 ! ============================================
+
+!LEAVEPTR=\$2000!    \ Leave-stack pointer, init by QUIT
+!LSATCK=\$2000!      \ leave stack,      grow up
+!PSTACK=\$2080!      \ parameter stack,  grow down
+!RSTACK=\$20E0!      \ Return stack,     grow down
+!PAD_ORG=\$20E0!     \ user scratch pad buffer, grow up
+!TIB_ORG=\$2134!     \ Terminal input buffer, grow up
+!HOLDS_ORG=\$2188!   \ a good address for HOLDS
+!BASE_HOLD=\$21AA!   \ BASE HOLD area, grow down
+!
+!! ----------------------
+!! NOT SAVED VARIABLES
+!! ----------------------
+!
+!HP=\$21AA!              HOLD ptr
+!CAPS=\$21AC!            CAPS ON/OFF flag, must be set to -1 before first reset !
+!LAST_NFA=\$21AE!
+!LAST_THREAD=\$21B0!
+!LAST_CFA=\$21B2!
+!LAST_PSP=\$21B4!
+!
+!!STATE=\$21B6!           Interpreter state
+!
+!SAV_CURRENT=\$21B8!     preserve CURRENT when create assembler words
+!OPCODE=\$21BA!          OPCODE adr
+!ASMTYPE=\$21BC!         keep the opcode complement
+!
+!SOURCE_LEN=\$21BE!      len of input stream
+!SOURCE_ADR=\$21C0!      adr of input stream
+!!\>IN=\$21C2!            >IN
+!DP=\$21C4!              dictionary ptr
+!LASTVOC=\$21C6!         keep VOC-LINK
+!CURRENT=\$21C8!         CURRENT dictionnary ptr
+!CONTEXT=\$21CA!         CONTEXT dictionnary space (8 CELLS)
+!
+!!BASE=\$21DA!            numeric base, must be defined before first reset !
+!
+!!21DC! 34 RAM bytes free
+!
+!!BUFFER-2 is reserved
+!BUFFER=\$2200!      \ SD_Card buffer
+!BUFEND=\$2400!
+
 LEAVEPTR=\$2000!    \ Leave-stack pointer, init by QUIT
 LSATCK=\$2000!      \ leave stack,      grow up
 PSTACK=\$2080!      \ parameter stack,  grow down
 RSTACK=\$20E0!      \ Return stack,     grow down
-PAD_ORG=\$20E0!     \ user scratch pad buffer, grow up
-TIB_ORG=\$2134!     \ Terminal input buffer, grow up
-HOLDS_ORG=\$2188!   \ a good address for HOLDS
-BASE_HOLD=\$21AA!   \ BASE HOLD area, grow down
+
+PAD_I2CADR=\$20E0!  \ RX I2C address
+PAD_I2CCNT=\$20E2!  \ count max
+PAD_ORG=\$20E4!     \ user scratch pad buffer, 84 bytes, grow up
+
+TIB_I2CADR=\$2138!  \ TX I2C address 
+TIB_I2CCNT=\$213A!  \ count of bytes
+TIB_ORG=\$213C!     \ Terminal input buffer, 84 bytes, grow up
+
+HOLDS_ORG=\$2190!   \ a good address for HOLDS
+BASE_HOLD=\$21B2!   \ BASE HOLD area, grow down
 
 ! ----------------------
 ! NOT SAVED VARIABLES
 ! ----------------------
 
-HP=\$21AA!              HOLD ptr
-CAPS=\$21AC!            CAPS ON/OFF flag, must be set to -1 before first reset !
-LAST_NFA=\$21AE!
-LAST_THREAD=\$21B0!
-LAST_CFA=\$21B2!
-LAST_CSP=\$21B4!
+HP=\$21B2!              HOLD ptr
+CAPS=\$21B4!            CAPS ON/OFF flag, must be set to -1 before first reset !
+LAST_NFA=\$21B6!
+LAST_THREAD=\$21B8!
+LAST_CFA=\$21BA!
+LAST_PSP=\$21BC!
 
-!STATE=\$21B6!           Interpreter state
+!STATE=\$21BE!           Interpreter state
 
-ASM_CURRENT=\$21B8!     preserve CURRENT when create assembler words
-OPCODE=\$21BA!          OPCODE adr
-ASMTYPE=\$21BC!         keep the opcode complement
+SAV_CURRENT=\$21C0!     preserve CURRENT when create assembler words
+OPCODE=\$21C2!          OPCODE adr
+ASMTYPE=\$21C4!         keep the opcode complement
 
-SOURCE_LEN=\$21BE!      len of input stream
-SOURCE_ADR=\$21C0!      adr of input stream
-!\>IN=\$21C2!            >IN
-DP=\$21C4!              dictionary ptr
-LASTVOC=\$21C6!         keep VOC-LINK
-CURRENT=\$21C8!         CURRENT dictionnary ptr
-CONTEXT=\$21CA!         CONTEXT dictionnary space (8 CELLS)
+SOURCE_LEN=\$21C6!      len of input stream
+SOURCE_ADR=\$21C8!      adr of input stream
+!\>IN=\$21CA!            >IN
+DP=\$21CC!              dictionary ptr
+LASTVOC=\$21CE!         keep VOC-LINK
+CONTEXT=\$21D0!         CONTEXT dictionnary space (8 CELLS)
+CURRENT=\$21E0!         CURRENT dictionnary ptr
 
-!BASE=\$21DA!            numeric base, must be defined before first reset !
+!BASE=\$21E2!           numeric base, must be defined before first reset !
+!LINE=\$21E4!           line in interpretation, activated with NOECHO, desactivated with ECHO
+! ---------------------------------------
+!21E6! 22 RAM bytes free
+! ---------------------------------------
 
-!21DC! 34 RAM bytes free
-
-!BUFFER-2 is reserved
+! ---------------------------------------
+! SD buffer
+! ---------------------------------------
+SD_BUF_I2ADR=\$21FC!
+SD_BUF_I2CNT=\$21FE!
 BUFFER=\$2200!      \ SD_Card buffer
 BUFEND=\$2400!
 
@@ -234,6 +290,8 @@ LOAD_STACK=\$2502!
 LOAD_STACK_END=\$2538!
 
 !SD_card Input Buffer
-SDIB_ORG=\$2538!
+SDIB_I2CADR=\$2538!
+SDIB_I2CCNT=\$253A!
+SDIB_ORG=\$253C!
 
-SD_END_DATA=\$258C!
+SD_END_DATA=\$2590!

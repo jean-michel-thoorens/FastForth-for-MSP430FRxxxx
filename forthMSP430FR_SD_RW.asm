@@ -43,7 +43,7 @@ OPEN_READ                           ;
 
 ;Z READ            -- f
 ; sequentially read a file opened by READ".
-; sectors are loaded in BUFFER and BufferLen leave the count of loaded bytes.
+; sectors are loaded in SD_BUF and BufferLen leave the count of loaded bytes.
 ; when the last sector of file is loaded in buffer, the handle is automatically closed and flag is true (<>0).
 
 ; ----------------------------------;
@@ -69,7 +69,7 @@ READ
 
 ; input : CurFATsector
 ; use SWX registers
-; output: W = new FATsector, BUFFER = [new FATsector], NewCluster
+; output: W = new FATsector, SD_BUF = [new FATsector], NewCluster
 ;         SectorL is unchanged, FATS are not updated.
 ;         S = 2 --> Disk FULL error
 ; ----------------------------------;
@@ -93,27 +93,27 @@ SearchFreeClustInBUF                ; <== SearchNextCluster
     CMP     #2,Y                    ; FAT16 Cluster size ?
     JZ      ClusterLowWordTest      ; yes
 ClusterHighWordTest                 ;
-    CMP     #0,BUFFER+2(X)          ; cluster address hi word = 0 ?
+    CMP     #0,SD_BUF+2(X)          ; cluster address hi word = 0 ?
     JNZ     SearchNextNewCluster    ;
 ClusterLowWordTest                  ;
-    CMP     #0,BUFFER(X)            ; Cluster address lo word = 0 ?
+    CMP     #0,SD_BUF(X)            ; Cluster address lo word = 0 ?
     JZ      GNC_FreeClusterFound    ; 
 SearchNextNewCluster                ;
-    ADD     Y,X                     ; increment BUFFER offset by size of Cluster address
+    ADD     Y,X                     ; increment SD_BUF offset by size of Cluster address
     CMP     #BytsPerSec,X           ;
     JNE     SearchFreeClustInBUF    ; loopback while X < BytsPerSec
 IncrementFATsector                  ;
     ADD     #1,0(RSP)               ; increment FATsector
     JMP     LoadFATsectorInBUF      ; loopback
 ; ----------------------------------;
-GNC_FreeClusterFound                ; Y =  cluster number low word in BUFFER = FATsector
+GNC_FreeClusterFound                ; Y =  cluster number low word in SD_BUF = FATsector
 ; ----------------------------------;
     MOV     #0,S                    ; clear error
     MOV.B   @RSP,W                  ; W = 0:FATsectorLo
-    MOV     #-1,BUFFER(X)           ; mark NewCluster low word as end cluster (0xFFFF) in BUFFER
+    MOV     #-1,SD_BUF(X)           ; mark NewCluster low word as end cluster (0xFFFF) in SD_BUF
     CMP     #2,Y                    ; Y = FAT16 size of Cluster number ?
     JZ      FAT16EntryToClusterNum  ; yes
-    MOV     #0FFFh,BUFFER+2(X)      ; no: mark NewCluster high word as end cluster (0x0FFF) in BUFFER
+    MOV     #0FFFh,SD_BUF+2(X)      ; no: mark NewCluster high word as end cluster (0x0FFF) in SD_BUF
 ; ----------------------------------;
 FAT32EntryToClusterNum              ; convert FAT32 cluster address to cluster number
 ; ----------------------------------;
@@ -142,8 +142,8 @@ SearchNewClusterEnd                 ;
 ; ----------------------------------;
 
 
-; update FATs with BUFFER content.
-; input : FATsector, FAToffset, BUFFER = [FATsector]
+; update FATs with SD_BUF content.
+; input : FATsector, FAToffset, SD_BUF = [FATsector]
 ; use : SWX registers
 ; ----------------------------------; else update FATsector of the old cluster
 UpdateFATsSectorW                   ;
@@ -219,7 +219,7 @@ OPWC_SkipDot                        ;
 FillDIRentryName                    ;SWXY use
 ; ----------------------------------;
     MOV.B   @T+,W                   ; W = char of pathname
-    MOV.B   W,BUFFER(Y)             ;     to DIRentry
+    MOV.B   W,SD_BUF(Y)             ;     to DIRentry
 ;    CMP     #0,W                    ; end of stringZ ?
 ;    JZ      OPWC_CompleteWithSpaces ;
     CMP     T,&EndOfPath            ; EOS < PTR ?
@@ -253,7 +253,7 @@ OPWC_CompleteWithSpaces             ; 0 to n spaces !
 ; ----------------------------------;
 OPWC_CompleteWithSpaceloop          ;
 ; ----------------------------------;
-    MOV.B   #' ',BUFFER(Y)          ; remplace dot by char space
+    MOV.B   #' ',SD_BUF(Y)          ; remplace dot by char space
     ADD     #1,Y                    ; increment DIRentry ptr in buffer 
     SUB     #1,X                    ; dec countdown of chars space
     JNZ OPWC_CompleteWithSpaceloop  ;
@@ -335,16 +335,16 @@ OPEN_WRITE_CREATE                   ;
 ; 4 init DIRentryAttributes         ;
 ; ----------------------------------;
 OPWC_SetEntryAttribute              ; (cluster=DIRcluster!)
-    MOV.B   #20h,BUFFER+11(Y)       ; file attribute = file
+    MOV.B   #20h,SD_BUF+11(Y)       ; file attribute = file
     CALL    #GetYMDHMSforDIR        ;WX  X=DATE,  W=TIME
-    MOV     #0,BUFFER+12(Y)         ; nt reserved = 0 and centiseconds are 0
-    MOV     W,BUFFER+14(Y)          ; time of creation
-    MOV     X,BUFFER+16(Y)          ; date of creation      20/08/2001
-    MOV     X,BUFFER+18(Y)          ; date of access        20/08/2001
-    MOV     &ClusterH,BUFFER+20(Y)  ; as first Cluster Hi 
-    MOV     &ClusterL,BUFFER+26(Y)  ; as first cluster LO   
-    MOV     #0,BUFFER+28(Y)         ; file lenghtLO  = 0 
-    MOV     #0,BUFFER+30(Y)         ; file lenghtHI  = 0 
+    MOV     #0,SD_BUF+12(Y)         ; nt reserved = 0 and centiseconds are 0
+    MOV     W,SD_BUF+14(Y)          ; time of creation
+    MOV     X,SD_BUF+16(Y)          ; date of creation      20/08/2001
+    MOV     X,SD_BUF+18(Y)          ; date of access        20/08/2001
+    MOV     &ClusterH,SD_BUF+20(Y)  ; as first Cluster Hi 
+    MOV     &ClusterL,SD_BUF+26(Y)  ; as first cluster LO   
+    MOV     #0,SD_BUF+28(Y)         ; file lenghtLO  = 0 
+    MOV     #0,SD_BUF+30(Y)         ; file lenghtHI  = 0 
 ; ----------------------------------;
 ; 5 create DIRentryName             ;
 ; ----------------------------------;
@@ -385,12 +385,12 @@ OPWW_UpdateDirectory                ; <== CloseHandleT
     CALL    #readSectorWX           ;SWX buffer = DIRsector
     CALL    #GetYMDHMSforDIR        ; X=DATE,  W=TIME
     MOV     HDLW_DIRofst(T),Y       ; Y = DirEntryOffset
-    MOV     X,BUFFER+18(Y)          ; access date
-    MOV     W,BUFFER+22(Y)          ; modified time
-    MOV     X,BUFFER+24(Y)          ; modified date
+    MOV     X,SD_BUF+18(Y)          ; access date
+    MOV     W,SD_BUF+22(Y)          ; modified time
+    MOV     X,SD_BUF+24(Y)          ; modified date
 OPWW_UpdateEntryFileSize            ;
-    MOV HDLL_CurSize(T),BUFFER+28(Y); save new filesize
-    MOV HDLH_CurSize(T),BUFFER+30(Y);
+    MOV HDLL_CurSize(T),SD_BUF+28(Y); save new filesize
+    MOV HDLH_CurSize(T),SD_BUF+30(Y);
     MOV     HDLL_DIRsect(T),W       ; 
     MOV     HDLH_DIRsect(T),X       ;
     MOV     #WriteSectorWX,PC       ;SWX then RET
@@ -420,7 +420,7 @@ Write_File                          ; <== WRITE, SD_EMIT, TERM2SD"
 ; ==================================;
     MOV     #BytsPerSec,&BufferPtr  ; write always all the buffer
     MOV     &CurrentHdl,T           ;
-    CALL    #WriteBuffer            ; write BUFFER and update Handle informations only for DIRentry update 
+    CALL    #WriteBuffer            ; write SD_BUF and update Handle informations only for DIRentry update 
     MOV     #0,&BufferPtr           ; reset buffer pointer
 ; ----------------------------------;
 PostIncrementSector                 ;
@@ -445,10 +445,10 @@ UpdateNewClusterFATs                ;
 LinkClusters                        ;
     MOV     @RSP+,W                 ; W = current FATsector
     MOV     @RSP+,Y                 ; pop current FAToffset
-    MOV     &NewClusterL,BUFFER(Y)  ; store new cluster to current cluster address in current FATsector buffer
+    MOV     &NewClusterL,SD_BUF(Y)  ; store new cluster to current cluster address in current FATsector buffer
     CMP     #1,&FATtype             ; FAT16?
     JZ UpdatePreviousClusterFATs    ; yes
-    MOV     &NewClusterH,BUFFER+2(Y);
+    MOV     &NewClusterH,SD_BUF+2(Y);
 UpdatePreviousClusterFATs           ;
     CALL    #UpdateFATsSectorW      ;SWX update FATS with current FATsector buffer
 UpdateHandleCurCluster              ;
@@ -461,7 +461,7 @@ Write_File_End
 ; ----------------------------------;
 
 ;Z WRITE            -- 
-; sequentially write the entire BUFFER in a file opened by WRITE"
+; sequentially write the entire SD_BUF in a file opened by WRITE"
 ; ----------------------------------;
     FORTHWORD "WRITE"               ;
 ; ----------------------------------;
@@ -479,7 +479,7 @@ SD_EMIT                             ;
     CALL    #Write_File             ;   BufferPtr = 0
 SD_EmitNext                         ;
     MOV     &BufferPtr,Y            ; 3 
-    MOV.B   TOS,BUFFER(Y)           ; 3
+    MOV.B   TOS,SD_BUF(Y)           ; 3
     ADD     #1,&BufferPtr           ; 4
     MOV     @PSP+,TOS               ; 2
     mNEXT                           ; 4
@@ -547,7 +547,7 @@ DIVSECPERSPC2                       ;
 ; ----------------------------------;
     MOV.B W,HDLB_ClustOfst(T)       ;3  update handle with W = REMlo = sectors offset in last cluster
 ; ----------------------------------;
-; 3- load last sector in BUFFER     ;
+; 3- load last sector in SD_BUF     ;
 ; ----------------------------------;
     MOV     HDLL_CurSize(T),W       ; example : W = 1013
     BIC     #01FFh,HDLL_CurSize(T)  ; substract 13 from HDLL_CurSize, because loaded in buffer
@@ -586,7 +586,7 @@ SelectFreeEntry                     ; nothing to do: S = 0 ready for free entry!
 ; ----------------------------------;
     CMP     #BytsPerSec-32,Y        ; Entry >= last entry in DIRsector ?
     JHS     SelectHideEntry         ; yes:  next DIR entry is out of sector
-    CMP.B   #0,BUFFER+32(Y)         ; no:   next DIR entry in DIRsector is free?
+    CMP.B   #0,SD_BUF+32(Y)         ; no:   next DIR entry in DIRsector is free?
     JZ      WriteDelEntry           ;       yes
 ; ----------------------------------;
 SelectHideEntry                     ;       no
@@ -595,7 +595,7 @@ SelectHideEntry                     ;       no
 ; ----------------------------------;
 WriteDelEntry
 ; ----------------------------------;
-    MOV.B   S,BUFFER(Y)             ; 
+    MOV.B   S,SD_BUF(Y)             ; 
     CALL    #WriteSector            ;SWX  write SectorHL=DIRsector
 ; ----------------------------------;
 ; 3- free all file clusters         ; Cluster = FirstCluster
@@ -611,14 +611,14 @@ LoadFAT1sector
 ; ----------------------------------;
 GetAndFreeClusterLo                 ;
 ; ----------------------------------;
-    MOV     BUFFER(Y),W             ; get [clusterLO]
-    MOV     #0,BUFFER(Y)            ; free CLusterLO
+    MOV     SD_BUF(Y),W             ; get [clusterLO]
+    MOV     #0,SD_BUF(Y)            ; free CLusterLO
 ClusterTestSelect                   ;
     CMP     #1,&FATtype             ; FAT16 ?
     JZ      ClusterLoTest           ; yes
 GetAndFreeClusterHi                 ;
-    MOV     BUFFER+2(Y),X           ; get [clusterHI]
-    MOV     #0,BUFFER+2(Y)          ; free CLusterHI
+    MOV     SD_BUF+2(Y),X           ; get [clusterHI]
+    MOV     #0,SD_BUF+2(Y)          ; free CLusterHI
 ClusterHiTest
     AND     #00FFFh,X               ; select 12 bits significant
     CMP     #00FFFh,X               ; [ClusterHI] was = 0FFFh?
@@ -670,7 +670,7 @@ OPND_End                            ;
     MOV     @RSP+,IP                ;
     BIC     #UCRXIFG,&TERMIFG       ;   clean up RX buffer  
 ; ----------------------------------;
-T2S_GetSliceLoop                    ;   tranfert by slices of 512 bytes terminal input to file on SD_CARD via BUFFER 
+T2S_GetSliceLoop                    ;   tranfert by slices of 512 bytes terminal input to file on SD_CARD via SD_BUF 
 ; ----------------------------------;
     MOV     #0,Y                    ;1  reset Y = BufferPtr
     CALL    #RXON                   ;   use no registers
@@ -680,9 +680,9 @@ T2S_FillBufferLoop                  ;
     BIT     #UCRXIFG,&TERMIFG       ;3 new char in TERMRXBUF ?
     JZ      T2S_FillBufferLoop      ;2
     MOV.B   &TERMRXBUF,X            ;3
-    CMP.B   #4,X                    ;1 ETX sent by TERATERM ?
+    CMP.B   #4,X                    ;1 EOT sent by TERATERM ?
     JZ      T2S_END                 ;2 yes
-    MOV.B   X,BUFFER(Y)             ;3
+    MOV.B   X,SD_BUF(Y)             ;3
     ADD     #1,Y                    ;1
     CMP     #BytsPerSec-1,Y         ;2
     JLO     T2S_FillBufferLoop      ;2 Y<511    21 cycles char loop

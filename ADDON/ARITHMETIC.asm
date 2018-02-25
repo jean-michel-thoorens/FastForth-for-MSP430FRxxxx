@@ -22,6 +22,13 @@
 ARITHMETIC
     .ENDIF
 
+;https://forth-standard.org/standard/core/StoD
+;C S>D    n -- d          single -> double prec.
+            FORTHWORD "S>D"
+STOD:       SUB     #2,PSP
+            MOV     TOS,0(PSP)
+            JMP     ZEROLESS
+
     .IFDEF MPY
 
 ;https://forth-standard.org/standard/core/UMTimes

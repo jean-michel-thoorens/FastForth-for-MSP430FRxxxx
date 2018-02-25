@@ -279,7 +279,7 @@ WaitFEhResponse                     ; wait SD_Card response FEh
 ; ----------------------------------;
 ReadSectorLoop                      ; get 512+1 bytes, write 512 bytes
 ; ----------------------------------;
-    MOV.B   &SD_RXBUF,BUFFER-1(X)   ; 5
+    MOV.B   &SD_RXBUF,SD_BUF-1(X)   ; 5
 ReadSectorfirst                     ;
     MOV.B   #-1,&SD_TXBUF           ; 3 put FF
     NOP                             ; 1 NOPx adjusted to avoid read SD_error
@@ -315,7 +315,7 @@ WriteSectorWX                       ; write a logical sector
 ; ----------------------------------;
 WriteSectorLoop                     ; 11 cycles loop write, starts with X = 0
 ; ----------------------------------;
-    MOV.B   BUFFER(X),&SD_TXBUF     ; 5
+    MOV.B   SD_BUF(X),&SD_TXBUF     ; 5
     NOP                             ; 1 NOPx adjusted to avoid write SD_error
     ADD     #1,X                    ; 1
     CMP     #BytsPerSec,X           ; 2

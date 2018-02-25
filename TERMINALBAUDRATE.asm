@@ -673,12 +673,12 @@
              MOV     #5,     &TERMBRW
              MOV.W   #04900h,&TERMMCTLW
 
-        .CASE 4000000 ; CP2102 baudrate
-; Configure UART0 @ 4000000 bauds / 16MHz
-; N = 16000000/4000000 = 4... ==> {UCOS16=0, UCBR0=int(N)=0, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.0000000)=0
-; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
-             MOV     #4,     &TERMBRW
-             MOV.W   #0,&TERMMCTLW
+;        .CASE 4000000 ; CP2102 baudrate
+;; Configure UART0 @ 4000000 bauds / 16MHz
+;; N = 16000000/4000000 = 4... ==> {UCOS16=0, UCBR0=int(N)=0, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.0000000)=0
+;; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+;             MOV     #4,     &TERMBRW
+;             MOV.W   #00100h,&TERMMCTLW
 
 ;        .CASE 6000000 ; PL2303TA baudrate
 ;; Configure UART0 @ 6000000 bauds / 24MHz

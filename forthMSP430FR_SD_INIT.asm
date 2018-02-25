@@ -132,7 +132,7 @@ SetHighSpeed                        ; end of SD init ==> SD_CLK = SMCLK
 Read_EBP_FirstSector                ; W=0, BS_FirstSectorHL=0
 ; ----------------------------------;
     CALL    #readSectorW            ; read physical first sector
-    MOV     #BUFFER,Y               ;
+    MOV     #SD_BUF,Y               ;
     MOV     454(Y),&BS_FirstSectorL ; so, sectors become logical
     MOV     456(Y),&BS_FirstSectorH ; 
     MOV.B   450(Y),W                ; W = partition ID 

@@ -37,10 +37,10 @@
 \ under interrupt, IP is free for use
 \ interrupts reset SR register !
 
-\ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, R7, R6, R5, R4
+\ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, R7, R6, R5, R4, R3, R2,RSP, PC
 \ example : PUSHM IP,Y
 \
-\ POPM  order :  R4, R5, R6, R7,  Y,  X,  W,  T,  S, IP,TOS,PSP
+\ POPM  order :  PC ,RSP, R2, R3, R4, R5, R6, R7,  Y,  X,  W,  T,  S, IP,TOS,PSP
 \ example : POPM Y,IP
 
 \ ASSEMBLER conditionnal usage after IF UNTIL WHILE : S< S>= U< U>= 0= 0<> 0>=
@@ -442,13 +442,14 @@ CODE START                      \
 \    MOV #%1011010100,&TB0CTL   \ SMCLK/8, up mode, clear timer, no int
 \    MOV #2,&TB0EX0             \ predivide by 3 in TB0EX0 register (24 MHZ)
 \ ------------------------------\
-    MOV #20,&TB0CCR0            \ 20*1us=20us
+    MOV #19,&TB0CCR0            \ 19+1=20*1us=20us
 \ ------------------------------\
 \ set TB0.2 to generate PWM for LCD_Vo
 \ ------------------------------\
-    MOV #%1100000,&TB0CCTL2     \ output mode = set/reset \ clear CCIFG
-    MOV #10,&TB0CCR2           \ contrast adjust : 10/20 ==> LCD_Vo = -0V6|+3V6 (Vcc=3V6)
+    MOV #%01100000,&TB0CCTL2    \ output mode = set/reset \ clear CCIFG
+    MOV #10,&TB0CCR2            \ contrast adjust : 10/20 ==> LCD_Vo = -0V6|+3V6 (Vcc=3V6)
 \    MOV #12,&TB0CCR2            \ contrast adjust : 12/20 ==> LCD_Vo = -1V4|+3V3 (Vcc=3V3)
+\ ------------------------------\
     BIS.B #LCDVo,&LCDVo_DIR     \
     BIS.B #LCDVo,&LCDVo_SEL     \ SEL.2 TB0.2
 \ ------------------------------\

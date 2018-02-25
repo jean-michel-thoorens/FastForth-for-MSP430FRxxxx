@@ -1,5 +1,5 @@
 ; -*- coding: utf-8 -*-
-; DTCforthMSP430FRxxxxSD_LOAD.asm
+; forthMSP430FR_SD_LOAD.asm
 
 ; Tested with MSP-EXP430FR5969 launchpad
 ; Copyright (C) <2017>  <J.M. THOORENS>
@@ -17,6 +17,8 @@
 ; You should have received a copy of the GNU General Public License
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+; used variables : BufferPtr, BufferLen
 
 ;-----------------------------------------------------------------------
 ; SD card OPEN, LOAD subroutines
@@ -135,7 +137,7 @@ ParseEntryNameSpaces                ;XY
 ; ----------------------------------;
 ParseEntryNameSpacesLoop            ;
 ; ----------------------------------;
-    CMP.B   #32,BUFFER(Y)           ; SPACE ? 
+    CMP.B   #32,SD_BUF(Y)           ; SPACE ? 
     JNZ     PENSL_END               ; no: RET
     ADD     #1,Y                    ;
     SUB     #1,X                    ;
@@ -145,7 +147,7 @@ PENSL_END                           ;
 ; ----------------------------------; 
 
 
-; sequentially load in BUFFER bytsPerSec bytes of a file opened as read or as load
+; sequentially load in SD_BUF bytsPerSec bytes of a file opened as read or as load
 ; if previous bufferLen had a size < bytsPerSec, closes the file.
 ; if new bufferLen have a size <= BufferPtr, closes the file.
 ; reload previous LOADed file if exist.
@@ -170,10 +172,10 @@ Read_File                           ; <== SD_ACCEPT, READ
     CALL #HDLCurClusToFAT1sectWofstY;WXY  Output: W=FATsector, Y=FAToffset, Cluster=HDL_CurCluster
     CALL    #ReadFAT1SectorW        ;SWX (< 65536)
     MOV     #0,HDLH_CurClust(T)     ;
-    MOV BUFFER(Y),HDLL_CurClust(T)  ;
+    MOV SD_BUF(Y),HDLL_CurClust(T)  ;
     CMP     #1,&FATtype             ; FAT16?
     JZ SetBufLenAndLoadCurSector    ;
-    MOV BUFFER+2(Y),HDLH_CurClust(T);
+    MOV SD_BUF+2(Y),HDLH_CurClust(T);
 ; ==================================;
 SetBufLenAndLoadCurSector           ;WXY <== previous handle reLOAD
 ; ==================================;
@@ -254,13 +256,13 @@ InitHandle                          ;
     MOV     &SectorL,HDLL_DIRsect(T); init handle DIRsectorL
     MOV     &SectorH,HDLH_DIRsect(T); 
     MOV     &EntryOfst,Y            ;
-    MOV     Y,HDLW_DIRofst(T)       ; init handle BUFFER offset of DIR entry
-    MOV BUFFER+26(Y),HDLL_FirstClus(T); init handle firstcluster of file (to identify file)
-    MOV BUFFER+20(Y),HDLH_FirstClus(T)
-    MOV BUFFER+26(Y),HDLL_CurClust(T)  ; init handle CurrentCluster
-    MOV BUFFER+20(Y),HDLH_CurClust(T) 
-    MOV BUFFER+28(Y),HDLL_CurSize(T); init handle LOW currentSizeL
-    MOV BUFFER+30(Y),HDLH_CurSize(T);
+    MOV     Y,HDLW_DIRofst(T)       ; init handle SD_BUF offset of DIR entry
+    MOV SD_BUF+26(Y),HDLL_FirstClus(T); init handle firstcluster of file (to identify file)
+    MOV SD_BUF+20(Y),HDLH_FirstClus(T)
+    MOV SD_BUF+26(Y),HDLL_CurClust(T)  ; init handle CurrentCluster
+    MOV SD_BUF+20(Y),HDLH_CurClust(T) 
+    MOV SD_BUF+28(Y),HDLL_CurSize(T); init handle LOW currentSizeL
+    MOV SD_BUF+30(Y),HDLH_CurSize(T);
     MOV     #0,&BufferPtr           ; reset BufferPtr all type of files
     CMP.B   #2,W                    ; is a WRITE file handle?
     JZ      ComputeHDLcurrentSector ; = 2, is a WRITE file
@@ -350,6 +352,7 @@ RestoreBufferContext                ; -- org CPL len'   R-- CIB_PTR RET_to_SD_AC
     MOV     @W+,IP                  ;
     mNEXT                           ;                   return to interpret
 ; ----------------------------------;
+
 
     .IFDEF SD_CARD_READ_WRITE
 
@@ -546,13 +549,13 @@ OPN_SearchDIRentry                  ; <=== DIR Entry loopback
     .word   0E58h                   ; 5 RLAM #4,Y --> * 16
     ADD     Y,Y                     ; 1           --> * 2
     MOV     Y,&EntryOfst            ; EntryOfst points to first free entry
-    CMP.B   #0,BUFFER(Y)            ; free entry ? (end of entries in DIR)
+    CMP.B   #0,SD_BUF(Y)            ; free entry ? (end of entries in DIR)
     JZ      OPN_NoSuchFile          ; error 2 NoSuchFile, used by create ===>
     MOV     #8,X                    ; count of chars in entry name
 ; ----------------------------------;
 OPN_CompareName8chars               ;
 ; ----------------------------------;
-    CMP.B   @rDOCON+,BUFFER(Y)      ; compare Pathname(char) with DirEntry(char)
+    CMP.B   @rDOCON+,SD_BUF(Y)      ; compare Pathname(char) with DirEntry(char)
     JNZ     OPN_FirstCharMismatch   ;
     ADD     #1,Y                    ;
     SUB     #1,X                    ;
@@ -600,7 +603,7 @@ OPN_DotFound                        ; not equal chars of entry name until 8 must
 ; ----------------------------------;
 OPN_CompareExt3chars                ;
 ; ----------------------------------;
-    CMP.B   @rDOCON+,BUFFER(Y)      ; compare string(char) with DirEntry(char)
+    CMP.B   @rDOCON+,SD_BUF(Y)      ; compare string(char) with DirEntry(char)
     JNZ     OPN_ExtNotEqualChar     ;
     ADD     #1,Y                    ;
     SUB     #1,X                    ;
@@ -617,10 +620,10 @@ OPN_ExtNotEqualChar                 ;
 OPN_EntryFound                      ; Y points on the file attribute (11th byte of entry)
 ; ----------------------------------;
     MOV     &EntryOfst,Y            ; reload DIRentry
-    MOV     BUFFER+26(Y),&ClusterL  ; first clusterL of file
-    MOV     BUFFER+20(Y),&ClusterH  ; first clusterT of file, always 0 if FAT16
+    MOV     SD_BUF+26(Y),&ClusterL  ; first clusterL of file
+    MOV     SD_BUF+20(Y),&ClusterH  ; first clusterT of file, always 0 if FAT16
 OPN_EntryFoundNext
-    BIT.B   #10h,BUFFER+11(Y)       ; test if Directory or File
+    BIT.B   #10h,SD_BUF+11(Y)       ; test if Directory or File
     JZ      OPN_FileFound           ;
 ; ----------------------------------;
 OPN_DIRfound                        ; entry is a DIRECTORY

@@ -46,14 +46,17 @@ With all options its size is < 10kb.
 What is new ?
 -------------
 
+    FastForth V202
+
+    French touch: added the line number in case of error occurring when download a file.f|file.4th
+    in the new HALFDUPLEX mode (scite command CTRL+2) or in default NOECHO mode (scite command CTRL+0).
+    However, in case of download a file.f (with preprocessing), this line number refers
+    to the contents of the file named LAST.4th.
+    
     FastForth V201
 
-    added MSP-EXP430FR2433 Launchpad.
-    
-    modified forthMSP430FR_SD_INIT.asm and all target.asm files, 
-            OPEN file primitive in forthMSP430FR_SD_LOAD.asm,
-            TERM2SD" word in forthMSP430FR_SD_RW.asm.
-    reordered files preprocessor in only one gema folder.
+    modified OPEN file primitive in forthMSP430FR_SD_LOAD.asm; modified forthMSP430FR_SD_INIT.asm
+    reordered files preprocessor in only one folder.
     
     You can now compile FastForth from Linux, see FastForth.pdf
     ...But desperately searching for the linux equivalent of TERATERM !

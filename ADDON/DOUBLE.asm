@@ -17,14 +17,6 @@
 ; You should have received a copy of the GNU General Public License
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-;https://forth-standard.org/standard/core/StoD
-;C S>D    n -- d          single -> double prec.
-            FORTHWORD "S>D"
-STOD:       SUB     #2,PSP
-            MOV     TOS,0(PSP)
-            JMP     ZEROLESS
-
 ;https://forth-standard.org/standard/core/TwoFetch
 ;C 2@    a-addr -- x1 x2    fetch 2 cells ; the lower address will appear on top of stack
             FORTHWORD "2@"

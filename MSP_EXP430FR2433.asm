@@ -91,6 +91,10 @@
 ; P3.2  -             J2.17  -  <---> SDA I2C Soft_Master
         
 
+; P2.0  -             J2.11  -  <---- I2CTERM_SLA0
+; P2.1  -             J2.12  -  <---- I2CTERM_SLA1
+; P2.2  - ACLK        J2.18  -  <---- I2CTERM_SLA2 
+
 ; ----------------------------------------------------------------------
 ; INIT order : WDT, GPIOs, FRAM, Clock, UARTs...
 ; ----------------------------------------------------------------------
@@ -147,14 +151,13 @@ SD_CSOUT        .equ P2OUT
 SD_CSDIR        .equ P2DIR
 
 
-; RTS output is wired to the CTS input of UART2USB bridge 
-; configure RTS as output high to disable RX TERM during start FORTH
-
             MOV #-1,&PAREN      ; all inputs with pull resistors
             BIS #00003h,&PADIR  ; all pins as input else LED1/LED2 as output
             MOV #0FFFCh,&PAOUT  ; all pins with pullup resistors and LED1/LED2 = output low
 
     .IFDEF TERMINAL4WIRES
+; RTS output is wired to the CTS input of UART2USB bridge 
+; configure RTS as output high to disable RX TERM during start FORTH
 HANDSHAKOUT .equ    P1OUT
 HANDSHAKIN  .equ    P1IN
 RTS         .equ    1           ; P1.0 bit position
@@ -163,14 +166,37 @@ RTS         .equ    1           ; P1.0 bit position
 
         .IFDEF TERMINAL5WIRES
 
+; CTS input is wired to the RTS output of UART2USB bridge 
+; configure CTS as input low
 CTS         .equ    2           ; P1.1 bit position
-
             BIC  #2,&PADIR      ; CTS input pull down resistor
 
         .ENDIF  ; TERMINAL5WIRES
 
     .ENDIF  ; TERMINAL4WIRES
+
           
+    .IFDEF UCB0_TERM        ; for MSP_EXP430FR2433_I2C
+I2CT_BUS    .equ    0Ch   ; P1.2=SDA P1.3=SCL
+I2CT_SEL    .equ    P1SEL0
+I2CT_REN    .equ    P1REN
+I2CT_OUT    .equ    P1OUT
+
+I2CT_SLA_BUS .equ   07h     ; P2.0 P2.1 P2.1
+I2CT_SLA_IN  .equ   P2IN
+I2CT_SLA_OUT .equ   P2OUT
+I2CT_SLA_DIR .equ   P2DIR
+I2CT_SLA_REN .equ   P2REN
+    .ENDIF
+
+    .IFDEF  UCB0_I2CM   ; for TERM2IIC add-on
+
+I2CM_BUS    .equ    0Ch   ; P1.2=SDA P1.3=SCL
+I2CM_SEL    .equ    P1SEL0
+I2CM_REN    .equ    P1REN
+I2CM_OUT    .equ    P1OUT
+    .ENDIF
+
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3

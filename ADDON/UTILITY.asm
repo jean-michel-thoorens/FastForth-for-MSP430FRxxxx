@@ -48,7 +48,7 @@ STKDISPL2   .word   II,FETCH,UDOT
 
 
             FORTHWORD ".RS"     ; --           print <depth> of Return Stack and stack contents if not empty
-            MOV     TOS,-2(PSP) ; -- TOS ( tos x x ) 
+DOTRS       MOV     TOS,-2(PSP) ; -- TOS ( tos x x ) 
             MOV     RSP,-6(PSP) ; -- TOS ( tos x  RSP )
             MOV     #RSTACK,TOS ; -- R0  ( tos x  RSP )
             JMP     DOTS1
@@ -56,7 +56,7 @@ STKDISPL2   .word   II,FETCH,UDOT
 ;https://forth-standard.org/standard/tools/q
 ;Z  ?       adr --             display the content of adr
             FORTHWORD "?"
-            MOV     @TOS,TOS
+QUESTION    MOV     @TOS,TOS
             MOV     #UDOT,PC
 
 ;https://forth-standard.org/standard/tools/WORDS
@@ -173,7 +173,7 @@ DUMP        PUSH    IP
             ASMtoFORTH
             .word   SWAP,OVER,OVER          ; -- END ORG END ORG
             .word   UDOT,LIT,1,MINUS,UDOT   ; -- END ORG          display org end-1
-            .word   LIT,0FFF0h,ANDD,xdo     ; -- END ORG_modulo_16
+            .word   LIT,0FFFEh,ANDD,xdo     ; -- END ORG_modulo_2
 DUMP1       .word   CR
             .word   II,lit,7,UDOTR,SPACE    ; generate address
             .word   II,lit,10h,PLUS,II,xdo  ; display 16 bytes

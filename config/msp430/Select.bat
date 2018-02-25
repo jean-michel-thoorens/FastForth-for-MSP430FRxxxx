@@ -13,6 +13,7 @@
 @echo 5  MSP_EXP430FR4133
 @echo 6  MSP_EXP430FR2433
 @echo 7  CHIPSTICK_FR2433
+
 @set /p choice=your choice: 
 
 @if %choice% == 1    set template=MSP_EXP430FR5739
@@ -20,7 +21,7 @@
 @if %choice% == 3    set template=MSP_EXP430FR5994
 @if %choice% == 4    set template=MSP_EXP430FR6989
 @if %choice% == 5    set template=MSP_EXP430FR4133
-@if %choice% == 6    set template=MSP_EXP430FR4133
+@if %choice% == 6    set template=MSP_EXP430FR2433
 @if %choice% == 7    set template=CHIPSTICK_FR2433
 
 @exit /b

@@ -89,25 +89,25 @@ BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 
     .org    INTVECT         ; FFDA-FFFF 18 vectors + reset
 
-        .word  reset        ; FFDAh - P2       
-        .word  reset        ; FFDCh - P1       
-        .word  reset        ; FFDEh - ADC10    
-        .word  reset        ; FFE0h - eUSCI_B0 
-        .word  reset        ; FFE2h - eUSCI_A1 
-TERMVEC .word  TERMINAL_INT ; FFE4h - eUSCI_A0 
-        .word  reset        ; FFE6h - WDT      
-        .word  reset        ; FFE8h - RTC      
-        .word  reset        ; FFEAh - TA3_x    
-        .word  reset        ; FFECh - TA3_0    
-        .word  reset        ; FFEEh - TA2_x    
-        .word  reset        ; FFF0h - TA2_0    
-        .word  reset        ; FFF2h - TA1_x    
-        .word  reset        ; FFF4h - TA1_0    
-        .word  reset        ; FFF6h - TA0_x    
-        .word  reset        ; FFF8h - TA0_0    
-        .word  reset        ; FFFAh - UserNMI  
-        .word  reset        ; FFFCh - SysNMI   
-RST_ADR .word  reset        ; FFFEh - Reset    
+            .word  reset        ; FFDAh - P2       
+            .word  reset        ; FFDCh - P1       
+            .word  reset        ; FFDEh - ADC10    
+            .word  reset        ; FFE0h - eUSCI_B0 
+            .word  reset        ; FFE2h - eUSCI_A1 
+TERMVEC     .word  TERMINAL_INT ; FFE4h - eUSCI_A0 
+            .word  reset        ; FFE6h - WDT      
+            .word  reset        ; FFE8h - RTC      
+            .word  reset        ; FFEAh - TA3_x    
+            .word  reset        ; FFECh - TA3_0    
+            .word  reset        ; FFEEh - TA2_x    
+            .word  reset        ; FFF0h - TA2_0    
+            .word  reset        ; FFF2h - TA1_x    
+            .word  reset        ; FFF4h - TA1_0    
+            .word  reset        ; FFF6h - TA0_x    
+            .word  reset        ; FFF8h - TA0_0    
+            .word  reset        ; FFFAh - UserNMI  
+            .word  reset        ; FFFCh - SysNMI   
+RST_ADR     .word  reset        ; FFFEh - Reset    
 
 ; ----------------------------------------------------------------------
 ; MPY_32
@@ -428,7 +428,6 @@ CSCTL8      .equ CS_SFR + 10h   ; Clock System Control Register 8
 ; ----------------------------------------------------------------------
 ; RTC
 ; ----------------------------------------------------------------------
-RTC     ; define type of RTC
 RTCCTL      .equ RTC_SFR + 00h  ; Real-Time Clock Control 
 RTCIV       .equ RTC_SFR + 04h  ; Real-Time Clock Interrupt Vector 
 RTCMOD      .equ RTC_SFR + 08h  ; Real-Timer Clock Modulo 
@@ -463,13 +462,34 @@ SD_IFG         .equ eUSCI_A1_SFR + 2Ch    ; USCI_B0 Interrupt Flags Register
 ; ----------------------------------------------------------------------
 ; eUSCI_B0
 ; ----------------------------------------------------------------------
-    .IFDEF UCB0_SD
-SD_CTLW0       .equ eUSCI_B0_SFR + 00h    ; USCI_B0 Control Word Register 0
-SD_BRW         .equ eUSCI_B0_SFR + 06h    ; USCI_B0 Baud Word Rate 0
-SD_RXBUF       .equ eUSCI_B0_SFR + 0Ch    ; USCI_B0 Receive Buffer 8
-SD_TXBUF       .equ eUSCI_B0_SFR + 0Eh    ; USCI_B0 Transmit Buffer 8
-SD_IFG         .equ eUSCI_B0_SFR + 2Ch    ; USCI_B0 Interrupt Flags Register
-    .ENDIF ;UCB0_SD
+    .IFDEF UCB0_TERM
+I2CTERM_CTLW0       .equ eUSCI_B0_SFR + 00h    ; USCI_B0 Control Word Register 0
+I2CTERM_CTLW1       .equ eUSCI_B0_SFR + 02h    ; USCI_B0 Control Word Register 1
+I2CTERM_BRW         .equ eUSCI_B0_SFR + 06h    ; USCI_B0 Baud Word Rate 0
+I2CTERM_RXBUF       .equ eUSCI_B0_SFR + 0Ch    ; USCI_B0 Receive Buffer 8
+I2CTERM_TXBUF       .equ eUSCI_B0_SFR + 0Eh    ; USCI_B0 Transmit Buffer 8
+I2CTERM_I2COA0      .equ eUSCI_B0_SFR + 14h    ; USCI_B0 I2C Own Address 0
+I2CTERM_ADDRX       .equ eUSCI_B0_SFR + 1Ch    ; USCI_B0  Received Address Register 
+I2CTERM_I2CSA       .equ eUSCI_B0_SFR + 20h    ; USCI_B0 I2C Slave Address
+I2CTERM_IE          .equ eUSCI_B0_SFR + 2Ah    ; USCI_B0 Interrupt Enable
+I2CTERM_IFG         .equ eUSCI_B0_SFR + 2Ch    ; USCI_B0 Interrupt Flags Register
+    .ENDIF ;UCB0_TERM
+
+    .IFDEF UCB0_I2CM ; used by UART2MICC.asm 
+TERM2IIC_CTLW0       .equ eUSCI_B0_SFR + 00h    ; USCI_B0 Control Word Register 0
+TERM2IIC_CTLW1       .equ eUSCI_B0_SFR + 02h    ; USCI_B0 Control Word Register 1
+TERM2IIC_BRW         .equ eUSCI_B0_SFR + 06h    ; USCI_B0 Baud Word Rate 0
+TERM2IIC_STATW       .equ eUSCI_B0_SFR + 08h    ; USCI_B0 Status Word
+TERM2IIC_STAT        .equ eUSCI_B0_SFR + 08h    ; USCI_B0 Status Byte
+TERM2IIC_BCNT        .equ eUSCI_B0_SFR + 09h    ; USCI_B0 Byte Counter Register Byte
+TERM2IIC_TBCNT       .equ eUSCI_B0_SFR + 0Ah    ; USCI_B0 Byte Counter Threshold Register
+TERM2IIC_RXBUF       .equ eUSCI_B0_SFR + 0Ch    ; USCI_B0 Receive Buffer 8
+TERM2IIC_TXBUF       .equ eUSCI_B0_SFR + 0Eh    ; USCI_B0 Transmit Buffer 8
+TERM2IIC_I2COA0      .equ eUSCI_B0_SFR + 14h    ; USCI_B0 I2C Own Address 0
+TERM2IIC_I2CSA       .equ eUSCI_B0_SFR + 20h    ; USCI_B0 I2C Slave Address
+TERM2IIC_IE          .equ eUSCI_B0_SFR + 2Ah    ; USCI_B0 Interrupt Enable
+TERM2IIC_IFG         .equ eUSCI_B0_SFR + 2Ch    ; USCI_B0 Interrupt Flags Register
+    .ENDIF ;UCB0_I2CM
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET SYS config

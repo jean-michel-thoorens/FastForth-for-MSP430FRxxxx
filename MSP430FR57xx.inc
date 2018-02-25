@@ -629,7 +629,6 @@ SD_IFG         .equ eUSCI_B0_SFR + 2Ch    ; USCI_B0 Interrupt Flags Register
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : RTC REGISTERS
 ; ----------------------------------------------------------------------
-RTC_B   ; declare RTC type
 RTCCTL01      .equ RTC_B_SFR + 00h
 RTCCTL0       .equ RTC_B_SFR + 00h
 RTCCTL1       .equ RTC_B_SFR + 01h

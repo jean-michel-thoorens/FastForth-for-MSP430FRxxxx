@@ -1137,6 +1137,8 @@ T{ s12 s11 COMPARE -> -1 }T
 
 $0A BASE !  \ happy end of core test
 
-[THEN]      \ ANS_COMP
+[ELSE]      \ if ANS_COMP is not present
+DOWNLOAD_FIRST_ANS_COMP_!
+[THEN]
 
 ECHO

@@ -104,30 +104,32 @@ FDIVEND MOV @IP+,PC
 
     .IFDEF MPY ; hardware multiplier
 
-; F#S    Shi Qlo -- Shi 0   convert fractionnal part of S15Q16 fixed point number (direct order)
+; F#S    Qlo Qhi -- Qhi 0   convert fractionnal part of Q15.16 fixed point number
     FORTHWORD "F#S"
-QUMS        SUB #2,PSP              ; -- Shi x Qlo
-            MOV TOS,0(PSP)          ; -- Shi Qlo x
-            MOV #4,T                ; -- Shi Qlo x      T = limit for base 16
+FNUMS       MOV @PSP,X              ; -- Qlo Qhi    X = Qlo
+            MOV TOS,0(PSP)          ; -- Qhi Qhi
+            SUB #2,PSP              ; -- Qhi x Qhi
+            MOV X,0(PSP)            ; -- Qhi Qlo Qhi
+            MOV #4,T                ; -- Qhi Qlo x      T = limit for base 16
             CMP #10,&BASE
-            JNZ QUMS2
+            JNZ FNUMS2
             ADD #1,T                ;                   T = limit for base 10
-QUMS2       MOV #0,S                ;                   S = count
-QUMSLOOP    MOV @PSP,&MPY           ;                   Load 1st operand
+FNUMS2      MOV #0,S                ;                   S = count
+FNUMSLOOP   MOV @PSP,&MPY           ;                   Load 1st operand
             MOV &BASE,&OP2          ;                   Load 2nd operand
-            MOV &RES0,0(PSP)        ; -- Shi Qlo' x     low result on stack
-            MOV &RES1,TOS           ; -- Shi Qlo' digit high result in TOS
+            MOV &RES0,0(PSP)        ; -- Qhi Qlo' x     low result on stack
+            MOV &RES1,TOS           ; -- Qhi Qlo' digit high result in TOS
             CMP #10,TOS             ;                   digit to char
-            JLO QUMS2CHAR
+            JLO FNUMS2CHAR
             ADD #7,TOS
-QUMS2CHAR   ADD #30h,TOS
-            MOV.B TOS,HOLDS_ORG(S)  ; -- Shi Qlo' char  char to string
+FNUMS2CHAR  ADD #30h,TOS
+            MOV.B TOS,HOLDS_ORG(S)  ; -- Qhi Qlo' char  char to string
             ADD #1,S                ;                   count+1
             CMP T,S                 ;2                  count=limit ?
-            JLO QUMSLOOP            ;                   loop back if U<
-            MOV T,TOS               ; -- Shi Qlo' limit
-            MOV #0,0(PSP)           ; -- Shi 0 limit
-            MOV #HOLDS_ORG,X        ; -- Shi 0 len      X= org
+            JLO FNUMSLOOP           ;                   loop back if U<
+            MOV T,TOS               ; -- Qhi Qlo' limit
+            MOV #0,0(PSP)           ; -- Qhi 0 limit
+            MOV #HOLDS_ORG,X        ; -- Qhi 0 len      X= org
             JMP HOLDS1
             
             FORTHWORD "F*"      ; signed s15.16 multiplication --> s15.16 result
@@ -144,7 +146,7 @@ QUMS2CHAR   ADD #30h,TOS
 
     .ELSE ; no hardware multiplier
 
-; F#S    Shi Qlo -- Shi 0   convert fractionnal part of S15Q16 fixed point number (direct order)
+; F#S    Qlo Qhi -- Qhi 0   convert fractionnal part of Q15.16 fixed point number
     FORTHWORD "F#S"
 ; create a counted string at PAD+CPL+2
 ; with digit high result of Qdlo * base
@@ -152,38 +154,40 @@ QUMS2CHAR   ADD #30h,TOS
 ; mov &BASE,S , jmp UMSTAR1 without hardware MPY
 ; result: digit in tos (high) to convert in digit
 ; 
-QUMS        SUB #2,PSP              ; -- Shi x Qlo
-            MOV TOS,0(PSP)          ; -- Shi Qlo x
-            MOV #4,TOS              ; -- Shi Qlo x      T = limit for base 16
+FNUMS       MOV @PSP,X              ; -- Qlo Qhi    X = Qlo
+            MOV TOS,0(PSP)          ; -- Qhi Qhi
+            SUB #2,PSP              ; -- Qhi x Qhi
+            MOV X,0(PSP)            ; -- Qhi Qlo Qhi
+            MOV #4,TOS              ; -- Qhi Qlo limit      TOS = count for base 16
             CMP #10,&BASE
-            JNZ QUMS2
-            ADD #1,TOS              ;                   T = limit for base 10
-QUMS2       .word 151Eh             ;                   PUSHM TOS,IP  TOS=limit IP count
-            MOV #QUMSNEXT,IP        ; -- Shi Qlo x
+            JNZ FNUMS2
+            ADD #1,TOS              ;                   TOS = limit for base 10
+FNUMS2      .word 151Eh             ;                   PUSHM TOS,IP  TOS=limit IP count
+            MOV #FNUMSNEXT,IP       ; -- Qhi Qlo limit
             MOV #0,S
-QUMSLOOP    PUSH S                  ;                   R-- limit IP count
-            MOV &BASE,TOS           ; -- Shi Qlo base
+FNUMSLOOP   PUSH S                  ;                   R-- limit IP count
+            MOV &BASE,TOS           ; -- Qhi Qlo base
             MOV #UMSTAR,PC 
-QUMSNEXT    FORTHtoASM              ; -- Shi QloRem digit
+FNUMSNEXT   FORTHtoASM              ; -- Qhi QloRem digit
             SUB #2,IP
             CMP #10,TOS             ;                   digit to char
-            JLO QUMS2CHAR
+            JLO FNUMS2CHAR
             ADD #7,TOS
-QUMS2CHAR   ADD #30h,TOS
+FNUMS2CHAR  ADD #30h,TOS
             MOV @RSP+,S             ;                       R-- limit IP
-            MOV.B TOS,HOLDS_ORG(S)  ; -- Shi Qlorem char    char to stringto string
+            MOV.B TOS,HOLDS_ORG(S)  ; -- Qhi Qlorem char    char to stringto string
             ADD #1,S                ;                       count+1
             CMP 2(RSP),S            ;3                      count=limit ?
-            JLO QUMSLOOP            ;                       no
-            .word 171Dh             ; -- Shi Qlorem limit   POPM IP,TOS ;
-            MOV #0,0(PSP)           ; -- Shi 0 limit
-            MOV #HOLDS_ORG,X        ; -- Shi 0 len          X= org
+            JLO FNUMSLOOP           ;                       no
+            .word 171Dh             ; -- Qhi Qlorem limit   POPM IP,TOS ;
+            MOV #0,0(PSP)           ; -- Qhi 0 limit
+            MOV #HOLDS_ORG,X        ; -- Qhi 0 len          X= org
             JMP HOLDS1
             
 ; unsigned multiply 32*32 = 64
 ; don't use S reg (keep sign)
         FORTHWORD "UDM*"
-UDMS    PUSH IP         ; 3
+UDMT    PUSH IP         ; 3
         .word 1537h     ; 6 PUSHM R7,R4     save R7 ~ R4 regs
         MOV 4(PSP),IP   ; 3 MDlo
         MOV 2(PSP),T    ; 3 MDhi
@@ -196,23 +200,23 @@ UDMS    PUSH IP         ; 3
         MOV #0,R7       ; 1 RESHI=0
         MOV #1,X        ; 1 BIT TEST REGlo
         MOV #0,Y        ; 1 BIT TEST2 REGhi
-UDMS1   CMP #0,X
-        JNZ UDMS2       ; 2
+UDMT1   CMP #0,X
+        JNZ UDMT2       ; 2
         BIT Y,TOS       ; 1 TEST ACTUAL BIT MRhi
-        JMP UDMS3
-UDMS2   BIT X,W         ; 1 TEST ACTUAL BIT MRlo
-UDMS3   JZ UDMS4        ; 
+        JMP UDMT3
+UDMT2   BIT X,W         ; 1 TEST ACTUAL BIT MRlo
+UDMT3   JZ UDMT4        ; 
         ADD IP,4(PSP)   ; 3 IF 1: ADD MDlo TO RESlo
         ADDC T,2(PSP)   ; 3      ADDC MDhi TO REShi
         ADDC R4,R6      ; 1      ADDC MDLO TO RESLO        
         ADDC R5,R7      ; 1      ADDC MDHI TO RESHI
-UDMS4   ADD IP,IP       ; 1 (RLA LSBs) MDlo *2
+UDMT4   ADD IP,IP       ; 1 (RLA LSBs) MDlo *2
         ADDC T,T        ; 1 (RLC MSBs) MDhi *2
         ADDC R4,R4      ; 1 (RLA LSBs) MDLO *2
         ADDC R5,R5      ; 1 (RLC MSBs) MDHI *2
         ADD X,X         ; 1 (RLA) NEXT BIT TO TEST
         ADDC Y,Y        ; 1 (RLA) NEXT BIT TO TEST
-        JLO UDMS1       ; 2 IF BIT IN CARRY: FINISHED    32 * 16~ (average loop)
+        JLO UDMT1       ; 2 IF BIT IN CARRY: FINISHED    32 * 16~ (average loop)
         MOV R6,0(PSP)   ; 3
         MOV R7,TOS      ; 1 high result in TOS
         .word 1734h     ; 6  POPM R4,R7  restore R4 ~ R7 regs
@@ -230,7 +234,7 @@ UDMS4   ADD IP,IP       ; 1 (RLA LSBs) MDlo *2
         ADD #1,4(PSP)
         ADDC #0,2(PSP)
 FSTAR1   mDOCOL
-        .word DABBS,UDMS
+        .word DABBS,UDMT
         FORTHtoASM          ; -- RES0 RES1 RES2 RES3 
         MOV @RSP+,IP
         MOV @PSP+,TOS       ; -- RES0 RES1 RES2
@@ -240,33 +244,34 @@ FSTAR1   mDOCOL
 
     .ENDIF
 
-        FORTHWORD "F."      ; display a s15q16 number
+        FORTHWORD "F."      ; display a Q15.16 number
         mDOCOL
         .word   LESSNUM,DUP,TOR,DABBS
-        .word   SWAP,QUMS,lit,',',HOLD,NUMS
+        .word   FNUMS,lit,',',HOLD,NUMS
         .word   RFROM,SIGN,NUMGREATER,TYPE,SPACE,EXIT
         
-        FORTHWORD "S>F"     ; convert a signed number to a s15q16 (signed) number
+        FORTHWORD "S>F"     ; convert a signed number to a Q15.16 (signed) number
         SUB #2,PSP
         MOV #0,0(PSP)
         MOV @IP+,PC
 
-        FORTHWORD "D>F"     ; convert a signed double number (-32768|32767) to a s15q16 (signed) number
-        MOV @PSP,TOS
-        MOV #0,0(PSP)
+; https://forth-standard.org/standard/core/TwoFetch
+; 2@    a-addr -- x1 x2    fetch 2 cells ; the lower address will appear on top of stack
+            FORTHWORD "2@"
+TWOFETCH    
+        SUB #2,PSP
+        MOV 2(TOS),0(PSP)
+        MOV @TOS,TOS
         MOV @IP+,PC
 
+
 ; https://forth-standard.org/standard/double/TwoCONSTANT
-; udlo/dlo/Flo udhi/dhi/Shi --         create a double or a s15q16 CONSTANT
+; udlo/dlo/Flo udhi/dhi/Qhi --         create a double or a Q15.16 CONSTANT
         FORTHWORD "2CONSTANT"
         mDOCOL
         .word CREATE
-        .word SWAP,COMMA,COMMA  ; compile udlo/dlo/Flo then udhi/dhi/Shi
+        .word COMMA,COMMA       ; compile udhi/dhi/Qhi then udlo/dlo/Qlo
         .word DOES
-        FORTHtoASM
-        SUB #2,PSP          ; -- x PFA
-        MOV @TOS+,0(PSP)    ; -- lo PFA+2
-        MOV @TOS,TOS        ; -- lo hi
-        MOV @RSP+,IP
-        MOV @IP+,PC
+        .word TWOFETCH
+        .word EXIT
 

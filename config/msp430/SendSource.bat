@@ -36,6 +36,7 @@ goto badend
 IF /I "%3" == "" GOTO preprocessF
 IF /I "%3" == "ECHO" GOTO preprocessF
 IF /I "%3" == "NOECHO" GOTO preprocessF
+IF /I "%3" == "HALF" GOTO preprocessF
 
 echo unexpected third parameter %3 !
 
@@ -45,7 +46,6 @@ exit
 
 
 :preprocessF
-::@%~d1\prog\gema\gema.exe -nobackup -line -t -f  %~dpn2.pat %~dpn1.f %~dpn1.4th 
 @%~d1\prog\gema\gema.exe -nobackup -line -t -f  %~d1\config\gema\%~n2.pat %~dpn1.f %~dpn1.4th 
 
 :DownloadF
@@ -56,11 +56,10 @@ exit
 @IF NOT ERRORLEVEL 1 GOTO EndF
 
 :Win64F
-::del null
 @"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d1\config\msp430\SendFile.ttl %~dpn1.4th /C %3
 
 :EndF
-@del %~dpn1.4th
+@MOVE "%~dpn1.4th" "%~dp1\LAST.4th" > NUL
 exit
 
 
@@ -72,7 +71,7 @@ exit
 
 :4th
 
-shift /2
+shift /3
 
 ::echo %1
 ::echo %2
@@ -87,6 +86,7 @@ goto badend
 if /I "%2"=="" GOTO Download4th
 if /I "%2"=="ECHO" GOTO Download4th
 if /I "%2"=="NOECHO" GOTO Download4th
+if /I "%2"=="HALF" GOTO Download4th
 
 echo unexpected 2th parameter %2 !
 goto badend 
@@ -96,12 +96,11 @@ goto badend
 @taskkill /F /IM ttermpro.exe 1> NUL 2>&1
 
 :Win324th
-@"C:\Program Files\teraterm\ttpmacro.exe" /V %~d1\config\msp430\SendFile.ttl %~dpn1.4th /C %2  1> NUL 2>&1
+@"C:\Program Files\teraterm\ttpmacro.exe" /V %~d1\config\msp430\SendFile.ttl %~dpn1.4TH /C %2  1> NUL 2>&1
 @IF NOT ERRORLEVEL 1 GOTO End4th
 
 :Win644th
-::del null
-@"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d1\config\msp430\SendFile.ttl %~dpn1.4th /C %2
+@"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d1\config\msp430\SendFile.ttl %~dpn1.4TH /C %2
 
 :End4th
 exit

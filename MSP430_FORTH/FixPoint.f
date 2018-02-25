@@ -1,19 +1,22 @@
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
-\ MSP_EXP430FR4133  CHIPSTICK_FR2433
+\ MSP_EXP430FR2433  MSP_EXP430FR4133  CHIPSTICK_FR2433
 \ MY_MSP430FR5738_1 MY_MSP430FR5738     MY_MSP430FR5948     MY_MSP430FR5948_1   
 \ JMJ_BOX
 
 
-
 PWR_STATE
     \
+
 [DEFINED] {FIXPOINT} [IF] {FIXPOINT} [THEN]     \ remove {FIXPOINT} if outside core 
     \
+
 [DEFINED] ASM [UNDEFINED] {FIXPOINT} AND [IF]   \ assembler required, don't replicate {FIXPOINT} inside core
     \
+
 MARKER {FIXPOINT}
     \
+
 \ https://forth-standard.org/standard/core/HOLDS
 \ Adds the string represented by addr u to the pictured numeric output string
 \ compilation use: <# S" string" HOLDS #>
@@ -33,20 +36,23 @@ REPEAT      MOV Y,&HP       \ 3
             MOV @IP+,PC     \ 4  15 words
 ENDCODE
     \
-CODE F+                 \ add s15q16 numbers
-    ADD @PSP+,2(PSP)    \ -- sumlo  d1hi d2hi
-    ADDC @PSP+,TOS      \ -- sumlo sumhi
+
+CODE F+                     \ add Q15.16 numbers
+    ADD @PSP+,2(PSP)        \ -- sumlo  d1hi d2hi
+    ADDC @PSP+,TOS          \ -- sumlo sumhi
     MOV @IP+,PC
 ENDCODE
     \
-CODE F-                 \ substract s15q16 numbers
-    SUB @PSP+,2(PSP)    \ -- diflo d1hi d2hi
-    SUBC TOS,0(PSP)     \ -- diflo difhi d2hi
+
+CODE F-                     \ substract Q15.16 numbers
+    SUB @PSP+,2(PSP)        \ -- diflo d1hi d2hi
+    SUBC TOS,0(PSP)         \ -- diflo difhi d2hi
     MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE
     \
-CODE F/                     \ s15q16 / s15q16 --> s15q16 result
+
+CODE F/                     \ Q15.16 / Q15.16 --> Q15.16 result
         MOV 2(PSP),S        \
         XOR TOS,S           \ MDhi XOR MRhi --> S keep sign of result
         MOV #0,T            \ DVDlo = 0
@@ -111,37 +117,42 @@ S< IF   XOR #-1,0(PSP)
 THEN    MOV @IP+,PC
 ENDCODE
     \
+
 $1A04 C@ $EF > [IF] ; test tag value MSP430FR413x subfamily without hardware_MPY 
     \
-\ F#S    Shi Flo -- Shi 0   convert fractional part Flo of S15Q16 fixed point number
+
+\ F#S    Qhi Qlo -- Qhi 0   convert fractional part Qlo of Q15.16 fixed point number
 CODE F#S 
-            SUB #2,PSP              \ -- Shi x Flo
-            MOV TOS,0(PSP)          \ -- Shi Flo x
-            MOV #4,TOS              \ -- Shi Flo x      TOS = limit for base 16
+            MOV @PSP,X              \ -- Qlo Qhi    X = Qlo
+            MOV TOS,0(PSP)          \ -- Qhi Qhi
+            SUB #2,PSP              \ -- Qhi x Qhi
+            MOV X,0(PSP)            \ -- Qhi Qlo Qhi
+            MOV #4,TOS              \ -- Qhi Qlo x      TOS = limit for base 16
             CMP #10,&BASE
 0= IF       ADD #1,TOS              \                   TOS = limit for base 10
 THEN        PUSHM TOS,IP            \
-            MOV #0,S                \ -- Shi Flo x
+            MOV #0,S                \ -- Qhi Qlo x
 BEGIN       PUSH S                  \                   R-- limit IP count
-            MOV &BASE,TOS           \ -- Shi Flo base
+            MOV &BASE,TOS           \ -- Qhi Qlo base
             LO2HI
             UM*                     \                   u1 u2 -- RESlo REShi
-            HI2LO                   \ -- Shi RESlo digit
+            HI2LO                   \ -- Qhi RESlo digit
             SUB #2,IP
             CMP #10,TOS             \                   digit to char
     U>= IF  ADD #7,TOS
     THEN    ADD #$30,TOS
             MOV @RSP+,S             \                       R-- limit IP
-            MOV.B TOS,HOLDS_ORG(S)  \ -- Shi RESlo char     char to string
+            MOV.B TOS,HOLDS_ORG(S)  \ -- Qhi RESlo char     char to string
             ADD #1,S                \                       count+1
             CMP 2(RSP),S            \                       count=limit ?
 U>= UNTIL   POPM IP,TOS             \
-            MOV #0,0(PSP)           \ -- Shi 0 len
-            SUB #2,PSP              \ -- Shi 0 x len
-            MOV #HOLDS_ORG,0(PSP)   \ -- Shi 0 addr len
+            MOV #0,0(PSP)           \ -- Qhi 0 len
+            SUB #2,PSP              \ -- Qhi 0 x len
+            MOV #HOLDS_ORG,0(PSP)   \ -- Qhi 0 addr len
             JMP HOLDS
 ENDCODE
     \
+
 \ unsigned multiply 32*32 = 64
 \ don't use S reg (keep sign)
 CODE UDM*
@@ -179,10 +190,11 @@ U>= UNTIL   MOV R6,0(PSP)   \ 2 IF BIT IN CARRY: FINISHED    32 * 16~ (average l
             MOV @IP+,PC
 ENDCODE
     \
+
 CODE F*                 \ s15.16 * s15.16 --> s15.16 result
     MOV 2(PSP),S        \
     XOR TOS,S           \ 1s15 XOR 2s15 --> S keep sign of result
-    BIT #8000,2(PSP)    \ MD < 0 ? 
+    BIT #$8000,2(PSP)   \ MD < 0 ? 
 0<> IF  XOR #-1,2(PSP)
         XOR #-1,4(PSP)
         ADD #1,4(PSP)
@@ -197,89 +209,104 @@ THEN
     GOTO BW1            \ goto end of F/ to process sign of result
 ENDCODE
     \
+
 [ELSE]                  \ hardware multiplier
     \
-\ F#S    Shi Flo -- Shi 0   convert fractionnal part of S15Q16 fixed point number (direct order)
+
+\ F#S    Qhi Qlo -- Qhi 0   convert fractionnal part of Q15.16 fixed point number (direct order)
 CODE F#S
-            SUB #2,PSP              \ -- Shi x Flo
-            MOV TOS,0(PSP)          \ -- Shi Flo x
-            MOV #4,T                \ -- Shi Flo x      T = limit for base 16
+            MOV @PSP,X              \ -- Qlo Qhi    X = Qlo
+\            BIT.B #3,X
+\            0<> IF
+\                ADD #1,X                \ -- display by excess (experimental)
+\            THEN
+            MOV TOS,0(PSP)          \ -- Qhi Qhi
+            SUB #2,PSP              \ -- Qhi x Qhi
+            MOV X,0(PSP)            \ -- Qhi Qlo Qhi
+            MOV #4,T                \ -- Qhi Qlo x      T = limit for base 16
             CMP #10,&BASE
 0= IF       ADD #1,T                \                   T = limit for base 10
 THEN        MOV #0,S                \                   S = count
 BEGIN       MOV @PSP,&MPY           \                   Load 1st operand
             MOV &BASE,&OP2          \                   Load 2nd operand
-            MOV &RES0,0(PSP)        \ -- Shi RESlo x        low result on stack
-            MOV &RES1,TOS           \ -- Shi RESlo REShi    high result in TOS
+            MOV &RES0,0(PSP)        \ -- Qhi RESlo x        low result on stack
+            MOV &RES1,TOS           \ -- Qhi RESlo REShi    high result in TOS
             CMP #10,TOS             \                   digit to char
     U>= IF  ADD #7,TOS
     THEN    ADD #$30,TOS
-            MOV.B TOS,HOLDS_ORG(S)  \ -- Shi RESlo char     char to string
+            MOV.B TOS,HOLDS_ORG(S)  \ -- Qhi RESlo char     char to string
             ADD #1,S                \                   count+1
             CMP T,S                 \                   count=limit ?
-U>= UNTIL   MOV T,TOS               \ -- Shi RESlo limit
-            MOV #0,0(PSP)           \ -- Shi 0 limit
-            SUB #2,PSP              \ -- Shi 0 x len
-            MOV #HOLDS_ORG,0(PSP)   \ -- Shi 0 addr len
+U>= UNTIL   MOV T,TOS               \ -- Qhi RESlo limit
+            MOV #0,0(PSP)           \ -- Qhi 0 limit
+            SUB #2,PSP              \ -- Qhi 0 x len
+            MOV #HOLDS_ORG,0(PSP)   \ -- Qhi 0 addr len
             JMP HOLDS
 ENDCODE
     \
+
 CODE F*                 \ signed s15.16 multiplication --> s15.16 result
     MOV 4(PSP),&MPYS32L \ 5 Load 1st operand
     MOV 2(PSP),&MPYS32H \ 5
     MOV @PSP,&OP2L      \ 4 load 2nd operand
     MOV TOS,&OP2H       \ 3
     ADD #4,PSP          \ 1 remove 2 cells
-    NOP2                \ 2
-    NOP2                \ 2 wait 8 cycles after write OP2L before reading RES1
+\    NOP2                \ 2
+\    NOP2                \ 2 wait 8 cycles after write OP2L before reading RES1
     MOV &RES1,0(PSP)    \ 5
     MOV &RES2,TOS       \ 5
     MOV @IP+,PC
 ENDCODE
     \
+
 [THEN]  \ hardware multiplier
     \
-: F.                \ display a s15q16 number
-    <# DUP >R DABS  \ -- udlo udhi          R-- sign
-    SWAP            \ -- sign udhi udlo
-    F#S             \ -- sign udhi 0
+
+: F.                \ display a Q15.16 number
+    <# DUP >R DABS  \ -- Qlo Qhi            R-- sign
+    F#S             \ -- sign Qhi 0
     $2C HOLD #S     \ -- sign 0 0
     R> SIGN #>      \ -- addr len           R-- 
     TYPE SPACE      \ --         
-    EXIT
 ;
     \
-CODE S>F         \ convert a signed number to a s15q16 (signed) number
+
+CODE S>F         \ convert a signed number to a Q15.16 (signed) number
     SUB #2,PSP
     MOV #0,0(PSP)
     MOV @IP+,PC
 ENDCODE
     \
-CODE D>F         \ convert a signed double number (-.32768|.32767) to a s15q16 (signed) number
-    MOV @PSP,TOS
-    MOV #0,0(PSP)
-    MOV @IP+,PC
+
+[UNDEFINED] 2CONSTANT [IF]
+    \
+
+\ https://forth-standard.org/standard/core/TwoFetch
+\ 2@    a-addr -- x1 x2    fetch 2 cells ; the lower address will appear on top of stack
+CODE 2@
+SUB #2,PSP
+MOV 2(TOS),0(PSP)
+MOV @TOS,TOS
+NEXT
 ENDCODE
     \
 
 \ https://forth-standard.org/standard/double/TwoCONSTANT
-: 2CONSTANT \  udlo/dlo/Flo udhi/dhi/Shi --         to create double or s15q16 CONSTANT
+: 2CONSTANT \  udlo/dlo/Qlo udhi/dhi/Qhi --         to create double or Q15.16 CONSTANT
 CREATE
-SWAP , ,            \ compile Flo then Shi
+, ,             \ compile Qhi then Qlo
 DOES>
-HI2LO
-MOV @RSP+,IP
-SUB #2,PSP          \ -- x PFA
-MOV @TOS+,0(PSP)    \ -- lo PFA+2
-MOV @TOS,TOS        \ -- lo hi
-MOV @IP+,PC
-ENDCODE
+2@              \ execution part
+;
     \
+
 [THEN]
     \
+
 ECHO
 PWR_HERE
     \
+
 ; -----------------------
 ; (volatile) tests
 ; -----------------------

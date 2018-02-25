@@ -21,7 +21,7 @@
 ;Z SD_ACCEPT  addr addr len -- addr' len'  get line to interpret from a SD Card file
 ; note : addr = TIB, addr' = PAD
 ; defered word ACCEPT is redirected here by the word LOAD"
-; sequentially move an input line ended by CRLF from BUFFER to PAD
+; sequentially move an input line ended by CRLF from SD_BUF to PAD
 ;   if end of buffer is reached before CRLF, asks Read_HandledFile to fill buffer with next sector
 ;   then move the end of the line.
 ; when all LOAD"ed files are read, redirects defered word ACCEPT to (ACCEPT) and restore interpret pointers.
@@ -32,7 +32,7 @@
 ; ----------------------------------;
 ;    FORTHWORD "SD_ACCEPT"          ; CIB CIB CPL -- CIB len
 ; ----------------------------------;
-SD_ACCEPT                           ; sequentially move from BUFFER to SDIB (PAD if RAM=1k) a line of chars delimited by CRLF
+SD_ACCEPT                           ; sequentially move from SD_BUF to SDIB (PAD if RAM=1k) a line of chars delimited by CRLF
 ; ----------------------------------; up to CPL = 80 chars
     PUSH    IP                      ;
     MOV     #SDA_YEMIT_RET,IP       ; set YEMIT return
@@ -60,7 +60,7 @@ SDA_ComputeChar                     ;
 ; ----------------------------------;
     CMP     &BufferLen,X            ; 3 BufferPtr >= BufferLen ?
     JHS     SDA_GetFileNextSector   ; 2 yes
-    MOV.B   BUFFER(X),Y             ; 3 Y = char
+    MOV.B   SD_BUF(X),Y             ; 3 Y = char
     ADD     #1,X                    ; 1 increment input BufferPtr
     CMP.B   #32,Y                   ; 2 ascii printable char ?
     JHS     SDA_MoveChar            ; 2 yes
@@ -90,14 +90,5 @@ SDA_GetFileNextSector               ; CIB CPL Count --
     MOV     @RSP+,W                 ; restore dst
     JMP     SDA_InitSrcAddr         ; loopback to end the line
 ; ----------------------------------;
-
-;https://forth-standard.org/standard/core/ACCEPT
-;C ACCEPT  addr addr len -- addr' len'  get line at addr to interpret len' chars
-            FORTHWORD "ACCEPT"
-ACCEPT      MOV     #PARENACCEPT,PC
-
-;C (ACCEPT)  addr addr len -- addr len'     get len' (up to len) chars from terminal (TERATERM.EXE) via USBtoUART bridge
-            FORTHWORD "(ACCEPT)"
-PARENACCEPT
 
 

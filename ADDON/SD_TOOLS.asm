@@ -88,7 +88,7 @@ DisplaySector
     mDOCOL                          ;
     .word   LESSNUM,NUMS,NUMGREATER ; ud --            display the double number
     .word   TYPE,SPACE              ;
-    .word   lit,BUFFER,lit,200h,DUMP;    
+    .word   lit,SD_BUF,lit,200h,DUMP;    
     .word   EXIT                    ;
 ; ----------------------------------;
 

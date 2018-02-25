@@ -4,7 +4,7 @@
 
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
-\ MSP_EXP430FR4133  CHIPSTICK_FR2433
+\ MSP_EXP430FR2433   MSP_EXP430FR4133  CHIPSTICK_FR2433
 
 \ MY_MSP430FR5738_1 MY_MSP430FR5738     MY_MSP430FR5948     MY_MSP430FR5948_1   
 \ JMJ_BOX
@@ -150,7 +150,7 @@ TEST5  ; you should see :  9 8 7 6 5 4 3 2 1 0 -->
 \ tests indexing address
 \ -----------------------------------------------------------------------
 
-: TABLE
+: BYTES_TABLE_IDX
 CREATE 
 0 DO I C,
 LOOP
@@ -158,7 +158,7 @@ DOES>
 +
 ;
 
-8 TABLE BYTES_TABLE
+8 BYTES_TABLE_IDX BYTES_TABLE \ create table "BYTES_TABLE" with bytes content = 0,1,2,3,4,5,6,7
     \
 2 BYTES_TABLE C@ . ; you should see 2 -->
 \
@@ -190,5 +190,94 @@ ENDCODE
 \ -----------------------------------------------------------------------
 \ R16 causes an error, assembler context is aborted and the word TEST7 is "hidden".
 
-; CODE TEST7
-;            MOV 0(PSP),0(R16)  ; display an error "out of bounds" -->
+\ CODE TEST7
+\            MOV 0(PSP),0(R16)  ; display an error "out of bounds" -->
+
+
+\ -----------------------------------------------------------------------
+\ tests access to a CREATED word with assembler 
+\ -----------------------------------------------------------------------
+
+
+    \
+CREATE TABLE0
+0 C,
+1 C,
+2 C,
+3 C,
+    \
+
+CREATE TABLE10
+$10 C,
+$11 C,
+$12 C,
+$13 C,
+
+    \
+
+CREATE TABLE20
+$20 C,
+$21 C,
+$22 C,
+$23 C,
+    \
+
+CREATE TABLE
+
+
+TABLE 2 - CONSTANT PFA_TABLE      \ PFA_TABLE leave the PFA of TABLE
+
+
+CODE REDIRECT       ; <table> --    redirects TABLE to argument <table>    
+MOV TOS,&PFA_TABLE
+MOV @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+    \
+
+CODE REDIRECT0      ; --            redirects TABLE to TABLE0        
+MOV #TABLE0,&PFA_TABLE
+MOV @IP+,PC
+ENDCODE
+    \
+
+CODE REDIRECT10     ; --            redirects TABLE to TABLE10        
+MOV #TABLE10,&PFA_TABLE
+MOV @IP+,PC
+ENDCODE
+    \
+
+CODE REDIRECT20     ; --            redirects TABLE to TABLE20        
+MOV #TABLE20,&PFA_TABLE
+MOV @IP+,PC
+ENDCODE
+    \
+
+' TABLE0 10 DUMP
+    \
+' TABLE10 10 DUMP
+    \
+' TABLE20 10 DUMP
+    \
+    \
+TABLE0 REDIRECT TABLE 10 DUMP
+    \
+TABLE10 REDIRECT TABLE 10 DUMP
+    \
+TABLE20 REDIRECT TABLE 10 DUMP
+    \
+    \
+REDIRECT0 TABLE 10 DUMP
+    \
+REDIRECT10 TABLE 10 DUMP
+    \
+REDIRECT20 TABLE 10 DUMP
+    \
+
+TABLE0 PFA_TABLE ! TABLE 10 DUMP
+    \
+TABLE10 PFA_TABLE ! TABLE 10 DUMP
+    \
+TABLE20 PFA_TABLE ! TABLE 10 DUMP
+    \
+

@@ -1,15 +1,21 @@
 ::SendSourceFileToTarget.bat
 ::used as link in any folder to drag and drop file.f or file.4th on it.
 
-IF /I "%~x1" == ".4TH" goto letsgo
+IF  /I "%~x1" == ".f" goto sendF
 
-::@call  SelectTarget.bat
-@call  Select.bat SelectTemplate
+:send4th
 
-:letsgo
+start  SendSource.bat %1  NOECHO
+::PAUSE > NUL
+exit
 
-@start  SendSource.bat %1 %~d1\config\gema\%template% %2
+
+:sendF
+
+call  Select.bat SelectTemplate
+
+start  SendSource.bat %1 %~d1\config\gema\%template% NOECHO
+
+::PAUSE > NUL
 exit
 :: %1 is file.f to be send
-:: %2 = \config\gema\ !!!
-:: optionnal %3 may be used by SendSource.bat

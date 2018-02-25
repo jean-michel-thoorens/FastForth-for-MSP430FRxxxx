@@ -32,7 +32,7 @@ PWR_STATE
     \
 [DEFINED] {SD_TOOLS} [IF] {SD_TOOLS} [THEN]     \ remove {SD_TOOLS} if outside core 
     \
-[DEFINED] ASM [DEFINED] LOAD" AND [UNDEFINED] {SD_TOOLS} AND [IF]
+[DEFINED] ASM [DEFINED] LOAD" AND [UNDEFINED] {SD_TOOLS} AND [IF] \ "
     \
 MARKER {SD_TOOLS}
     \
@@ -92,7 +92,7 @@ CODE SECTOR                         \ sector. --     don't forget to add decimal
     CALL    &ReadSectorWX           \ W = SectorLO  X = SectorHI
 COLON                               \
     <# #S #> TYPE SPACE             \ ud --            display the double number
-    BUFFER $200 DUMP CR ;           \ then dump the sector
+    SD_BUF $200 DUMP CR ;           \ then dump the sector
 \ ----------------------------------\
     \
 

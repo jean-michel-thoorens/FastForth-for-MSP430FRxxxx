@@ -3,25 +3,44 @@ sendln '     $0A BASE ! ECHO STOP' ; blanks are to pass LPMx wake up time...
 
 inputbox 'Send a File' 'Select File : ' param2
 
-; strcompare param4 'NOECHO'
-; if result = 0 sendln 'NOECHO'
-; strcompare param4 'ECHO'
-; if result = 0 sendln 'ECHO'
-
-strcompare param4 'ECHO'
-if result=0 then
+strcompare param4 'NOECHO'
+if result = 0 then
     sendln 'NOECHO'
-else
-    sendln 'ECHO'
+    setecho 0
+    showtt 0
+    clearscreen 1
+    sendfile inputstr 0
+    showtt 1
+    goto end
 endif
 
-showtt 0
-sendfile inputstr 0
-showtt 1
+strcompare param4 'ECHO'
+if result = 0 then
+    sendln 'ECHO'
+    setecho 0
+    showtt 0
+    clearscreen 1
+    sendfile inputstr 0
+    showtt 1
+    goto end
+endif
 
+strcompare param4 'HALF'
+if result = 0 then
+    sendln 'NOECHO'
+    setecho 1
+    showtt 0
+    clearscreen 1
+    sendfile inputstr 0
+    setecho 1
+    showtt 1
+endif
 
+:end
 end
+
+
 ; param1 = this macro
 ; param2 = file to send
 ; param3 = "/C"
-; param4 = ECHO or NOECHO
+; param4 = "ECHO" or "NOECHO" or "HALF" or nothing

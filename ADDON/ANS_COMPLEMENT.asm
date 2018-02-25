@@ -22,16 +22,16 @@
     mNEXT
 
     .IFNDEF ARITHMETIC
-    .include "ADDON\ARITHMETIC.asm"
+    .include "ADDON/ARITHMETIC.asm"
     .ENDIF
     .IFNDEF ALIGNMENT
-    .include "ADDON\ALIGNMENT.asm"
+    .include "ADDON/ALIGNMENT.asm"
     .ENDIF
     .IFNDEF PORTABILITY
-    .include "ADDON\PORTABILITY.asm"
+    .include "ADDON/PORTABILITY.asm"
     .ENDIF
     .IFNDEF DOUBLE
-    .include "ADDON\DOUBLE.asm"
+    .include "ADDON/DOUBLE.asm"
     .ENDIF
 
 ;https://forth-standard.org/standard/core/INVERT

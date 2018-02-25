@@ -1,19 +1,23 @@
-\ ------------------------------------------------------------------------------
-\ ANS_COMP.f                               words complement to pass CORETEST.4th
-\ ------------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
+; ANS_COMP.f                               words complement to pass CORETEST.4th
+; ------------------------------------------------------------------------------
 
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
-\ MSP_EXP430FR4133  CHIPSTICK_FR2433
+\ MSP_EXP430FR2433  MSP_EXP430FR4133    CHIPSTICK_FR2433
 \ MY_MSP430FR5738_1 MY_MSP430FR5738     MY_MSP430FR5948     MY_MSP430FR5948_1   
 \ JMJ_BOX
-
+    \
 PWR_STATE
     \
 [DEFINED] {ANS_COMP} [IF] {ANS_COMP} [THEN] \ remove {ANS_COMP} if outside core  
     \
-[DEFINED] ASM [UNDEFINED] {ANS_COMP} AND [IF] \ assembler required, don't replicate {ANS_COMP} inside core
+[UNDEFINED] ASM [IF]
+ECHO 
+ASM ; assembler is required! 
+[THEN]
     \
+[UNDEFINED] {ANS_COMP} [IF]
 
 MARKER {ANS_COMP}
     \
@@ -41,7 +45,7 @@ ENDCODE
     \
 
 \ https://forth-standard.org/standard/core/RSHIFT
-\ RSHIFT  x1 u -- x2    logical R shift u places
+\ RSHIFT  x1 u -- x2    logical R7 shift u places
 CODE RSHIFT
             MOV @PSP+,W
             AND #$1F,TOS       \ no need to shift more than 16
@@ -514,8 +518,6 @@ CODE >BODY
 ADD #4,TOS
 MOV @IP+,PC
 ENDCODE
-    \
-[THEN]
     \
 PWR_HERE
     \
