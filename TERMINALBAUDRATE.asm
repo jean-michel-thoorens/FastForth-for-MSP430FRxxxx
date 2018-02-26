@@ -531,11 +531,11 @@
              MOV     #3,     &TERMBRW
              MOV.W   #04400h,&TERMMCTLW
 
-;        .CASE 3000000 ; PL2303TA baudrate
-;; Configure UART0 @ 6000000 bauds / 16MHz
-;; N = 16000000/6000000 = 2.6666.. ==> {UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.6666)=0xD6
-;            MOV     #2,    &TERMBRW
-;            MOV.W   #0D600h,&TERMMCTLW
+        .CASE 3000000 ; PL2303TA baudrate
+; Configure UART0 @ 6000000 bauds / 16MHz
+; N = 16000000/6000000 = 2.6666.. ==> {UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.6666)=0xB6
+            MOV     #2,    &TERMBRW
+            MOV.W   #0B600h,&TERMMCTLW
 
         .ELSECASE
             .error "UART0 / 8 MHz : baudrate not implemented"
@@ -680,11 +680,11 @@
 ;             MOV     #4,     &TERMBRW
 ;             MOV.W   #00100h,&TERMMCTLW
 
-;        .CASE 6000000 ; PL2303TA baudrate
-;; Configure UART0 @ 6000000 bauds / 24MHz
-;; N = 16000000/6000000 = 2.6666.. ==> {UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.6666)=0xD6
-;            MOV     #2,    &TERMBRW
-;            MOV.W   #0D600h,&TERMMCTLW
+        .CASE 6000000 ; PL2303TA baudrate
+; Configure UART0 @ 6000000 bauds / 24MHz
+; N = 16000000/6000000 = 2.6666.. ==> {UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.6666)=0xB6
+            MOV     #2,    &TERMBRW
+            MOV.W   #0B600h,&TERMMCTLW
 
         .ELSECASE
             .error "UART0 / 16 MHz : baudrate not implemented"

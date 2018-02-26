@@ -55,13 +55,13 @@ DTC .equ 1  ; DTC model 1 : DOCOL = CALL rDOCOL           14 cycles 1 word      
             ; DTC model 2 : DOCOL = PUSH IP, CALL rEXIT   13 cycles 2 words     good compromize for mix FORTH/ASM code
             ; DTC model 3 : inlined DOCOL                  9 cycles 4 words     fastest
 
-FREQUENCY   .equ 16 ; fully tested at 0.25,0.5,1,2,4,8,16 (and 24 for MSP430FR57xx) MHz
+FREQUENCY   .equ 16  ; fully tested at 0.25,0.5,1,2,4,8,16 (and 24 for MSP430FR57xx) MHz
 THREADS     .equ 16 ; 1,   4,   8,  16,   32 search entries in dictionnary. 16 is the good compromise between speed and size.
                     ;    +40, +66, +90, +154 bytes
 
 ;HALFDUPLEX          ; to use FAST FORTH with input terminal via bluetooth or WIFI (and with teraterm config = local Echo) 
 
-TERMINALBAUDRATE    .equ 115200    ; choose value considering the frequency and the UART2USB bridge, see explanations below.
+TERMINALBAUDRATE    .equ 921600    ; choose value considering the frequency and the UART2USB bridge, see explanations below.
 TERMINAL3WIRES      ;               enable 3 wires (GND,TX,RX) with XON/XOFF software flow control (PL2303TA/HXD, CP2102)
 TERMINAL4WIRES      ; + 18 bytes    enable 4 wires with hardware flow control on RX with RTS (PL2303TA/HXD, FT232RL)
 ;TERMINAL5WIRES      ; +  6 bytes    enable 5 wires with hardware flow control on RX/TX with RTS/CTS (PL2303TA/HXD, FT232RL)
@@ -72,7 +72,7 @@ TERMINAL4WIRES      ; + 18 bytes    enable 4 wires with hardware flow control on
 MSP430ASSEMBLER     ; + 1884 bytes : adds embedded assembler with TI syntax; without, you can do all but all much more slowly...
 SD_CARD_LOADER      ; + 1832 bytes : to LOAD source files from SD_card
 SD_CARD_READ_WRITE  ; + 1196 bytes : to read, create, write and del files + source files direct copy from PC to SD_Card
-BOOTLOADER          ; +   52 bytes : adds to <reset> a bootstrap to SD_CARD\BOOT.4TH.
+;BOOTLOADER          ; +   52 bytes : adds to <reset> a bootstrap to SD_CARD\BOOT.4TH.
 ;QUIETBOOT           ; +    2 bytes : to perform bootload without displaying.
 FIXPOINT_INPUT      ; +   78 bytes : adds the interpretation of Q15.16 numbers
 VOCABULARY_SET      ; +  108 bytes : adds VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83, not ANSI)
@@ -84,7 +84,7 @@ LOWERCASE           ; +   30 bytes : enables to write strings in lowercase.
 ;-------------------------------------------------------------------------------                   v
 CONDCOMP            ;; +  354 bytes : add cond. comp. : [UNDEFINED] [DEFINED] [IF] [ELSE] [THEN] CONDCOMP.f
 UTILITY             ;; +  426/508 bytes : add .S .RS WORDS U.R DUMP ?                            UTILITY.f
-FIXPOINT            ; +  452 bytes : add Q15.16 words HOLDS F+ F- F/ F* F#S F. S>F 2@ 2CONSTANT FIXPOINT.f
+;FIXPOINT            ; +  452 bytes : add Q15.16 words HOLDS F+ F- F/ F* F#S F. S>F 2@ 2CONSTANT FIXPOINT.f
 SD_TOOLS            ; +  126 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, adds UTILITY  SD_TOOLS.f
 ;ANS_CORE_COMPLIANT  ; +  876 bytes : required to pass coretest.4th ; (includes items below)     ANS_COMP.f
 ;ARITHMETIC          ; +  358 bytes : add S>D M* SM/REM FM/MOD * /MOD / MOD */MOD /MOD */
@@ -108,14 +108,13 @@ SD_TOOLS            ; +  126 bytes for trivial DIR, FAT, CLUSTER and SECTOR view
 ; --------------------------------------------------------------------------------------------
 ; WARNING ! if you use PL2303TA cable as supply, open box before to weld red wire on 3v3 pad !
 ; --------------------------------------------------------------------------------------------
-; 9600,19200,38400,57600 (250kHz)
-; + 115200,134400 (500kHz)
-; + 201600,230400,268800 (1MHz)
-; + 403200,460800,614400 (2MHz)
-; + 806400,921600,1228800 (4MHz)
-; + 2457600 (8MHz)
-; + 3000000 (16MHz)
-; + 6000000 (24MHz, MSP430FR57xx)
+; 9600,19200,38400,57600    (250kHz)
+; + 115200,134400           (500kHz)
+; + 201600,230400,268800    (1MHz)
+; + 403200,460800,614400    (2MHz)
+; + 806400,921600,1228800   (4MHz)
+; + 2457600,3000000         (8MHz)
+; + 6000000                 (16,24MHz) (shorten the 1m cable or use a Si8622EC-B-IS to regenerate TTL levels)
 
 
 ; UARTtoUSB module with Silabs CP2102 (supply current = 20 mA)
@@ -164,12 +163,13 @@ SD_TOOLS            ; +  126 bytes for trivial DIR, FAT, CLUSTER and SECTOR view
 ; --------------------------------------------------------------------------------------------
 ; WARNING ! if you use PL2303TA cable as supply, open box before to weld red wire on 3v3 pad !
 ; --------------------------------------------------------------------------------------------
-; 9600,19200,38400,57600,115200,134400 (500kHz)
-; + 201600,230400,268800 (1MHz)
-; + 403200,460800,614400 (2MHz)
-; + 806400,921600,1228800 (4MHz)
-; + 2457600 (8MHz)
-; + 3000000 (16MHz, 24MHz with MSP430FR57xx))
+; 9600,19200,38400,57600    (250kHz)
+; + 115200,134400           (500kHz)
+; + 201600,230400,268800    (1MHz)
+; + 403200,460800,614400    (2MHz)
+; + 806400,921600,1228800   (4MHz)
+; + 2457600,3000000         (8MHz)
+; + 6000000                 (16,24MHz) (shorten the 1m cable or use a Si8622EC-B-IS to regenerate TTL levels)
 
 
 ; UARTtoUSB module with FTDI FT232RL (FT230X don't work correctly)
@@ -1435,9 +1435,6 @@ TERMINAL_INT                            ; <--- TEMR RX interrupt vector, delayed
 ; --------------------------------------;
             ADD     #4,RSP              ;1  remove SR and PC from stack, SR flags are lost (unused by FORTH interpreter)
             .word   173Ah               ;6  POPM ;W=buffer_bound, T=0Dh,S=20h, IP=AYEMIT_RET
-;        .word   1758h                  ;8  POPM Y=oldSR, X=oldPC, W=buffer_bound, T=0Dh,S=20h, IP=AYEMIT_RET
-;        BIC #78h,Y                     ;2  SCG1,SCG0,OSCOFF,CPUOFF and GIE are OFF in oldSR
-;        MOV Y,SR                       ;1  restore SR with UF9 to UF11 flags, to preserve them.
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
 ; starts the 2th stopwatch              ;
 ; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
@@ -1445,14 +1442,13 @@ AKEYREAD    MOV.B   &TERMRXBUF,Y        ;3  read character into Y, UCRXIFG is cl
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
 ; stops the 3th stopwatch               ; 3th bottleneck result : 17~ + LPMx wake_up time ( + 5~ XON loop if F/Bds<230400 )
 ; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
-AKEYREAD1                               ; <---  XON RET address 2 ; first emergency: anticipate XOFF on CR as soon as possible
+AKEYREAD1   CMP.B   S,Y                 ;1      printable char ?
+            JHS     ASTORETEST          ;2      yes
             CMP.B   T,Y                 ;1      char = CR ?
             JZ      RXOFF               ;2      then RET to ENDACCEPT
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;+ 4    to send RXOFF
-; stops the first stopwatch             ;=      first bottleneck, best case result: 24~ + LPMx wake_up time..
-; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;       ...or 11~ in case of empty line
-            CMP.B   S,Y                 ;1      printable char ?
-            JHS     ASTORETEST          ;2      yes
+; stops the first stopwatch             ;=      first bottleneck, best case result: 27~ + LPMx wake_up time..
+; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;       ...or 14~ in case of empty line
 AQBS        CMP.B   #8,Y                ;1      char = BS ?
             JNE     WAITaKEY            ;2      case of other control chars
 ; --------------------------------------;
@@ -1469,11 +1465,14 @@ ASTORETEST  CMP     W,TOS               ; 1 Bound is reached ?
             JZ      YEMIT1              ; 2 yes: send echo then loopback
             MOV.B   Y,0(TOS)            ; 3 no: store char @ Ptr, send echo then loopback
             ADD     #1,TOS              ; 1     increment Ptr
-YEMIT1      BIT     #UCTXIFG,&TERMIFG   ; 3 wait the sending end of previous char, useless at high baudrates
+YEMIT1
+    .IF TERMINALBAUDRATE/FREQUENCY <230400
+            BIT     #UCTXIFG,&TERMIFG   ; 3 wait the sending end of previous char (sent before ACCEPT), useless at high baudrates
             JZ      YEMIT1              ; 2
+    .ENDIF
     .IFDEF TERMINAL5WIRES               ;
-YEMIT2      BIT.B   #CTS,&HANDSHAKIN    ;
-            JNZ     YEMIT2              ;
+YEMIT2      BIT.B   #CTS,&HANDSHAKIN    ; 3
+            JNZ     YEMIT2              ; 2
     .ENDIF
 YEMIT       .word   4882h               ; hi7/4~ lo:12/4~ send/send_not  echo to terminal
             .word   TERMTXBUF           ; 3 MOV Y,&TERMTXBUF
@@ -1482,10 +1481,10 @@ YEMIT       .word   4882h               ; hi7/4~ lo:12/4~ send/send_not  echo to
 AYEMIT_RET  FORTHtoASM                  ; 0     YEMII NEXT address; NOP9
             SUB     #2,IP               ; 1 set YEMIT NEXT address to AYEMIT_RET
 WAITaKEY    BIT     #UCRXIFG,&TERMIFG   ; 3 new char in TERMRXBUF ?
-            JZ      WAITaKEY            ; 2 no
             JNZ     AKEYREAD            ; 2 yes
+            JZ      WAITaKEY            ; 2 no
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
-; stops the 2th stopwatch               ; best case result: 31~/28~ (with/without echo) ==> 322/357 kBds/MHz
+; stops the 2th stopwatch               ; best case result: 26~/22~ (with/without echo) ==> 385/455 kBds/MHz
 ; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^; 
 
 ; --------------------------------------;
@@ -3078,7 +3077,7 @@ PARENWARM
 ;            .word   DOT                 ; display SYSSNIV
 ;            .word   DOT                 ; display SYSUNIV
             .word   XSQUOTE
-            .byte   39," FastForth V202",FREQ," (C) J.M.Thoorens "
+            .byte   39," FastForth V203",FREQ," (C) J.M.Thoorens "
             .word   TYPE
             .word   LIT,FRAM_FULL,HERE,MINUS,UDOT
             .word   XSQUOTE         ;

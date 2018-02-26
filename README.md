@@ -46,6 +46,12 @@ With all options its size is < 10kb.
 What is new ?
 -------------
 
+    FastForth V203
+
+    French touch 2: MSP430FR5xxx and MSP430FR6xxx @8MHz work with up to 3Mbds TERATERM terminal
+                    via PL2303TA/HXD 1m cable, and 6Mbds @16MHz with shortened cable.
+                    doesn't work with FR2xxx/FR4xxx families (FLL clock)
+    
     FastForth V202
 
     French touch: added the line number in case of error occurring when download a file.f|file.4th
