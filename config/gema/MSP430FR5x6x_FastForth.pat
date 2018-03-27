@@ -138,7 +138,7 @@ CONTEXT=\$1DD0!         CONTEXT dictionnary space (8 CELLS)
 CURRENT=\$1DE0!         CURRENT dictionnary ptr
 
 !BASE=\$1DE2!           numeric base, must be defined before first reset !
-!LINE=\$1DE4!           line in interpretation, activated with NOECHO, desactivated with ECHO
+LINE=\$1DE4!           line in interpretation, activated with NOECHO, desactivated with ECHO
 
 ! ---------------------------------------
 !1DE6! 22 bytes RAM free

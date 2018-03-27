@@ -115,31 +115,31 @@ tst             macro   op
 ; Sprungbefehle
 
 br              macro   op
-                mov     op,pc
+            mov     op,pc
                 endm
 
 dint            macro
-                bic     #8,sr
+            bic     #8,sr
                 endm
 
 eint            macro
-                bis     #8,sr
+            bis     #8,sr
                 endm
 
 nop             macro         
-                .word   04303h         ; mov #0, r3         
+            .word   04303h         ; mov #0, r3         
                 endm
 
 nop2            macro                  ; 1 Word, 2 Takte
-                jmp $+2
+            jmp $+2
                 endm
 
 nop3            macro                  ; 1 Word, 3 Takte
-                MOV PC,PC
+            MOV PC,PC
                 endm
 
 ret             macro
-                mov     @sp+,pc
+            mov     @sp+,pc
                 endm
 
 jlo		macro	label   ; unsigned

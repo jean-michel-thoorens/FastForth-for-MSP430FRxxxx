@@ -170,6 +170,8 @@ SD_BUS      .equ 04C0h   ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0
 
 Deep_RST_IN .equ P2IN   ; TERMINAL TX  pin as FORTH Deep_RST 
 Deep_RST    .equ 2      ; P2.0 = TX
+TERM_TX     .equ 1      ; P2.0 = TX
+TERM_RX     .equ 2      ; P2.1 = RX
 TERM_TXRX   .equ 003h   ; P2.1 = RX
 TERM_SEL    .equ P2SEL1
 TERM_REN    .equ P2REN

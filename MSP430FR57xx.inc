@@ -80,48 +80,6 @@ BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ; ----------------------------------------------
 
 
-; ----------------------------------------------
-; Interrupt Vectors and signatures - MSP430FR57xx
-; ----------------------------------------------
-
-;    .org    SIGNATURES
-;;Start of JTAG and BSL signatures
-;        .word   0           ; JTAG signature 1
-;        .word   0           ; JTAG signature 2
-;        .word   0 ; 5555h   ; BSL signature 1 ; disable BSL
-;        .word   0           ; BSL signature 2
-
-;    .org JTAG_PASSWORD     ;Start of JTAG PASSWORD
-
-    .org    INTVECT         ; FFCE-FFFF 24 vectors + reset
-        .word  reset        ; $FFCE  -  RTC_B
-        .word  reset        ; $FFD0  -  I/O Port 4
-        .word  reset        ; $FFD2  -  I/O Port 3
-        .word  reset        ; $FFD4  -  TB2_1
-        .word  reset        ; $FFD6  -  TB2_0
-        .word  reset        ; $FFD8  -  I/O Port P2
-        .word  reset        ; $FFDA  -  TB1_1
-        .word  reset        ; $FFDC  -  TB1_0
-        .word  reset        ; $FFDE  -  I/O Port P1
-;   .org BSL_PASSWORD       ;Start of BSL PASSWORD
-        .word  reset        ; $FFE0  -  TA1_1
-        .word  reset        ; $FFE2  -  TA1_0
-        .word  reset        ; $FFE4  -  DMA
-        .word  reset        ; $FFE6  -  eUSCI_A1
-        .word  reset        ; $FFE8  -  TA0_1
-        .word  reset        ; $FFEA  -  TA0_0
-        .word  reset        ; $FFEC  -  ADC10_B
-        .word  reset        ; $FFEE  -  eUSCI_B0
-TERMVEC .word  TERMINAL_INT ; $FFF0  -  eUSCI_A0
-        .word  reset        ; $FFF2  -  Watchdog
-        .word  reset        ; $FFF4  -  TB0_1
-        .word  reset        ; $FFF6  -  TB0_0
-        .word  reset        ; $FFF8  -  COMP_D
-        .word  reset        ; $FFFA  -  userNMI
-        .word  reset        ; $FFFC  -  sysNMI
-RST_ADR .word  reset        ; $FFFE  -  reset
-
-
     .ENDIF ; DEVICE="MSP430fr5734
 
 
@@ -202,48 +160,6 @@ JTAG_PASSWORD   .equ 0FF88h      ; 256 bits
 INTVECT         .equ 0FFCEh      ; FFCE-FFFF
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ; ----------------------------------------------
-
-
-; ----------------------------------------------
-; Interrupt Vectors and signatures - MSP430FR57xx
-; ----------------------------------------------
-
-;    .org    SIGNATURES
-;;Start of JTAG and BSL signatures
-;        .word   0           ; JTAG signature 1
-;        .word   0           ; JTAG signature 2
-;        .word   0 ; 5555h   ; BSL signature 1 ; disable BSL
-;        .word   0           ; BSL signature 2
-
-;    .org JTAG_PASSWORD     ;Start of JTAG PASSWORD
-
-    .org    INTVECT         ; FFCE-FFFF 24 vectors + reset
-        .word  reset        ; $FFCE  -  RTC_B
-        .word  reset        ; $FFD0  -  I/O Port 4
-        .word  reset        ; $FFD2  -  I/O Port 3
-        .word  reset        ; $FFD4  -  TB2_1
-        .word  reset        ; $FFD6  -  TB2_0
-        .word  reset        ; $FFD8  -  I/O Port P2
-        .word  reset        ; $FFDA  -  TB1_1
-        .word  reset        ; $FFDC  -  TB1_0
-        .word  reset        ; $FFDE  -  I/O Port P1
-;   .org BSL_PASSWORD       ;Start of BSL PASSWORD
-        .word  reset        ; $FFE0  -  TA1_1
-        .word  reset        ; $FFE2  -  TA1_0
-        .word  reset        ; $FFE4  -  DMA
-        .word  reset        ; $FFE6  -  eUSCI_A1
-        .word  reset        ; $FFE8  -  TA0_1
-        .word  reset        ; $FFEA  -  TA0_0
-        .word  reset        ; $FFEC  -  ADC10_B
-        .word  reset        ; $FFEE  -  eUSCI_B0
-TERMVEC .word  TERMINAL_INT ; $FFF0  -  eUSCI_A0
-        .word  reset        ; $FFF2  -  Watchdog
-        .word  reset        ; $FFF4  -  TB0_1
-        .word  reset        ; $FFF6  -  TB0_0
-        .word  reset        ; $FFF8  -  COMP_D
-        .word  reset        ; $FFFA  -  userNMI
-        .word  reset        ; $FFFC  -  sysNMI
-RST_ADR .word  reset        ; $FFFE  -  reset
 
 
     .ENDIF ; DEVICE="MSP430fr5738
@@ -329,55 +245,6 @@ INTVECT         .equ 0FFCEh      ; FFCE-FFFF
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ; ----------------------------------------------
 
-; ----------------------------------------------
-; Interrupt Vectors and signatures - MSP430FR57xx
-; ----------------------------------------------
-
-;    .org    SIGNATURES
-;;Start of JTAG and BSL signatures
-;        .word   0           ; JTAG signature 1
-;        .word   0           ; JTAG signature 2
-;        .word   0 ; 5555h   ; BSL signature 1; disable BSL
-;        .word   0           ; BSL signature 2
-
-;    .org JTAG_PASSWORD     ;Start of JTAG PASSWORD
-
-    .org    INTVECT         ; FFCE-FFFF 24 vectors + reset
-        .word  reset        ; $FFCE  -  RTC_B
-        .word  reset        ; $FFD0  -  I/O Port 4
-        .word  reset        ; $FFD2  -  I/O Port 3
-        .word  reset        ; $FFD4  -  TB2_1
-        .word  reset        ; $FFD6  -  TB2_0
-        .word  reset        ; $FFD8  -  I/O Port P2
-        .word  reset        ; $FFDA  -  TB1_1
-        .word  reset        ; $FFDC  -  TB1_0
-        .word  reset        ; $FFDE  -  I/O Port P1
-;   .org BSL_PASSWORD       ;Start of BSL PASSWORD
-        .word  reset        ; $FFE0  -  TA1_1
-        .word  reset        ; $FFE2  -  TA1_0
-        .word  reset        ; $FFE4  -  DMA
-    .IFDEF UCA1_UART
-TERMVEC .word  TERMINAL_INT ; $FFE6  -  eUSCI_A1
-    .ELSE
-        .word  reset        ; $FFE6  -  eUSCI_A1
-    .ENDIF
-        .word  reset        ; $FFE8  -  TA0_1
-        .word  reset        ; $FFEA  -  TA0_0
-        .word  reset        ; $FFEC  -  ADC10_B
-        .word  reset        ; $FFEE  -  eUSCI_B0
-    .IFDEF UCA0_UART
-TERMVEC .word  TERMINAL_INT ; $FFF0  -  eUSCI_A0
-    .ELSE
-        .word  reset        ; $FFF0  -  eUSCI_A0
-    .ENDIF
-        .word  reset        ; $FFF2  -  Watchdog
-        .word  reset        ; $FFF4  -  TB0_1
-        .word  reset        ; $FFF6  -  TB0_0
-        .word  reset        ; $FFF8  -  COMP_D
-        .word  reset        ; $FFFA  -  userNMI
-        .word  reset        ; $FFFC  -  sysNMI
-RST_ADR .word  reset        ; $FFFE  -  reset
-
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4
@@ -439,6 +306,48 @@ TERMIFG         .equ eUSCI_A1_SFR + 1Ch    ; eUSCI_A1 Interrupt Flags Register
 ;=======================================================================
 ; COMMON PARTS
 ;=======================================================================
+
+; ----------------------------------------------
+; Interrupt Vectors and signatures - MSP430FR57xx
+; ----------------------------------------------
+
+;    .org    SIGNATURES
+;;Start of JTAG and BSL signatures
+;        .word   0           ; JTAG signature 1
+;        .word   0           ; JTAG signature 2
+;        .word   0 ; 5555h   ; BSL signature 1 ; disable BSL
+;        .word   0           ; BSL signature 2
+;
+;    .org JTAG_PASSWORD     ;Start of JTAG PASSWORD
+;
+;    .org    INTVECT         ; FFCE-FFFF 24 vectors + reset
+;        .word  reset        ; $FFCE  -  RTC_B
+;        .word  reset        ; $FFD0  -  I/O Port 4
+;        .word  reset        ; $FFD2  -  I/O Port 3
+;        .word  reset        ; $FFD4  -  TB2_1
+;        .word  reset        ; $FFD6  -  TB2_0
+;        .word  reset        ; $FFD8  -  I/O Port P2
+;        .word  reset        ; $FFDA  -  TB1_1
+;        .word  reset        ; $FFDC  -  TB1_0
+;        .word  reset        ; $FFDE  -  I/O Port P1
+;;   .org BSL_PASSWORD       ;Start of BSL PASSWORD
+;        .word  reset        ; $FFE0  -  TA1_1
+;        .word  reset        ; $FFE2  -  TA1_0
+;        .word  reset        ; $FFE4  -  DMA
+;        .word  reset        ; $FFE6  -  eUSCI_A1
+;        .word  reset        ; $FFE8  -  TA0_1
+;        .word  reset        ; $FFEA  -  TA0_0
+;        .word  reset        ; $FFEC  -  ADC10_B
+;        .word  reset        ; $FFEE  -  eUSCI_B0
+;        .word  reset        ; $FFF0  -  eUSCI_A0
+;        .word  reset        ; $FFF2  -  Watchdog
+;        .word  reset        ; $FFF4  -  TB0_1
+;        .word  reset        ; $FFF6  -  TB0_0
+;        .word  reset        ; $FFF8  -  COMP_D
+;        .word  reset        ; $FFFA  -  userNMI
+;        .word  reset        ; $FFFC  -  sysNMI
+;        .word  reset        ; $FFFE  -  reset
+
 
 UCSWRST         .equ 1  ; eUSCI Software Reset
 UCTXIE          .equ 2  ; eUSCI Transmit Interrupt Enable

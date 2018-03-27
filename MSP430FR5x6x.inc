@@ -98,45 +98,45 @@ BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ; ----------------------------------------------
 ;    .org    SIGNATURES
 ;;Start of JTAG and BSL signatures
-;        .word   0           ; JTAG signature 1
-;        .word   0           ; JTAG signature 2
-;        .word   0;5555h     ; BSL signature 1; disable BSL
-;        .word   0           ; BSL signature 2
+;        .word   0FFFFh      ; JTAG signature 1
+;        .word   0FFFFh      ; JTAG signature 2
+;        .word   0FFFFh      ; BSL signature 1, 5555h to disable BSL
+;        .word   0FFFFh      ; BSL signature 2
 
 ; ----------------------------------------------
 ; Interrupt Vectors and signatures - MSP430FR5948
 ; ----------------------------------------------
 
-    .org    INTVECT         ; FFCC-FFFF 25 vectors + reset
-         .word  reset       ; $FFCC  -  AES
-         .word  reset       ; $FFCE  -  RTC_B
-         .word  reset       ; $FFD0  -  I/O Port 4
-         .word  reset       ; $FFD2  -  I/O Port 3
-         .word  reset       ; $FFD4  -  TB2_1
-         .word  reset       ; $FFD6  -  TB2_0
-         .word  reset       ; $FFD8  -  I/O Port P2
-         .word  reset       ; $FFDA  -  TB1_1
-         .word  reset       ; $FFDC  -  TB1_0
-         .word  reset       ; $FFDE  -  I/O Port P1
-
-
-;    .org BSL_PASSWORD      ;Start of BSL PASSWORD
-         .word  reset       ; $FFE0  -  TA1_1
-         .word  reset       ; $FFE2  -  TA1_0
-         .word  reset       ; $FFE4  -  DMA
-         .word  reset       ; $FFE6  -  eUSCI_A1
-         .word  reset       ; $FFE8  -  TA0_1
-         .word  reset       ; $FFEA  -  TA0_0
-         .word  reset       ; $FFEC  -  ADC12_B
-         .word  reset       ; $FFEE  -  eUSCI_B0
-TERMVEC .word  TERMINAL_INT ; $FFF0  -  eUSCI_A0
-         .word  reset       ; $FFF2  -  Watchdog
-         .word  reset       ; $FFF4  -  TB0_1
-         .word  reset       ; $FFF6  -  TB0_0
-         .word  reset       ; $FFF8  -  COMP_D
-         .word  reset       ; $FFFA  -  userNMI
-         .word  reset       ; $FFFC  -  sysNMI
-RST_ADR  .word  reset       ; $FFFE  -  reset
+;    .org    INTVECT         ; FFCC-FFFF 25 vectors + reset
+;         .word  reset       ; $FFCC  -  AES
+;         .word  reset       ; $FFCE  -  RTC_B
+;         .word  reset       ; $FFD0  -  I/O Port 4
+;         .word  reset       ; $FFD2  -  I/O Port 3
+;         .word  reset       ; $FFD4  -  TB2_1
+;         .word  reset       ; $FFD6  -  TB2_0
+;         .word  reset       ; $FFD8  -  I/O Port P2
+;         .word  reset       ; $FFDA  -  TB1_1
+;         .word  reset       ; $FFDC  -  TB1_0
+;         .word  reset       ; $FFDE  -  I/O Port P1
+;
+;
+;;    .org BSL_PASSWORD      ;Start of BSL PASSWORD
+;         .word  reset       ; $FFE0  -  TA1_1
+;         .word  reset       ; $FFE2  -  TA1_0
+;         .word  reset       ; $FFE4  -  DMA
+;         .word  reset       ; $FFE6  -  eUSCI_A1
+;         .word  reset       ; $FFE8  -  TA0_1
+;         .word  reset       ; $FFEA  -  TA0_0
+;         .word  reset       ; $FFEC  -  ADC12_B
+;         .word  reset       ; $FFEE  -  eUSCI_B0
+;         .word  reset       ; $FFF0  -  eUSCI_A0
+;         .word  reset       ; $FFF2  -  Watchdog
+;         .word  reset       ; $FFF4  -  TB0_1
+;         .word  reset       ; $FFF6  -  TB0_0
+;         .word  reset       ; $FFF8  -  COMP_D
+;         .word  reset       ; $FFFA  -  userNMI
+;         .word  reset       ; $FFFC  -  sysNMI
+;         .word  reset       ; $FFFE  -  reset
 
 
 ; ----------------------------------------------------------------------
@@ -262,45 +262,46 @@ IPE_STR_PTR_SRC .equ 0FF8Ah      ; one word
 INTVECT         .equ 0FFCCh      ; FFCC-FFFF
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ; ----------------------------------------------
+
 ;    .org    SIGNATURES
 ;;Start of JTAG and BSL signatures
-;        .word   0           ; JTAG signature 1
-;        .word   0           ; JTAG signature 2
-;        .word   0;5555h       ; BSL signature 1, disable BSL
-;        .word   0           ; BSL signature 2
-
+;        .word   0FFFFh      ; JTAG signature 1
+;        .word   0FFFFh      ; JTAG signature 2
+;        .word   0FFFFh      ; BSL signature 1, 5555h to disable BSL
+;        .word   0FFFFh      ; BSL signature 2
+;
 ;    .org JTAG_PASSWORD     ;Start of JTAG PASSWORD
-
-    .org    INTVECT         ; FFCC-FFFF 25 vectors + reset
-         .word  reset       ; $FFCC  -  AES
-         .word  reset       ; $FFCE  -  RTC_B
-         .word  reset       ; $FFD0  -  I/O Port 4
-         .word  reset       ; $FFD2  -  I/O Port 3
-         .word  reset       ; $FFD4  -  TB2_1
-         .word  reset       ; $FFD6  -  TB2_0
-         .word  reset       ; $FFD8  -  I/O Port P2
-         .word  reset       ; $FFDA  -  TB1_1
-         .word  reset       ; $FFDC  -  TB1_0
-         .word  reset       ; $FFDE  -  I/O Port P1
-
-
-;    .org BSL_PASSWORD      ;Start of BSL PASSWORD
-         .word  reset       ; $FFE0  -  TA1_1
-         .word  reset       ; $FFE2  -  TA1_0
-         .word  reset       ; $FFE4  -  DMA
-         .word  reset       ; $FFE6  -  eUSCI_A1
-         .word  reset       ; $FFE8  -  TA0_1
-         .word  reset       ; $FFEA  -  TA0_0
-         .word  reset       ; $FFEC  -  ADC12_B
-         .word  reset       ; $FFEE  -  eUSCI_B0
-TERMVEC .word  TERMINAL_INT ; $FFF0  -  eUSCI_A0
-         .word  reset       ; $FFF2  -  Watchdog
-         .word  reset       ; $FFF4  -  TB0_1
-         .word  reset       ; $FFF6  -  TB0_0
-         .word  reset       ; $FFF8  -  COMP_D
-         .word  reset       ; $FFFA  -  userNMI
-         .word  reset       ; $FFFC  -  sysNMI
-RST_ADR  .word  reset       ; $FFFE  -  reset
+;
+;    .org    INTVECT         ; FFCC-FFFF 25 vectors + reset
+;         .word  reset       ; $FFCC  -  AES
+;         .word  reset       ; $FFCE  -  RTC_B
+;         .word  reset       ; $FFD0  -  I/O Port 4
+;         .word  reset       ; $FFD2  -  I/O Port 3
+;         .word  reset       ; $FFD4  -  TB2_1
+;         .word  reset       ; $FFD6  -  TB2_0
+;         .word  reset       ; $FFD8  -  I/O Port P2
+;         .word  reset       ; $FFDA  -  TB1_1
+;         .word  reset       ; $FFDC  -  TB1_0
+;         .word  reset       ; $FFDE  -  I/O Port P1
+;
+;
+;;    .org BSL_PASSWORD      ;Start of BSL PASSWORD
+;         .word  reset       ; $FFE0  -  TA1_1
+;         .word  reset       ; $FFE2  -  TA1_0
+;         .word  reset       ; $FFE4  -  DMA
+;         .word  reset       ; $FFE6  -  eUSCI_A1
+;         .word  reset       ; $FFE8  -  TA0_1
+;         .word  reset       ; $FFEA  -  TA0_0
+;         .word  reset       ; $FFEC  -  ADC12_B
+;         .word  reset       ; $FFEE  -  eUSCI_B0
+;         .word  reset       ; $FFF0  -  eUSCI_A0
+;         .word  reset       ; $FFF2  -  Watchdog
+;         .word  reset       ; $FFF4  -  TB0_1
+;         .word  reset       ; $FFF6  -  TB0_0
+;         .word  reset       ; $FFF8  -  COMP_D
+;         .word  reset       ; $FFFA  -  userNMI
+;         .word  reset       ; $FFFC  -  sysNMI
+;         .word  reset       ; $FFFE  -  reset
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : RTC REGISTERS
@@ -447,53 +448,53 @@ BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ; ----------------------------------------------
 ;    .org    SIGNATURES
 ;;Start of JTAG and BSL signatures
-;        .word   0           ; JTAG signature 1
-;        .word   0           ; JTAG signature 2
-;        .word   0;5555h       ; BSL signature 1, disable BSL
-;        .word   0           ; BSL signature 2
+;        .word   0FFFFh      ; JTAG signature 1
+;        .word   0FFFFh      ; JTAG signature 2
+;        .word   0FFFFh      ; BSL signature 1, 5555h to disable BSL
+;        .word   0FFFFh      ; BSL signature 2
 
 ;    .org JTAG_PASSWORD     ;Start of JTAG PASSWORD
-
-    .org    INTVECT         ; FFB4-FFFF 37 vectors + reset
-        .word reset         ; 0FFB4h - LEA_Vec        
-        .word reset         ; 0FFB6h - P8_Vec         
-        .word reset         ; 0FFB8h - P7_Vec         
-        .word reset         ; 0FFBAh - eUSCI_B3_Vec   
-        .word reset         ; 0FFBCh - eUSCI_B2_Vec   
-        .word reset         ; 0FFBEh - eUSCI_B1_Vec   
-        .word reset         ; 0FFC0h - eUSCI_A3_Vec   
-        .word reset         ; 0FFC2h - eUSCI_A2_Vec   
-        .word reset         ; 0FFC4h - P6_Vec         
-        .word reset         ; 0FFC6h - P5_Vec         
-        .word reset         ; 0FFC8h - TA4_x_Vec      
-        .word reset         ; 0FFCAh - TA4_0_Vec      
-        .word reset         ; 0FFCCh - AES_Vec        
-        .word reset         ; 0FFCEh - RTC_C_Vec      
-        .word reset         ; 0FFD0h - P4_Vec=        
-        .word reset         ; 0FFD2h - P3_Vec=        
-        .word reset         ; 0FFD4h - TA3_x_Vec      
-        .word reset         ; 0FFD6h - TA3_0_Vec      
-        .word reset         ; 0FFD8h - P2_Vec         
-        .word reset         ; 0FFDAh - TA2_x_Vec      
-        .word reset         ; 0FFDCh - TA2_0_Vec      
-        .word reset         ; 0FFDEh - P1_Vec=        
-;    .org BSL_PASSWORD      ;Start of BSL PASSWORD
-        .word reset         ; 0FFE0h - TA1_x_Vec      
-        .word reset         ; 0FFE2h - TA1_0_Vec      
-        .word reset         ; 0FFE4h - DMA_Vec        
-        .word reset         ; 0FFE6h - eUSCI_A1_Vec   
-        .word reset         ; 0FFE8h - TA0_x_Vec      
-        .word reset         ; 0FFEAh - TA0_0_Vec      
-        .word reset         ; 0FFECh - ADC12_B_Vec    
-        .word reset         ; 0FFEEh - eUSCI_B0_Vec   
-TERMVEC .word TERMINAL_INT  ; 0FFF0h - eUSCI_A0_Vec   
-        .word reset         ; 0FFF2h - WDT_Vec        
-        .word reset         ; 0FFF4h - TB0_x_Vec      
-        .word reset         ; 0FFF6h - TB0_0_Vec      
-        .word reset         ; 0FFF8h - COMP_E_Vec     
-        .word reset         ; 0FFFAh - U_NMI_Vec      
-        .word reset         ; 0FFFCh - S_NMI_Vec      
-RST_ADR .word reset         ; 0FFFEh - RST_Vec        
+;
+;    .org    INTVECT         ; FFB4-FFFF 37 vectors + reset
+;        .word reset         ; 0FFB4h - LEA_Vec        
+;        .word reset         ; 0FFB6h - P8_Vec         
+;        .word reset         ; 0FFB8h - P7_Vec         
+;        .word reset         ; 0FFBAh - eUSCI_B3_Vec   
+;        .word reset         ; 0FFBCh - eUSCI_B2_Vec   
+;        .word reset         ; 0FFBEh - eUSCI_B1_Vec   
+;        .word reset         ; 0FFC0h - eUSCI_A3_Vec   
+;        .word reset         ; 0FFC2h - eUSCI_A2_Vec   
+;        .word reset         ; 0FFC4h - P6_Vec         
+;        .word reset         ; 0FFC6h - P5_Vec         
+;        .word reset         ; 0FFC8h - TA4_x_Vec      
+;        .word reset         ; 0FFCAh - TA4_0_Vec      
+;        .word reset         ; 0FFCCh - AES_Vec        
+;        .word reset         ; 0FFCEh - RTC_C_Vec      
+;        .word reset         ; 0FFD0h - P4_Vec=        
+;        .word reset         ; 0FFD2h - P3_Vec=        
+;        .word reset         ; 0FFD4h - TA3_x_Vec      
+;        .word reset         ; 0FFD6h - TA3_0_Vec      
+;        .word reset         ; 0FFD8h - P2_Vec         
+;        .word reset         ; 0FFDAh - TA2_x_Vec      
+;        .word reset         ; 0FFDCh - TA2_0_Vec      
+;        .word reset         ; 0FFDEh - P1_Vec=        
+;;    .org BSL_PASSWORD      ;Start of BSL PASSWORD
+;        .word reset         ; 0FFE0h - TA1_x_Vec      
+;        .word reset         ; 0FFE2h - TA1_0_Vec      
+;        .word reset         ; 0FFE4h - DMA_Vec        
+;        .word reset         ; 0FFE6h - eUSCI_A1_Vec   
+;        .word reset         ; 0FFE8h - TA0_x_Vec      
+;        .word reset         ; 0FFEAh - TA0_0_Vec      
+;        .word reset         ; 0FFECh - ADC12_B_Vec    
+;        .word reset         ; 0FFEEh - eUSCI_B0_Vec   
+;        .word reset         ; 0FFF0h - eUSCI_A0_Vec   
+;        .word reset         ; 0FFF2h - WDT_Vec        
+;        .word reset         ; 0FFF4h - TB0_x_Vec      
+;        .word reset         ; 0FFF6h - TB0_0_Vec      
+;        .word reset         ; 0FFF8h - COMP_E_Vec     
+;        .word reset         ; 0FFFAh - U_NMI_Vec      
+;        .word reset         ; 0FFFCh - S_NMI_Vec      
+;        .word reset         ; 0FFFEh - RST_Vec        
 
 
 ; ----------------------------------------------------------------------
@@ -710,44 +711,44 @@ BSL_PASSWORD   .equ 0FFE0h      ; up to 0FFFFh : 256 bits
 
 ;    .org    SIGNATURES
 ;;Start of JTAG and BSL signatures
-;        .word   0           ; JTAG signature 1
-;        .word   0           ; JTAG signature 2
-;        .word   0;5555h       ; BSL signature 1, disable BSL
-;        .word   0           ; BSL signature 2
-
+;        .word   0FFFFh      ; JTAG signature 1
+;        .word   0FFFFh      ; JTAG signature 2
+;        .word   0FFFFh      ; BSL signature 1, 5555h to disable BSL
+;        .word   0FFFFh      ; BSL signature 2
+;
 ;   .org JTAG_PASSWORD      ;Start of JTAG PASSWORD
-
-    .org    INTVECT         ; FFC6-FFFF 28 vectors + reset
-        .word  reset        ; $FFC6  -  AES
-        .word  reset        ; $FFC8  -  RTC_C
-        .word  reset        ; $FFCA  -  LCD_C
-        .word  reset        ; $FFCC  -  I/O Port 4
-        .word  reset        ; $FFCE  -  I/O Port 3
-        .word  reset        ; $FFD0  -  TA3_x
-        .word  reset        ; $FFD2  -  TA3_0
-        .word  reset        ; $FFD4  -  I/O Port P2
-        .word  reset        ; $FFD6  -  TA2_x
-        .word  reset        ; $FFD8  -  TA2_0
-        .word  reset        ; $FFDA  -  I/O Port P1
-        .word  reset        ; $FFDC  -  TA1_x
-        .word  reset        ; $FFDE  -  TA1_0
-;    .org BSL_PASSWORD      ;Start of BSL PASSWORD
-        .word  reset        ; $FFE0  -  DMA
-        .word  reset        ; $FFE2  -  eUSCI_B1
-TERMVEC .word  TERMINAL_INT ; $FFE4  -  eUSCI_A1
-        .word  reset        ; $FFE6  -  TA0_x
-        .word  reset        ; $FFE8  -  TA0_0
-        .word  reset        ; $FFEA  -  ADC12_B
-        .word  reset        ; $FFEC  -  eUSCI_B0
-        .word  reset        ; $FFEE  -  eUSCI_A0
-        .word  reset        ; $FFF0  -  Extended Scan IF
-        .word  reset        ; $FFF2  -  Watchdog
-        .word  reset        ; $FFF4  -  TB0_x
-        .word  reset        ; $FFF6  -  TB0_0
-        .word  reset        ; $FFF8  -  COMP_E
-        .word  reset        ; $FFFA  -  userNMI
-        .word  reset        ; $FFFC  -  sysNMI
-RST_ADR .word  reset        ; $FFFE  -  reset
+;
+;    .org    INTVECT         ; FFC6-FFFF 28 vectors + reset
+;        .word  reset        ; $FFC6  -  AES
+;        .word  reset        ; $FFC8  -  RTC_C
+;        .word  reset        ; $FFCA  -  LCD_C
+;        .word  reset        ; $FFCC  -  I/O Port 4
+;        .word  reset        ; $FFCE  -  I/O Port 3
+;        .word  reset        ; $FFD0  -  TA3_x
+;        .word  reset        ; $FFD2  -  TA3_0
+;        .word  reset        ; $FFD4  -  I/O Port P2
+;        .word  reset        ; $FFD6  -  TA2_x
+;        .word  reset        ; $FFD8  -  TA2_0
+;        .word  reset        ; $FFDA  -  I/O Port P1
+;        .word  reset        ; $FFDC  -  TA1_x
+;        .word  reset        ; $FFDE  -  TA1_0
+;;    .org BSL_PASSWORD      ;Start of BSL PASSWORD
+;        .word  reset        ; $FFE0  -  DMA
+;        .word  reset        ; $FFE2  -  eUSCI_B1
+;        .word  reset        ; $FFE4  -  eUSCI_A1
+;        .word  reset        ; $FFE6  -  TA0_x
+;        .word  reset        ; $FFE8  -  TA0_0
+;        .word  reset        ; $FFEA  -  ADC12_B
+;        .word  reset        ; $FFEC  -  eUSCI_B0
+;        .word  reset        ; $FFEE  -  eUSCI_A0
+;        .word  reset        ; $FFF0  -  Extended Scan IF
+;        .word  reset        ; $FFF2  -  Watchdog
+;        .word  reset        ; $FFF4  -  TB0_x
+;        .word  reset        ; $FFF6  -  TB0_0
+;        .word  reset        ; $FFF8  -  COMP_E
+;        .word  reset        ; $FFFA  -  userNMI
+;        .word  reset        ; $FFFC  -  sysNMI
+;        .word  reset        ; $FFFE  -  reset
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT5/6

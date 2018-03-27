@@ -41,14 +41,13 @@
 ;-----------------------------------------------------------------------------------------------
 ; TARGET configuration SWITCHES ; bytes values are for DTC=1, 8MHz 921600 bds TERMINAL3WIRES, no adds-on
 ;-----------------------------------------------------------------------------------------------
-;                                                                     TOTAL - SUM of (INFO+RAM +VECTORS) = MAIN PROG
-;MSP_EXP430FR5739   ; compile for MSP-EXP430FR5739 launchpad        ; 4210  - 160    ( 24 + 86 +  50   ) = 4050 bytes
-;MSP_EXP430FR5969   ; compile for MSP-EXP430FR5969 launchpad        ; 4200  - 162    ( 24 + 86 +  52   ) = 4038 bytes
-MSP_EXP430FR5994   ; compile for MSP-EXP430FR5994 launchpad        ; 4242  - 186    ( 24 + 86 +  76   ) = 4056 bytes
-;MSP_EXP430FR6989   ; compile for MSP-EXP430FR6989 launchpad        ; 4234  - 168    ( 24 + 86 +  58   ) = 4066 bytes
-;MSP_EXP430FR4133   ; compile for MSP-EXP430FR4133 launchpad        ; 4244  - 140    ( 24 + 86 +  30   ) = 4104 bytes
-;MSP_EXP430FR2433   ;; compile for MSP-EXP430FR2433 launchpad        ; 4164  - 148    ( 24 + 86 +  38   ) = 4016 bytes
-;CHIPSTICK_FR2433   ; compile for the "CHIPSTICK" of M. Ken BOAK    ; 4164  - 148    ( 24 + 86 +  38   ) = 4016 bytes
+MSP_EXP430FR5739   ;; compile for MSP-EXP430FR5739 launchpad        ; 4074 bytes
+;MSP_EXP430FR5969   ; compile for MSP-EXP430FR5969 launchpad        ; 4062 bytes
+;MSP_EXP430FR5994   ; compile for MSP-EXP430FR5994 launchpad        ; 4080 bytes
+;MSP_EXP430FR6989   ; compile for MSP-EXP430FR6989 launchpad        ; 4090 bytes
+;MSP_EXP430FR4133   ; compile for MSP-EXP430FR4133 launchpad        ; 4128 bytes
+;MSP_EXP430FR2433   ; compile for MSP-EXP430FR2433 launchpad        ; 4040 bytes
+;CHIPSTICK_FR2433   ; compile for the "CHIPSTICK" of M. Ken BOAK    ; 4040 bytes
 
 ; choose DTC (Direct Threaded Code) model, if you don't know, choose 1
 DTC .equ 1  ; DTC model 1 : DOCOL = CALL rDOCOL           14 cycles 1 word      shortest DTC model
@@ -61,7 +60,7 @@ THREADS     .equ 16 ; 1,   4,   8,  16,   32 search entries in dictionnary. 16 i
 
 ;HALFDUPLEX          ; to use FAST FORTH with input terminal via bluetooth or WIFI (and with teraterm config = local Echo) 
 
-TERMINALBAUDRATE    .equ 921600    ; choose value considering the frequency and the UART2USB bridge, see explanations below.
+TERMINALBAUDRATE    .equ 3000000    ; choose value considering the frequency and the UART2USB bridge, see explanations below.
 TERMINAL3WIRES      ;               enable 3 wires (GND,TX,RX) with XON/XOFF software flow control (PL2303TA/HXD, CP2102)
 TERMINAL4WIRES      ; + 18 bytes    enable 4 wires with hardware flow control on RX with RTS (PL2303TA/HXD, FT232RL)
 ;TERMINAL5WIRES      ; +  6 bytes    enable 5 wires with hardware flow control on RX/TX with RTS/CTS (PL2303TA/HXD, FT232RL)
@@ -69,14 +68,14 @@ TERMINAL4WIRES      ; + 18 bytes    enable 4 wires with hardware flow control on
 ;-------------------------------------------------------------------------------
 ; KERNEL ADD-ON SWITCHES
 ;-------------------------------------------------------------------------------
-MSP430ASSEMBLER     ; + 1884 bytes : adds embedded assembler with TI syntax; without, you can do all but all much more slowly...
-SD_CARD_LOADER      ; + 1832 bytes : to LOAD source files from SD_card
-SD_CARD_READ_WRITE  ; + 1196 bytes : to read, create, write and del files + source files direct copy from PC to SD_Card
+MSP430ASSEMBLER     ;; + 1884 bytes : adds embedded assembler with TI syntax; without, you can do all but all much more slowly...
+;SD_CARD_LOADER      ; + 1752 bytes : to LOAD source files from SD_card
+;SD_CARD_READ_WRITE  ; + 1188 bytes : to read, create, write and del files + source files direct copy from PC to SD_Card
 ;BOOTLOADER          ; +   52 bytes : adds to <reset> a bootstrap to SD_CARD\BOOT.4TH.
 ;QUIETBOOT           ; +    2 bytes : to perform bootload without displaying.
-FIXPOINT_INPUT      ; +   78 bytes : adds the interpretation of Q15.16 numbers
-VOCABULARY_SET      ; +  108 bytes : adds VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83, not ANSI)
-LOWERCASE           ; +   30 bytes : enables to write strings in lowercase.
+FIXPOINT_INPUT      ;; +   78 bytes : adds the interpretation of Q15.16 numbers
+VOCABULARY_SET      ;; +  108 bytes : adds VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83, not ANSI)
+LOWERCASE           ;; +   30 bytes : enables to write strings in lowercase.
 
 ;-------------------------------------------------------------------------------
 ; OPTIONAL KERNEL ADD-ON SWITCHES (can be downloaded later)                     >------------------+
@@ -85,7 +84,7 @@ LOWERCASE           ; +   30 bytes : enables to write strings in lowercase.
 CONDCOMP            ;; +  354 bytes : add cond. comp. : [UNDEFINED] [DEFINED] [IF] [ELSE] [THEN] CONDCOMP.f
 UTILITY             ;; +  426/508 bytes : add .S .RS WORDS U.R DUMP ?                            UTILITY.f
 ;FIXPOINT            ; +  452 bytes : add Q15.16 words HOLDS F+ F- F/ F* F#S F. S>F 2@ 2CONSTANT FIXPOINT.f
-SD_TOOLS            ; +  126 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, adds UTILITY  SD_TOOLS.f
+;SD_TOOLS            ; +  126 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, adds UTILITY  SD_TOOLS.f
 ;ANS_CORE_COMPLIANT  ; +  876 bytes : required to pass coretest.4th ; (includes items below)     ANS_COMP.f
 ;ARITHMETIC          ; +  358 bytes : add S>D M* SM/REM FM/MOD * /MOD / MOD */MOD /MOD */
 ;DOUBLE              ; +  130 bytes : add 2@ 2! 2DUP 2SWAP 2OVER
@@ -96,7 +95,7 @@ SD_TOOLS            ; +  126 bytes for trivial DIR, FAT, CLUSTER and SECTOR view
     .include "Target.inc" ; to define target config: I/O, memory, SFR, vectors, TERMINAL eUSCI, SD_Card eUSCI, LF_XTAL,
 
 ;===============================================================================
-; XON/XOFF control flow configuration ; up to 322kBd/MHz with ECHO
+; XON/XOFF control flow configuration ; up to 385kBd/MHz with ECHO
 ;===============================================================================
 
 ; Only two usb2uart bridges correctly handle XON / XOFF: cp2102 and pl2303.
@@ -113,8 +112,11 @@ SD_TOOLS            ; +  126 bytes for trivial DIR, FAT, CLUSTER and SECTOR view
 ; + 201600,230400,268800    (1MHz)
 ; + 403200,460800,614400    (2MHz)
 ; + 806400,921600,1228800   (4MHz)
-; + 2457600,3000000         (8MHz)
-; + 6000000                 (16,24MHz) (shorten the 1m cable or use a Si8622EC-B-IS to regenerate TTL levels)
+; + 2457600                 (MSP430FR2xxx families,8MHz)
+; + 3000000                 (MSP430FR5xxx families,8MHz)
+; + 3000000                 (MSP430FR2xxx families,16MHz)
+; + 6000000                 (MSP430FR5xxx families,16MHz)  (shorten the 1m cable or use a Si8622EC-B-IS to regenerate TTL levels)
+;                           (MSP430FR57xx 24MHz )
 
 
 ; UARTtoUSB module with Silabs CP2102 (supply current = 20 mA)
@@ -128,7 +130,7 @@ SD_TOOLS            ; +  126 bytes for trivial DIR, FAT, CLUSTER and SECTOR view
 ; + 921600 (4MHz)
 ; + 1382400,1843200 (8MHz) (must be reprogrammed)
 ; + 4000000 (16MHz,24MHz) (must be reprogrammed)
-; ...But beyond 921600 bds, while the download is done without errors, some chars issued by FAST FORTH are lost ...
+; ...But beyond 921600 bds, while the download is done without errors, some TX chars issued by FAST FORTH are lost ...
 
 ; Launchpad --- UARTtoUSB device
 ;        RX <-- TX
@@ -273,65 +275,66 @@ HOLD_SIZE   .equ    34      ; | grows down  (ans spec. : HOLD_SIZE >= (2*n) + 2 
                             ;       24 bytes free
                             ;
 ; variables system END      ; ----- RAMSTART + $1FC
-                            ;       SDBUF_I2CADR
-                            ;       SDBUF_I2CCNT
+                            ;       SD_BUF_I2CADR
+                            ;       SD_BUF_I2CCNT
 ;SD_BUF                     ; ----- RAMSTART + $200
                             ;
                             ; 512 bytes buffer
                             ;
                             ; ----- RAMSTART + $2FF
 
+
 LSTACK          .equ RAMSTART
 LEAVEPTR        .equ LSTACK             ; Leave-stack pointer
 PSTACK          .equ LSTACK+(LSTACK_SIZE*2)+(PSTACK_SIZE*2)
 RSTACK          .equ PSTACK+(RSTACK_SIZE*2)
+PAD_I2CADR      .equ PAD_ORG-4    
+PAD_I2CCNT      .equ PAD_ORG-2
 PAD_ORG         .equ RSTACK+4
+TIB_I2CADR      .equ TIB_ORG-4   
+TIB_I2CCNT      .equ TIB_ORG-2
 TIB_ORG         .equ PAD_ORG+PAD_LEN+4
 HOLDS_ORG       .equ TIB_ORG+TIB_LEN
+
 BASE_HOLD       .equ HOLDS_ORG+HOLD_SIZE
 
 
-; ----------------------------------
-; RAM VARIABLES initialised by RESET
-; ----------------------------------
+; ----------------------------------------------------
+; RAMSTART + $1B2 : RAM VARIABLES initialised by RESET
+; ----------------------------------------------------
 
-    .org BASE_HOLD
+HP              .equ BASE_HOLD      ; HOLD ptr
+CAPS            .equ BASE_HOLD+2
+LAST_NFA        .equ BASE_HOLD+4    ; NFA, VOC_PFA, LFA, CFA, PSP of last created word
+LAST_THREAD     .equ BASE_HOLD+6    ; used by QREVEAL
+LAST_CFA        .equ BASE_HOLD+8
+LAST_PSP        .equ BASE_HOLD+10
+STATE           .equ BASE_HOLD+12   ; Interpreter state
+SAV_CURRENT     .equ BASE_HOLD+14   ; preserve CURRENT during create assembler words
+OPCODE          .equ BASE_HOLD+16   ; OPCODE adr
+ASMTYPE         .equ BASE_HOLD+18   ; keep the opcode complement
+SOURCE          .equ BASE_HOLD+20       
+SOURCE_LEN      .equ BASE_HOLD+20       
+SOURCE_ADR      .equ BASE_HOLD+22   ; len, addr of input stream
+TOIN            .equ BASE_HOLD+24   ; CurrentInputBuffer pointer
+DDP             .equ BASE_HOLD+26   ; dictionnary pointer
+LASTVOC         .equ BASE_HOLD+28   ; keep VOC-LINK
+CONTEXT         .equ BASE_HOLD+30   ; CONTEXT dictionnary space (8 CELLS)
+CURRENT         .equ BASE_HOLD+46   ; CURRENT dictionnary ptr
+BASE            .equ BASE_HOLD+48   
+LINE            .equ BASE_HOLD+50   ; line in interpretation (initialized by NOECHO)
 
-HP              .word 0                 ; HOLD ptr
-CAPS            .word 0
-LAST_NFA        .word 0                 ; NFA, VOC_PFA, LFA, CFA, PSP of last created word
-LAST_THREAD     .word 0                 ; used by QREVEAL
-LAST_CFA        .word 0
-LAST_PSP        .word 0
-STATE           .word 0                 ; Interpreter state
-SAV_CURRENT     .word 0                 ; preserve CURRENT during create assembler words
-OPCODE          .word 0                 ; OPCODE adr
-ASMTYPE         .word 0                 ; keep the opcode complement
-SOURCE
-SOURCE_LEN      .word 0
-SOURCE_ADR      .word 0                 ; len, addr of input stream
-TOIN            .word 0                 ; CurrentInputBuffer pointer
-DDP             .word 0                 ; dictionnary pointer
-LASTVOC         .word 0                 ; keep VOC-LINK
-CONTEXT         .word 0,0,0,0,0,0,0,0   ; CONTEXT dictionnary space (8 CELLS)
-CURRENT         .word 0                 ; CURRENT dictionnary ptr
-BASE            .word 0
-LINE            .word 0                 ; line in interpretation (initialized by NOECHO)
-
-; ------------------------------------- ; RAMSTART + $1E6
-
-                .word 0,0,0,0,0,0,0,0   ; user free use
-                .word 0,0,0             ; user free use
-
-; ------------------------------------- ; RAMSTART + $1FC
+; ------------------------------------- ;
+; RAMSTART + $1E6 : free to user        ;
+; ------------------------------------- ;
 
 
-; --------------------------------
-; RAM SD_CARD SD_BUF 4 + 512 bytes
-; --------------------------------
-SD_BUF_I2CADR   .word 0              
-SD_BUF_I2CCNT   .word 0              
-SD_BUF
+; --------------------------------------------------
+; RAMSTART + $1FC : RAM SD_CARD SD_BUF 4 + 512 bytes
+; --------------------------------------------------
+SD_BUF_I2CADR   .equ SD_BUF-4    
+SD_BUF_I2CCNT   .equ SD_BUF-2
+SD_BUF          .equ BASE_HOLD+78
 SD_BUFEND       .equ SD_BUF + 200h   ; 512bytes
 
 
@@ -346,11 +349,12 @@ SD_BUFEND       .equ SD_BUF + 200h   ; 512bytes
 ; --------------------------
 
 INI_THREAD      .word THREADS               ; used by ADDON_UTILITY.f
-INI_TERM        .word TERMINAL_INT          ; used by RESET
+INI_TERM        .word TERMINAL_INT          ;
+
     .IF FREQUENCY = 0.25
-FREQ_KHZ        .word 250                   ; user use
+FREQ_KHZ        .word 250                   ;
     .ELSEIF FREQUENCY = 0.5
-FREQ_KHZ        .word 500                   ; user use
+FREQ_KHZ        .word 500                   ;
     .ELSE
 FREQ_KHZ        .word FREQUENCY*1000        ; user use
     .ENDIF
@@ -358,6 +362,7 @@ HECTOBAUDS      .word TERMINALBAUDRATE/100  ; user use
 
 SAVE_SYSRSTIV   .word 05                    ; value to identify first start after core recompiling
 LPM_MODE        .word CPUOFF+GIE            ; LPM0 is the default mode
+;LPM_MODE        .word CPUOFF+GIE+SCG0       ; LPM1 is the default mode (disable FLL)
 INIDP           .word ROMDICT               ; define RST_STATE
 INIVOC          .word lastvoclink           ; define RST_STATE
 
@@ -375,74 +380,81 @@ INIVOC          .word lastvoclink           ; define RST_STATE
                 .word 0,0
     .ENDIF ; SD_CARD_LOADER
 
+INFO_BASE_END
+
 ; ------------------------------
 ; VARIABLES that could be in RAM
 ; ------------------------------
-    .IFNDEF RAM_1K      ; if RAM = 1K (FR57xx) the variables below stay in FRAM
-    .org SD_BUFEND         ; else in RAM beyond SD_BUF
+
+    .IFDEF RAM_1K       ; if RAM = 1K (FR57xx) the variables below are in INFO space (FRAM)
+    .org INFO_BASE_END
+    .ELSE               ; if RAM >= 2k the variables below are in RAM
+    .org SD_BUFEND
     .ENDIF
 
     .IFDEF SD_CARD_LOADER
 
 SD_ORG_DATA
-                .word 0 ; guard word
+
 ; ---------------------------------------
 ; FAT16 FileSystemInfos
 ; ---------------------------------------
-FATtype         .word 0
-BS_FirstSectorL .word 0 ; init by SD_Init, used by RW_Sector_CMD
-BS_FirstSectorH .word 0 ; init by SD_Init, used by RW_Sector_CMD
-OrgFAT1         .word 0 ; init by SD_Init,
-FATSize         .word 0 ; init by SD_Init,
-OrgFAT2         .word 0 ; init by SD_Init,
-OrgRootDIR      .word 0 ; init by SD_Init, (FAT16 specific)
-OrgClusters     .word 0 ; init by SD_Init, Sector of Cluster 0
-SecPerClus      .word 0 ; init by SD_Init, byte size
+FATtype         .equ SD_ORG_DATA+2
+BS_FirstSectorL .equ SD_ORG_DATA+4  ; init by SD_Init, used by RW_Sector_CMD
+BS_FirstSectorH .equ SD_ORG_DATA+6  ; init by SD_Init, used by RW_Sector_CMD
+OrgFAT1         .equ SD_ORG_DATA+8  ; init by SD_Init,
+FATSize         .equ SD_ORG_DATA+10 ; init by SD_Init,
+OrgFAT2         .equ SD_ORG_DATA+12 ; init by SD_Init,
+OrgRootDIR      .equ SD_ORG_DATA+14 ; init by SD_Init, (FAT16 specific)
+OrgClusters     .equ SD_ORG_DATA+16 ; init by SD_Init, Sector of Cluster 0
+SecPerClus      .equ SD_ORG_DATA+18 ; init by SD_Init, byte size
 
+SD_LOW_LEVEL    .equ SD_ORG_DATA+20
 ; ---------------------------------------
 ; SD command
 ; ---------------------------------------
-SD_CMD_FRM      .byte 0,0,0,0,0,0   ; SD_CMDx inverted frame ${CRC7,ll,LL,hh,HH,CMD}
-SectorL         .word 0
-SectorH         .word 0
+SD_CMD_FRM      .equ SD_LOW_LEVEL   ; SD_CMDx inverted frame ${CRC7,ll,LL,hh,HH,CMD}
+SectorL         .equ SD_LOW_LEVEL+6
+SectorH         .equ SD_LOW_LEVEL+8
 
 ; ---------------------------------------
 ; SD_BUF management
 ; ---------------------------------------
-BufferPtr       .word 0
-BufferLen       .word 0
+BufferPtr       .equ SD_LOW_LEVEL+10
+BufferLen       .equ SD_LOW_LEVEL+12
 
+SD_FAT_LEVEL    .equ SD_LOW_LEVEL+14 
 ; ---------------------------------------
 ; FAT entry
 ; ---------------------------------------
-ClusterL        .word 0   ;
-ClusterH        .word 0   ;
-NewClusterL     .word 0   ;
-NewClusterH     .word 0   ;
-CurFATsector    .word 0   ; current FATSector of last free cluster
+ClusterL        .equ SD_FAT_LEVEL     ;
+ClusterH        .equ SD_FAT_LEVEL+2   ;
+NewClusterL     .equ SD_FAT_LEVEL+4   ;
+NewClusterH     .equ SD_FAT_LEVEL+6   ;
+CurFATsector    .equ SD_FAT_LEVEL+8   ; current FATSector of last free cluster
 
 ; ---------------------------------------
 ; DIR entry
 ; ---------------------------------------
-DIRClusterL     .word 0     ; contains the Cluster of current directory ; = 1 as FAT16 root directory
-DIRClusterH     .word 0     ; contains the Cluster of current directory ; = 1 as FAT16 root directory
-EntryOfst       .word 0
+DIRClusterL     .equ SD_FAT_LEVEL+10    ; contains the Cluster of current directory ; = 1 as FAT16 root directory
+DIRClusterH     .equ SD_FAT_LEVEL+12    ; contains the Cluster of current directory ; = 1 as FAT16 root directory
+EntryOfst       .equ SD_FAT_LEVEL+14
 
 ; ---------------------------------------
 ; Handle Pointer
 ; ---------------------------------------
-CurrentHdl      .word 0     ; contains the address of the last opened file structure, or 0
+CurrentHdl      .equ SD_FAT_LEVEL+16    ; contains the address of the last opened file structure, or 0
 
 ; ---------------------------------------
 ; Load file operation
 ; ---------------------------------------
 
-pathname        .word 0     ; or any string...
-EndOfPath       .word 0     ; or of any string...
+pathname        .equ SD_FAT_LEVEL+18    ; or any string...
+EndOfPath       .equ SD_FAT_LEVEL+20    ; or of any string...
 
 ; ---------------------------------------
 
-                .word 0,0,0,0
+FirstHandle     .equ SD_FAT_LEVEL+30
 
 ; ---------------------------------------
 ; Handle structure
@@ -469,53 +481,44 @@ HDLH_CurSize    .equ 20 ; written size / not yet read size (Long)
 HDLW_BUFofst    .equ 22 ; SD_BUF offset ; used by LOAD"
 
 
-    .IFDEF RAM_1K ; RAM_Size = 1k: due to the lack of RAM PAD is SDIB
+    .IFDEF RAM_1K ; RAM_Size = 1k: due to the lack of RAM, PAD is SDIB
 
-FirstHandle
-HandleMax       .equ 5 ; and not 8 because lack of RAM
+HandleMax       .equ 5 ; and not 8 to respect INFO size (FRAM)
 HandleLenght    .equ 24
 HandleEnd       .equ FirstHandle+handleMax*HandleLenght
-
-    .org HandleEnd
 
 LOADPTR         .equ HandleEnd
 LOAD_STACK      .equ HandleEnd+2
 LOADSTACK_SIZE  .equ HandleMax+1    ; make room for 3 words * handles
 LoadStackEnd    .equ LOAD_STACK+LOADSTACK_SIZE*6
 
-    .org LoadStackEnd
-
+SDIB_I2CADR     .equ PAD_ORG-4   
+SDIB_I2CCNT     .equ PAD_ORG-2
 SDIB_ORG        .equ PAD_ORG
 
 
-    .ELSEIF     ; RAM_Size > 1k
+    .ELSEIF     ; RAM_Size > 1k all is in RAM
 
-FirstHandle
 HandleMax       .equ 8
 HandleLenght    .equ 24
 HandleEnd       .equ FirstHandle+handleMax*HandleLenght
-
-    .org HandleEnd
 
 LOADPTR         .equ HandleEnd
 LOAD_STACK      .equ HandleEnd+2
 LOADSTACK_SIZE  .equ HandleMax+1    ; make room for 3 words * handles
 LoadStackEnd    .equ LOAD_STACK+LOADSTACK_SIZE*6 ; 3 words by handle
 
-    .org LoadStackEnd
-
-SDIB_I2CADR     .word 0
-SDIB_I2CCNT     .word 0
-SDIB_ORG
+SDIB_I2CADR     .equ SDIB_ORG-4    
+SDIB_I2CCNT     .equ SDIB_ORG-2
+SDIB_ORG        .equ LoadStackEnd+4
 SDIB_LEN        .equ 84
-
-    .org SDIB_ORG+SDIB_LEN
 
     .ENDIF ; RAM_Size
 
+SD_END_DATA     .equ LoadStackEnd
+
     .ENDIF ; SD_CARD_LOADER
 
-SD_END_DATA ; used by SD_INIT to init SD_ram area
 
 ;-------------------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx program (FRAM) memory
@@ -1063,11 +1066,6 @@ FBASE       mDOCON
 FSTATE      mDOCON
             .word   STATE   ; VARIABLE address in RAM space
 
-; LINE   -- a-addr       LINE interpretation
-            FORTHWORD "LINE"
-FLINE       mDOCON
-            .word   LINE   ; VARIABLE address in RAM space
-
 ;-------------------------------------------------------------------------------
 ; ANS complement OPTION
 ;-------------------------------------------------------------------------------
@@ -1118,6 +1116,11 @@ FLINE       mDOCON
 LESSNUM     MOV     #BASE_HOLD,&HP
             mNEXT
 
+;https://forth-standard.org/standard/core/UMDivMOD
+; UM/MOD   udlo|udhi u1 -- r q   unsigned 32/16->16
+            FORTHWORD "UM/MOD"
+UMSLASHMOD  PUSH #DROP          ; 3 return address for MU/MOD
+
 ; unsigned 32-BIT DIVIDEND : 16-BIT DIVISOR --> 32-BIT QUOTIENT, 16-BIT REMAINDER
 ; 2 times faster if DVDhi = 0 (it's the general case)
 
@@ -1131,9 +1134,7 @@ LESSNUM     MOV     #BASE_HOLD,&HP
 ; Y     = QUOThi        = ud2hi     = ud2hi
 ; rDODOES = count
 
-; MU/MOD        DVDlo DVDhi DIVlo -- REMlo QUOTlo QUOThi
-;            FORTHWORD "MU/MOD"
-            ASMWORD "MU/MOD"    ; for ANS_COMP use
+; MU/MOD        DVDlo DVDhi DIVlo -- REMlo QUOTlo QUOThi, used by fixpoint and #
 MUSMOD      MOV     TOS,T       ;1 T = DIVlo
             MOV     @PSP,TOS    ;2 TOS = DVDhi
             MOV     2(PSP),S    ;3 S = DVDlo
@@ -1389,15 +1390,13 @@ RXOFF_LOOP  BIT     #UCTXIFG,&TERMIFG   ;3  wait the sending end of XOFF, useles
 
 ; --------------------------------------;
     ASMWORD "SLEEP"                     ; may be redirected
-SLEEP                                   ;
-    MOV     @PC+,PC                     ;3
-    .word   PARENSLEEP                  ;
+SLEEP       MOV     @PC+,PC             ;3
+            .word   PARENSLEEP          ;
 ; --------------------------------------;
 
 ; --------------------------------------;
     ASMWORD "(SLEEP)"                   ;
-PARENSLEEP                              ;
-    BIS &LPM_MODE,SR                    ;3  enter in LPMx sleep mode with GIE=1
+PARENSLEEP  BIS &LPM_MODE,SR            ;3  enter in LPMx sleep mode with GIE=1
 ; --------------------------------------;   default FAST FORTH mode (for its input terminal use) : LPM0.
 
 ;###############################################################################################################
@@ -1474,7 +1473,7 @@ YEMIT1
 YEMIT2      BIT.B   #CTS,&HANDSHAKIN    ; 3
             JNZ     YEMIT2              ; 2
     .ENDIF
-YEMIT       .word   4882h               ; hi7/4~ lo:12/4~ send/send_not  echo to terminal
+YEMIT       .word   4882h               ; hi7/4~ lo:12/9~ send/send_not  echo to terminal
             .word   TERMTXBUF           ; 3 MOV Y,&TERMTXBUF
             mNEXT                       ; 4
 ; --------------------------------------;
@@ -1560,29 +1559,10 @@ SPACESEND   MOV     @PSP+,TOS
             mNEXT
 
 
-    .IFDEF DEFER_TYPE
-
 ;https://forth-standard.org/standard/core/TYPE
 ;C TYPE    adr len --     type line to terminal
             FORTHWORD "TYPE"
-TYPE        MOV     @PC+,PC
-            .word   PARENTYPE
-
-;https://forth-standard.org/standard/core/TYPE
-;C TYPE    adr len --     type line to terminal
-            FORTHWORD "(TYPE)"
-PARENTYPE
-
-    .ELSE
-
-;https://forth-standard.org/standard/core/TYPE
-;C TYPE    adr len --     type line to terminal
-            FORTHWORD "TYPE"
-TYPE  
-
-    .ENDIF ; DEFER_TYPE
-
-            CMP     #0,TOS
+TYPE        CMP     #0,TOS
             JZ      TWODROP     ; abort fonction
             .word   0151Eh      ;5 PUSM TOS,IP      R-- len,IP 
             MOV     #TYPE_NEXT,IP
@@ -1874,6 +1854,9 @@ QSIGN       CMP.B   #1,W            ;1
 QNUMNEXT    FORTHtoASM              ;  -- c-addr ud2lo-hi addr2 cnt2    R-- IP sign BASE    S=addr2
             CMP     #0,TOS          ;1                                  cnt2=0 : conversion is ok ?
             JZ      QNUMNEXT1       ;2                                  yes
+            BIT     #UF9,SR         ;2                                  already flagged double ? 
+                                    ;                                   ( test to discard repeated points or repeated commas)
+            JNZ     QNUMNEXT1       ;2                                  abort
             BIS     #UF9,SR         ;2                                  set double number flag
 
     .IFDEF FIXPOINT_INPUT
@@ -2052,6 +2035,9 @@ QSIGN       CMP.B   #1,X            ;1
 QNUMNEXT    FORTHtoASM              ;  -- c-addr ud2lo-hi addr2 cnt2    R-- IP sign BASE    S=addr2,T=cnt2
             CMP     #0,TOS          ;1                                  cnt2=0 ? conversion is ok ?
             JZ      QNUMNEXT1       ;2                                  yes
+            BIT     #UF9,SR         ;2                                  already flagged double ? 
+                                    ;                                   ( test to discard repeated points or repeated commas)
+            JNZ     QNUMNEXT1       ;2                                  abort
             BIS     #UF9,SR         ;2                                  set double number flag
 
     .IFDEF FIXPOINT_INPUT
@@ -2240,18 +2226,18 @@ BOOT    MOV #RSTACK,RSP
 ; ----------------------------------;
 ; BOOTSTRAP TEST                    ;
 ; ----------------------------------;
-        CMP #0,&SAVE_SYSRSTIV       ; if WARM
-        JZ QUIT0                    ; no boostrap
-        BIT.B #SD_CD,&SD_CDIN       ; SD_memory in SD_Card module ?
-        JNZ QUIT0                   ; no
+    CMP #0,&SAVE_SYSRSTIV           ; if WARM
+    JZ QUIT0                        ; no boostrap
+    BIT.B #SD_CD,&SD_CDIN           ; SD_memory in SD_Card module ?
+    JNZ QUIT0                       ; no
 ; ----------------------------------;
 ; BOOTSTRAP                         ; on SYSRSTIV <> 0
 ; ----------------------------------;
-        SUB #2,PSP                  ;
-        MOV TOS,0(PSP)              ;
-        MOV &SAVE_SYSRSTIV,TOS      ;
-        MOV #0,&SAVE_SYSRSTIV       ;
-        ASMtoFORTH                  ;
+    SUB #2,PSP                      ;
+    MOV TOS,0(PSP)                  ;
+    MOV &SAVE_SYSRSTIV,TOS          ;
+    MOV #0,&SAVE_SYSRSTIV           ;
+    ASMtoFORTH                      ;
     .IFDEF QUIETBOOT                
     .word NOECHO                    ; warning ! your BOOT.4TH must to be finished with ECHO command! 
     .ENDIF
@@ -2385,8 +2371,7 @@ QABUSBLOOPI NOP                     ; 1~        <---+   |
             .word   XSQUOTE         ; -- c-addr u c-addr1 u1
             .byte   4,27,"[7m"      ;
             .word   TYPE            ; -- c-addr u       set reverse video
-
-            .word   FLINE,FETCH,QDUP;       if LINE <> 0
+            .word   lit,LINE,FETCH,QDUP;       if LINE <> 0
             .word   QBRAN,ERRLINE_END
             .word   XSQUOTE         ;       displays the line where error occured
             .byte   5,"line:"       ;
@@ -2549,7 +2534,7 @@ HEADER      mDOCOL
             MOV     W,&DDP          ; -- xxx
             MOV     @PSP+,TOS       ; --
             MOV     @RSP+,IP
-            MOV     @RSP+,PC        ; 23 words, W is the new DDP value )
+            RET                     ; 23 words, W is the new DDP value )
                                     ;           X is LAST_THREAD       > used by VARIABLE, CONSTANT, CREATE, DEFER and :
                                     ;           Y is NFA               )
 
@@ -2964,10 +2949,8 @@ DEFINITIONS  MOV     &CONTEXT,&CURRENT
 ; IMPROVED ON/OFF AND RESET
 ;-------------------------------------------------------------------------------
 
-STATE_DOES  ; execution part of PWR_STATE
-    .IFDEF VOCABULARY_SET
-            .word   FORTH,ONLY,DEFINITIONS ; sorry, doesn't restore search order pointers
-    .ENDIF
+STATE_DOES  ; execution part of PWR_STATE ; sorry, doesn't restore search order pointers
+            .word   FORTH,ONLY,DEFINITIONS
             FORTHtoASM              ; -- BODY       IP is free
             MOV     @TOS+,W         ; -- BODY+2     W = old VOCLINK = VLK
             MOV     W,&LASTVOC      ; -- BODY+2     restore LASTVOC
@@ -3077,7 +3060,7 @@ PARENWARM
 ;            .word   DOT                 ; display SYSSNIV
 ;            .word   DOT                 ; display SYSUNIV
             .word   XSQUOTE
-            .byte   39," FastForth V203",FREQ," (C) J.M.Thoorens "
+            .byte   39," FastForth V204",FREQ," (C) J.M.Thoorens "
             .word   TYPE
             .word   LIT,FRAM_FULL,HERE,MINUS,UDOT
             .word   XSQUOTE         ;
@@ -3144,8 +3127,8 @@ INITRAM     MOV     #0,0(X)
 ;-------------------------------------------------------------------------------
 ; RESET : INIT FORTH machine
 ;-------------------------------------------------------------------------------
-            MOV     #RSTACK,SP              ; init return stack
-            MOV     #PSTACK,PSP             ; init parameter stack
+            MOV     #RSTACK,SP      ; init return stack
+            MOV     #PSTACK,PSP     ; init parameter stack
     .SWITCH DTC
     .CASE 1
             MOV     #xdocol,rDOCOL
@@ -3206,10 +3189,16 @@ COLD_END
         .word   WARM            ; the next step
     .ELSE
         FORTHtoASM
-    BIT.B #SD_CD,&SD_CDIN       ; SD_memory in SD_Card module ?
-    JNZ WARM                    ; no
+
+    .IFDEF RAM_1K               ; case of MSP430FR57xx
+        MOV #0,&CurrentHDL      ; init this FRAM area to pass QABORT
+    .ENDIF
+
+        BIT.B #SD_CD,&SD_CDIN   ; SD_memory in SD_Card module ?
+        JNZ WARM                ; no
+
     .include "forthMSP430FR_SD_INIT.asm";
-    JMP     WARM
+        JMP WARM
     .ENDIF
 
 ;-------------------------------------------------------------------------------
@@ -3267,6 +3256,7 @@ COLD_END
 ;-------------------------------------------------------------------------------
 ; IT'S FINISH : RESOLVE ASSEMBLY PTR
 ;-------------------------------------------------------------------------------
+
 ROMDICT         ; init DDP with this current address
 lastvoclink     .equ voclink
 lastforthword   .equ forthlink
@@ -3339,3 +3329,11 @@ lastasmword30   .equ asmlink30
 lastasmword31   .equ asmlink31
 
     .ENDIF
+
+;-------------------------------------------------------------------------------
+; Don't forget me !
+;-------------------------------------------------------------------------------
+
+    .org 0FFFEh 
+    .word reset
+

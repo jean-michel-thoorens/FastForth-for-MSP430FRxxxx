@@ -2,8 +2,6 @@
 
 
  ------------------------Start Firmware update--------------------------- 
-----TRACE---- SUB mcu !writeSubMcu
-----TRACE----programm the Sub MCU update failed 
-----TRACE----Stop JTAG done failed 
+----TRACE----DcdcLayer update failed 
 
 ---------------------Firmware upate end--------------------------

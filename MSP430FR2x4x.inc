@@ -82,32 +82,32 @@ BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 
 ;    .org    SIGNATURES
 ;;Start of JTAG and BSL signatures
-;        .word   0           ; JTAG signature 1
-;        .word   0           ; JTAG signature 2
-;        .word   0           ; BSL signature 1
-;        .word   0           ; BSL signature 2
+;        .word   0FFFFh      ; JTAG signature 1
+;        .word   0FFFFh      ; JTAG signature 2
+;        .word   0FFFFh      ; BSL signature 1, 5555h to disable BSL
+;        .word   0FFFFh      ; BSL signature 2
 
-    .org    INTVECT         ; FFDA-FFFF 18 vectors + reset
-
-            .word  reset        ; FFDAh - P2       
-            .word  reset        ; FFDCh - P1       
-            .word  reset        ; FFDEh - ADC10    
-            .word  reset        ; FFE0h - eUSCI_B0 
-            .word  reset        ; FFE2h - eUSCI_A1 
-TERMVEC     .word  TERMINAL_INT ; FFE4h - eUSCI_A0 
-            .word  reset        ; FFE6h - WDT      
-            .word  reset        ; FFE8h - RTC      
-            .word  reset        ; FFEAh - TA3_x    
-            .word  reset        ; FFECh - TA3_0    
-            .word  reset        ; FFEEh - TA2_x    
-            .word  reset        ; FFF0h - TA2_0    
-            .word  reset        ; FFF2h - TA1_x    
-            .word  reset        ; FFF4h - TA1_0    
-            .word  reset        ; FFF6h - TA0_x    
-            .word  reset        ; FFF8h - TA0_0    
-            .word  reset        ; FFFAh - UserNMI  
-            .word  reset        ; FFFCh - SysNMI   
-RST_ADR     .word  reset        ; FFFEh - Reset    
+;   .org    INTVECT         ; FFDA-FFFF 18 vectors + reset
+;
+;           .word  reset        ; FFDAh - P2       
+;           .word  reset        ; FFDCh - P1       
+;           .word  reset        ; FFDEh - ADC10    
+;           .word  reset        ; FFE0h - eUSCI_B0 
+;           .word  reset        ; FFE2h - eUSCI_A1 
+;           .word  reset        ; FFE4h - eUSCI_A0 
+;           .word  reset        ; FFE6h - WDT      
+;           .word  reset        ; FFE8h - RTC      
+;           .word  reset        ; FFEAh - TA3_x    
+;           .word  reset        ; FFECh - TA3_0    
+;           .word  reset        ; FFEEh - TA2_x    
+;           .word  reset        ; FFF0h - TA2_0    
+;           .word  reset        ; FFF2h - TA1_x    
+;           .word  reset        ; FFF4h - TA1_0    
+;           .word  reset        ; FFF6h - TA0_x    
+;           .word  reset        ; FFF8h - TA0_0    
+;           .word  reset        ; FFFAh - UserNMI  
+;           .word  reset        ; FFFCh - SysNMI   
+;           .word  reset        ; FFFEh - Reset    
 
 ; ----------------------------------------------------------------------
 ; MPY_32
@@ -220,23 +220,23 @@ BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ;        .word   0           ; BSL signature 1
 ;        .word   0           ; BSL signature 2
 
-    .org    INTVECT         ; FFE2-FFFF 14 vectors + reset
-
-        .word  reset        ; FFE2h - LCD      
-        .word  reset        ; FFE4h - P2       
-        .word  reset        ; FFE6h - P1       
-        .word  reset        ; FFE8h - ADC10    
-        .word  reset        ; FFEAh - eUSCI_B0 
-TERMVEC .word  TERMINAL_INT ; FFECh - eUSCI_A0 
-        .word  reset        ; FFEEh - WDT      
-        .word  reset        ; FFF0h - RTC      
-        .word  reset        ; FFF2h - TA1_x    
-        .word  reset        ; FFF4h - TA1_0    
-        .word  reset        ; FFF6h - TA0_x    
-        .word  reset        ; FFF8h - TA0_0    
-        .word  reset        ; FFFAh - UserNMI  
-        .word  reset        ; FFFCh - SysNMI   
-RST_ADR .word  reset        ; FFFEh - Reset    
+;    .org    INTVECT         ; FFE2-FFFF 14 vectors + reset
+;
+;        .word  reset        ; FFE2h - LCD      
+;        .word  reset        ; FFE4h - P2       
+;        .word  reset        ; FFE6h - P1       
+;        .word  reset        ; FFE8h - ADC10    
+;        .word  reset        ; FFEAh - eUSCI_B0 
+;TERMVEC .word  TERMINAL_INT ; FFECh - eUSCI_A0 
+;        .word  reset        ; FFEEh - WDT      
+;        .word  reset        ; FFF0h - RTC      
+;        .word  reset        ; FFF2h - TA1_x    
+;        .word  reset        ; FFF4h - TA1_0    
+;        .word  reset        ; FFF6h - TA0_x    
+;        .word  reset        ; FFF8h - TA0_0    
+;        .word  reset        ; FFFAh - UserNMI  
+;        .word  reset        ; FFFCh - SysNMI   
+;RST_ADR .word  reset        ; FFFEh - Reset    
 
 
 ; ----------------------------------------------------------------------

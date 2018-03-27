@@ -6,10 +6,10 @@ FAST FORTH is a fast and well made embedded interpreter/assembler/compiler, very
 If your purpose is programming a MSP430FRxxxx in assembler, FAST FORTH is the Swiss army knife you absolutely need! 
 
 For only 3 kbytes in addition, you have the primitives to access the sd\_card FAT16 and FAT32: read, write, del + load source files + direct copy from PC to SD\_Card.
-It works with all SD CARD memories from 64MB to 64GB. Count 14/11 clock cycles (MCLK!) to read/write a byte...
+It works with all SD CARD memories from 64MB to 64GB. Read or write a byte is done in less than a microsecond @ 16MHz.
 This enables to make a fast data logger with a small footprint as a MSP430FR5738 QFN24. To compare with a LPC800 ARM entry-level...
 
-With all options its size is < 10kb. 
+With all options its size is about 10kB. 
 
 	Tested on MSP-EXP430{FR5969,FR5994,FR6989,FR4133,FR2433} launchpads and CHIPSTICKFR2433,
     at 0.5, 1, 2, 4, 8, 16 MHz and 24MHz on a MSP430FR5738 module.
@@ -46,11 +46,14 @@ With all options its size is < 10kb.
 What is new ?
 -------------
 
+    FastForth V204
+                    bugs corrected.
+
     FastForth V203
 
-    French touch 2: MSP430FR5xxx and MSP430FR6xxx @8MHz work with up to 3Mbds TERATERM terminal
+    French touch 2: MSP430FR5xxx and MSP430FR6xxx @8MHz work with up to 3Mbds TERATERM XON/XOFF terminal
                     via PL2303TA/HXD 1m cable, and 6Mbds @16MHz with shortened cable.
-                    doesn't work with FR2xxx/FR4xxx families (FLL clock)
+                    doesn't work with FR2xxx/FR4xxx families (because FLL clock?)
     
     FastForth V202
 

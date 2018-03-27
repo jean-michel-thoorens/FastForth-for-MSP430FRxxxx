@@ -43,9 +43,9 @@ RTCRDY=\$10!
 ! 1A00-1A7F = TLV device descriptor info (FRAM 128 B)
 ! 1A80-1BFF = unused (385 B)
 ! 1C00-23FF = RAM (2 KB)
-! 2000-C1FF = unused (41472 B)
-! C200-FF7F = code memory (FRAM 15743 B)
-! FF80-FFFF = interrupt vectors (FRAM 127 B)
+! 2000-43FF = unused
+! 4400-FF7F = code memory (FRAM)
+! FF80-FFFF = interrupt vectors (FRAM 128 B)
 ! ----------------------------------------------
 INFOSTART=\$1800!
 INFODSTART=\$1800!

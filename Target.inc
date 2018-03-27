@@ -25,6 +25,7 @@ DEVICE = "MSP430FR5739"
 ;CHIP  .equ 5739
 LF_XTAL
 UCA0_UART
+TERMVEC     .equ 0FFF0h      ;  eUSCI_A0
 UCB0_SD
 HRDWMPY
 RTC_B 
@@ -37,6 +38,7 @@ DEVICE = "MSP430FR5969"
 ;CHIP  .equ 5969
 LF_XTAL
 UCA0_UART
+TERMVEC     .equ 0FFF0h      ;  eUSCI_A0
 UCA1_SD
 HRDWMPY
 RTC_B 
@@ -49,6 +51,7 @@ DEVICE = "MSP430FR5994"
 ;CHIP  .equ 5994
 LF_XTAL
 UCA0_UART
+TERMVEC     .equ 0FFF0h      ;  eUSCI_A0
 UCB0_SD
 HRDWMPY
 RTC_C 
@@ -61,6 +64,7 @@ DEVICE = "MSP430FR6989"
 ;CHIP  .equ 6989
 LF_XTAL
 UCA1_UART
+TERMVEC     .equ 0FFE4h      ;  eUSCI_A1
 UCA0_SD
 HRDWMPY
 RTC_C 
@@ -73,6 +77,7 @@ DEVICE = "MSP430FR4133"
 ;CHIP  .equ 4133
 LF_XTAL
 UCA0_UART
+TERMVEC     .equ 0FFECh      ;  eUSCI_A0
 UCB0_SD
 RTC     ; define type of RTC
     .INCLUDE "MSP430FR2x4x.inc"
@@ -84,9 +89,9 @@ DEVICE = "MSP430FR2433"
 ;CHIP  .equ 2433
 LF_XTAL
 UCA0_UART
+TERMVEC     .equ 0FFE4h      ;  eUSCI_A0
 UCA1_SD
-UCB0_I2CM   ; for TERM2IIC add-on
-I2CTERM_INT .equ reset
+UCB0_I2CM                   ; for TERM2IIC add-on
 HRDWMPY
 RTC     ; define type of RTC
     .include "MSP430FR2x4x.inc"
@@ -97,12 +102,12 @@ RTC     ; define type of RTC
 DEVICE = "MSP430FR2433"
 ;CHIP  .equ 2433
 UCA0_UART
+TERMVEC     .equ 0FFE4h      ;  eUSCI_A0
 UCB0_SD
 HRDWMPY
 RTC     ; define type of RTC
     .include "MSP430FR2x4x.inc"
     .ENDIF
-
 
 ; define RAM = 1k for MSP430FR57xx devices
     .IF (charfromstr(DEVICE,8) = '5') & (charfromstr(DEVICE,9) = '7') 

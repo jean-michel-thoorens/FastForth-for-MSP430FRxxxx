@@ -28,6 +28,19 @@
 
 
 ; ===========================================================
+; 0- Init FRAM SD datas, case of MSP430FR57xx
+; ===========================================================
+
+    .IFDEF RAM_1K               ; case of MSP430FR57xx : SD datas are in FRAM
+        MOV #SD_ORG_DATA,X      ; so are not initialised to 0 by COLD/RESET
+InitSDdata                      ;
+        MOV #0,0(X)             ;
+        ADD #2,X                ;
+        CMP #SD_END_DATA,X      ;
+        JNE InitSDdata          ;
+    .ENDIF
+
+; ===========================================================
 ; 1- Init eUSCI dedicated to SD_Card SPI driver
 ; ===========================================================
 
@@ -39,19 +52,7 @@
     BIC     #1,&SD_CTLW0            ; release eUSCI from reset
 
 ; ===========================================================
-; 2- Init to 0 all SD_Card variables, handles and SDIB buffer
-; ===========================================================
-
-InitSDdata
-    MOV     #SD_ORG_DATA,X          ;
-InitSDdataLoop                      ;
-    MOV     #0,0(X)                 ;
-    ADD     #2,X                    ;
-    CMP     #SD_END_DATA,X          ;
-    JNE     InitSDdataLoop          ;
-
-; ===========================================================
-; 3- Init SD_Card
+; 2- Init SD_Card
 ; ===========================================================
 
 SD_POWER_ON

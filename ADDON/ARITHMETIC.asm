@@ -57,19 +57,18 @@ MSTAR       MOV     @PSP,&MPYS
 MSTAR:      MOV     TOS,S           ; TOS= n2
             XOR     @PSP,S          ; S contains sign of result
             CMP     #0,0(PSP)       ; n1 > -1 ?
-            JGE     u1MSTARn2       ; yes
+            JGE     u1n2MSTAR       ; yes
             XOR     #-1,0(PSP)      ; no : n1 --> u1
             ADD     #1,0(PSP)       ;
-u1MSTARn2   CMP     #0,TOS          ; n2 > -1 ?
-            JGE     u1MSTARu2       ; yes
-            XOR     #-1,TOS         ; no : n2 --> u2 
+u1n2MSTAR   CMP     #0,TOS          ; n2 <= -1 ?
+            JGE     u1u2MSTAR       ; no
+            XOR     #-1,TOS         ; y: n2 --> u2 
             ADD     #1,TOS          ;
-u1MSTARu2   
-           .word    151Dh           ; -- ud1lo ud1hi adr count          PUSHM IP,S (1+1 push,IP=D)
-            MOV     #MSTARud,IP
-            MOV     #UMSTAR,PC      ; UMSTAR use S,T,W,X,Y
-MSTARud     FORTHtoASM
-           .word    171Ch           ; -- ud1lo ud1hi adr count          POPM S,IP (1+1 pop,S=C)
+u1u2MSTAR   .word   151Dh           ;           PUSHM IP,S (1+1 push,IP=0Dh)
+            ASMtoFORTH
+            .word UMSTAR            ; UMSTAR use S,T,W,X,Y
+            FORTHtoASM
+            .word   171Ch           ;           POPM S,IP (1+1 pop,S=0Ch)
             CMP     #0,S            ; result > -1 ?
             JGE     MSTARend        ; yes
             XOR     #-1,0(PSP)      ; no : ud --> d
@@ -79,38 +78,6 @@ MSTARud     FORTHtoASM
 MSTARend    mNEXT
 
     .ENDIF ;MPY
-
-; TOS = DIVISOR
-; S   = DIVIDENDlo
-; W   = DIVIDENDhi
-; X   = count
-; Y   = QUOTIENT
-; T.I. UNSIGNED DIVISION SUBROUTINE 32-BIT BY 16-BIT
-; DVDhi|DVDlo : DIVISOR -> QUOT in Y, REM in DVDhi
-; RETURN: CARRY = 0: OK CARRY = 1: QUOTIENT > 16 BITS
-
-;https://forth-standard.org/standard/core/UMDivMOD
-;C UM/MOD   udlo|udhi u1 -- r q   unsigned 32/16->16
-            FORTHWORD "UM/MOD"
-UMSLASHMOD  MOV @PSP+,W     ;2 W = DIVIDENDhi
-            MOV @PSP,S      ;2 S = DIVIDENDlo
-            MOV #0,Y        ;1 CLEAR RESULT
-            MOV #16,X       ;2 INITIALIZE LOOP COUNTER
-DIV1:       CMP TOS,W       ;1 dividendHI-divisor
-            JNC DIV2        ;2 jump if U<
-            SUB TOS,W       ;1
-DIV2:       ADDC Y,Y        ;1 RLC quotient
-            SUB #1,X        ;1 Decrement loop counter
-            JN DIV3         ;2 If 0< --> end
-            ADD S,S         ;1 RLA
-            ADDC W,W        ;1 RLC
-            JNC DIV1        ;2 jump if U<   14~ loop
-            SUB TOS,W       ;1
-            BIS #1,SR       ;1 SETC
-            JMP DIV2        ;2              14~ loop
-DIV3        MOV W,0(PSP)    ;3 remainder on stack
-            MOV Y,TOS       ;1 quotient in TOS
-            mNEXT           ;4 23 words  240 cycles
 
 ;https://forth-standard.org/standard/core/SMDivREM
 ;C SM/REM   d1lo d1hi n2 -- n3 n4  symmetric signed div
@@ -129,24 +96,22 @@ d1u2SMSLASHREM                  ;   -- d1 u2
             ADD #1,2(PSP)       ;4           d1lo+1
             ADDC #0,0(PSP)      ;4           d1hi+C
 ud1u2SMSLASHREM                 ;   -- ud1 u2
-           .word 151Dh          ;4  -- ud1lo ud1hi adr count          PUSHM IP,S (1+1 push,IP=D)
-        MOV #SMSLASHREMu3u4,IP  ;2
-            JMP UMSLASHMOD      ;2 UM/MOD use S,W,X,Y, not T
-SMSLASHREMu3u4
-            FORTHtoASM          ;240   -- u3 u4
-           .word 171Ch          ;4  -- ud1lo ud1hi adr count          POPM S,IP (1+1 pop,S=C)
-            CMP #0,T            ;1  -- u3 u4  T=rem_sign>=0?
-            JGE SMSLASHREMn3u4  ;2           yes
+           .word 151Ch          ;4          PUSHM S,T (1+1 push,S=0Ch)
+            CALL #MUSMOD
+            MOV @PSP+,TOS
+           .word 171Bh          ;4          POPM T,S (1+1 pop,T=0Bh)
+            CMP #0,T            ;1  -- ur uq  T=rem_sign>=0?
+            JGE SMSLASHREMnruq  ;2           yes
             XOR #-1,0(PSP)      ;3
             ADD #1,0(PSP)       ;3
-SMSLASHREMn3u4
+SMSLASHREMnruq
             XOR S,T             ;1           S=divisor T=quot_sign
-            CMP #0,T            ;1  -- n3 u4  T=quot_sign>=0?
-            JGE SMSLASHREMn3n4  ;2           yes
+            CMP #0,T            ;1  -- nr uq  T=quot_sign>=0?
+            JGE SMSLASHREMnrnq  ;2           yes
             XOR #-1,TOS         ;1
             ADD #1,TOS          ;1
-SMSLASHREMn3n4                  ;   -- n3 n4  S=divisor
-            mNEXT               ;4 36 words
+SMSLASHREMnrnq                  ;   -- nr nq  S=divisor
+            mNEXT               ;4 34 words
 
 ;https://forth-standard.org/standard/core/FMDivMOD
 ;C FM/MOD   d1 n1 -- r q   floored signed div'n

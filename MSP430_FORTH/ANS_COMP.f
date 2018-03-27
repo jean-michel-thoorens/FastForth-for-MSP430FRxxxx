@@ -172,15 +172,6 @@ ENDCODE
 [THEN]
     \
 
-\ https://forth-standard.org/standard/core/UMDivMOD
-\ UM/MOD   udlo|udhi u1 -- r q   unsigned 32/16->16
-CODE UM/MOD
-    CALL #MU/MOD  \ -- REMlo QUOTlo QUOThi
-    MOV @PSP+,TOS
-    MOV @IP+,PC
-ENDCODE
-    \
-
 \ https://forth-standard.org/standard/core/SMDivREM
 \ SM/REM   d1lo d1hi n2 -- r3 q4  symmetric signed div
 CODE SM/REM
@@ -198,10 +189,11 @@ S< IF               \
     ADD #1,2(PSP)   \           d1lo+1
     ADDC #0,0(PSP)  \           d1hi+C
 THEN                \ -- uDVDlo uDVDhi uDIVlo
-PUSHM S,T           \
-CALL #MU/MOD        \ -- uREMlo uQUOTlo uQUOThi
-MOV @PSP+,TOS       \ -- uREMlo uQUOTlo
-POPM T,S            \
+PUSHM IP,T          \           save IP,S,T
+LO2HI
+    UM/MOD          \ -- uREMlo uQUOTlo
+HI2LO
+POPM T,IP           \           restore T,S,IP
 CMP #0,T            \           T=rem_sign
 S< IF
     XOR #-1,0(PSP)
@@ -519,6 +511,6 @@ ADD #4,TOS
 MOV @IP+,PC
 ENDCODE
     \
-PWR_HERE
+RST_HERE
     \
 ECHO 
