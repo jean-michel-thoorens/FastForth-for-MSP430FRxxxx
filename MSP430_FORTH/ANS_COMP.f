@@ -22,6 +22,30 @@ ASM ; assembler is required!
 MARKER {ANS_COMP}
     \
 
+\ https://forth-standard.org/standard/core/AND
+\ C AND    x1 x2 -- x3           logical AND
+CODE AND
+AND @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+    \
+
+\ https://forth-standard.org/standard/core/OR
+\ C OR     x1 x2 -- x3           logical OR
+CODE OR
+BIS @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+    \
+
+\ https://forth-standard.org/standard/core/XOR
+\ C XOR    x1 x2 -- x3           logical XOR
+CODE XOR
+XOR @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+    \
+
 \ https://forth-standard.org/standard/core/INVERT
 \ INVERT   x1 -- x2            bitwise inversion
 CODE INVERT
@@ -56,22 +80,6 @@ CODE RSHIFT
     0= UNTIL
 THEN        MOV W,TOS
             MOV @IP+,PC
-ENDCODE
-    \
-
-\ https://forth-standard.org/standard/core/OnePlus
-\ 1+      n1/u1 -- n2/u2       add 1 to TOS
-CODE 1+
-ADD #1,TOS
-MOV @IP+,PC
-ENDCODE
-    \
-
-\ https://forth-standard.org/standard/core/OneMinus
-\ 1-      n1/u1 -- n2/u2     subtract 1 from TOS
-CODE 1-
-SUB #1,TOS
-MOV @IP+,PC
 ENDCODE
     \
 
@@ -202,9 +210,27 @@ THEN
 XOR S,T             \           S=divisor T=quot_sign
 CMP #0,T            \ -- n3 u4  T=quot_sign
 S< IF
+BW1
+BW2
     XOR #-1,TOS
     ADD #1,TOS
 THEN                \ -- n3 n4  S=divisor
+MOV @IP+,PC
+ENDCODE
+    \
+
+\ https://forth-standard.org/standard/core/NEGATE
+\ C NEGATE   x1 -- x2            two's complement
+CODE NEGATE
+GOTO BW1 
+ENDCODE
+    \
+
+\ https://forth-standard.org/standard/core/ABS
+\ C ABS     n1 -- +n2     absolute value
+CODE ABS
+CMP #0,TOS       \  1
+0< ?GOTO BW2
 MOV @IP+,PC
 ENDCODE
     \
@@ -343,7 +369,6 @@ MOV @IP+,PC
 ENDCODE
     \
 
-
 \ ----------------------------------------------------------------------
 \ ALIGNMENT OPERATORS
 \ ----------------------------------------------------------------------
@@ -427,7 +452,6 @@ MOV @IP+,PC
 ENDCODE
     \ 
 
-
 \ https://forth-standard.org/standard/core/FILL
 \ FILL   c-addr u char --  fill memory with char
 CODE FILL
@@ -510,6 +534,21 @@ CODE >BODY
 ADD #4,TOS
 MOV @IP+,PC
 ENDCODE
+    \
+
+\ https://forth-standard.org/standard/core/toIN
+\ C >IN     -- a-addr       holds offset in input stream
+TOIN CONSTANT >IN
+    \
+
+[UNDEFINED] PAD [IF]
+
+\ https://forth-standard.org/standard/core/PAD
+\  PAD           --  pad address
+PAD_ORG CONSTANT PAD
+
+[THEN]
+
     \
 RST_HERE
     \

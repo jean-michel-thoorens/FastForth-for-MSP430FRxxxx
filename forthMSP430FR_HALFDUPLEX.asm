@@ -6,6 +6,9 @@
 ; --------------------------------------;
 ; (ACCEPT) part I: prepare TERMINAL_INT ;
 ; --------------------------------------;
+    .IFDEF TOTAL
+            .word 1537h                 ;6              push R7,R6,R5,R4
+    .ENDIF                              ;
             MOV     #ENDACCEPT,S        ;2              S = ACCEPT XOFF return
             MOV     #AKEYREAD1,T        ;2              T = default XON return
             .word   152Dh               ;5              PUSHM IP,S,T, as IP ret, XOFF ret, XON ret
@@ -143,11 +146,14 @@ ENDACCEPT                               ; <--- XOFF return address
 ; --------------------------------------;
             MOV     #LPM0+GIE,&LPM_MODE ; reset LPM_MODE to default mode LPM0 for next line of input stream
             CMP     #0,&LINE            ; if LINE <> 0...
-            JZ      DROPEXIT            ;
-            ADD     #1,&LINE            ; ...increment LINE
-DROPEXIT    SUB     @PSP+,TOS           ; Org Ptr -- len'
-            MOV     @RSP+,IP            ; 2 and continue with INTERPRET with GIE=0.
+            JZ ACCEPTEND                ;
+            ADD #1,&LINE                ; ...increment LINE
+ACCEPTEND   SUB @PSP+,TOS               ; Org Ptr -- len'
+            MOV @RSP+,IP                ; 2 and continue with INTERPRET with GIE=0.
                                         ; So FORTH machine is protected against any interrupt...
+    .IFDEF TOTAL
+            .word 1734h                 ;6              pop R4,R5,R6,R7
+    .ENDIF
             mNEXT                       ; ...until next falling down to LPMx mode of (ACCEPT) part1,
 ; **************************************;    i.e. when the FORTH interpreter has no more to do.
 

@@ -8,6 +8,268 @@ LPM0=\$18! SR(LPM0+GIE)
 
 
 
+! ============================================
+! SR bits :
+! ============================================
+\#C=\#1!        = SR(0) Carry flag
+\#Z=\#2!        = SR(1) Zero flag
+\#N=\#4!        = SR(2) Negative flag
+\#GIE=\#8!      = SR(3) Enable Int
+\#CPUOFF=\#\$10!= SR(4) CPUOFF    
+\#OSCOFF=\#\$20!= SR(5) OSCOFF
+\#SCG0=\#\$40!  = SR(6) SCG0     
+\#SCG1=\#\$80!  = SR(7) SCG1
+\#V=\#\$100!    = SR(8) oVerflow flag
+\#UF9=\#\$200!  = SR(9) User Flag 1 used by ?NUMBER --> INTERPRET --> LITERAL to process double numbers, else free for use.  
+\#UF10=\#\$400! = SR(10) User Flag 2  
+\#UF11=\#\$800! = SR(11) User Flag 3  
+
+
+! ============================================
+! PORTx, Reg  bits :
+! ============================================
+BIT0=1!
+BIT1=2!
+BIT2=4!
+BIT3=8!
+BIT4=\$10!
+BIT5=\$20!
+BIT6=\$40!
+BIT7=\$80!
+BIT8=\$100!
+BIT9=\$200!
+BIT10=\$400!
+BIT11=\$800!
+BIT12=\$1000!
+BIT13=\$2000!
+BIT14=\$4000!
+BIT15=\$8000!
+
+! ============================================
+! symbolic codes :
+! ============================================
+RET=MOV \@R1+,R0!   \ MOV @RSP+,PC
+NOP=MOV \#0,R3!     \                one word one cycle
+NOP2=\$3C00 ,!      \ compile JMP 0  one word two cycles
+NOP3=MOV R0,R0!     \ MOV PC,PC      one word three cycles
+NEXT=MOV \@R13+,R0! \ MOV @IP+,PC   
+SEMI=MOV \@R1+,R13\nMOV \@R13+,R0!
+
+
+! =================================================
+! MSP430FR5x6x DEVICES HAVE SPECIFIC RAM ADDRESSES!
+! =================================================
+
+
+! You can check the addresses below by comparing their values in DTCforthMSP430FRxxxx.lst
+! those addresses are usable with the symbolic assembler
+
+! ============================================
+! FastForth INFO(DCBA) memory map (256 bytes):
+! ============================================
+
+! ----------------------
+! KERNEL CONSTANTS
+! ----------------------
+INI_THREAD=\$1800!      .word THREADS
+TERMINAL_INT=\$1802!    .word TERMINAL_INT
+FREQ_KHZ=\$1804!        .word FREQUENCY
+HECTOBAUDS=\$1806!      .word TERMINALBAUDRATE/100
+! ----------------------
+! SAVED VARIABLES
+! ----------------------
+SAVE_SYSRSTIV=\$1808!   to enable SYSRSTIV read
+LPM_MODE=\$180A!        LPM0+GIE is the default mode
+INIDP=\$180C!           define RST_STATE, init by wipe
+INIVOC=\$180E!          define RST_STATE, init by wipe
+
+RXON=\$1810!
+RXOFF=\$1812!
+
+ReadSectorWX=\$1814!    call with W = SectorLO  X = SectorHI
+WriteSectorWX=\$1816!   call with W = SectorLO  X = SectorHI
+GPFLAGS=\$1818!
+
+! ============================================
+! FORTH RAM areas :
+! ============================================
+LSTACK_SIZE=\#16! words
+PSTACK_SIZE=\#48! words
+RSTACK_SIZE=\#48! words
+PAD_LEN=\#84! bytes
+TIB_LEN=\#84! bytes
+HOLD_SIZE=\#34! bytes
+
+! ============================================
+! FastForth RAM memory map (>= 2k):
+! ============================================
+
+
+LEAVEPTR=\$1C00!    \ Leave-stack pointer, init by QUIT
+LSATCK=\$1C00!      \ leave stack,      grow up
+PSTACK=\$1C80!      \ parameter stack,  grow down
+RSTACK=\$1CE0!      \ Return stack,     grow down
+
+PAD_I2CADR=\$1CE0!  \ RX I2C address
+PAD_I2CCNT=\$1CE2!  \ count max
+PAD_ORG=\$1CE4!     \ user scratch pad buffer, 84 bytes, grow up
+
+TIB_I2CADR=\$1D38!  \ TX I2C address 
+TIB_I2CCNT=\$1D3A!  \ count of bytes
+TIB_ORG=\$1D3C!     \ Terminal input buffer, 84 bytes, grow up
+
+HOLDS_ORG=\$1D90!   \ base address for HOLDS
+BASE_HOLD=\$1DB2!   \ BASE HOLD area, grow down
+
+! ----------------------
+! NOT SAVED VARIABLES
+! ----------------------
+
+HP=\$1DB2!              HOLD ptr
+CAPS=\$1DB4!            CAPS ON/OFF flag, must be set to -1 before first reset !
+LAST_NFA=\$1DB6!
+LAST_THREAD=\$1DB8!
+LAST_CFA=\$1DBA!
+LAST_PSP=\$1DBC!
+
+!STATE=\$1DBE!           Interpreter state
+
+SAV_CURRENT=\$1DC0!     preserve CURRENT when create assembler words
+OPCODE=\$1DC2!          OPCODE adr
+ASMTYPE=\$1DC4!         keep the opcode complement
+
+SOURCE_LEN=\$1DC6!      len of input stream
+SOURCE_ADR=\$1DC8!      adr of input stream
+TOIN=\$1DCA!            >IN
+DP=\$1DCC!              dictionary ptr
+LASTVOC=\$1DCE!         keep VOC-LINK
+CONTEXT=\$1DD0!         CONTEXT dictionnary space (8 CELLS)
+CURRENT=\$1DE0!         CURRENT dictionnary ptr
+
+!BASE=\$1DE2!           numeric base, must be defined before first reset !
+LINE=\$1DE4!           line in interpretation, activated with NOECHO, desactivated with ECHO
+
+! ---------------------------------------
+!1DE6! 22 bytes RAM free
+! ---------------------------------------
+
+! ---------------------------------------
+! SD buffer
+! ---------------------------------------
+SD_BUF_I2ADR=\$1DFC!
+SD_BUF_I2CNT=\$1DFE!
+BUFFER=\$1E00!      \ SD_Card buffer
+BUFEND=\$2000!
+
+! ---------------------------------------
+! FAT16 FileSystemInfos 
+! ---------------------------------------
+FATtype=\$2002!
+BS_FirstSectorL=\$2004!
+BS_FirstSectorH=\$2006!
+OrgFAT1=\$2008!
+FATSize=\$200A!
+OrgFAT2=\$200C!
+OrgRootDir=\$200E!
+OrgClusters=\$2010!         Sector of Cluster 0
+SecPerClus=\$2012!
+
+! ---------------------------------------
+! SD command
+! ---------------------------------------
+SD_CMD_FRM=\$2014!  6 bytes SD_CMDx inverted frame \${CRC,ll,LL,hh,HH,CMD}
+SD_CMD_FRM0=\$2014! CRC:ll  word access
+SD_CMD_FRM1=\$2015! ll      byte access
+SD_CMD_FRM2=\$2016! LL:hh   word access
+SD_CMD_FRM3=\$2017! hh      byte access
+SD_CMD_FRM4=\$2018! HH:CMD  word access
+SD_CMD_FRM5=\$2019! CMD     byte access
+SectorL=\$201A!     2 words
+SectorH=\$201C!
+
+! ---------------------------------------
+! BUFFER management
+! ---------------------------------------
+BufferPtr=\$201E! 
+BufferLen=\$2020!
+
+! ---------------------------------------
+! FAT entry
+! ---------------------------------------
+ClusterL=\$2022!     16 bits wide (FAT16)
+ClusterH=\$2024!     16 bits wide (FAT16)
+NewClusterL=\$2026!  16 bits wide (FAT16) 
+NewClusterH=\$2028!  16 bits wide (FAT16) 
+CurFATsector=\$202A! 
+
+! ---------------------------------------
+! DIR entry
+! ---------------------------------------
+DIRclusterL=\$202C!  contains the Cluster of current directory ; 1 if FAT16 root directory
+DIRclusterH=\$202E!  contains the Cluster of current directory ; 1 if FAT16 root directory
+EntryOfst=\$2030!  
+
+! ---------------------------------------
+! Handle Pointer
+! ---------------------------------------
+CurrentHdl=\$2032!  contains the address of the last opened file structure, or 0
+
+! ---------------------------------------
+! Load file operation
+! ---------------------------------------
+pathname=\$2034!
+EndOfPath=\$2436!
+
+! ---------------------------------------
+! Handle structure
+! ---------------------------------------
+! three handle tokens : 
+! token = 0 : free handle
+! token = 1 : file to read
+! token = 2 : file updated (write)
+! token =-1 : LOAD"ed file (source file)
+
+! offset values
+HDLW_PrevHDL=0!     previous handle ; used by LOAD"
+HDLB_Token=2!       token
+HDLB_ClustOfst=3!   Current sector offset in current cluster (Byte)
+HDLL_DIRsect=4!     Dir SectorL (Long)
+HDLH_DIRsect=6!
+HDLW_DIRofst=8!     BUFFER offset of Dir entry
+HDLL_FirstClus=10!  File First ClusterLo (identify the file)
+HDLH_FirstClus=12!  File First ClusterHi (byte)
+HDLL_CurClust=14!   Current ClusterLo
+HDLH_CurClust=16!   Current ClusterHi (T as 3Th byte)
+HDLL_CurSize=18!    written size / not yet read size (Long)
+HDLH_CurSize=20!    written size / not yet read size (Long)
+HDLW_BUFofst=22!    BUFFER offset ; used by LOAD" and by WRITE"
+
+
+!OpenedFirstFile     ; "openedFile" structure 
+HandleMax=8!
+HandleLenght=24!
+FirstHandle=\$2040!
+HandleEnd=\$2100!
+
+!Stack of return IP for LOADed files, preincrement stack structure
+LOADPTR=\$2100!
+LOAD_STACK=\$2102!
+LOAD_STACK_END=\$2138!
+
+!SD_card Input Buffer, lenght = CPL = 84
+SDIB_I2CADR=\$2138!
+SDIB_I2CCNT=\$213A!
+SDIB_ORG=\$213C!
+
+SD_END_DATA=\$2190!
+
+
+
+! ============================================
+! Special Fonction Registers (SFR)
+! ============================================
+
+
 SFRIE1=\$100!       \ SFR enable register
 SFRIFG1=\$102!      \ SFR flag register
 SFRRPCR=\$104!      \ SFR reset pin control
@@ -24,6 +286,8 @@ CRC16DI=\$150!      \ CRC data input
 CRCDIRB=\$152!      \ CRC data input reverse byte     
 CRCINIRES=\$154!    \ CRC initialization and result   
 CRCRESR=\$156!      \ CRC result reverse byte  
+
+RCCTL0=\$158!       \ RAM controller control 0
 
 WDTCTL=\$15C!        \ WDT control register
 
@@ -53,12 +317,10 @@ PADIR=\$204!
 PAREN=\$206!
 PASEL0=\$20A!
 PASEL1=\$20C!
-P1IV=\$20E!
 PASELC=\$216!
 PAIES=\$218!
 PAIE=\$21A!
 PAIFG=\$21C!
-P2IV=\$21E!
 
 P1IN=\$200!
 P1OUT=\$202!
@@ -66,6 +328,7 @@ P1DIR=\$204!
 P1REN=\$206!
 P1SEL0=\$20A!
 P1SEL1=\$20C!
+P1IV=\$20E!
 P1SELC=\$216!
 P1IES=\$218!
 P1IE=\$21A!
@@ -81,6 +344,7 @@ P2SELC=\$217!
 P2IES=\$219!
 P2IE=\$21B!
 P2IFG=\$21D!
+P2IV=\$21E!
 
 PBIN=\$220!
 PBOUT=\$222!
@@ -88,12 +352,10 @@ PBDIR=\$224!
 PBREN=\$226!
 PBSEL0=\$22A!
 PBSEL1=\$22C!
-P3IV=\$22E!
 PBSELC=\$236!
 PBIES=\$238!
 PBIE=\$23A!
 PBIFG=\$23C!
-P4IV=\$23E!
 
 P3IN=\$220!
 P3OUT=\$222!
@@ -101,6 +363,7 @@ P3DIR=\$224!
 P3REN=\$226!
 P3SEL0=\$22A!
 P3SEL1=\$22C!
+P3IV=\$22E!
 P3SELC=\$236!
 P3IES=\$238!
 P3IE=\$23A!
@@ -116,6 +379,7 @@ P4SELC=\$237!
 P4IES=\$239!
 P4IE=\$23B!
 P4IFG=\$23D!
+P4IV=\$23E!
 
 PCIN=\$240!
 PCOUT=\$242!
@@ -123,12 +387,10 @@ PCDIR=\$244!
 PCREN=\$246!
 PCSEL0=\$24A!
 PCSEL1=\$24C!
-P5IV=\$24E!
 PCSELC=\$256!
 PCIES=\$258!
 PCIE=\$25A!
 PCIFG=\$25C!
-P6IV=\$25E!
 
 P5IN=\$240!
 P5OUT=\$242!
@@ -136,6 +398,7 @@ P5DIR=\$244!
 P5REN=\$246!
 P5SEL0=\$24A!
 P5SEL1=\$24C!
+P5IV=\$24E!
 P5SELC=\$256!
 P5IES=\$258!
 P5IE=\$25A!
@@ -151,6 +414,7 @@ P6SELC=\$257!
 P6IES=\$259!
 P6IE=\$25B!
 P6IFG=\$25D!
+P6IV=\$25E!
 
 PDIN=\$260!
 PDOUT=\$262!
@@ -158,12 +422,10 @@ PDDIR=\$264!
 PDREN=\$266!
 PDSEL0=\$26A!
 PDSEL1=\$26C!
-P7IV=\$26E!
-PCSELC=\$276!
-PCIES=\$278!
-PCIE=\$27A!
-PCIFG=\$27C!
-P8IV=\$27E!
+PDSELC=\$276!
+PDIES=\$278!
+PDIE=\$27A!
+PDIFG=\$27C!
 
 P7IN=\$260!
 P7OUT=\$262!
@@ -171,6 +433,7 @@ P7DIR=\$264!
 P7REN=\$266!
 P7SEL0=\$26A!
 P7SEL1=\$26C!
+P7IV=\$26E!
 P7SELC=\$276!
 P7IES=\$278!
 P7IE=\$27A!
@@ -186,6 +449,7 @@ P8SELC=\$277!
 P8IES=\$279!
 P8IE=\$27B!
 P8IFG=\$27D!
+P8IV=\$27E!
 
 PEIN=\$280!
 PEOUT=\$282!
@@ -193,12 +457,10 @@ PEDIR=\$284!
 PEREN=\$286!
 PESEL0=\$28A!
 PESEL1=\$28C!
-P9IV=\$28E!
 PESELC=\$296!
 PEIES=\$298!
 PEIE=\$29A!
 PEIFG=\$29C!
-P10IV=\$29E!
 
 P9IN=\$280!
 P9OUT=\$282!
@@ -206,6 +468,7 @@ P9DIR=\$284!
 P9REN=\$286!
 P9SEL0=\$28A!
 P9SEL1=\$28C!
+P9IV=\$28E!
 P9SELC=\$296!
 P9IES=\$298!
 P9IE=\$29A!
@@ -221,6 +484,7 @@ P10SELC=\$297!
 P10IES=\$299!
 P10IE=\$29B!
 P10IFG=\$29D!
+P10IV=\$29E!
 
 PJIN=\$320!
 PJOUT=\$322!
@@ -241,10 +505,14 @@ TA0CTL=\$340!       \ TA0 control
 TA0CCTL0=\$342!     \ Capture/compare control 0   
 TA0CCTL1=\$344!     \ Capture/compare control 1   
 TA0CCTL2=\$346!     \ Capture/compare control 2   
+TA0CCTL3=\$348!     \ Capture/compare control 3   
+TA0CCTL4=\$34A!     \ Capture/compare control 4   
 TA0R=\$350!         \ TA0 counter register        
 TA0CCR0=\$352!      \ Capture/compare register 0  
 TA0CCR1=\$354!      \ Capture/compare register 1  
 TA0CCR2=\$356!      \ Capture/compare register 2  
+TA0CCR2=\$358!      \ Capture/compare register 3  
+TA0CCR2=\$35A!      \ Capture/compare register 4  
 TA0EX0=\$360!       \ TA0 expansion register 0    
 TA0IV=\$36E!        \ TA0 interrupt vector        
 
@@ -263,10 +531,18 @@ TB0CTL=\$3C0!       \ TB0 control
 TB0CCTL0=\$3C2!     \ Capture/compare control 0   
 TB0CCTL1=\$3C4!     \ Capture/compare control 1   
 TB0CCTL2=\$3C6!     \ Capture/compare control 2   
+TB0CCTL3=\$3C8!     \ Capture/compare control 3   
+TB0CCTL4=\$3CA!     \ Capture/compare control 4   
+TB0CCTL5=\$3CC!     \ Capture/compare control 5   
+TB0CCTL6=\$3CE!     \ Capture/compare control 6   
 TB0R=\$3D0!         \ TB0 counter register        
 TB0CCR0=\$3D2!      \ Capture/compare register 0  
 TB0CCR1=\$3D4!      \ Capture/compare register 1  
 TB0CCR2=\$3D6!      \ Capture/compare register 2  
+TB0CCR3=\$3D8!      \ Capture/compare register 3  
+TB0CCR5=\$3DA!      \ Capture/compare register 4 
+TB0CCR5=\$3DC!      \ Capture/compare register 5  
+TB0CCR6=\$3DE!      \ Capture/compare register 6  
 TB0EX0=\$3E0!       \ TB0 expansion register 0    
 TB0IV=\$3EE!        \ TB0 interrupt vector        
 
@@ -284,9 +560,15 @@ CAPTIO0CTL=\$43E!   \ Capacitive Touch IO 0 control
 TA3CTL=\$440!       \ TA3 control                 
 TA3CCTL0=\$442!     \ Capture/compare control 0   
 TA3CCTL1=\$444!     \ Capture/compare control 1   
+TA3CCTL2=\$446!     \ Capture/compare control 2   
+TA3CCTL3=\$448!     \ Capture/compare control 3   
+TA3CCTL4=\$44A!     \ Capture/compare control 4   
 TA3R=\$450!         \ TA3 counter register        
 TA3CCR0=\$452!      \ Capture/compare register 0  
 TA3CCR1=\$454!      \ Capture/compare register 1  
+TA3CCR2=\$456!      \ Capture/compare register 2  
+TA3CCR3=\$458!      \ Capture/compare register 3  
+TA3CCR4=\$45A!      \ Capture/compare register 4  
 TA3EX0=\$460!       \ TA3 expansion register 0    
 TA3IV=\$46E!        \ TA3 interrupt vector  
 
@@ -318,6 +600,12 @@ MPY32CTL0=\$4EC!    \ MPY32 control register 0
 
 DMAIFG=8!
 
+DMACTL0=\$500!      \ DMA module control 0                    
+DMACTL1=\$502!      \ DMA module control 1                    
+DMACTL2=\$504!      \ DMA module control 2                    
+DMACTL3=\$506!      \ DMA module control 3                    
+DMACTL4=\$508!      \ DMA module control 4                    
+DMAIV=\$50A!        \ DMA interrupt vector                    
 DMA0CTL=\$510!      \ DMA channel 0 control                   
 DMA0SAL=\$512!      \ DMA channel 0 source address low        
 DMA0SAH=\$514!      \ DMA channel 0 source address high       
@@ -336,30 +624,24 @@ DMA2SAH=\$534!      \ DMA channel 2 source address high
 DMA2DAL=\$536!      \ DMA channel 2 destination address low   
 DMA2DAH=\$538!      \ DMA channel 2 destination address high  
 DMA2SZ=\$53A!       \ DMA channel 2 transfer size             
-DMA2CTL=\$540!      \ DMA channel 3 control                   
-DMA2SAL=\$542!      \ DMA channel 3 source address low        
-DMA2SAH=\$544!      \ DMA channel 3 source address high       
-DMA2DAL=\$546!      \ DMA channel 3 destination address low   
-DMA2DAH=\$548!      \ DMA channel 3 destination address high  
-DMA2SZ=\$54A!       \ DMA channel 3 transfer size             
-DMA2CTL=\$550!      \ DMA channel 4 control                   
-DMA2SAL=\$552!      \ DMA channel 4 source address low        
-DMA2SAH=\$554!      \ DMA channel 4 source address high       
-DMA2DAL=\$556!      \ DMA channel 4 destination address low   
-DMA2DAH=\$558!      \ DMA channel 4 destination address high  
-DMA2SZ=\$55A!       \ DMA channel 4 transfer size             
-DMA2CTL=\$560!      \ DMA channel 5 control                   
-DMA2SAL=\$562!      \ DMA channel 5 source address low        
-DMA2SAH=\$564!      \ DMA channel 5 source address high       
-DMA2DAL=\$566!      \ DMA channel 5 destination address low   
-DMA2DAH=\$568!      \ DMA channel 5 destination address high  
-DMA2SZ=\$56A!       \ DMA channel 5 transfer size             
-DMACTL0=\$500!      \ DMA module control 0                    
-DMACTL1=\$502!      \ DMA module control 1                    
-DMACTL2=\$504!      \ DMA module control 2                    
-DMACTL3=\$506!      \ DMA module control 3                    
-DMACTL4=\$508!      \ DMA module control 4                    
-DMAIV=\$50A!        \ DMA interrupt vector                    
+DMA3CTL=\$540!      \ DMA channel 3 control                   
+DMA3SAL=\$542!      \ DMA channel 3 source address low        
+DMA3SAH=\$544!      \ DMA channel 3 source address high       
+DMA3DAL=\$546!      \ DMA channel 3 destination address low   
+DMA3DAH=\$548!      \ DMA channel 3 destination address high  
+DMA3SZ=\$54A!       \ DMA channel 3 transfer size             
+DMA4CTL=\$550!      \ DMA channel 4 control                   
+DMA4SAL=\$552!      \ DMA channel 4 source address low        
+DMA4SAH=\$554!      \ DMA channel 4 source address high       
+DMA4DAL=\$556!      \ DMA channel 4 destination address low   
+DMA4DAH=\$558!      \ DMA channel 4 destination address high  
+DMA4SZ=\$55A!       \ DMA channel 4 transfer size             
+DMA5CTL=\$560!      \ DMA channel 5 control                   
+DMA5SAL=\$562!      \ DMA channel 5 source address low        
+DMA5SAH=\$564!      \ DMA channel 5 source address high       
+DMA5DAL=\$566!      \ DMA channel 5 destination address low   
+DMA5DAH=\$568!      \ DMA channel 5 destination address high  
+DMA5SZ=\$56A!       \ DMA channel 5 transfer size             
 
 MPUCTL0=\$5A0!      \ MPU control 0             
 MPUCTL1=\$5A2!      \ MPU control 1             
@@ -634,7 +916,7 @@ CRC32RESRW1=\$98!       \ CRC32 result reverse word 1
 CRC32RESRW1=\$98E!      \ CRC32 result reverse word 0             
 CRC16DIW0=\$990!        \ CRC16 data input                        
 CRC16DIRBW0=\$996!      \ CRC16 data input reverse                
-CRC16INIRESW0=\$99!     \ CRC16 initialization and result word 0  
+CRC16INIRESW0=\$998!    \ CRC16 initialization and result word 0  
 CRC16RESRW1=\$99E!      \ CRC16 result reverse word 0             
 
 

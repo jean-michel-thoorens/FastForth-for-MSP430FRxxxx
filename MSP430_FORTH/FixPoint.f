@@ -11,7 +11,7 @@ PWR_STATE
 [DEFINED] {FIXPOINT} [IF] {FIXPOINT} [THEN]     \ remove {FIXPOINT} if outside core 
     \
 
-[DEFINED] ASM [UNDEFINED] {FIXPOINT} AND [IF]   \ assembler required, don't replicate {FIXPOINT} inside core
+[UNDEFINED] {FIXPOINT} [IF]   \ assembler required, don't replicate {FIXPOINT} inside core
     \
 
 MARKER {FIXPOINT}

@@ -25,7 +25,6 @@
 ! ======================================================================
 
 @define{@read{@mergepath{@inpath{};MSP430FR5994.pat;}}}
-@define{@read{@mergepath{@inpath{};MSP430FR5x6x_FastForth.pat;}}}
 @define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
 @define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 
@@ -177,36 +176,50 @@ SD_BUS=\$04C0!  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
 ! APPLICATION I/O :
 ! ============================================
 LED1_OUT=\$202!
-led1=1!             P1.0
+led1=1!                 P1.0
 
 LED2_OUT=\$202!
-led2=2!             P1.1
+led2=2!                 P1.1
 
 SW1_IN=\$240!
-SW1=\$40!           P5.6
+SW1=\$40!               P5.6
 
 SW2_IN=\$240!
-SW2=\$20!           P5.5
+SW2=\$20!               P5.5
 
 LCDVo_DIR=\$204!
-LCDVo_SEL=\$20A!      SEL0
-LCDVo=\$20!         P1.5
+LCDVo_SEL=\$20A!        SEL0
+LCDVo=\$20!             P1.5
+!LCD timer
+LCD_TIM_CTL=\$3C0!      TB0CTL
+LCD_TIM_CCTL2=\$3C6!    TB0CCTL2
+LCD_TIM_CCR0=\$3D2!     TB0CCR0
+LCD_TIM_CCR2=\$3D6!     TB0CCR2
+LCD_TIM_EX0=\$3E0!      TB0EX0
+
 
 LCD_CMD_IN=\$241!
 LCD_CMD_OUT=\$243!
 LCD_CMD_DIR=\$245!
 LCD_CMD_REN=\$247!
-LCD_RS=2!           P6.1
-LCD_RW=1!           P6.0
-LCD_EN=4!           P6.2
+LCD_RS=2!               P6.1
+LCD_RW=1!               P6.0
+LCD_EN=4!               P6.2
 LCD_CMD=7!
 
 LCD_DB_IN=\$220!
 LCD_DB_OUT=\$222!
 LCD_DB_DIR=\$224!
 LCD_DB_REN=\$226!
-LCD_DB=\$0F!        P3.3210
+LCD_DB=\$0F!            P3.3210
 
+
+!WATCHDOG timer
+WDT_TIM_CTL=\$340!      TA0CTL
+WDT_TIM_CCTL0=\$342!    TA0CCTL0
+WDT_TIM_CCR0=\$352!     TA0CCR0
+WDT_TIM_EX0=\$360!      TA0EX0
+WDT_TIM_0_Vec=\$FFEA!   TA0_0_Vec
 
 IR_IN=\$200!  
 IR_OUT=\$202! 
@@ -215,25 +228,29 @@ IR_REN=\$206!
 IR_IES=\$208!
 IR_IE=\$20A!
 IR_IFG=\$20C!
-IR_Vec=\$FFDE!        P1 int
+IR_Vec=\$FFDE!          P1 int
 RC5_=RC5_!
-RC5=4!              P1.2
+RC5=4!                  P1.2
+!IR_RC5 timer
+RC5_TIM_CTL=\$380!      TA1CTL
+RC5_TIM_R=\$390!        TA1R
+RC5_TIM_EX0=\$3A0!      TA1EX0
 
 
 I2CSM_IN=\$261!
 I2CSM_OUT=\$263!
 I2CSM_DIR=\$265!
 I2CSM_REN=\$267!
-SMSDA=4!         P8.2
-SMSCL=2!         P8.1
+SMSDA=4!                P8.2
+SMSCL=2!                P8.1
 SM_BUS=6!
 
 I2CSMM_IN=\$261!
 I2CSMM_OUT=\$263!
 I2CSMM_DIR=\$265!
 I2CSMM_REN=\$267!
-SMMSDA=4!        P8.2
-SMMSCL=2!        P8.1
+SMMSDA=4!               P8.2
+SMMSCL=2!               P8.1
 SMM_BUS=6!
 
 I2CMM_IN=\$260!
@@ -241,9 +258,9 @@ I2CMM_OUT=\$262!
 I2CMM_DIR=\$264!
 I2CMM_REN=\$266!
 I2CMM_SEL1=\$26C!
-I2CMM_Vec=\$FFBC!     UCB2_Vec
-MMSDA=1!            P7.0
-MMSCL=2!            P7.1
+I2CMM_Vec=\$FFBC!       UCB2_Vec
+MMSDA=1!                P7.0
+MMSCL=2!                P7.1
 MM_BUS=3!
 
 I2CM_IN=\$260!
@@ -252,8 +269,8 @@ I2CM_DIR=\$264!
 I2CM_REN=\$266!
 I2CM_SEL1=\$26C!
 I2CM_Vec=\$FFBC!
-MSDA=1!             P7.0
-MSCL=2!             P7.1
+MSDA=1!                 P7.0
+MSCL=2!                 P7.1
 M_BUS=3!
 
 I2CS_IN=\$260!
@@ -262,7 +279,7 @@ I2CS_DIR=\$264!
 I2CS_REN=\$266!
 I2CS_SEL1=\$26C!
 I2CS_Vec=\$FFBC!
-SSDA=1!             P7.0
-SSCL=2!             P7.1
+SSDA=1!                 P7.0
+SSCL=2!                 P7.1
 S_BUS=3!
 

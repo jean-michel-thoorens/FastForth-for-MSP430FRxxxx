@@ -45,10 +45,6 @@ COMPEQUAL
         FORTHWORDIMM "[THEN]"   ; do nothing
         mNEXT
 
-ONEMIN
-        SUB #1,TOS
-        mNEXT
-
 ;[ELSE]
 ;Compilation:
 ;Perform the execution semantics given below.
@@ -79,8 +75,9 @@ BRACKETELSE3                            ;           ELSE
         .byte   6,"[ELSE]"              ; 
         .word   COMPARE                 ;               COMPARE
         .word   QZBRAN,BRACKETELSE5     ;               0= IF
-        .word   TWODROP,ONEMIN          ;                   2DROP 1-
-        .word   DUP,QBRAN,BRACKETELSE4  ;                   DUP IF
+        .word   TWODROP,ONEMINUS        ;                   2DROP 1-
+;        .word   DUP,QBRAN,BRACKETELSE4  ;                  DUP IF
+        .word   DUP,QBRAN,BRACKETELSE7  ;
         .word   ONEPLUS                 ;                       1+
 BRACKETELSE4                            ;                   THEN
         .word   BRAN,BRACKETELSE7       ;               (ENDIF)
@@ -89,32 +86,24 @@ BRACKETELSE5                            ;               ELSE
         .byte   6,"[THEN]"              ; 
         .word   COMPARE                 ;                   COMPARE
         .word   QZBRAN,BRACKETELSE6     ;                   0= IF
-        .word   ONEMIN                  ;                       1-
+        .word   ONEMINUS                ;                       1-
 BRACKETELSE6                            ;                   THEN
 BRACKETELSE7                            ;               THEN
 BRACKETELSE8                            ;           THEN
         .word   QDUP                    ;           ?DUP
-        .word   QZBRAN,BRACKETELSE9     ;           0= IF
+;        .word   QZBRAN,BRACKETELSE9     ;           0= IF
+        .word   QZBRAN,BRACKETELSE2     ;
         .word   EXIT                    ;               EXIT
-BRACKETELSE9                            ;           THEN
-        .word   BRAN,BRACKETELSE2       ;       REPEAT
+;BRACKETELSE9                            ;           THEN
+;        .word   BRAN,BRACKETELSE2       ;       REPEAT
 BRACKETELSE10                           ;
         .word   TWODROP                 ;       2DROP
         .word   XSQUOTE                 ;
-;        .byte   3,13,107,111            ;
-;        .word   TYPE,SPACE              ;       CR ." ko "     to show false branch of conditionnal compilation
         .byte   5,13,10,"ko "           ;
         .word   TYPE                    ;       CR+LF ." ko "     to show false branch of conditionnal compilation
-        .word   FCIB,DUP,CPL            ;                   )  
-                                        ;                   > REFILL
-        .word   ACCEPT                  ;       -- CIB len  )
-        FORTHtoASM                      ;
-        MOV     #0,&TOIN                ;
-        MOV     TOS,&SOURCE_LEN         ;       -- CIB len
-        MOV     @PSP+,&SOURCE_ADR       ;       -- len' 
-        MOV     @PSP+,TOS               ;       --
-        MOV     #BRACKETELSE1,IP        ;   AGAIN
-        mNEXT                           ; 78 words
+        .word   REFILL                  ;       REFILL
+        .word   SETIB                   ;               SET Input Buffer pointers SOURCE_LEN, SOURCE_ORG and clear >IN
+        .word   BRAN,BRACKETELSE1       ;   AGAIN
 
 
 ;[IF]
@@ -188,4 +177,6 @@ MARKER_DOES FORTHtoASM                  ; execution part
             SUB     #2,Y                ;1 Y = LFA
             MOV     Y,2(W)              ;3 [BODY+2] = LFA = DP to be restored
             ADD     #4,&DDP             ;3
-                                        ; the next is GOOD_CSP in forthMSP430FR.asm
+
+
+                                        ; the next in forthMSP430FR.asm is GOOD_CSP

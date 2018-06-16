@@ -25,7 +25,6 @@
 ! ======================================================================
 
 @define{@read{@mergepath{@inpath{};MSP430FR5969.pat;}}}
-@define{@read{@mergepath{@inpath{};MSP430FR5x6x_FastForth.pat;}}}
 @define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
 @define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 
@@ -243,6 +242,12 @@ SW2=\$02!           P1.1
 LCDVo_DIR=\$205!    P2
 LCDVo_SEL=\$20B!    SEL0
 LCDVo=\$04
+!LCD timer
+LCD_TIM_CTL=\$3C0!      TB0CTL
+LCD_TIM_CCTL2=\$3C6!    TB0CCTL2
+LCD_TIM_CCR0=\$3D2!     TB0CCR0
+LCD_TIM_CCR2=\$3D6!     TB0CCR2
+LCD_TIM_EX0=\$3E0!      TB0EX0
 
 LCD_CMD_IN=\$220!   P3
 LCD_CMD_OUT=\$222
@@ -260,6 +265,13 @@ LCD_DB_REN=\$326
 LCD_DB=\$0F
 
 
+!WATCHDOG timer
+WDT_TIM_CTL=\$340!      TA0CTL
+WDT_TIM_CCTL0=\$342!    TA0CCTL0
+WDT_TIM_CCR0=\$352!     TA0CCR0
+WDT_TIM_EX0=\$360!      TA0EX0
+WDT_TIM_0_Vec=\$FFEA!   TA0_0_Vec
+
 IR_IN=\$221
 IR_OUT=\$223
 IR_DIR=\$225
@@ -267,33 +279,38 @@ IR_REN=\$227
 IR_IES=\$239
 IR_IE=\$23B
 IR_IFG=\$23D
-IR_Vec=\$FFD0!      P4 int
-RC5=\$01!           P4.0
+IR_Vec=\$FFD0!          P4 int
+RC5=\$01!               P4.0
+!IR_RC5 timer
+RC5_TIM_CTL=\$380!      TA1CTL
+RC5_TIM_R=\$390!        TA1R
+RC5_TIM_EX0=\$3A0!      TA1EX0
+
 
 I2CSM_IN=\$200
 I2CSM_OUT=\$202
 I2CSM_DIR=\$204
 I2CSM_REN=\$206
-SMSDA=\$04!         P1.2
-SMSCL=\$08!         P1.3
+SMSDA=\$04!             P1.2
+SMSCL=\$08!             P1.3
 SM_BUS=\$0C
 
 I2CSMM_IN=\$200
 I2CSMM_OUT=\$202
 I2CSMM_DIR=\$204
 I2CSMM_REN=\$206
-SMMSDA=\$04!        P1.2
-SMMSCL=\$08!        P1.3
+SMMSDA=\$04!            P1.2
+SMMSCL=\$08!            P1.3
 SMM_BUS=\$0C
 
 I2CMM_IN=\$200
 I2CMM_OUT=\$202
 I2CMM_DIR=\$204
 I2CMM_REN=\$206
-I2CMM_SEL=\$20C!    SEL1
-I2CMM_Vec=\$FFEE!   eUSCIB0_INT
-MMSDA=\$40!         P1.6
-MMSCL=\$80!         P1.7
+I2CMM_SEL=\$20C!        SEL1
+I2CMM_Vec=\$FFEE!       eUSCIB0_INT
+MMSDA=\$40!             P1.6
+MMSCL=\$80!             P1.7
 MM_BUS=\$C0
 
 I2CM_IN=\$200
@@ -301,9 +318,9 @@ I2CM_OUT=\$202
 I2CM_DIR=\$204
 I2CM_REN=\$206
 I2CM_SEL=\$20C
-I2CM_Vec=\$FFEE!    eUSCIB0_INT
-MSDA=\$40!          P1.6
-MSCL=\$80!          P1.7
+I2CM_Vec=\$FFEE!        eUSCIB0_INT
+MSDA=\$40!              P1.6
+MSCL=\$80!              P1.7
 M_BUS=\$C0
 
 I2CS_IN=\$200
@@ -311,8 +328,8 @@ I2CS_OUT=\$202
 I2CS_DIR=\$204
 I2CS_REN=\$206
 I2CS_SEL=\$20C
-I2CS_Vec=\$FFEE!    eUSCIB0_INT
-SSDA=\$40!          P1.6
-SSCL=\$80!          P1.7
+I2CS_Vec=\$FFEE!        eUSCIB0_INT
+SSDA=\$40!              P1.6
+SSCL=\$80!              P1.7
 S_BUS=\$C0
 

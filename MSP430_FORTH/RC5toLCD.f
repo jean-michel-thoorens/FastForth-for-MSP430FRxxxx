@@ -4,10 +4,10 @@
 
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
-\ MSP_EXP430FR4133  CHIPSTICK_FR2433
+\ MSP_EXP430FR2355
 
-\ MY_MSP430FR5738_1 MY_MSP430FR5738     MY_MSP430FR5948     MY_MSP430FR5948_1   
-\ JMJ_BOX
+\ MY_MSP430FR5738   MY_MSP430FR5738_1 MY_MSP430FR5738_2   
+\ MY_MSP430FR5948   MY_MSP430FR5948_1   
 
     \
 \ Copyright (C) <2016>  <J.M. THOORENS>
@@ -60,7 +60,7 @@
 \        LCDVo current consumption ~ 500 uA.
 
 \ ===================================================================================
-\ notice : adjust TA0EX0,TB0CTL,TB0EX0 and 20_us to the target frequency if <> 8MHz !
+\ notice : adjust WDT_TIM_EX0,LCD_TIM_CTL,LCD_TIM_EX0 and 20_us to the target frequency if <> 8MHz !
 \ ===================================================================================
 
 
@@ -74,7 +74,7 @@
 \              / \ 1N4148   |
 \              ---          |
 \          100n |    2k2    |
-\ TB0.2 >---||--+--^/\/\/v--+---->  3 LCD_Vo (= 0V6 without modulation)
+\ LCD_TIM_.2 >---||--+--^/\/\/v--+---->  3 LCD_Vo (= 0V6 without modulation)
 \       ------------------------->  4 LCD_RW
 \       ------------------------->  5 LCD_RW
 \       ------------------------->  6 LCD_EN
@@ -140,11 +140,11 @@ ENDCODE
 \     \
 
 CODE 20_US                  \ n --      n * 20 us
-BEGIN                       \ here we presume that TB0IFG = 1...
+BEGIN                       \ here we presume that LCD_TIM_IFG = 1...
     BEGIN
-        BIT #1,&TB0CTL      \ 3
-    0<> UNTIL               \ 2         loop until TB0IFG set
-    BIC #1,&TB0CTL          \ 3         clear TB0IFG
+        BIT #1,&LCD_TIM_CTL      \ 3
+    0<> UNTIL               \ 2         loop until LCD_TIM_IFG set
+    BIC #1,&LCD_TIM_CTL          \ 3         clear LCD_TIM_IFG
     SUB #1,TOS              \ 1
 U< UNTIL                    \ 2 ...so add a dummy loop with U< instead of 0=
 MOV @PSP+,TOS               \ 2
@@ -207,6 +207,18 @@ ENDCODE
 ;
     \
 
+[UNDEFINED] OR [IF]
+    \
+\ https://forth-standard.org/standard/core/OR
+\ C OR     x1 x2 -- x3           logical OR
+CODE OR
+BIS @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+    \
+
+[THEN]
+    \
 : LCD_Entry_set     $04 OR LCD_WrF ;
     \
 : LCD_DSP_Ctrl      $08 OR LCD_WrF ;
@@ -252,24 +264,24 @@ ASM WDT_INT                     \ Watchdog interrupt routine, warning : not FORT
 \ XOR.B #LED1,&LED1_OUT           \ to visualise WDT
 BIT.B #SW2,&SW2_IN              \ test switch S2
 0= IF                           \ case of switch S2 pressed
-    CMP #19,&TB0CCR2             \ maxi Ton = 19/20 & VDD=3V6 ==> LCD_Vo = -1V4
+    CMP #19,&LCD_TIM_CCR2       \ maxi Ton = 19/20 & VDD=3V6 ==> LCD_Vo = -1V4
     U< IF
-        ADD #1,&TB0CCR2         \ action for switch S2 (P2.5) : 150 mV / increment
+        ADD #1,&LCD_TIM_CCR2    \ action for switch S2 (P2.5) : 150 mV / increment
     THEN
 ELSE
     BIT.B #SW1,&SW1_IN          \ test switch S1 input
     0= IF                       \ case of Switch S1 pressed
-        CMP #3,&TB0CCR2         \ mini Ton = 3/20 & VDD=3V6 ==> LCD_Vo = 0V
+        CMP #3,&LCD_TIM_CCR2    \ mini Ton = 3/20 & VDD=3V6 ==> LCD_Vo = 0V
         U>= IF                  \
-            SUB #1,&TB0CCR2     \ action for switch S1 (P2.6) : -150 mV / decrement
+           SUB #1,&LCD_TIM_CCR2 \ action for switch S1 (P2.6) : -150 mV / decrement
         THEN                    \
     THEN                        \
 THEN                            \
 BW1                             \ from quit on truncated RC5 message
 BW2                             \ from repeated RC5 command
 BW3                             \ from end of RC5_INT
-BIC #$78,0(RSP)                 \4  SCG0,OSCOFF,CPUOFF and GIE are OFF in retiSR to force LPM0_LOOP despite pending interrupt
-RETI                            \5
+BIC #$78,0(RSP)                 \ 4  SCG0,OSCOFF,CPUOFF and GIE are OFF in retiSR to force LPM0_LOOP despite pending interrupt
+RETI                            \ 5
 ENDASM
     \
 
@@ -280,20 +292,20 @@ ASM RC5_INT                     \   wake up on Px.RC5 change interrupt
 \ ******************************\
 \                               \ in :  SR(9)=old Toggle bit memory (ADD on)
 \                               \       SMclock = 8|16|24 MHz
-\                               \ use : T,W,X,Y, TA1 timer, TA1R register
+\                               \ use : T,W,X,Y, RC5_TIM_ timer, RC5_TIM_R register
 \                               \ out : X = 0 C6 C5 C4 C3 C2 C1 C0
 \                               \       SR(9)=new Toggle bit memory (ADD on)
 \ ******************************\
 \ RC5_FirstStartBitHalfCycle:   \
-\ ******************************\                division in TA1CTL (SMCLK/1|SMCLK/1|SMCLK/2|SMCLK/4|SMCLK/8)
-\ MOV #0,&TA1EX0                \ predivide by 1 in TA1EX0 register ( 125kHz|  1MHz |  2MHZ |  4MHZ |  8MHZ ), reset value
-  MOV #1,&TA1EX0                \ predivide by 2 in TA1EX0 register ( 250kHZ|  2MHz |  4MHZ |  8MHZ | 16MHZ )
-\ MOV #2,&TA1EX0                \ predivide by 3 in TA1EX0 register ( 375kHz|  3MHz |  6MHZ | 12MHZ | 24MHZ )
-\ MOV #3,&TA1EX0                \ predivide by 4 in TA1EX0 register ( 500kHZ|  4MHz |  8MHZ | 16MHZ )
-\ MOV #4,&TA1EX0                \ predivide by 6 in TA1EX0 register ( 625kHz|  5MHz | 10MHZ | 20MHZ )
-\ MOV #5,&TA1EX0                \ predivide by 6 in TA1EX0 register ( 750kHz|  6MHz | 12MHZ | 24MHZ )
-\ MOV #6,&TA1EX0                \ predivide by 7 in TA1EX0 register ( 875kHz|  7MHz | 14MHZ | 28MHZ )
-\ MOV #7,&TA1EX0                \ predivide by 8 in TA1EX0 register (  1MHz |  8MHz | 16MHZ | 32MHZ )
+\ ******************************\                division in RC5_TIM_CTL (SMCLK/1|SMCLK/1|SMCLK/2|SMCLK/4|SMCLK/8)
+\ MOV #0,&RC5_TIM_EX0           \ predivide by 1 in RC5_TIM_EX0 register ( 125kHz|  1MHz |  2MHZ |  4MHZ |  8MHZ ), reset value
+  MOV #1,&RC5_TIM_EX0           \ predivide by 2 in RC5_TIM_EX0 register ( 250kHZ|  2MHz |  4MHZ |  8MHZ | 16MHZ )
+\ MOV #2,&RC5_TIM_EX0           \ predivide by 3 in RC5_TIM_EX0 register ( 375kHz|  3MHz |  6MHZ | 12MHZ | 24MHZ )
+\ MOV #3,&RC5_TIM_EX0           \ predivide by 4 in RC5_TIM_EX0 register ( 500kHZ|  4MHz |  8MHZ | 16MHZ )
+\ MOV #4,&RC5_TIM_EX0           \ predivide by 6 in RC5_TIM_EX0 register ( 625kHz|  5MHz | 10MHZ | 20MHZ )
+\ MOV #5,&RC5_TIM_EX0           \ predivide by 6 in RC5_TIM_EX0 register ( 750kHz|  6MHz | 12MHZ | 24MHZ )
+\ MOV #6,&RC5_TIM_EX0           \ predivide by 7 in RC5_TIM_EX0 register ( 875kHz|  7MHz | 14MHZ | 28MHZ )
+\ MOV #7,&RC5_TIM_EX0           \ predivide by 8 in RC5_TIM_EX0 register (  1MHz |  8MHz | 16MHZ | 32MHZ )
 MOV #1778,X                     \ RC5_Period * 1us
 \ MOV #222,X                    \ RC5_Period * 8us (SMCLK/1 and first column above)
 MOV #14,W                       \ count of loop
@@ -301,17 +313,17 @@ BEGIN                           \
 \ ******************************\
 \ RC5_HalfCycle                 \ <--- loop back ---+ with readjusted RC5_Period
 \ ******************************\                   |
-\   MOV #%1000100100,&TA1CTL    \ (re)start timer_A | SMCLK/1 time interval,free running,clear TA1_IFG and TA1R
-\   MOV #%1002100100,&TA1CTL    \ (re)start timer_A | SMCLK/2 time interval,free running,clear TA1_IFG and TA1R
-\   MOV #%1010100100,&TA1CTL    \ (re)start timer_A | SMCLK/4 time interval,free running,clear TA1_IFG and TA1R
-    MOV #%1011100100,&TA1CTL    \ (re)start timer_A | SMCLK/8 time interval,free running,clear TA1_IFG and TA1R
+\ MOV #%1000100100,&RC5_TIM_CTL   \ (re)start timer_A | SMCLK/1 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
+\ MOV #%1002100100,&RC5_TIM_CTL   \ (re)start timer_A | SMCLK/2 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
+\ MOV #%1010100100,&RC5_TIM_CTL   \ (re)start timer_A | SMCLK/4 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
+MOV #%1011100100,&RC5_TIM_CTL   \ (re)start timer_A | SMCLK/8 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
 \ RC5_Compute_3/4_Period:       \                   |
     RRUM    #1,X                \ X=1/2 cycle       |
     MOV     X,Y                 \                   ^
     RRUM    #1,Y                \ Y=1/4
     ADD     X,Y                 \ Y=3/4 cycle
-    BEGIN   CMP Y,&TA1R         \3 wait 1/2 + 3/4 cycle = n+1/4 cycles 
-    U>= UNTIL                   \2
+    BEGIN   CMP Y,&RC5_TIM_R    \ 3 wait 1/2 + 3/4 cycle = n+1/4 cycles 
+    U>= UNTIL                   \ 2
 \ ******************************\
 \ RC5_SampleOnFirstQuarter      \ at n+1/4 cycles, we sample RC5_input, ST2/C6 bit first
 \ ******************************\
@@ -325,19 +337,19 @@ BEGIN                           \
 0<> WHILE                       \ ----> out of loop ----+
     ADD X,Y                     \                       |   Y = n+3/4 cycles = time out because n+1/2 cycles edge is always present
     BEGIN                       \                       |
-        MOV &TA1R,X             \3                      |   X grows from n+1/4 up to n+3/4 cycles
-        CMP Y,X                 \1                      |   cycle time out of bound ?
-        U>= IF                  \2                  ^   |   yes:
-            BIC #$30,&TA1CTL    \                   |   |      stop timer
-            GOTO BW1            \                   |   |      quit on truncated RC5 message
+        MOV &RC5_TIM_R,X        \ 3                     |   X grows from n+1/4 up to n+3/4 cycles
+        CMP Y,X                 \ 1                     |   cycle time out of bound ?
+        U>= IF                  \ 2                 ^   |   yes:
+        BIC #$30,&RC5_TIM_CTL   \                   |   |      stop timer
+        GOTO BW1                \                   |   |      quit on truncated RC5 message
         THEN                    \                   |   |
-        BIT.B #RC5,&IR_IFG      \3                  |   |   n+1/2 cycles edge is always present
-    0<> UNTIL                   \2                  |   |
+        BIT.B #RC5,&IR_IFG      \ 3                 |   |   n+1/2 cycles edge is always present
+    0<> UNTIL                   \ 2                 |   |
 REPEAT                          \ ----> loop back --+   |   with X = new RC5_period value
 \ ******************************\                       |
 \ RC5_SampleEndOf:              \ <---------------------+
 \ ******************************\
-BIC #$30,&TA1CTL                \   stop timer
+BIC #$30,&RC5_TIM_CTL           \   stop timer
 \ ******************************\
 \ RC5_ComputeNewRC5word         \
 \ ******************************\
@@ -396,62 +408,62 @@ ENDASM                          \
 
 CODE START                      \
 \ ------------------------------\
-\ TB0CTL =  %0000 0010 1001 0100\$3C0
-\               - -             \CNTL Counter lentgh \ 00 = 16 bits
-\                   --          \TBSSEL TimerB clock select \ 10 = SMCLK
-\                      --       \ID input divider \ 10 = /4
-\                        --     \MC Mode Control \ 01 = up to TB0CCR0
-\                            -  \TBCLR TimerB Clear
-\                             - \TBIE
-\                              -\TBIFG
+\ LCD_TIM_CTL =  %0000 0010 1001 0100\$3C0
+\                    - -             \CNTL Counter lentgh \ 00 = 16 bits
+\                        --          \TBSSEL TimerB clock select \ 10 = SMCLK
+\                           --       \ID input divider \ 10 = /4
+\                             --     \MC Mode Control \ 01 = up to LCD_TIM_CCR0
+\                                 -  \TBCLR TimerB Clear
+\                                  - \TBIE
+\                                   -\TBIFG
 \ -------------------------------\
-\ TB0CCTLx = %0000 0000 0110 0000\$3C{2,4,6,8,A,C,E}
-\             --                 \CM Capture Mode
-\               --               \CCIS
-\                  -             \SCS
-\                   --           \CLLD
-\                     -          \CAP
-\                       ---      \OUTMOD \ 011 = set/reset
-\                          -     \CCIE
-\                            -   \CCI
-\                             -  \OUT
-\                              - \COV
-\                               -\CCIFG
+\ LCD_TIM_CCTLx = %0000 0000 0110 0000\$3C{2,4,6,8,A,C,E}
+\                  --                 \CM Capture Mode
+\                    --               \CCIS
+\                       -             \SCS
+\                        --           \CLLD
+\                          -          \CAP
+\                            ---      \OUTMOD \ 011 = set/reset
+\                               -     \CCIE
+\                                 -   \CCI
+\                                  -  \OUT
+\                                   - \COV
+\                                    -\CCIFG
 \ -------------------------------\
-\ TB0CCRx                        \
+\ LCD_TIM_CCRx                   \
 \ -------------------------------\
-\ TB0EX0                         \ 
+\ LCD_TIM_EX0                    \ 
 \ ------------------------------\
-\ set TB0 to make 50kHz PWM     \ for LCD_Vo, works without interrupt
+\ set LCD_TIM_ to make 50kHz PWM \ for LCD_Vo, works without interrupt
 \ ------------------------------\
-\    MOV #%1000010100,&TB0CTL   \ SMCLK/1, up mode, clear timer, no int
-\    MOV #0,&TB0EX0             \ predivide by 1 in TB0EX0 register (1 MHZ)
+\    MOV #%1000010100,&LCD_TIM_CTL \ SMCLK/1, up mode, clear timer, no int
+\    MOV #0,&LCD_TIM_EX0        \ predivide by 1 in LCD_TIM_EX0 register (1 MHZ)
 \ ------------------------------\
-\    MOV #%1001010100,&TB0CTL   \ SMCLK/2, up mode, clear timer, no int
-\    MOV #1,&TB0EX0             \ predivide by 2 in TB0EX0 register (2 MHZ)
+\    MOV #%1001010100,&LCD_TIM_CTL \ SMCLK/2, up mode, clear timer, no int
+\    MOV #1,&LCD_TIM_EX0        \ predivide by 2 in LCD_TIM_EX0 register (2 MHZ)
 \ ------------------------------\
-\    MOV #%1010010100,&TB0CTL   \ SMCLK/4, up mode, clear timer, no int
-\    MOV #1,&TB0EX0             \ predivide by 2 in TB0EX0 register (4 MHZ)
+\    MOV #%1010010100,&LCD_TIM_CTL \ SMCLK/4, up mode, clear timer, no int
+\    MOV #1,&LCD_TIM_EX0        \ predivide by 2 in LCD_TIM_EX0 register (4 MHZ)
 \ ------------------------------\
-\    MOV #%1011010100,&TB0CTL    \ SMCLK/8, up mode, clear timer, no int
-\    MOV #0,&TB0EX0              \ predivide by 1 in TB0EX0 register (8 MHZ)
+\    MOV #%1011010100,&LCD_TIM_CTL \ SMCLK/8, up mode, clear timer, no int
+\    MOV #0,&LCD_TIM_EX0        \ predivide by 1 in LCD_TIM_EX0 register (8 MHZ)
 \ ------------------------------\
-    MOV #%1011010100,&TB0CTL   \ SMCLK/8, up mode, clear timer, no int
-    MOV #1,&TB0EX0             \ predivide by 2 in TB0EX0 register (16 MHZ)
+    MOV #%1011010100,&LCD_TIM_CTL \ SMCLK/8, up mode, clear timer, no int
+    MOV #1,&LCD_TIM_EX0         \ predivide by 2 in LCD_TIM_EX0 register (16 MHZ)
 \ ------------------------------\
-\    MOV #%1011010100,&TB0CTL   \ SMCLK/8, up mode, clear timer, no int
-\    MOV #2,&TB0EX0             \ predivide by 3 in TB0EX0 register (24 MHZ)
+\    MOV #%1011010100,&LCD_TIM_CTL \ SMCLK/8, up mode, clear timer, no int
+\    MOV #2,&LCD_TIM_EX0        \ predivide by 3 in LCD_TIM_EX0 register (24 MHZ)
 \ ------------------------------\
-    MOV #19,&TB0CCR0            \ 19+1=20*1us=20us
+    MOV #19,&LCD_TIM_CCR0       \ 19+1=20*1us=20us
 \ ------------------------------\
-\ set TB0.2 to generate PWM for LCD_Vo
+\ set LCD_TIM_.2 to generate PWM for LCD_Vo
 \ ------------------------------\
-    MOV #%01100000,&TB0CCTL2    \ output mode = set/reset \ clear CCIFG
-    MOV #10,&TB0CCR2            \ contrast adjust : 10/20 ==> LCD_Vo = -0V6|+3V6 (Vcc=3V6)
-\    MOV #12,&TB0CCR2            \ contrast adjust : 12/20 ==> LCD_Vo = -1V4|+3V3 (Vcc=3V3)
+    MOV #%01100000,&LCD_TIM_CCTL2 \ output mode = set/reset \ clear CCIFG
+    MOV #10,&LCD_TIM_CCR2       \ contrast adjust : 10/20 ==> LCD_Vo = -0V6|+3V6 (Vcc=3V6)
+\    MOV #12,&LCD_TIM_CCR2        \ contrast adjust : 12/20 ==> LCD_Vo = -1V4|+3V3 (Vcc=3V3)
 \ ------------------------------\
     BIS.B #LCDVo,&LCDVo_DIR     \
-    BIS.B #LCDVo,&LCDVo_SEL     \ SEL.2 TB0.2
+    BIS.B #LCDVo,&LCDVo_SEL     \ SEL.2
 \ ------------------------------\
     BIS.B #LCD_CMD,&LCD_CMD_DIR \ lcd_cmd as outputs
     BIC.B #LCD_CMD,&LCD_CMD_REN \ lcd_cmd pullup/down disable
@@ -465,7 +477,7 @@ CODE START                      \
     BIC.B #RC5,&IR_IFG          \ reset RC5_Int flag
     MOV #RC5_INT,&IR_Vec        \ init interrupt vector
 \ ******************************\
-\ init WatchDog TA0             \ eUSCI_A0 (FORTH terminal) has higher priority than TA0
+\ init WatchDog WDT_TIM_             \ eUSCI_A0 (FORTH terminal) has higher priority than WDT_TIM_
 \ ******************************\
 \              %01 0001 0100    \ TAxCTL
 \               --              \ TASSEL    CLK = ACLK = LFXT = 32768 Hz
@@ -475,22 +487,22 @@ CODE START                      \
 \                         -     \ TAIE
 \                          -    \ TAIFG
 \ ------------------------------\
-    MOV #%0100010100,&TA0CTL    \ start TA0, ACLK, up mode, disable int, 
+    MOV #%0100010100,&WDT_TIM_CTL \ start WDT_TIM_, ACLK, up mode, disable int, 
 \ ------------------------------\
 \                        000    \ TAxEX0
 \                        ---    \ TAIDEX    pre divisor
 \ ------------------------------\
 \          %0000 0000 0000 0101 \ TAxCCR0
-    MOV ##1638,&TA0CCR0         \ init WDT for LFXT: 32768/20=1638 ==> 50ms
-\    MOV ##400,&TA0CCR0          \ init WDT for VLO: 8000/20=400 ==> 50ms
+    MOV ##1638,&WDT_TIM_CCR0    \ init WDT for LFXT: 32768/20=1638 ==> 50ms
+\    MOV ##400,&WDT_TIM_CCR0      \ init WDT for VLO: 8000/20=400 ==> 50ms
 \ ------------------------------\
 \          %0000 0000 0001 0000 \ TAxCCTL0
 \                   -           \ CAP capture/compare mode = compare
 \                        -      \ CCIEn
 \                             - \ CCIFGn
-    MOV #%10000,&TA0CCTL0       \ enable compare interrupt, clear CCIFG0
+    MOV #%10000,&WDT_TIM_CCTL0  \ enable compare interrupt, clear CCIFG0
 \ ------------------------------\
-    MOV #WDT_INT,&TA0_0_Vec     \ for only CCIFG0 int, this interrupt clears automatically CCIFG0
+    MOV #WDT_INT,&WDT_TIM_0_Vec \ for only CCIFG0 int, this interrupt clears automatically CCIFG0
 \ ------------------------------\
 \ define LPM mode for ACCEPT    \
 \ ------------------------------\
@@ -533,9 +545,9 @@ LO2HI                           \ no need to push IP because (WARM) resets the R
 \    NOECHO                      \ uncomment to run this app without terminal connexion
     CR
     ."    RC5toLCD is running. Type STOP to quit"
-    LIT RECURSE IS WARM         \ insert this START routine between WARM and (WARM)...
-    (WARM)                      \ ...and continue with (WARM), must be the START last statement.
-;
+    LIT RECURSE IS WARM         \ replace WARM by this START routine
+    ABORT                       \ and continue with the next word after WARM...
+;                               \ ...until interpreter falls in sleep mode within ACCEPT.
     \
 
 CODE STOP                   \ stops multitasking, must to be used before downloading app

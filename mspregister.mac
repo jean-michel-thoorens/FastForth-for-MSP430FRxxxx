@@ -1,13 +1,13 @@
                 save
-                listing off   ; kein Listing über diesen File
+                listing off   ; kein Listing uber diesen File
 
 ;****************************************************************************
 ;*                                                                          *
 ;*   AS 1.41 - Datei REGMSP.INC von Alfred Arnold                           *
 ;*   					 			            *
-;*   Sinn : enthält Makro- und Registerdefinitionen für den MSP430          *
+;*   Sinn : enthält Makro- und Registerdefinitionen fu den MSP430          *
 ;* 									    *
-;*   letzte Änderungen : 2002-01-11                                         *
+;*   letzte underungen : 2002-01-11                                         *
 ;*                       2010/2011/2012 erweitert von Matthias Koch         *
 ;*                                                                          *
 ;****************************************************************************

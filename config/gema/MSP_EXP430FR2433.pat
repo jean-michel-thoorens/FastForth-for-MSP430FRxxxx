@@ -25,9 +25,8 @@
 ! ======================================================================
 
 @define{@read{@mergepath{@inpath{};MSP430FR2433.pat;}}}
-@define{@read{@mergepath{@inpath{};MSP430FR2x4x_FastForth.pat;}}}
 @define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
-@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
+!@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 
 ! ======================================================================
 ! INIT MSP-EXP430FR2433 board

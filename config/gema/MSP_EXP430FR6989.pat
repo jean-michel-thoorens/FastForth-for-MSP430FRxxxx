@@ -25,7 +25,6 @@
 ! ======================================================================
 
 @define{@read{@mergepath{@inpath{};MSP430FR6989.pat;}}}
-@define{@read{@mergepath{@inpath{};MSP430FR5x6x_FastForth.pat;}}}
 @define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
 @define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 
@@ -150,6 +149,13 @@ LCDVo_DIR=\$224!
 LCDVo_SEL=\$22C!  SEL1
 LCDVo=\$40!     P3.6
 
+!LCD timer
+LCD_TIM_CTL=\$3C0!      TB0CTL
+LCD_TIM_CCTL2=\$3C6!    TB0CCTL2
+LCD_TIM_CCR0=\$3D2!     TB0CCR0
+LCD_TIM_CCR2=\$3D6!     TB0CCR2
+LCD_TIM_EX0=\$3E0!      TB0EX0
+
 LCD_CMD_IN=\$221!
 LCD_CMD_OUT=\$223!
 LCD_CMD_DIR=\$225!
@@ -165,6 +171,13 @@ LCD_DB_DIR=\$284!
 LCD_DB_REN=\$286!
 LCD_DB=\$0F!    P9.3-0
 
+
+!WATCHDOG timer
+WDT_TIM_CTL=\$340!      TA0CTL
+WDT_TIM_CCTL0=\$342!    TA0CCTL0
+WDT_TIM_CCR0=\$352!     TA0CCR0
+WDT_TIM_EX0=\$360!      TA0EX0
+WDT_TIM_0_Vec=\$FFE8!   TA0_0_Vec
 
 IR_IN=\$221!  
 IR_OUT=\$223! 
@@ -192,6 +205,10 @@ I2CSMM_REN=\$206!
 SMMSDA=8!    P1.3
 SMMSCL=\$20!    P1.5
 SMM_BUS=\$28!    
+RC5_TIM_CTL=\$380!      TA1CTL
+RC5_TIM_R=\$390!        TA1R
+RC5_TIM_EX0=\$3A0!      TA1EX0
+
 
 I2CMM_IN=\$200!
 I2CMM_OUT=\$202!

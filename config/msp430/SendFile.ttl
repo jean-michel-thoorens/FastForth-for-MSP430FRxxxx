@@ -3,10 +3,10 @@ sendln '     $0A BASE ! ECHO STOP' ; blanks are to pass LPMx wake up time...
 
 inputbox 'Send a File' 'Select File : ' param2
 
-strcompare param4 'NOECHO'
+strcompare param4 'ECHO'
 if result = 0 then
-    sendln 'NOECHO'
-    setecho 0
+    sendln 'ECHO'   ; echo from FastForth 
+    setecho 0       ; no echo from Teraterm
     showtt 0
     clearscreen 1
     sendfile inputstr 0
@@ -14,13 +14,15 @@ if result = 0 then
     goto end
 endif
 
-strcompare param4 'ECHO'
+strcompare param4 'NOECHO'
 if result = 0 then
-    sendln 'ECHO'
-    setecho 0
+    sendln 'NOECHO' ; no echo from FastForth
+    setecho 1       ; add echo from Teraterm
+;    setecho 0       ; don't add echo from Teraterm
     showtt 0
     clearscreen 1
     sendfile inputstr 0
+    setecho 0
     showtt 1
     goto end
 endif
@@ -28,6 +30,7 @@ endif
 strcompare param4 'HALF'
 if result = 0 then
     sendln 'NOECHO'
+;    setecho 0       ; don't add echo from Teraterm
     setecho 1
     showtt 0
     clearscreen 1

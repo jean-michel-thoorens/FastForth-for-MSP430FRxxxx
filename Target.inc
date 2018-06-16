@@ -1,14 +1,49 @@
 ; Target.inc
 
+; define if Terminal half duplex
+    .IFDEF UARTtoI2C
+    .IFNDEF HALFDUPLEX
+HALFDUPLEX
+    .ENDIF
+    .ENDIF
+
+
+
+    .IFDEF SD_CARD_LOADER 
+    .IFDEF BOOTLOADER
+    .IFDEF CONDCOMP
+BOOTLOAD
+    .ELSE 
+        .WARNING "SD Boot Loader requires conditional compilation addon"
+CONDCOMP
+BOOTLOAD
+    .ENDIF
+    .ENDIF
+    .ENDIF
+
+; define FREQ  used in WARM message (6)
+    .IF     FREQUENCY = 0.25
+FREQ    .set " .2MHz"
+    .ELSEIF FREQUENCY = 0.5
+FREQ    .set " .5MHz"
+    .ELSEIF FREQUENCY = 1
+FREQ    .set "  1MHz"
+    .ELSEIF FREQUENCY = 2
+FREQ    .set "  2MHz"
+    .ELSEIF FREQUENCY = 4
+FREQ    .set "  4MHz"
+    .ELSEIF FREQUENCY = 8
+FREQ    .set "  8MHz"
+    .ELSEIF FREQUENCY = 16
+FREQ    .set " 16MHz"
+    .ELSEIF FREQUENCY = 24
+FREQ    .set " 24MHz"
+    .ENDIF
+
+
 ;-----------------------------------------------------------------------
 ; DEVICE I/O, MEMORY, SFR, vectors and FORTH I/O declarations
 ;-----------------------------------------------------------------------
-
-
-FRAM_FULL   .equ SIGNATURES-50h ; set to protect JTAG and BSL signatures against overwrite.
-                                ; notice that ALLOT memory space beyond SIGNATURES don't corrupt it,
-                                ; so 80 bytes are sufficient considering what can be compiled in one line and WORD use.
-                                ; good practice: one line reserved for each ALLOT command.
 
 
     OUTRADIX  10
@@ -91,7 +126,7 @@ LF_XTAL
 UCA0_UART
 TERMVEC     .equ 0FFE4h      ;  eUSCI_A0
 UCA1_SD
-UCB0_I2CM                   ; for TERM2IIC add-on
+;UCB0_I2CM                   ; for TERM2IIC add-on
 HRDWMPY
 RTC     ; define type of RTC
     .include "MSP430FR2x4x.inc"
@@ -109,7 +144,28 @@ RTC     ; define type of RTC
     .include "MSP430FR2x4x.inc"
     .ENDIF
 
+    .IFDEF MSP_EXP430FR2355
+    .warning "Code for MSP_EXP430FR2355"
+DEVICE = "MSP430FR2355"
+;CHIP  .equ 2355
+LF_XTAL
+UCA1_UART
+TERMVEC     .equ 0FFE2h      ;  eUSCI_A1
+UCB1_SD
+HRDWMPY
+RTC     ; define type of RTC
+    .include "MSP430FR2x4x.inc"
+    .ENDIF
+
+
 ; define RAM = 1k for MSP430FR57xx devices
     .IF (charfromstr(DEVICE,8) = '5') & (charfromstr(DEVICE,9) = '7') 
 RAM_1K
     .ENDIF
+
+FRAM_FULL   .equ SIGNATURES-50h ; set to protect JTAG and BSL signatures against overwrite.
+                                ; notice that ALLOT memory space beyond SIGNATURES don't corrupt it,
+                                ; so 80 bytes are sufficient considering what can be compiled in one line and WORD use.
+                                ; good practice: one line reserved for each ALLOT command.
+
+

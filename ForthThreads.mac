@@ -1,10 +1,35 @@
 ; -*- coding: utf-8 -*-
 ; ForthThreads.mac
 
-voclink     .set 0                      ; initial vocabulary link
-
-
+voclink     .set 0                      ; init vocabulary links
 forthlink   .set 0
+asmlink     .set 0
+
+
+    .IF THREADS = 1
+
+FORTHWORD   .MACRO  name
+            .word   forthlink
+forthlink   .set    $
+            .byte   STRLEN(name),name
+;            .align  2
+            .ENDM
+
+FORTHWORDIMM .MACRO  name
+            .word   forthlink
+forthlink   .set    $
+            .byte   STRLEN(name)+128,name
+;            .align  2
+            .ENDM
+
+asmword     .MACRO  name
+            .word   asmlink
+asmlink     .set    $
+            .byte   STRLEN(name),name
+;            .align  2
+            .ENDM
+
+    .ELSE
 forthlink1  .set 0
 forthlink2  .set 0
 forthlink3  .set 0
@@ -37,7 +62,6 @@ forthlink29 .set 0
 forthlink30 .set 0
 forthlink31 .set 0
 
-asmlink     .set 0
 asmlink1    .set 0
 asmlink2    .set 0
 asmlink3    .set 0
@@ -405,10 +429,10 @@ asmlink30 .set    $
 asmlink31 .set    $
 
 
-    .endcase
+    .endcase ; asmlink
 
             .byte   STRLEN(name),name
 ;            .align  2
             .ENDM
 
-
+    .endif ; thread case

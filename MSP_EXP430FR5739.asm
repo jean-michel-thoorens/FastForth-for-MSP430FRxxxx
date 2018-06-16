@@ -287,54 +287,50 @@ S1          .equ 1
 
 ; DCOCLK: Internal digitally controlled oscillator (DCO).
 
-; CS code for MSP430fr5739
             MOV.B   #CSKEY,&CSCTL0_H ;  Unlock CS registers
 
     .IF FREQUENCY = 0.25
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_32 + DIVM_32,&CSCTL3
-            MOV     #2,X
+            MOV     #4,X
 
     .ELSEIF FREQUENCY = 0.5
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_16 + DIVM_16,&CSCTL3
-            MOV     #4,X
+            MOV     #8,X
 
     .ELSEIF FREQUENCY = 1
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_8 + DIVM_8,&CSCTL3
-            MOV     #8,X
+            MOV     #16,X
 
     .ELSEIF FREQUENCY = 2
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_4 + DIVM_4,&CSCTL3
-            MOV     #16,X
+            MOV     #32,X
 
     .ELSEIF FREQUENCY = 4
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1          ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_2 + DIVM_2,&CSCTL3
-            MOV     #32,X
+            MOV     #64,X
 
     .ELSEIF FREQUENCY = 8
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1          ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
-            MOV     #64,X
-SMCLK .equ 8
+            MOV     #128,X
 
     .ELSEIF FREQUENCY = 16
             MOV     #DCORSEL,&CSCTL1                    ; Set 16MHZ DCO setting
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
-            MOV     #128,X
-SMCLK .equ 16
+            MOV     #256,X
 
     .ELSEIF FREQUENCY = 24
             MOV     #DCORSEL+DCOFSEL1+DCOFSEL0,&CSCTL1  ; Set 24 MHZ DCO setting
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
-            MOV     #192,X
-SMCLK .equ 24
+            MOV     #384,X
 
     .ELSEIF
-    .error "bad frequency setting, only 0.5,1,2,4,8,16,24 MHz"
+    .error "bad frequency setting, only 0.25,0.5,1,2,4,8,16,24 MHz"
     .ENDIF
 
     .IFDEF LF_XTAL
@@ -348,11 +344,11 @@ SMCLK .equ 24
             CMP #2,&SAVE_SYSRSTIV   ; POWER ON ?
             JZ      ClockWaitX      ; yes
             .word   0759h           ; no  RRUM #2,X --> wait only 125 ms
-ClockWaitX  MOV     #41666,Y        ; wait 0.5s before starting after POWER ON
-ClockWaitY  SUB     #1,Y            ;
-            JNZ     ClockWaitY      ; 41666x3 = 125000 cycles delay = 125ms @ 1MHz
-            SUB     #1,X            ; x 4 @ 1 MHZ
-            JNZ     ClockWaitX      ; time to stabilize power source ( 1s )
+ClockWaitX  MOV     #5209,Y         ; wait 0.5s before starting after POWER ON
+ClockWaitY  SUB     #1,Y            ;1
+            JNZ     ClockWaitY      ;2 5209x3 = 15625 cycles delay = 15.625ms @ 1MHz
+            SUB     #1,X            ; x 32 @ 1 MHZ = 500ms
+            JNZ     ClockWaitX      ; time to stabilize power source ( 500ms )
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : REF

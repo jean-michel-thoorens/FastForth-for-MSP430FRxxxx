@@ -17,6 +17,9 @@
     .IFDEF MSP_EXP430FR2433
     .include "MSP_EXP430FR2433.asm"
     .ENDIF
+    .IFDEF MSP_EXP430FR2355
+    .include "MSP_EXP430FR2355.asm"
+    .ENDIF
     .IFDEF CHIPSTICK_FR2433
     .include "CHIPSTICK_FR2433.asm"
     .ENDIF

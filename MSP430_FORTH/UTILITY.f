@@ -30,11 +30,11 @@
 
 PWR_STATE
     \
-[DEFINED] {UTILITY} [IF] {UTILITY} [THEN]     \ remove {UTILITY} if outside core 
+[DEFINED] {TOOLS} [IF] {TOOLS} [THEN]     \ remove {UTILITY} if outside core 
     \
-[DEFINED] ASM [UNDEFINED] {UTILITY} AND [IF]  \ required test and don't replicate {UTILITY} if inside core
+[UNDEFINED] {TOOLS} [IF]  \ don't replicate {UTILITY} if inside core
     \
-MARKER {UTILITY} 
+MARKER {TOOLS} 
     \
 [UNDEFINED] ? [IF]    \
 \ https://forth-standard.org/standard/tools/q
@@ -77,7 +77,7 @@ COLON
     \
 
 [UNDEFINED] .RS [IF]    \
-\ .S            --            display <depth> of Return Stack and stack contents if not empty
+\ .RS            --            display <depth> of Return Stack and stack contents if not empty
 CODE .RS
     MOV     TOS,-2(PSP) \ -- TOS ( tos x x ) 
     MOV     RSP,-6(PSP) \ -- TOS ( tos x  RSP )
@@ -88,6 +88,17 @@ ENDCODE
     \
 
 [UNDEFINED] WORDS [IF]
+    \
+[UNDEFINED] AND [IF]
+    \
+\ https://forth-standard.org/standard/core/AND
+\ C AND    x1 x2 -- x3           logical AND
+CODE AND
+AND @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+    \
+[THEN]
     \
 \ https://forth-standard.org/standard/tools/WORDS
 \ list all words of vocabulary first in CONTEXT.
@@ -110,7 +121,7 @@ CONTEXT @                           \ -- VOC_BODY                   MOVE all thr
     MOVE                            \
     BEGIN                           \ -- 
 \        0 DUP                       \ -- ptr=0 MAX=0                select the MAX of NFAs in all vocabulary threads
-        0.                          \ -- ptr=0 MAX=0
+        0.                          \ -- ptr=0 MAX=0                
         INI_THREAD @ DUP + 0        \ -- ptr=0 MAX=0 THREADS*2 0
             DO                      \ -- ptr MAX            I =  PAD_ptr = thread*2
             DUP I PAD + @           \ -- ptr MAX MAX NFAx
@@ -186,6 +197,17 @@ LO2HI
 ;
 [THEN]
     \
+
+\ : U.BS U. 8 EMIT ;
+\     \
+\
+\ : specs               \ to see specifications below
+\ FREQ_KHZ @ 0 1000 UM/MOD U.BS ." ," U.BS ." MHz "
+\ INI_THREAD @ U.BS ." Threads "
+\ HECTOBAUDS @ 0 10 UM/MOD U.BS ." ," U.BS ." kBds."  
+\ ;
+\     \
+
 
 [THEN]
     \

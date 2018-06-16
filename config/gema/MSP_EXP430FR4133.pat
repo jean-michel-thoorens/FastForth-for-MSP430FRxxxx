@@ -25,7 +25,6 @@
 ! ======================================================================
 
 @define{@read{@mergepath{@inpath{};MSP430FR4133.pat;}}}
-@define{@read{@mergepath{@inpath{};MSP430FR2x4x_FastForth.pat;}}}
 @define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
 @define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 
@@ -237,15 +236,16 @@ SW2=\$40!           P2.6 SW2
 
 !LCD Vo driver
 !-------------
-LCDVo_DIR=\$204!      P1.6 = LCDVo
-LCDVo_SEL=\$20A!      SEL0
+LCDVo_DIR=\$204!        P1.6 = LCDVo
+LCDVo_SEL=\$20A!        SEL0
 LCDVo=\$40!
-! FR4133 hasn't TB0: let TA0 addresses for TA0.2=LCDVo on P1.6
-TB0CTL=\$300!
-TB0CCTL2=\$306!
-TB0CCR0=\$312!
-TB0CCR2=\$316!
-TB0EX0=\$320!
+!LCD timer
+LCD_TIM_CTL=\$300!      TA0CTL
+LCD_TIM_CCTL=\$306!     TA0CCTL2
+LCD_TIM_CCR0=\$312!     TA0CCR0
+LCD_TIM_CCR=\$316!      TA0CCR2
+LCD_TIM_EX0=\$320!      TA0EX0
+
 
 !LCD command bus
 !---------------
@@ -253,9 +253,9 @@ LCD_CMD_IN=\$200!
 LCD_CMD_OUT=\$202!
 LCD_CMD_DIR=\$204!
 LCD_CMD_REN=\$206!
-LCD_RS=\$08!        P1.3 LCD_RS
-LCD_RW=\$10!        P1.4 LCD_RW
-LCD_EN=\$20!        P1.5 LCD_EN
+LCD_RS=\$08!            P1.3 LCD_RS
+LCD_RW=\$10!            P1.4 LCD_RW
+LCD_EN=\$20!            P1.5 LCD_EN
 LCD_CMD=\$38!
 
 !LCD data bus
@@ -275,60 +275,61 @@ IR_REN=\$206!
 IR_IES=\$218!
 IR_IE=\$21A!
 IR_IFG=\$21C!
-IR_Vec=\$FFE6!    P1 int
+IR_Vec=\$FFE6!          P1 int
 RC5=\$80!               P1.7 IR_RC5
-! replace TA0 addrs by TA1 addrs because TA0 used for LCDVo
-TA0CTL=\$340!
-TA0CCTL2=\$346!
-TA0R=\$350!
-TA0CCR0=\$352!
-TA0CCR2=\$356!
-TA0EX0=\$360!
+
+!IR_RC5 timer
+IR_TIM_CTL=\$340!       TA1CTL
+IR_TIM_CCTL2=\$346!     TA1CCTL2
+IR_TIM_R=\$350!         TA1R
+IR_TIM_CCR0=\$352!      TA1CCR0
+IR_TIM_CCR2=\$356!      TA1CCR2
+IR_TIM_EX0=\$360!       TA1EX0
 
 
 I2CSM_IN=\$261!
 I2CSM_OUT=\$263!
 I2CSM_DIR=\$265!
 I2CSM_REN=\$267!
-SMSDA=\$04!         P8.2  SDA software MASTER
-SMSCL=\$08!         P8.3  SCL software MASTER
+SMSDA=\$04!             P8.2  SDA software MASTER
+SMSCL=\$08!             P8.3  SCL software MASTER
 SM_BUS=\$0C!
 
 I2CSMM_IN=\$261!
 I2CSMM_OUT=\$263!
 I2CSMM_DIR=\$265!
 I2CSMM_REN=\$267!
-SMMSDA=\$04!        P8.2  SDA software MULTI_MASTER
-SMMSCL=\$08!        P8.3  SCL software MULTI_MASTER
+SMMSDA=\$04!            P8.2  SDA software MULTI_MASTER
+SMMSCL=\$08!            P8.3  SCL software MULTI_MASTER
 SMM_BUS=\$0C!
 
 I2CMM_IN=\$240!
 I2CMM_OUT=\$242!
 I2CMM_DIR=\$244!
 I2CMM_REN=\$246!
-I2CMM_SEL=\$24A!     SEL0
+I2CMM_SEL=\$24A!        SEL0
 I2CMM_Vec=\$FFEA!
-MMSDA=\$04!         P5.2  SDA hadware MULTI_MASTER
-MMSCL=\$08!         P5.3  SCL hadware MULTI_MASTER
+MMSDA=\$04!             P5.2  SDA hadware MULTI_MASTER
+MMSCL=\$08!             P5.3  SCL hadware MULTI_MASTER
 MM_BUS=\$0C!
 
 I2CM_IN=\$240!
 I2CM_OUT=\$242!
 I2CM_DIR=\$244!
 I2CM_REN=\$246!
-I2CM_SEL=\$24A!     SEL0
+I2CM_SEL=\$24A!         SEL0
 I2CM_Vec=\$FFEA!
-MSDA=\$04!        P5.2  SDA hadware MASTER
-MSCL=\$08!        P5.3  SCL hadware MASTER
+MSDA=\$04!              P5.2  SDA hadware MASTER
+MSCL=\$08!              P5.3  SCL hadware MASTER
 M_BUS=\$0C!
 
 I2CS_IN=\$240!
 I2CS_OUT=\$242!
 I2CS_DIR=\$244!
 I2CS_REN=\$246!
-I2CS_SEL=\$24A!     SEL0
+I2CS_SEL=\$24A!         SEL0
 I2CS_Vec=\$FFEA!
-SSDA=\$04!        P5.2  SDA hadware SLAVE
-SSCL=\$08!        P5.3  SCL hadware SLAVE
+SSDA=\$04!              P5.2  SDA hadware SLAVE
+SSCL=\$08!              P5.3  SCL hadware SLAVE
 S_BUS=\$0C!
 

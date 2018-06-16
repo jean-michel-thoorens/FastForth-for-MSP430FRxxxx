@@ -1071,22 +1071,17 @@ TESTING INPUT: ACCEPT
 
 CREATE ABUF 80 CHARS ALLOT
 
+: ACCEPT-TEST
+    CR ." PLEASE TYPE UP TO 80 CHARACTERS:" CR
 [DEFINED] LOAD" [IF]
-: ACCEPT-TEST
-    CR ." PLEASE TYPE UP TO 80 CHARACTERS:" CR
-    ABUF 80 (ACCEPT)                \ JMT: because ACCEPT is DEFERred to SD_ACCEPT
-    CR ." RECEIVED: " [CHAR] " EMIT
-    ABUF SWAP TYPE [CHAR] " EMIT CR
-;
+    ABUF 80 (ACCEPT)                \ JMT: because ACCEPT is deferred
 [ELSE]
-: ACCEPT-TEST
-    CR ." PLEASE TYPE UP TO 80 CHARACTERS:" CR
     ABUF 80 ACCEPT
+[THEN]      \ LOAD"
     CR ." RECEIVED: " [CHAR] " EMIT
     ABUF SWAP TYPE [CHAR] " EMIT CR
 ;
 
-[THEN]      \ LOAD"
 
 T{ ACCEPT-TEST -> }T
 \ ------------------------------------------------------------------------

@@ -316,44 +316,45 @@ CTS         .equ  1 ; P4.0
 ; ----------------------------------------------------------------------
 
 ; DCOCLK: Internal digitally controlled oscillator (DCO).
-; Startup clock system in max. DCO setting ~8MHz
 
+
+; CS code for MSP430FR5948
             MOV.B   #CSKEY,&CSCTL0_H ;  Unlock CS registers
 
     .IF FREQUENCY = 0.25
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_32 + DIVM_32,&CSCTL3
-            MOV     #2,X
+            MOV     #4,X
 
     .ELSEIF FREQUENCY = 0.5
             MOV     #0,&CSCTL1                  ; Set 1MHZ DCO setting
             MOV     #DIVA_2 + DIVS_2 + DIVM_2,&CSCTL3             ; set all dividers as 2
-            MOV     #4,X
+            MOV     #8,X
 
     .ELSEIF FREQUENCY = 1
             MOV     #0,&CSCTL1                  ; Set 1MHZ DCO setting
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3             ; set all dividers as 0
-            MOV     #8,X
+            MOV     #16,X
 
     .ELSEIF FREQUENCY = 2
             MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1  ; Set 4MHZ DCO setting
             MOV     #DIVA_0 + DIVS_2 + DIVM_2,&CSCTL3
-            MOV     #16,X
+            MOV     #32,X
 
     .ELSEIF FREQUENCY = 4
             MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1  ; Set 4MHZ DCO setting
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3             ; set all dividers as 0
-            MOV     #32,X
+            MOV     #64,X
 
     .ELSEIF FREQUENCY = 8
 ;            MOV     #DCOFSEL2+DCOFSEL1,&CSCTL1  ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3             ; set all dividers as 0
-            MOV     #64,X
+            MOV     #128,X
 
     .ELSEIF FREQUENCY = 16
             MOV     #DCORSEL+DCOFSEL2,&CSCTL1   ; Set 16MHZ DCO setting
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3             ; set all dividers as 0
-            MOV     #128,X
+            MOV     #256,X
 
     .ELSEIF
     .error "bad frequency setting, only 0.5,1,2,4,8,16 MHz"
@@ -361,7 +362,7 @@ CTS         .equ  1 ; P4.0
 
     .IFDEF LF_XTAL
             MOV     #SELA_LFXCLK+SELS_DCOCLK+SELM_DCOCLK,&CSCTL2
-    .ELSEIF
+    .ELSE
             MOV     #SELA_VLOCLK+SELS_DCOCLK+SELM_DCOCLK,&CSCTL2
     .ENDIF
             MOV.B   #01h, &CSCTL0_H                               ; Lock CS Registers
@@ -370,11 +371,11 @@ CTS         .equ  1 ; P4.0
             CMP #2,&SAVE_SYSRSTIV   ; POWER ON ?
             JZ      ClockWaitX      ; yes
             .word   0759h           ; no  RRUM #2,X --> wait only 125 ms
-ClockWaitX  MOV     #41666,Y        ; wait 0.5s before starting after POWER ON
-ClockWaitY  SUB     #1,Y            ;
-            JNZ     ClockWaitY      ; 41666x3 = 125000 cycles delay = 125ms @ 1MHz
-            SUB     #1,X            ; x 4 @ 1 MHZ
-            JNZ     ClockWaitX      ; time to stabilize power source ( 1s )
+ClockWaitX  MOV     #5209,Y         ; wait 0.5s before starting after POWER ON
+ClockWaitY  SUB     #1,Y            ;1
+            JNZ     ClockWaitY      ;2 5209x3 = 15625 cycles delay = 15.625ms @ 1MHz
+            SUB     #1,X            ; x 32 @ 1 MHZ = 500ms
+            JNZ     ClockWaitX      ; time to stabilize power source ( 500ms )
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : REF

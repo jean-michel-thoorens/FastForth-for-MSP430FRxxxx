@@ -1,6 +1,7 @@
 ::@echo off
 
 @call  %~d1\config\msp430\Select.bat SelectDevice %1
+@echo %device% programmation
 %~d1\prog\MSP430Flasher\msp430flasher -s -m SBW2 -n %device% -v -w %~n1.txt  -z [RESET,VCC]
 
 @exit
