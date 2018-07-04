@@ -122,11 +122,6 @@
 
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
-; PORTA usage
-SD_SEL      .equ PASEL0 ; to configure UCA1
-SD_REN      .equ PAREN  ; to configure pullup resistors
-SD_BUS      .equ 07000h ; pins P2.4 as UCA1CLK, P2.5 as UCA1SOMI & P2.6 as UCA1SIMO
-
 
 ; PORT1 usage
 ; LED1 - P1.0
@@ -136,11 +131,21 @@ SD_BUS      .equ 07000h ; pins P2.4 as UCA1CLK, P2.5 as UCA1SOMI & P2.6 as UCA1S
 ; P1.0  - RTS TERMINAL     
 ; P1.1  - CTS TERMINAL     
 
-Deep_RST_IN .equ P1IN 
-Deep_RST    .equ 10h
-TERM_TXRX   .equ 30h
+
+    .IFDEF UCA0_TERM
+TXD         .equ 10h        ; P1.4 = TXD + FORTH Deep_RST pin
+RXD         .equ 20h        ; P1.5
+TERM_BUS    .equ 30h
+TERM_IN     .equ P1IN
 TERM_SEL    .equ P1SEL0
 TERM_REN    .equ P1REN
+    .ENDIF
+
+    .IFDEF UCA1_SD
+SD_SEL      .equ PASEL0     ; to configure UCA1
+SD_REN      .equ PAREN      ; to configure pullup resistors
+SD_BUS      .equ 07000h     ; pins P2.4 as UCA1CLK, P2.5 as UCA1SOMI & P2.6 as UCA1SIMO
+    .ENDIF
 
 ; P2.1                <--- SD_CD (Card Detect)
 SD_CD           .equ  2
@@ -150,6 +155,15 @@ SD_CS           .equ  1
 SD_CSOUT        .equ P2OUT
 SD_CSDIR        .equ P2DIR
 
+
+    .IFDEF UCA1_TERM
+TXD         .equ 40h        ; P2.6 = TXD + FORTH Deep_RST pin
+RXD         .equ 20h        ; P2.5
+TERM_BUS    .equ 60h
+TERM_IN     .equ P2IN       ; TERMINAL TX  pin as FORTH Deep_RST 
+TERM_SEL    .equ P2SEL0
+TERM_REN    .equ P2REN
+    .ENDIF
 
             MOV #-1,&PAREN      ; all inputs with pull resistors
             BIS #00003h,&PADIR  ; all pins as input else LED1/LED2 as output
@@ -178,25 +192,25 @@ CTS         .equ    2           ; P1.1 bit position
 
           
     .IFDEF UCB0_TERM        ; for MSP_EXP430FR2433_I2C
-I2CT_BUS    .equ    0Ch   ; P1.2=SDA P1.3=SCL
-I2CT_SEL    .equ    P1SEL0
-I2CT_REN    .equ    P1REN
-I2CT_OUT    .equ    P1OUT
-
-I2CT_SLA_BUS .equ   07h     ; P2.0 P2.1 P2.1
-I2CT_SLA_IN  .equ   P2IN
-I2CT_SLA_OUT .equ   P2OUT
-I2CT_SLA_DIR .equ   P2DIR
-I2CT_SLA_REN .equ   P2REN
+I2CM_BUS        .equ    0Ch   ; P1.2=SDA P1.3=SCL
+I2CM_SEL        .equ    P1SEL0
+I2CM_REN        .equ    P1REN
+I2CM_OUT        .equ    P1OUT
     .ENDIF
 
     .IFDEF  UCB0_I2CM   ; for TERM2IIC add-on
-
-I2CM_BUS    .equ    0Ch   ; P1.2=SDA P1.3=SCL
-I2CM_SEL    .equ    P1SEL0
-I2CM_REN    .equ    P1REN
-I2CM_OUT    .equ    P1OUT
+I2CT_BUS        .equ    0Ch   ; P1.2=SDA P1.3=SCL
+I2CT_SEL        .equ    P1SEL0
+I2CT_REN        .equ    P1REN
+I2CT_OUT        .equ    P1OUT
     .ENDIF
+
+I2CT_SLA_BUS    .equ   07h     ; P2.0 P2.1 P2.1
+I2CT_SLA_IN     .equ   P2IN
+I2CT_SLA_OUT    .equ   P2OUT
+I2CT_SLA_DIR    .equ   P2DIR
+I2CT_SLA_REN    .equ   P2REN
+
 
 
 ; ----------------------------------------------------------------------

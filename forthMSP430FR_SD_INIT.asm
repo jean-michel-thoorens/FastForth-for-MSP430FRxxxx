@@ -27,12 +27,121 @@
 ; this is automatically done when we format the SD_Card !
 
 
+; =====================================================================
+; goal : accept 64 MB up to 64 GB SD_CARD
+; =====================================================================
+; thus FAT and RootClus logical sectors are word addressable.
+
+; FAT is a little endian structure.
+; CMD frame is sent as big endian.
+
+; we assume that SDSC Card (up to 2GB) is FAT16 with a byte addressing
+; and that SDHC Card (4GB up to 64GB) is FAT32 with a sector addressing (sector = 512 bytes)
+; for SDHC Card = 64 GB, cluster = 64 sectors ==> max clusters = 20 0000h ==> FAT size = 16384 sectors
+; ==> FAT1 and FAT2 can be addressed with a single word.
+
+; ref. https://en.wikipedia.org/wiki/Extended_boot_record
+; ref. https://en.wikipedia.org/wiki/Partition_type
+
+; Formatage FA16 d'une SDSC Card 2GB
+; First sector of physical drive (sector 0) content :
+; ---------------------------------------------------
+; dec@| HEX@
+; 446 |0x1BE    : partition table first record  ==> logical drive 0       
+; 462 |0x1CE    : partition table 2th record    ==> logical drive 1
+; 478 |0x1DE    : partition table 3th record    ==> logical drive 2
+; 494 |0x1EE    : partition table 4th record    ==> logical drive 3
+
+; partition of first record content :
+; ---------------------------------------------------
+; 450 |0x1C2 = 0x0E         : type FAT16 using LBA addressing
+; 454 |0x1C6 = 89 00 00 00  : FirstSector (of logical drive 0) BS_FirstSector  = 137
+
+
+; Partition type Description
+; 0	    empty / unused
+; 1	    FAT12
+; 4	    FAT16 for partitions <= 32 MiB
+; 5	    extended partition
+; 6	    FAT16 for partitions > 32 MiB
+; 11	FAT32 for partitions <= 2 GiB
+; 12	Same as type 11 (FAT32), but using LBA addressing, which removes size constraints
+; 14	Same as type 6 (FAT16), but using LBA addressing
+; 15	Same as type 5, but using LBA addressing
+; ref. https://www.compuphase.com/mbr_fat.htm#BOOTSECTOR
+
+; FirstSector of logical drive (sector 0) content :
+; -------------------------------------------------
+; dec@| HEX@ =  HEX                                                       decimal
+; 11  | 0x0B = 00 02        : 512 bytes/sector          BPB_BytsPerSec  = 512
+; 13  | 0x0D = 40           : 64 sectors/cluster        BPB_SecPerClus  = 64
+; 14  | 0x0E = 01 00        : 2 reserved sectors        BPB_RsvdSecCnt  = 1
+; 16  | 0x10 = 02           : 2 FATs                    BPB_NumFATs     = 2 (always 2)
+; 17  | 0x11 = 00 02        : 512 entries/directory     BPB_RootEntCnt  = 512
+; 19  | 0x13 = 00 00        : BPB_TotSec16 (if < 65535) BPB_TotSec16    = 0
+; 22  | 0x16 = EB 00        : 235 sectors/FAT (FAT16)   BPB_FATSize     = 235
+; 32  | 0x20 = 77 9F 3A 00  : ‭3841911‬ total sectors     BPB_TotSec32    = ‭3841911‬
+; 54  | 0x36 = "FAT16"                                  BS_FilSysType   (not used)
+
+; all values below are evaluated in logical sectors
+; FAT1           = BPB_RsvdSecCnt = 1
+; FAT2           = BPB_RsvdSecCnt + BPB_FATSz32 = 1 + 235 = 236
+; OrgRootDirL    = BPB_RsvdSecCnt + (BPB_FATSize * BPB_NumFATs) = 471
+; RootDirSize    = BPB_RootEntCnt * 32 / BPB_BytsPerSec         = 32 sectors
+; OrgDatas       = OrgRootDir + RootDirSize                     = 503
+; OrgCluster     = OrgRootDir - 2*BPB_SecPerClus                = 375 (virtual value)
+; FirstSectorOfCluster(n) = OrgCluster + n*BPB_SecPerClus       ==> cluster(3) = 705
+
+; ====================================================================================
+
+; Formatage FA32 d'une SDSC Card 8GB
+; First sector of physical drive (sector 0) content :
+; ---------------------------------------------------
+; dec@| HEX@
+; 446 |0x1BE    : partition table first record  ==> logical drive 0       
+; 462 |0x1CE    : partition table 2th record    ==> logical drive 1
+; 478 |0x1DE    : partition table 3th record    ==> logical drive 2
+; 494 |0x1EE    : partition table 4th record    ==> logical drive 3
+
+; partition record content :
+; ---------------------------------------------------
+; 450 |0x1C2 = 0x0C         : type FAT32 using LBA addressing
+; 454 |0x1C6 = 00 20 00 00  : FirstSector (of logical drive 0) = BS_FirstSector = 8192
+
+; 
+; FirstSector of logical block (sector 0) content :
+; -------------------------------------------------
+; dec@| HEX@ =  HEX                                                       decimal
+; 11  | 0x0B = 00 02        : 512 bytes/sector          BPB_BytsPerSec  = 512
+; 13  | 0x0D = 08           : 8 sectors/cluster         BPB_SecPerClus  = 8
+; 14  | 0x0E = 20 00        : 32 reserved sectors       BPB_RsvdSecCnt  = 32
+; 16  | 0x10 = 02           : 2 FATs                    BPB_NumFATs     = 2 (always 2)
+; 17  | 0x11 = 00 00        : 0                         BPB_RootEntCnt  = 0 (always 0 for FAT32)
+
+; 32  | 0x20 = 00 C0 EC 00  : BPB_TotSec32              BPB_TotSec32    = 15515648
+; 36  | 0x24 = 30 3B 00 00  : BPB_FATSz32               BPB_FATSz32     = 15152
+; 40  | 0x28 = 00 00        : BPB_ExtFlags              BPB_ExtFlags 
+; 44  | 0x2C = 02 00 00 00  : BPB_RootClus              BPB_RootClus    = 2
+; 48  | 0x30 = 01 00        : BPB_FSInfo                BPB_FSInfo      = 1
+; 50  | 0x33 = 06 00        : BPB_BkBootSec             BPB_BkBootSec   = 6
+; 82  | 0x52 = "FAT32"      : BS_FilSysType             BS_FilSysType   (not used)
+
+; 
+; all values below are evaluated in logical sectors
+; FAT1           = BPB_RsvdSecCnt = 32
+; FAT2           = BPB_RsvdSecCnt + BPB_FATSz32 = 32 + 15152 = 15184
+; OrgRootDirL    = BPB_RsvdSecCnt + BPB_FATSz32 * BPB_NumFATs = 32 + 15152*2 = 30336
+; OrgCluster     = OrgRootDir - 2*BPB_SecPerClus = 30320
+; RootDirSize    = BPB_RootEntCnt * 32 / BPB_BytsPerSec         = 0
+; OrgDatas       = OrgRootDir + RootDirSize                     = 30336
+; FirstSectorOfCluster(n) = OrgCluster + n*BPB_SecPerClus       ==> cluster(6) = 30368
+
 ; ===========================================================
 ; 0- Init FRAM SD datas, case of MSP430FR57xx
 ; ===========================================================
 
     .IFDEF RAM_1K               ; case of MSP430FR57xx : SD datas are in FRAM
-        MOV #SD_ORG_DATA,X      ; so are not initialised to 0 by COLD/RESET
+        MOV #SD_ORG_DATA,X      ; so are not initialised by COLD/RESET
 InitSDdata                      ;
         MOV #0,0(X)             ;
         ADD #2,X                ;
@@ -47,9 +156,9 @@ InitSDdata                      ;
     MOV #0A981h,&SD_CTLW0           ; UCxxCTL1  = CKPH, MSB, MST, SPI_3, SMCLK  + UCSWRST
     MOV #FREQUENCY*3,&SD_BRW        ; UCxxBRW init SPI CLK = 333 kHz ( < 400 kHz) for SD_Card init
     BIS.B #SD_CS,&SD_CSDIR          ; SD_CS as output high
-    BIS     #SD_BUS,&SD_SEL         ; Configure pins as SIMO, SOMI & SCK (PxDIR.y are controlled by eUSCI module)
-;    BIC     #SD_BUS,&SD_REN         ; disable pullup resistors for SIMO/SOMI/SCK pins
-    BIC     #1,&SD_CTLW0            ; release eUSCI from reset
+    BIS #SD_BUS,&SD_SEL             ; Configure pins as SIMO, SOMI & SCK (PxDIR.y are controlled by eUSCI module)
+;    BIC #SD_BUS,&SD_REN             ; disable pullup resistors for SIMO/SOMI/SCK pins
+    BIC #1,&SD_CTLW0                ; release eUSCI from reset
 
 ; ===========================================================
 ; 2- Init SD_Card
@@ -61,20 +170,19 @@ SD_POWER_ON
     BIC.B   #SD_CS,&SD_CSOUT        ; preset SD_CS output low to switch in SPI mode
     MOV     #4,S                    ; preset error 4R1
 ; ----------------------------------;
-INIT_CMD0                           ;
+INIT_CMD0                           ; all SD area is 0 filled
 ; ----------------------------------;
     MOV     #95h,&SD_CMD_FRM        ; $(95 00 00 00 00 00)
     MOV     #4000h,&SD_CMD_FRM+4    ; $(95 00 00 00 00 40); send CMD0 
 ; ----------------------------------;
-SEND_CMD0                           ; CMD0 : GO_IDLE_STATE
+SEND_CMD0                           ; CMD0 : GO_IDLE_STATE expected SPI_R1 response = 1 = idle state
 ; ----------------------------------;
-    MOV     #1,W                    ; expected SPI_R1 response = 1 = idle state
-    CALL    #sendCommand            ;X
+    CALL    #sendCommandIdleRet     ;X
     JZ      INIT_CMD8               ; if idle state
 SD_INIT_ERROR                       ;
     MOV     #SD_CARD_ERROR,PC       ; ReturnError = $04R1, case of defectuous card (or insufficient SD_POWER_ON clk)
 ; ----------------------------------;
-INIT_CMD8                           ; mandatory if SD_Card >= V2.x [11:8]supply voltage(VHS)
+INIT_CMD8                           ; mandatory if SD_Card >= V2.x     [11:8]supply voltage(VHS)
 ; ----------------------------------;
     CALL    #SPI_GET                ; (needed to pass SanDisk ultra 8GB "HC I")
     CMP.B   #-1,W                   ; FFh expected value <==> MISO = high level
@@ -83,15 +191,14 @@ INIT_CMD8                           ; mandatory if SD_Card >= V2.x [11:8]supply 
     MOV     #1,&SD_CMD_FRM+2        ; $(87 AA 01 00 ...)  (CRC:CHECK PATTERN:VHS set as 2.7to3.6V:0)
     MOV     #4800h,&SD_CMD_FRM+4    ; $(87 AA 01 00 00 48)
 ; ----------------------------------;
-SEND_CMD8                           ; CMD8 = SEND_IF_COND
+SEND_CMD8                           ; CMD8 = SEND_IF_COND; expected R1 response (first byte of SPI R7) = 01h : idle state
 ; ----------------------------------;
-    MOV     #1,W                    ; expected R1 response (first byte of SPI R7) = 01h : idle state
-    CALL    #sendCommand            ; time out occurs with SD_Card V1.x (and all MMC_card) 
+    CALL    #sendCommandIdleRet     ;X time out occurs with SD_Card V1.x (and all MMC_card) 
 ; ----------------------------------;
     MOV     #4,X                    ; skip end of SD_Card V2.x type R7 response (4 bytes), because useless
     CALL    #SPI_X_GET              ;WX
 ; ----------------------------------;
-INIT_ACMD41                         ;
+INIT_ACMD41                         ; no more CRC needed from here
 ; ----------------------------------;
     MOV     #1,&SD_CMD_FRM          ; $(01 00 ...   set stop bit
     MOV     #0,&SD_CMD_FRM+2        ; $(01 00 00 00 ...
@@ -104,9 +211,8 @@ SEND_ACMD41                         ; send CMD55+CMD41
     MOV     #8,S                    ; preset error 8R1 for ACMD41
 INIT_CMD55                          ;
     MOV     #7700h,&SD_CMD_FRM+4    ; $(01 00 00 00 00 77)
-SEND_CMD55                          ; CMD55 = APP_CMD
-    MOV     #1,W                    ; expected R1 response = 1 : idle
-    CALL    #sendCommand            ;
+SEND_CMD55                          ; CMD55 = APP_CMD; expected SPI_R1 response = 1 : idle
+    CALL    #sendCommandIdleRet     ;X
 SEND_CMD41                          ; CMD41 = APP OPERATING CONDITION
     MOV     #6940h,&SD_CMD_FRM+4    ; $(01 00 00 00 40 69) (30th bit = HCS = High Capacity Support request)
     CALL    #WaitIdleBeforeSendCMD  ; wait until idle (needed to pass SanDisk ultra 8GB "HC I") then send Command CMD41

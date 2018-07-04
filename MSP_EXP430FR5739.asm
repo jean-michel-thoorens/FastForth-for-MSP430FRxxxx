@@ -193,27 +193,31 @@
 
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
-; PORTA usage
-SD_SEL      .equ PASEL1 ; to configure UCB0
-SD_REN      .equ PAREN  ; to configure pullup resistors
-SD_BUS      .equ 7000h  ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
-
-
 ; PORT 1  usage
 ; P1.4 is used as analog input from NTC voltage divider
 
 
-Deep_RST_IN .equ P2IN  ; TERMINAL TX  pin as FORTH Deep_RST 
-Deep_RST    .equ 1     ; P2.0
-TERM_TXRX   .equ 003h
+
+    .IFDEF UCA0_TERM
+TERM_IN     .equ P2IN
+TXD         .equ 1          ; P2.0 = TXD + FORTH Deep_RST pin
+RXD         .equ 2          ; P2.1 = RXD
+TERM_BUS    .equ 3
 TERM_SEL    .equ P2SEL1
 TERM_REN    .equ P2REN
+    .ENDIF
 
-SD_CD       .equ 4         ; P2.2 as SD_CD
-SD_CS       .equ 8         ; P2.3 as SD_CS     
+    .IFDEF UCB0_SD
+SD_SEL      .equ PASEL1     ; to configure UCB0
+SD_REN      .equ PAREN      ; to configure pullup resistors
+SD_BUS      .equ 7000h      ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
+SD_CD       .equ 4          ; P2.2 as SD_CD
+SD_CS       .equ 8          ; P2.3 as SD_CS     
 SD_CDIN     .equ P2IN
 SD_CSOUT    .equ P2OUT
 SD_CSDIR    .equ P2DIR
+    .ENDIF
+
 
 ; RTS output is wired to the CTS input of UART2USB bridge 
 ; configure RTS as output high to disable RX TERM during start FORTH
@@ -319,10 +323,25 @@ S1          .equ 1
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
             MOV     #128,X
 
+    .ELSEIF FREQUENCY = 10
+            MOV     #DCORSEL+DCOFSEL1,&CSCTL1           ; Set 20 MHZ DCO setting
+            MOV     #DIVA_0 + DIVS_2 + DIVM_2,&CSCTL3   ; then SMCLK/2 MCLK/2
+            MOV     #160,X
+
+    .ELSEIF FREQUENCY = 12
+            MOV     #DCORSEL+DCOFSEL1+DCOFSEL0,&CSCTL1  ; Set 24 MHZ DCO setting
+            MOV     #DIVA_0 + DIVS_2 + DIVM_2,&CSCTL3   ; then SMCLK/2 MCLK/2
+            MOV     #192,X
+
     .ELSEIF FREQUENCY = 16
             MOV     #DCORSEL,&CSCTL1                    ; Set 16MHZ DCO setting
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
             MOV     #256,X
+
+    .ELSEIF FREQUENCY = 20
+            MOV     #DCORSEL+DCOFSEL1,&CSCTL1           ; Set 20 MHZ DCO setting
+            MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
+            MOV     #320,X
 
     .ELSEIF FREQUENCY = 24
             MOV     #DCORSEL+DCOFSEL1+DCOFSEL0,&CSCTL1  ; Set 24 MHZ DCO setting
@@ -330,7 +349,7 @@ S1          .equ 1
             MOV     #384,X
 
     .ELSEIF
-    .error "bad frequency setting, only 0.25,0.5,1,2,4,8,16,24 MHz"
+    .error "bad frequency setting, only 0.25,0.5,1,2,4,8,12,16,20,24 MHz"
     .ENDIF
 
     .IFDEF LF_XTAL

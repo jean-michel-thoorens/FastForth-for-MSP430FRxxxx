@@ -12,12 +12,13 @@ This enables to make a fast data logger with a small footprint as a MSP430FR5738
 With all options its size is about 10kB. 
 
 	Tested on MSP-EXP430{FR5969,FR5994,FR6989,FR4133,FR2355,FR2433} launchpads and CHIPSTICKFR2433,
-    at 0.5, 1, 2, 4, 8, 16 MHz and 24MHz on FR2355.
+    at 0.5, 1, 2, 4, 8, 12, 16 MHz plus 20MHz and 24MHz for FR2355,FR573x devices.
 
     For the moment, the IDE works under WINDOWS...
 	
-    Files launchpad_3Mbds.txt are 16threads vocabularies 16MHz executables, with 3MBds XON/XOFF terminal,
-    Launchpad_115200.txt files are same except 115200Bds for unlucky linux men without TERATERM.    
+    Files launchpad_5Mbds.txt are 16threads vocabularies 16MHz executables, with 5MBds "4 WIRES" terminal,
+    usable with PL2303HXD only.
+    Launchpad_115200.txt files are same except 115200Bds for unlucky linux men without TERATERM. 
     For the launchpad MSP-EXP430FR5994 with SD_CARD, full version is available. For others, you must 
     recompile forthMSP430FR.asm with SD_CARD_LOADER and SD_CARD_READ_WRITE switches turned ON
     (uncomment their line).
@@ -38,7 +39,7 @@ With all options its size is about 10kB.
     After downloading of complementary words in ANS_COMP.f, FastForth executes CORETEST.4th without errors
     which ensures its compatibility with the FORTH CORE ANS94 standard.
 
-    Notice that FAST FORTH interprets lines up to 80 chars, only SPACE as delimiter, only CR+LF as EOL
+    Notice that FAST FORTH interprets lines up to 80 chars, only SPACE as delimiter, only CR+LF as EOL,
     and BACKSPACE. And that memory access is limited to 64 kbytes. 
     You can always create FORTH words to access data beyond this limit...
 
@@ -51,13 +52,15 @@ What is new ?
         Added MSP-EXP430FR2355 launchpad
         Added word :NONAME (option).
         FastForth terminal via Bluetooth v2.1 + EDR (Microchip RN42) works fine in full duplex mode,
-        921600bds, 4 wires (GND,RX,TX,RTS).
-        Added 4Mbds,5Mbds terminal @16MHZ, for use with PL2303HXD UART2USB bridge.
+        up to 460800bds, 4 WIRES (GND,RX,TX,RTS); but with, as wireless effect, a bad troughput of 6kb/s
+        instead of 30kb/s with a bridge UART2USB.
+        Added 4Mbds,5Mbds terminal @16MHZ, for use with UART2USB PL2303HXD.
         Words AND, OR, XOR are moved as complement in ANS_COMP.f file.
-        Simplified preprocessor files: two preprocess files for one module:
-            one for device, other for user_application/module.
+        Simplified preprocessor files in \config\gema\ folder: only two for one target:
+            one for the device, other for the target (launchpad or user application/module).
+            and similarly with the assembly files: device.inc and target.asm, for compiling FastForth.
         Corrected startup time in target.asm files.
-        Modified Clock config in MSP430FR2433.asm and MSP430FR4133.ASM, allowing clock modulation.
+        Modified Clock config in MSP_EXP430FR2433.asm and MSP_EXP430FR4133.ASM, allowing clock modulation.
 
 
     FastForth V202
@@ -361,11 +364,11 @@ Build the program file
 
 	- mspregister.mac that defines the TI symbolic instructions,
 	- Target.inc that defines for each device the eUSCI used as Terminal
-	  and then selects the declarations file family.inc, 
+	  and then selects the declarations file target.inc, 
 	- ForthThreads.mac in case of multithread vocabularies,
 	- optionally, forthMSP430FR_SD.asm file(s) for SD_Card,
 	- optionally, forthMSP430FR_ASM.asm for assembler,
-	- TargetInit.asm that selects the target.asm,
+	- Target.asm that selects the target.asm,
 	- and then TERMINALBAUDRATE.asm.
 
 open forthMSP430FR.asm with scite editor
@@ -940,7 +943,7 @@ Yes ! the assembly syntax borrows FORTH's one for jumps :
 
     CODE TEST_IF_THEN
         CMP #1,R8           \ set Z,N,V, flags
-        0= IF               \ irritating, the "IF =" upside down, isn't it?
+        0= IF               \ irritating, the "IF 0=" upside down, isn't it?
             ADD R8,R9       \ true part of comparaison
         THEN                    
         ...                 \ the next
@@ -1092,9 +1095,6 @@ SYMBOLIC ASSEMBLER ? YES !
 I have discovered a little semantic preprocessor "GEMA", just like that FAST FORTH have its symbolic assembler !
 
     \config\gema\MSP430FRxxxx_FastForth.pat contains system variables for all devices
-    \config\gema\MSP430FR57xx.pat contains declarations for FR57 family
-    \config\gema\MSP430FR5x6x.pat ... for FR59/FR69 families
-    \config\gema\MSP430FR2x4x.pat ... for FR2/FR4 families.
     \config\gema\DEVICE.pat contains memory map and vectors for a specified DEVICE
     \MSP430-FORTH\LAUNCHPAD.pat is the I/O config file for specific LAUNCHPAD or application
 
@@ -1122,58 +1122,30 @@ The principle is to create (or modify) first existing configuration files only t
 
         .IFDEF MY_MSP430FR5738_1
         .warning "Code for MY_MSP430FR5738_1"
-    DEVICE = "MSP430FR5738" ; for family.inc file below, defines your device
-    ;CHIP  .equ 5738 ; not used
-    UCA0_UART   ; for family.inc file below, defines uart used by FORTH input terminal 
-    LF_XTAL     ; for family.inc file below, defines if your module have a 32768 Hz xtal, to enable it.
-    UCB0_SD     ; for family.inc file below, defines UC used for SD Card driver if used
-        .include "MSP430FR57xx.inc"  ; include family declarations file: MSP430FR2x4x.inc, 
-                                    MSP430FR57xx.inc or MSP430FR5x6x.inc
+    DEVICE = "MSP430FR5738" ; for target.inc file below, defines your device
+    UCA0_UART   ; for target.inc file below, defines uart used by FORTH input terminal 
+    LF_XTAL     ; for target.inc file below, defines if your module have a 32768 Hz xtal, to enable it.
+    UCB0_SD     ; for target.inc file below, defines UC used for SD Card driver if used
+        .include "MSP430FR5738.inc"  ; include device declarations
         .ENDIF  ; MY_MSP430FR5738_1
 
-3- complete family.inc file with declarations for your device if not exists. 
-   take care to verify they not already exist in common part at the end of the file.
-
-4- include an item in TargetInit.asm:
+3- also include an new item in Target.asm:
     .IFDEF MY_MSP430FR5738_1
-    .include "MSP430FR5738_1.asm"
+    .include "MY_MSP430FR5738_1.asm"
     .ENDIF
 
-5- create your target MSP430FR5738_1.asm from another target.asm as model, then customize declarations.
+4- create your MSP430FR5738_1.asm (and MSP430FR5738.inc) from another target.asm and device.inc as model, 
+then customize declarations.
 
-
-6- if you use SD Card you must add an item in the forthMSP430FR_SD_INIT.asm file. Proceed as target.asm:
-
-        .IFDEF MY_MSP430FR5738_1
-    
-    ; COLD default state : Px{DIR,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; PX{OUT,REN} = 1 ; Px{IN,IES} = ?
-    
-    ; P2.3 as SD_CD
-    SD_CD           .equ  08h
-    SD_CDIN         .equ  P2IN
-    ; P2.4 as SD_CS
-    SD_CS           .equ  10h
-    SD_CSOUT        .equ  P2OUT
-    
-        BIS.B #SD_CS,&P2DIR ; SD_CS output high
-    
-    ; P2.2/UCB0CLK                ---> SD_CardAdapter CLK (SCK)   default value
-    ; P1.6/UCB0SIMO/UCB0SDA/TA0.0 ---> SD_CardAdapter SDI (MOSI)  default value
-    ; P1.7/UCB0SOMI/UCB0SCL/TA1.0 <--- SD_CardAdapter SDO (MISO)  default value
-        BIS #04C0h,&PASEL1  ; Configure UCB0 pins: P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
-                            ; P2DIR.x is controlled by eUSCI_B0 module
-        BIC #04C0h,&PAREN   ; disable pullup resistors for SIMO/SOMI/CLK pins
-    
-        .ENDIF
 
 Then, for the needs of syntactic preprocessor:
 
-1- create a \config\gema\device.pat file if not exist, from analog device.pat file
+1- create a \config\gema\device.pat file if not exist, to do a mix from your device.inc file and another analog device.pat.
 
-2- create your MSP430-FORTH\target.pat file from analog target.pat file, include same forth declarations as target.asm and complete it for your application
+2- create your MSP430-FORTH\target.pat file from target.asm file.
 
 Best practice, I suggest you that all digital pins you define (input or output) in your projects have their idle state high, with external pull up resistor
-
+that is the reset state of FastForth...
 
 START YOUR PROJECT
 --
@@ -1189,7 +1161,11 @@ PROJECT.f :
     ; ----------------------------------------------------
     ; MSP430FR5969 MSP_EXP430FR5969 8MHZ 921600bds PROJECT
     ; ----------------------------------------------------
-    WIPE        ; restore the content of your target.txt HEX file
+
+[DEFINED] {PROJECT} [IF] {PROJECT} [THEN] \ remove {PROJECT} if exist (memory managment)
+    \
+MARKER {PROJECT}
+    \
 
 here you append your already tested routines :
 
@@ -1229,9 +1205,14 @@ then finish with this 2 "magic" words plus one optional : START, STOP and option
     MOV #(SLEEP),PC         \ Must be the last statement of BACKGROUND
     ENDASM                  \
 
+
+
+
+
     CODE START              \ to init your app
         ...                 \ init assembly part
-    
+    MOV #WDT_INT,&VEC_WDT   \ init WDT vector interrupt
+        ...
 
     MOV #SLEEP,X            \ redirect default background task to yours (optional)
     MOV #BACKGROUND,2(X)    \
@@ -1239,9 +1220,8 @@ then finish with this 2 "magic" words plus one optional : START, STOP and option
     COLON
         ...                 \ init FORTH part
     
-    \   NOECHO              \ uncomment if your app runs without terminal
-        LIT RECURSE IS WARM \ insert START (so your init app) in the FORTH init process
-        (WARM)              \ then continue the FORTH init process
+        LIT RECURSE IS WARM \ replace (WARM) as part of FORTH init by START in the FORTH init process
+        ABORT               \ then end the FORTH init process.
     ;
 
 
@@ -1251,10 +1231,11 @@ then finish with this 2 "magic" words plus one optional : START, STOP and option
                             \ (thus "['] (SLEEP) IS SLEEP" don't works.)
     COLON
         ['] (WARM) IS WARM  \ remove START from FORTH init process 
-        ECHO                \ to retrieve FORTH input terminal
+        ECHO                \ to always retrieve FORTH input terminal
         COLD                \ reset CPU, interrupt vectors and restart FORTH.
     ;
 
+[THEN]  \ end of conditionnaly compilation
 
                 ; compiling is done
     RST_HERE    ; thus allowing to restart your app with <reset> or COLD
@@ -1263,8 +1244,8 @@ then finish with this 2 "magic" words plus one optional : START, STOP and option
 end of file
 
 
-Each time you download this project file in LAUNCHPAD, the word WIPE returns the dictionary set as it was in TXT file. 
-And the word RST_HERE protects the PROJECT against <RESET\>. 
+Each time you download this project file, the word {PROJECT} removes all subsequent definitions,
+and the word RST_HERE protects the PROJECT against <RESET\>. 
 
 The word START allows to include your app init into FORTH's one.
 The word STOP unlink your app.
@@ -1278,7 +1259,12 @@ TEST.f :
     \ ----------------------------------
     \ MSP-EXP430FR5969_8MHZ_TEST.f
     \ ----------------------------------
-    RST_STATE   \ restore the state defined by PROJECT.f
+
+[DEFINED] {TEST} [IF] {TEST} [THEN] \ remove {TEST} if exist (memory management)
+    \
+MARKER {TEST}
+    \
+
 
     here you write your routine to test
     
@@ -1307,28 +1293,12 @@ When the routine "test" works as you want, you cut it in test.f file and copy it
 Good luck !
 
 
-
-Case of MSP430FR2xxx family (with FLL)
----
-
-
-Difficult to download CORETEST.4th on CHIPSTICK @ 8MHz without error (tested with USBtoUART device = CP2102).
-
-To resolve, I was forced to speed the clock up to 8.29 MHz ! (see ChipStick_fr2433.inc) 
-
-And there is no this problem @ 16MHz !
-
-Is a problem that affects this device only, or corrupt TLV area during welding?
-
-If you ever encounter the same difficulty, recompile + download CORETEST.4th several times by increasing each time by 2 the FLLN value until you reach the good compromising...
-
-
 ANNEXE
 --
 
 The embedded assembler don't recognize the (useless) TI's symbolic addressing mode: ADD.B EDE,TONI.
 
-REGISTERS correspondence
+REGISTERS correspondence (preprocessor gema.exe allow you to use FASTFORTH registers's names).
 
     embedded ASM    TI      FASTFORTH   comment 
                              
@@ -1349,8 +1319,6 @@ REGISTERS correspondence
         R14         R14     TOS         Top Of parameters Stack
         R15         R15     PSP         Parameters Stack Pointer
 
-    FASTFORTH registers must be preprocessed by gema.exe before sending to the embedded assembler.
-
 REGISTERS use
 
     The FASTFORTH registers rDOCOL, rDOVAR, rDOCON and rDODOES must be preserved, 
@@ -1366,16 +1334,16 @@ PARAMETERS STACK use
     to push one cell on the PSP stack :
 
         SUB #2,PSP                  \ insert a empty 2th cell
-        MOV TOS,0(PSP)              \ mov first cell in this empty 2th cell
-        MOV <what you want>,TOS     \ or MOV.B <what you want>,TOS ; i.e. in first cell
+        MOV TOS,0(PSP)              \ fill this 2th cell with first cell
+        MOV <what you want>,TOS     \ MOV or MOV.B <what you want>,TOS ; i.e. update first cell
         ...
 
     to pop one cell from the PSP stack :
 
-        MOV @PSP+,TOS               \ first cell TOS is lost
+        MOV @PSP+,TOS               \ first cell TOS is lost and replaced by the 2th.
         ...
 
-    don't never pop a byte with instruction MOV.B @PSP+, ...
+    don't never pop a byte with instruction MOV.B @PSP+, because generates a stack misalignement...
 
 RETURN STACK use
 
@@ -1406,33 +1374,35 @@ RETURN STACK use
 
 CPUx instructions PUSHM / POPM (my own syntax, not the TI's one, too bad :-)
 
-    PUSHM order : PSP,TOS,IP, S, T, W, X, Y, R7, R6, R5, R4
+    PUSHM order : PSP,TOS, IP,   S,   T,   W,  X,  Y, R7, R6, R5, R4
+    PUSHM order : R15,R14,R13, R12, R11, R10, R9, R8, R7, R6, R5, R4
 
-    example : PUSHM IP,Y    \ push IP, S, T, W, X, Y registers onto the stack RSP
+    example : PUSHM IP,Y    \ push R13, R12, R11, R10, R9, R8 registers onto the stack RSP
 
 
-    POPM  order : R4, R5, R6, R7, Y, X, W, T, S, IP,TOS,PSP
+    POPM  order : R4, R5, R6, R7,  Y,  X,  W,   T,  S, IP,TOS,PSP
+    POPM  order : R4, R5, R6, R7, R8, R9, R10,R11,R12,R13,R14,R15
 
-    example : POPM Y,IP     \ pop Y, X, W, T, S, IP registers from the stack RSP
+    example : POPM Y,IP     \ restore R8, R9, R10,R11,R12,R13 registers from the stack RSP
 
     error occurs if bad order (PUSHM Y,IP for example)
 
 
 CPUx instructions RRCM,RRAM,RLAM,RRUM
     
-    example : RRUM #3,R8      \ R8 register is Unsigned Right shifted by n=3
+    example : RRUM #3,Y      \ Y (R8) register is Unsigned Right shifted by n=3
 
     error occurs if 1 > n > 4
 
 
 conditionnal jumps use with symbolic assembler
 
-    0=    { IF UNTIL WHILE ?JMP ?GOTO }
-    0<>   { IF UNTIL WHILE ?JMP ?GOTO }   
-    U>=   { IF UNTIL WHILE ?JMP ?GOTO }   
-    U<    { IF UNTIL WHILE ?JMP ?GOTO }    
-    S<    { IF UNTIL WHILE ?JMP ?GOTO }    
-    S>=   { IF UNTIL WHILE ?JMP ?GOTO }   
-    0>=   { IF UNTIL WHILE }
-    0<    { ?JMP ?GOTO } 
+    0=    with IF UNTIL WHILE ?JMP ?GOTO
+    0<>   with IF UNTIL WHILE ?JMP ?GOTO   
+    U>=   with IF UNTIL WHILE ?JMP ?GOTO   
+    U<    with IF UNTIL WHILE ?JMP ?GOTO    
+    S<    with IF UNTIL WHILE ?JMP ?GOTO    
+    S>=   with IF UNTIL WHILE ?JMP ?GOTO   
+    0>=   with IF UNTIL WHILE
+    0<    with ?JMP ?GOTO 
 

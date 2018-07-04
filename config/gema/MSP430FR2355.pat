@@ -49,6 +49,7 @@ PROGRAMSTART=\$8000!      ! Code space start
 ! ----------------------------------------------
 ! Interrupt Vectors and signatures - MSP430FR2355
 ! ----------------------------------------------
+FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
 SIGNATURES=\$FF80!      JTAG/BSL signatures
 JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW ! reset by wipe and by S1+<reset>
 JTAG_SIG2=\$FF82!       if JTAG_SIG <> |0xFFFFFFFF, 0x00000000|, SBW and JTAG are locked

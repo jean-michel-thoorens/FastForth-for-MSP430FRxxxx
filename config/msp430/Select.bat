@@ -15,6 +15,7 @@
 @echo 6  MSP_EXP430FR2433
 @echo 7  CHIPSTICK_FR2433
 @echo 8  MSP_EXP430FR2355
+
 @set /p choice=your choice: 
 
 @if %choice% == 1    set template=MSP_EXP430FR5739

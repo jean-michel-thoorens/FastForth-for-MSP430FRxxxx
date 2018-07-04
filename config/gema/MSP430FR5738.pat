@@ -25,6 +25,7 @@ TLVEND=\$1A7F!
 RAMSTART=\$1C00!
 RAMEND=\$1FFF!
 PROGRAMSTART=\$C200!    Code space start
+FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
 SIGNATURES=\$FF80!      JTAG/BSL signatures
 JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW; must be reset by wipe.
 JTAG_SIG2=\$FF82!       if JTAG_SIG1=\$AAAA, length of password string @ JTAG_PASSWORD
@@ -557,8 +558,8 @@ UCB0BRW=\$646!
 UCB0BR0=\$646!      \ eUSCI_B bit rate 0              
 UCB0BR1=\$647!      \ eUSCI_B bit rate 1              
 UCB0STATW=\$648!    \ eUSCI_B status word 
-UCBCNT0=\$649!      \ eUSCI_B hardware count           
-UCB0TBCNT=\$64A!    \ eUSCI_B byte counter threshold  
+UCB0BCNT=\$649!     \ eUSCI_B Byte Count            !WARNING! byte access!          
+UCB0TBCNT=\$64A!    \ eUSCI_B Byte Count Threshold  
 UCB0RXBUF=\$64C!    \ eUSCI_B receive buffer          
 UCB0TXBUF=\$64E!    \ eUSCI_B transmit buffer         
 UCB0I2COA0=\$654!   \ eUSCI_B I2C own address 0       

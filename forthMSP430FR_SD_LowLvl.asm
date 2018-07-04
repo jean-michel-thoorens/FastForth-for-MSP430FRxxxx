@@ -16,125 +16,15 @@
 ; You should have received a copy of the GNU General Public License
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-; =====================================================================
-; goal : accept 64 MB up to 64 GB SD_CARD
-; =====================================================================
-; thus FAT and RootClus logical sectors are word addressable.
-
-; FAT is a little endian structure.
-; CMD frame is sent as big endian.
-
-; we assume that SDSC Card (up to 2GB) is FAT16 with a byte addressing
-; and that SDHC Card (4GB up to 64GB) is FAT32 with a sector addressing (sector = 512 bytes)
-; for SDHC Card = 64 GB, cluster = 64 sectors ==> max clusters = 20 0000h ==> FAT size = 16384 sectors
-; ==> FAT1 and FAT2 can be addressed with a single word.
-
-; ref. https://en.wikipedia.org/wiki/Extended_boot_record
-; ref. https://en.wikipedia.org/wiki/Partition_type
-
-; Formatage FA16 d'une SDSC Card 2GB
-; First sector of physical drive (sector 0) content :
-; ---------------------------------------------------
-; dec@| HEX@
-; 446 |0x1BE    : partition table first record  ==> logical drive 0       
-; 446 |0x1CE    : partition table 2th record    ==> logical drive 1
-; 446 |0x1DE    : partition table 3th record    ==> logical drive 2
-; 446 |0x1EE    : partition table 4th record    ==> logical drive 3
-
-; partition record content :
-; ---------------------------------------------------
-; dec@|HEX@ =  HEX                                                           decimal
-; 0   |0x00 =  0x00     : not bootable
-; 1   |0x01 =  02 0C 00 : Org Cylinder/Head/Sector offset (CHS-addressing) = not used
-; 4   |0x04 =  0x0E     : type FAT16 using LBA addressing                  = 14 ==> FAT16
-; 5   |0x05 =  ED 3F EE : End Cylinder/Head/Sector offset (CHS-addressing) = not used
-; 8   |0x08 =  00 20 00 00 : sectors offset of logical drive               = 8192
-; 12  |0x0C =  00 40 74 00 : sectors size of logical drive                 = 7618560 sectors
-
-; 450 |0x04 =  0x0E     : type FAT16 using LBA addressing                  = 14 ==> set FATtype = FAT16 with byte CMD addressing
-; 454 |0x1C6 = 89 00    : FirstSector (of logical drive 0) BS_FirstSector  = 137
-
-
-; ref. https://www.compuphase.com/mbr_fat.htm#BOOTSECTOR
-
-; FirstSector of logical drive (sector 0) content :
-; -------------------------------------------------
-; dec@| HEX@ =  HEX                                                       decimal
-; 11  | 0x0B = 00 02        : 512 bytes/sector          BPB_BytsPerSec  = 512
-; 13  | 0x0D = 40           : 64 sectors/cluster        BPB_SecPerClus  = 64
-; 14  | 0x0E = 01 00        : 2 reserved sectors        BPB_RsvdSecCnt  = 1
-; 16  | 0x10 = 02           : 2 FATs                    BPB_NumFATs     = 2 (always 2)
-; 17  | 0x11 = 00 02        : 512 entries/directory     BPB_RootEntCnt  = 512
-; 19  | 0x13 = 00 00        : BPB_TotSec16 (if < 65535) BPB_TotSec16    = 0
-; 22  | 0x16 = EB 00        : 235 sectors/FAT (FAT16)   BPB_FATSize     = 235
-; 32  | 0x20 = 77 9F 3A 00  : ‭3841911‬ total sectors     BPB_TotSec32    = ‭3841911‬
-; 54  | 0x36 = "FAT16"                                  BS_FilSysType   (not used)
-
-; all values below are evaluated in logical sectors
-; FAT1           = BPB_RsvdSecCnt = 1
-; FAT2           = BPB_RsvdSecCnt + BPB_FATSz32 = 1 + 235 = 236
-; OrgRootDirL    = BPB_RsvdSecCnt + (BPB_FATSize * BPB_NumFATs) = 471
-; RootDirSize    = BPB_RootEntCnt * 32 / BPB_BytsPerSec         = 32 sectors
-; OrgDatas       = OrgRootDir + RootDirSize                     = 503
-; OrgCluster     = OrgRootDir - 2*BPB_SecPerClus                = 375 (virtual value)
-; FirstSectorOfCluster(n) = OrgCluster + n*BPB_SecPerClus       ==> cluster(3) = 705
-
-; ====================================================================================
-
-; Formatage FA32 d'une SDSC Card 8GB
-; First sector of physical drive (sector 0) content :
-; ---------------------------------------------------
-; dec@| HEX@
-; 446 |0x1BE    : partition table first record  ==> logical block 0       
-; 446 |0x1CE    : partition table 2th record    ==> logical block 1
-; 446 |0x1DE    : partition table 3th record    ==> logical block 2
-; 446 |0x1EE    : partition table 4th record    ==> logical block 3
-
-; partition record content :
-; ---------------------------------------------------
-; dec@|HEX@ =  HEX                                                        decimal
-; 0   |0x00 =  0x00     : not bootable
-; 1   |0x01 =  82 03 00 : Org CHS offset (Cylinder/Head/Sector)         = not used
-; 4   |0x04 =  0x0C     : type FAT32 using LBA addressing               = 12 ==> set FATtype = FAT32 with sector CMD addressing
-; 5   |0x05 =  82 03 00 : End offset (Cylinder/Head/Sector offset)      = not used
-; 8   |0x08 =  00 20 00 00 : sectors offset of logical block            = 8192
-; 12  |0x0C =  00 40 74 00 : sectors size of logical block              = 7618560
-
-; 454 |0x1C6 = 00 20 00 00 : FirstSector (of logical drive 0) = BS_FirstSector = 8192
-
-; 
-; FirstSector of logical block (sector 0) content :
-; -------------------------------------------------
-; dec@| HEX@ =  HEX                                                       decimal
-; 11  | 0x0B = 00 02        : 512 bytes/sector          BPB_BytsPerSec  = 512
-; 13  | 0x0D = 08           : 8 sectors/cluster         BPB_SecPerClus  = 8
-; 14  | 0x0E = 20 00        : 32 reserved sectors       BPB_RsvdSecCnt  = 32
-; 16  | 0x10 = 02           : 2 FATs                    BPB_NumFATs     = 2 (always 2)
-; 17  | 0x11 = 00 00        : 0                         BPB_RootEntCnt  = 0 (always 0 for FAT32)
-
-; 32  | 0x20 = 00 C0 EC 00  : BPB_TotSec32              BPB_TotSec32    = 15515648
-; 36  | 0x24 = 30 3B 00 00  : BPB_FATSz32               BPB_FATSz32     = 15152
-; 40  | 0x28 = 00 00        : BPB_ExtFlags              BPB_ExtFlags 
-; 44  | 0x2C = 02 00 00 00  : BPB_RootClus              BPB_RootClus    = 2
-; 48  | 0x30 = 01 00        : BPB_FSInfo                BPB_FSInfo      = 1
-; 50  | 0x33 = 06 00        : BPB_BkBootSec             BPB_BkBootSec   = 6
-; 82  | 0x52 = "FAT32"      : BS_FilSysType             BS_FilSysType   (not used)
-
-; 
-; all values below are evaluated in logical sectors
-; FAT1           = BPB_RsvdSecCnt = 32
-; FAT2           = BPB_RsvdSecCnt + BPB_FATSz32 = 32 + 15152 = 15184
-; OrgRootDirL    = BPB_RsvdSecCnt + BPB_FATSz32 * BPB_NumFATs = 32 + 15152*2 = 30336
-; OrgCluster     = OrgRootDir - 2*BPB_SecPerClus = 30320
-; RootDirSize    = BPB_RootEntCnt * 32 / BPB_BytsPerSec         = 0
-; OrgDatas       = OrgRootDir + RootDirSize                     = 30336
-; FirstSectorOfCluster(n) = OrgCluster + n*BPB_SecPerClus       ==> cluster(6) = 30368
-
 
 
 BytsPerSec      .equ 512
 
 ; all sectors are computed as logical, then physically translated at last time by RW_Sector_CMD
+
+sendCommandIdleRet                  ; <=== CMD0, CMD8, CMD55: W = 1 = R1 expected response = idle (forthMSP430FR_SD_INIT.asm)
+    MOV     #1,W                    ; expected R1 response (first byte of SPI R7) = 01h : idle state
+    JMP     sendCommand             ;
 
 ; in SPI mode CRC is not required, but CMD frame must be ended with a stop bit
 ; ==================================;
@@ -156,10 +46,10 @@ ComputePhysicalSector               ;
     CMP     #2,&FATtype             ;3 FAT32 ?          
     JZ      FAT32_CMD               ;2 yes
 FAT16_CMD                           ;  FAT16 : CMD17/24 byte address = Sector * BPB_BytsPerSec
-    ADD     W,W                     ;  shift left one Sector
-    ADDC.B  X,X                     ;
-    MOV     W,&SD_CMD_FRM+2         ;  $(01 00 ll LL xx CMD)
-    MOV.B   X,&SD_CMD_FRM+4         ;  $(01 00 ll LL hh CMD) 
+    ADD     W,W                     ;1 shift left one Sector
+    ADDC.B  X,X                     ;1
+    MOV     W,&SD_CMD_FRM+2         ;3 $(01 00 ll LL xx CMD)
+    MOV.B   X,&SD_CMD_FRM+4         ;3 $(01 00 ll LL hh CMD) 
     JMP     WaitIdleBeforeSendCMD   ;
 FAT32_CMD                           ;  FAT32 : CMD17/24 sector address
     MOV.B   W,&SD_CMD_FRM+1         ;3 $(01 ll xx xx xx CMD)
@@ -172,11 +62,10 @@ FAT32_CMD                           ;  FAT32 : CMD17/24 sector address
 WaitIdleBeforeSendCMD               ; <=== CMD41, CMD1, CMD16 (forthMSP430FR_SD_INIT.asm)
 ; ==================================;
     CALL #SPI_GET                   ;
-    CMP.B   #-1,W                   ; FFh = expected value <==> MISO = 1 = not busy = idle state
-    JNE WaitIdleBeforeSendCMD       ; loop back until idle state
-    MOV     #0,W                    ; W = expected R1 response = ready, for CMD41,CMD16, CMD17, CMD24
-; ==================================;
-sendCommand                         ;X <=== CMD0, CMD8, CMD55: W = R1 expected response = idle (forthMSP430FR_SD_INIT.asm)
+    ADD.B   #1,W                    ; expected value = FFh <==> MISO = 1 = not busy = idle state
+    JNE WaitIdleBeforeSendCMD       ; loop back if <> FFh
+; ==================================;   W = 0 = expected R1 response = ready, for CMD41,CMD16, CMD17, CMD24
+sendCommand                         ;X  
 ; ==================================;
                                     ; input : SD_CMD_FRM : {CRC,byte_l,byte_L,byte_h,byte_H,CMD} 
                                     ;         W = expected return value
@@ -229,16 +118,16 @@ SPI_WAIT_RET                        ; flag Z = 1 <==> Returned value = expected 
 ; PUT value must be a word or  byte:byte because little endian to big endian conversion
 
 ; ==================================;
-SPI_GET                             ; PUT(FFh)
-; ==================================; output : W = received byte, X = 0 always
+SPI_GET                             ; PUT(FFh), output : W = received byte, X = 0
+; ==================================;
     MOV #1,X                        ;1
 ; ==================================;
-SPI_X_GET                           ; PUT(FFh) X times
-; ==================================; output : W = last received byte, X = 0
-    MOV #-1,W                       ;1
+SPI_X_GET                           ; PUT(FFh) X times, output : W = last received byte, X = 0
 ; ==================================;
-SPI_PUT                             ; PUT(W) X time
-; ==================================; output : W = last received byte, X = 0
+    MOV #-1,W                       ;1 W = FFFFh
+; ==================================;
+SPI_PUT                             ; PUT(W) X time, output : W = last received byte, X = 0
+; ==================================;
             SWPB W                  ;1
             MOV.B W,&SD_TXBUF       ;3 put W high byte then W low byte and so forth, that performs little to big endian conversion
             CMP #0,&SD_BRW          ;3 full speed ?
@@ -259,7 +148,7 @@ readFAT1SectorW                     ; read a FAT1 sector
 ; ==================================;
     ADD     &OrgFAT1,W              ;
 ; ==================================;
-readSectorW                         ; read a logical sector up to 65535 (case of FAT1,FAT2)
+readSectorW                         ; read a logical sector < 65536
 ; ==================================;
     MOV     #0,X                    ;
 ; ==================================;
@@ -273,14 +162,14 @@ readSectorWX                        ; read a logical sector
 WaitFEhResponse                     ; wait SD_Card response FEh
 ; ----------------------------------;
     CALL #SPI_GET                   ;
-    CMP.B   #-2,W                   ; FEh expected value
+    ADD.B   #2,W                    ;1 FEh expected value
     JZ  ReadSectorfirst             ; 2
     JNZ WaitFEhResponse             ;
 ; ----------------------------------;
-ReadSectorLoop                      ; get 512+1 bytes, write 512 bytes
+ReadSectorLoop                      ; get 512+1 bytes, write 512 bytes in SD_BUF
 ; ----------------------------------;
     MOV.B   &SD_RXBUF,SD_BUF-1(X)   ; 5
-ReadSectorfirst                     ;
+ReadSectorfirst                     ; 
     MOV.B   #-1,&SD_TXBUF           ; 3 put FF
     NOP                             ; 1 NOPx adjusted to avoid read SD_error
     ADD     #1,X                    ; 1
@@ -353,28 +242,35 @@ CheckWriteState                     ;
 ; 6th bit = address error
 ; 7th bit = parameter error
 
+; Data Response Token
+; Every data block written to the card will be acknowledged by a data response token. 
+; It is one byte long and has the following format:
+; 7 6 5 4 3 2  1  0
+; x x x 0 Status  1
+;The meaning of the status bits is defined as follows:
+;'010' - Data accepted.
+;'101' - Data rejected due to a CRC error.
+;'110' - Data Rejected due to a Write Error
+
 ; ----------------------------------;
 SD_CARD_ERROR                       ; <=== SD_INIT errors 4,8,$10
 ; ----------------------------------;
     SWPB S                          ; High Level error in High byte
-    ADD &SD_RXBUF,S                 ; add SPI(GET) return value to high level error
-SD_CARD_ID_ERROR                    ; <=== SD_INIT error $20
+    ADD &SD_RXBUF,S                 ; add SPI(GET) return value as low byte error
+SD_CARD_ID_ERROR                    ; <=== SD_INIT error $20 from forthMSP430FR_SD_LowLvl.asm
     BIS.B #SD_CS,&SD_CSOUT          ; SD_CS = high
     mDOCOL                          ;
     .word   XSQUOTE                 ;
     .byte   11,"< SD Error!"        ;
 ; ----------------------------------;
-SD_QABORTYES                        ; <=== OPEN/READ and WRITE errors
+SD_QABORTYES                        ; <=== OPEN file errors from forthMSP430FR_SD_LOAD.asm
 ; ----------------------------------;
     FORTHtoASM                      ;
-    SUB #4,PSP                      ;
-    MOV TOS,2(PSP)                  ;
-    MOV &BASE,0(PSP)                ;
+    SUB #2,PSP                      ; to avoid stack underflow crash
     MOV #10h,&BASE                  ; select hex
     MOV S,TOS                       ;
     ASMtoFORTH                      ;
     .word   UDOT                    ;
-    .word   FBASE,STORE             ; restore base
-    .word   QABORTYES               ;
+    .word   QABORTYES               ; no return...
 ; ----------------------------------;
 

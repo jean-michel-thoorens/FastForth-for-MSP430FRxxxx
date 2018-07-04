@@ -90,9 +90,6 @@
 ; LFXTAL XOUT- P2.6
 ; LFXTAL XIN - P2.7
 
-
-
-
 ; ======================================================================
 ; MSP-EXP430FR2355 LAUNCHPAD    <--> OUTPUT WORLD
 ; ======================================================================
@@ -109,11 +106,11 @@
         
 ; P2.2  -             J2.18  -  <---- TSSOP32236 (IR RC5) 
 
-; P2.5  -             J2.12  -  ----> SD_CS (Card Select)
-; P4.4  -             J2.13  -  <---- SD_CD (Card Detect)
+; P2.5  -             J2.13  -  <---- SD_CD (Card Detect)
+; P4.4  -             J2.12  -  ----> SD_CS (Card Select)
 ; P4.5  - UCB1 CLK    J1.7   -  ----> SD_CLK
-; P4.7  - UCB1 SOMI   J2.14  -  <---- SD_SDO
 ; P4.6  - UCB1 SIMO   J2.15  -  ----> SD_SDI
+; P4.7  - UCB1 SOMI   J2.14  -  <---- SD_SDO
         
 ; P6.0  -             J4.39  -  ----> SCL I2C Soft_Master
 ; P6.1  -             J4.38  -  <---> SDA I2C Soft_Master
@@ -143,36 +140,45 @@
 ; POWER ON RESET AND INITIALIZATION : PORT1/2
 ; ----------------------------------------------------------------------
 
-; LED1 - P1.0   (red)
-
-; SW2  - P2.3
-
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
 ; PORTA usage
 
+;               P1.0  -   LED1 red
+; UART RTS      P2.0  -   J2.19     ---->   CTS UARTtoUSB bridge (TERMINAL4WIRES)
+; UART CTS      P2.1  -   J4.40     <----   RTS UARTtoUSB bridge (TERMINAL5WIRES)
+;               P2.3  -   SW2
+;               P2.5  -   J2.10     <----   SD_CD (Card Detect)
+
             MOV #-1,&PAREN      ; all inputs with pull resistors
             BIS #00001h,&PADIR  ; all pins as input else LED1 as output
-            MOV #0FFFEh,&PAOUT  ; all pins with pullup resistors ekse LED1 = output low
+            MOV #0FFFEh,&PAOUT  ; all pins with pullup resistors else LED1 = output low
 
-
-; P2.0  - RTS         J2.19   -  ----> CTS UARTtoUSB bridge (TERMINAL4WIRES)
-; P2.1  - CTS         J4.40   -  <---- RTS UARTtoUSB bridge (TERMINAL5WIRES)
+    .IFDEF UCA0_TERM
+; UCA0_RXD  -   P1.6    - J1.3      <----   TX  UARTtoUSB bridge
+; UCA0_TXD  -   P1.7    - J1.4      ---->   RX  UARTtoUSB bridge
+RXD         .equ 40h        ; P1.6 = RXD
+TXD         .equ 80h        ; P1.7 = TXD + FORTH Deep_RST pin
+TERM_BUS    .equ 0C0h
+TERM_IN     .equ P1IN
+TERM_REN    .equ P1REN
+TERM_SEL    .equ P1SEL0
+    .ENDIF
 
     .IFDEF TERMINAL4WIRES
+
 ; RTS output must be wired to the CTS input of UART2USB bridge 
-; configure RTS as output high to disable RX TERM during start FORTH
-; notice that this pin RTS may be permanently wired on SBWTCK (TEST) without disturbing SBW 2 wires programming
+; configure RTS as output high (false) to disable RX TERM during start FORTH
 HANDSHAKOUT .equ    P2OUT
 HANDSHAKIN  .equ    P2IN
 RTS         .equ    1           ; P2.0 bit position
 
             BIS.B #1,&P2OUT     ; P2.0 RTS as output high
 
-        .IFDEF TERMINAL5WIRES
+        .IFDEF TERMINAL5WIRES   ; included in 4WIRES configuration
 
 ; CTS input must be wired to the RTS output of UART2USB bridge 
-; configure CTS as input low
+; configure CTS as input low (true)
 CTS         .equ    2           ; P2.1 bit position
             BIC.B  #2,&P2DIR    ; CTS input pull down resistor
 
@@ -180,48 +186,48 @@ CTS         .equ    2           ; P2.1 bit position
 
     .ENDIF  ; TERMINAL4WIRES
 
-; SD_CS - P2.5 (Card Select)
-SD_CS           .equ  20h
-SD_CSOUT        .equ P2OUT
-SD_CSDIR        .equ P2DIR
-
+SD_CD       .equ  20h
+SD_CDIN     .equ  P2IN
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3-4
 ; ----------------------------------------------------------------------
 
-          
-
-; P4.1  - SW1
-
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
-; PORT3 usage
-            MOV.B #-1,&P3OUT  ; OUT1 for all pins
-            BIS.B #-1,&P3REN  ; all pins with pull resistors
+; PORTB usage
 
-; P4.2  - UCA1 RXD    J101.8 -  <---- TX  UARTtoUSB bridge
-; P4.3  - UCA1 TXD    J101.6 -  <-+-> RX  UARTtoUSB bridge
+;               P4.1    -   SW1
+; UCA1 RXD      P4.2    -   J101.8  <----   TX  UARTtoUSB bridge
+; UCA1 TXD      P4.3    -   J101.6  ---->   RX  UARTtoUSB bridge
+;               P4.4    -   J2.9    ---->   SD_CS(Card Select)
+; UCB1 CLK      P4.5    -   J1.7    ---->   SD_CLK
+; UCB1 SIMO     P4.6    -   J2.15   ---->   SD_SDI
+; UCB1 SOMI     P4.7    -   J2.14   <----   SD_SDO
 
-Deep_RST_IN .equ P4IN
-Deep_RST    .equ 8 ; = TX
-TERM_TXRX   .equ 0Ch
-TERM_SEL    .equ P4SEL0
+            MOV.B #-1,&PBOUT  ; pullup resistors for all pins
+            BIS.B #-1,&PBREN  ; all pins with pull resistors
+
+    .IFDEF UCA1_TERM
+; UCA1 RXD      P4.2    -   J101.8  <----   TX  UARTtoUSB bridge
+; UCA1 TXD      P4.3    -   J101.6  ---->   RX  UARTtoUSB bridge
+RXD         .equ 4      ; P4.2 = RXD
+TXD         .equ 8      ; P4.3 = TXD + FORTH Deep_RST pin
+TERM_BUS    .equ 0Ch
+TERM_IN     .equ P4IN
 TERM_REN    .equ P4REN
+TERM_SEL    .equ P4SEL0
+    .ENDIF
 
-; P4.4  -             J2.13  -  <---- SD_CD (Card Detect)
-SD_CD           .equ  10h
-SD_CDIN         .equ  P4IN
+    .IFDEF UCB1_SD
+SD_CS       .equ 10h    ; P4.4
+SD_CSOUT    .equ P4OUT
+SD_CSDIR    .equ P4DIR
 
-; P4.5  - UCB1 CLK    J1.7   -  ----> SD_CLK
-; P4.6  - UCB1 SIMO   J2.15  -  ----> SD_SDI
-; P4.7  - UCB1 SOMI   J2.14  -  <---- SD_SDO
-        
 SD_SEL      .equ PBSEL0 ; to configure UCB1
 SD_REN      .equ PBREN  ; to configure pullup resistors
 SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1SOMI
-
-
+    .ENDIF
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT5-6
 ; ----------------------------------------------------------------------
@@ -230,26 +236,23 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 
 ; PORT6 usage
 
-; LED2 - P6.6   (green)
+;           P6.6    -   LED2 green
 
             BIS.B #0BFh,&P6REN  ; all pins with pull up resistors else P6.6
-            MOV.B #040h,&P6DIR
             MOV.B #0BFh,&P6OUT  ; OUT high for all pins else P6.6
-
+            MOV.B #040h,&P6DIR  ; all pins with pullup resistors else LED2 = output low
 
 ; ----------------------------------------------------------------------
 ; FRAM config
 ; ----------------------------------------------------------------------
 
     .IF FREQUENCY = 16
-;NWAITS            = 1
             MOV.B   #0A5h, &FRCTL0_H     ; enable FRCTL0 access
             MOV.B   #10h, &FRCTL0         ; 1 waitstate @ 16 MHz
             MOV.B   #01h, &FRCTL0_H       ; disable FRCTL0 access
     .ENDIF
 
     .IF FREQUENCY = 24
-;NWAITS            = 2
             MOV.B   #0A5h, &FRCTL0_H     ; enable FRCTL0 access
             MOV.B   #20h, &FRCTL0         ; 2 waitstate @ 24 MHz
             MOV.B   #01h, &FRCTL0_H       ; disable FRCTL0 access
@@ -259,9 +262,7 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 ; POWER ON RESET SYS config
 ; ----------------------------------------------------------------------
 
-; SYS code                                  
-;    BIC #1,&SYSCFG0 ; enable write program in FRAM
-    MOV #0A500h,&SYSCFG0 ; enable write MAIN and INFO
+    MOV #0A500h,&SYSCFG0    ; enable write MAIN + INFO
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : CLOCK SYSTEM

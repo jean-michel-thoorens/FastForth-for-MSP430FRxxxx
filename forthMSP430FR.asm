@@ -41,47 +41,40 @@ VER .equ "V205"
 ;===============================================================================
 
 ;-------------------------------------------------------------------------------
-; TARGET configuration SWITCHES ; sizes are for 8MHz DTC=1, 2457600 bds, 3WIRES
+; TARGETS kernel    ; sizes are for 8MHz, DTC=1, 2457600 bds, 3WIRES (XON/XOFF)
 ;-------------------------------------------------------------------------------
-;MSP_EXP430FR5739   ; compile for MSP-EXP430FR5739 launchpad        ; 4024 bytes
-;MSP_EXP430FR5969   ; compile for MSP-EXP430FR5969 launchpad        ; 4010 bytes
-;MSP_EXP430FR5994   ; compile for MSP-EXP430FR5994 launchpad        ; 4028 bytes
-;MSP_EXP430FR6989   ; compile for MSP-EXP430FR6989 launchpad        ; 4044 bytes
-;MSP_EXP430FR4133   ; compile for MSP-EXP430FR4133 launchpad        ; 4076 bytes
-;MSP_EXP430FR2433   ; compile for MSP-EXP430FR2433 launchpad        ; 3988 bytes
-;MSP_EXP430FR2355   ; compile for MSP-EXP430FR2355 launchpad        ; 4026 bytes
-CHIPSTICK_FR2433   ; compile for the "CHIPSTICK" of M. Ken BOAK    ; 3988 bytes
-;MY_MSP430FR5738    ; compile for my own MSP430FR5738 miniboards    ; 3988 bytes
-;MY_MSP430FR5738_1  ; compile for MY_MSP430FR5738_1 miniboard       ; 3988 bytes
-;MY_MSP430FR5948    ; compile for my own MSP430FR5948 miniboard     ; 3984 bytes
-;MY_MSP430FR5948_1  ; compile for my own MSP430FR5948_1 miniboard   ; 3996 bytes
-;PA_Core_MSP430     ; compile MSP430FR5948_1 miniboard                ; 3996 bytes
-;JMJ_BOX            ; compile for JMJ_BOX MSP430FR5738              ; 3980 bytes
-;PA_PA_MSP430       ; compile for PA8_PA_MSP430 MSP430FR5738        ; 3980 bytes
+;MSP_EXP430FR5739   ; compile for MSP-EXP430FR5739 launchpad        ; 3998 bytes
+;MSP_EXP430FR5969   ; compile for MSP-EXP430FR5969 launchpad        ; 3986 bytes
+;MSP_EXP430FR5994   ; compile for MSP-EXP430FR5994 launchpad        ; 4004 bytes
+;MSP_EXP430FR6989   ; compile for MSP-EXP430FR6989 launchpad        ; 4014 bytes
+;MSP_EXP430FR4133   ; compile for MSP-EXP430FR4133 launchpad        ; 4048 bytes
+;MSP_EXP430FR2433   ; compile for MSP-EXP430FR2433 launchpad        ; 3966 bytes
+;CHIPSTICK_FR2433   ; compile for the "CHIPSTICK" of M. Ken BOAK    ; 3958 bytes
+MSP_EXP430FR2355   ; compile for MSP-EXP430FR2355 launchpad        ; 3980 bytes
 
 ; choose DTC (Direct Threaded Code) model, if you don't know, choose 2
-DTC .equ 1  ; DTC model 1 : DOCOL = CALL rDOCOL           14 cycles 1 word      shortest DTC model
+DTC .equ 2  ; DTC model 1 : DOCOL = CALL rDOCOL           14 cycles 1 word      shortest DTC model
             ; DTC model 2 : DOCOL = PUSH IP, CALL rEXIT   13 cycles 2 words     good compromize for mix FORTH/ASM code
             ; DTC model 3 : inlined DOCOL                  9 cycles 4 words     fastest
 
-FREQUENCY   .equ 16  ; fully tested at 0.25,0.5,1,2,4,8,16 (and 24 for MSP430FR57xx) MHz
-THREADS     .equ 16 ;  1,    2,    4,    8,   16,   32 search entries in dictionnary.
+FREQUENCY   .equ 24  ; fully tested at 0.25,0.5,1,2,4,8,16 (and 24 for MSP430FR57xx) MHz
+THREADS     .equ 16  ;  1,    2,    4,    8,   16,   32 search entries in dictionnary.
                     ; +0, +108, +122, +138, +180, +232 bytes
                     ; used to speed compilation; with bluetooth connection, choose 1,
                     ; with uart usb bridge, choose 16.
 ;-------------------------------------------------------------------------------
 ; KERNEL ADD-ON SWITCHES
 ;-------------------------------------------------------------------------------
-MSP430ASSEMBLER     ;; + 1894 bytes : adds embedded assembler with TI syntax; without, you can do all but all much more slowly...
+MSP430ASSEMBLER     ;; + 1882 bytes : adds embedded assembler with TI syntax; without, you can do all but all much more slowly...
 CONDCOMP            ;; +  324 bytes : add conditionnal compilation : MARKER [UNDEFINED] [DEFINED] [IF] [ELSE] [THEN] COMPARE
 FIXPOINT_INPUT      ;; +   78 bytes : adds the interpretation input for Q15.16 numbers
 LOWERCASE           ;; +   30 bytes : enables to write strings in lowercase.
-VOCABULARY_SET      ; +  102 bytes : adds words: VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83)
-;SD_CARD_LOADER      ; + 1752 bytes : to LOAD source files from SD_card
-;SD_CARD_READ_WRITE  ; + 1188 bytes : to read, create, write and del files + source files direct copy from PC to SD_Card
+VOCABULARY_SET      ;; +  102 bytes : adds words: VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83)
+;SD_CARD_LOADER      ;; + 1740 bytes : to LOAD source files from SD_card
+;SD_CARD_READ_WRITE  ;; + 1188 bytes : to read, create, write and del files + source files direct copy from PC to SD_Card
 ;BOOTLOADER          ; +   52 bytes : adds to <reset> a bootstrap to SD_CARD\BOOT.4TH.
 ;QUIETBOOT           ; +    2 bytes : to perform bootload without displaying.
-;NONAME              ; +   44 bytes : adds :NONAME
+;NONAME              ; +   34 bytes : adds :NONAME
 ;TOTAL               ; +    4 bytes : to save R4 to R7 registers during interrupts.
 
 ;-------------------------------------------------------------------------------
@@ -90,8 +83,8 @@ VOCABULARY_SET      ; +  102 bytes : adds words: VOCABULARY FORTH ASSEMBLER ALSO
 ;-------------------------------------------------------------------------------                   v
 ;UARTtoI2C           ;                to redirect source file to a I2C TERMINAL FastForth device UART2IIC.f
 UTILITY             ;; +  426/508 bytes : add .S .RS WORDS U.R DUMP ?                            UTILITY.f
-FIXPOINT            ; +  452 bytes : add Q15.16 words HOLDS F+ F- F/ F* F#S F. S>F 2@ 2CONSTANT FIXPOINT.f
-;SD_TOOLS            ; +  126 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, adds UTILITY  SD_TOOLS.f
+;FIXPOINT            ; +  452 bytes : add Q15.16 words HOLDS F+ F- F/ F* F#S F. S>F 2@ 2CONSTANT FIXPOINT.f
+;SD_TOOLS            ;; +  126 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, adds UTILITY  SD_TOOLS.f
 ;ANS_CORE_COMPLIANT  ; +  876 bytes : required to pass coretest.4th ; (includes items below)     ANS_COMP.f
 ;ARITHMETIC          ; +  358 bytes : add S>D M* SM/REM FM/MOD * /MOD / MOD */MOD /MOD */
 ;DOUBLE              ; +  130 bytes : add 2@ 2! 2DUP 2SWAP 2OVER
@@ -195,7 +188,8 @@ TERMINAL4WIRES      ; + 18 bytes    enable 4 wires with hardware flow control on
 ; + 403200,460800,614400    (2MHz)
 ; + 806400,921600,1228800   (4MHz)
 ; + 2457600,3000000         (8MHz)
-; + 6000000                 (16,24MHz) (shorten the 1m cable or use a Si8622EC-B-IS to regenerate TTL levels)
+; + 4000000,5000000         (16MHz)
+; + 6000000                 (24MHz)
 
 
 ; UARTtoUSB module with FTDI FT232RL (FT230X don't work correctly)
@@ -332,14 +326,14 @@ BASE_HOLD       .equ HOLDS_ORG+HOLD_SIZE
 
 HP              .equ BASE_HOLD      ; HOLD ptr
 CAPS            .equ BASE_HOLD+2
-LAST_NFA        .equ BASE_HOLD+4    ; NFA, VOC_PFA, LFA, CFA, PSP of last created word
+LAST_NFA        .equ BASE_HOLD+4    ; NFA, VOC_PFA, CFA, PSP of last created word
 LAST_THREAD     .equ BASE_HOLD+6    ; used by QREVEAL
 LAST_CFA        .equ BASE_HOLD+8
 LAST_PSP        .equ BASE_HOLD+10
 STATE           .equ BASE_HOLD+12   ; Interpreter state
 SAV_CURRENT     .equ BASE_HOLD+14   ; preserve CURRENT during create assembler words
-OPCODE          .equ BASE_HOLD+16   ; OPCODE adr; also used by :NONAME
-ASMTYPE         .equ BASE_HOLD+18   ; keep the opcode complement; also used by :NONAME
+OPCODE          .equ BASE_HOLD+16   ; OPCODE adr;                   also used as lure by :NONAME
+ASMTYPE         .equ BASE_HOLD+18   ; keep the opcode complement;   also used as lure by :NONAME
 SOURCE          .equ BASE_HOLD+20       
 SOURCE_LEN      .equ BASE_HOLD+20       
 SOURCE_ADR      .equ BASE_HOLD+22   ; len, addr of input stream
@@ -993,7 +987,7 @@ xloopnext   BIT #100h,SR    ;2 is overflow bit set?
             JZ bran         ;2 no overflow = loop
             ADD #2,IP       ;1 overflow = loop done, skip branch ofs
 UNXLOOP     ADD #4,RSP      ;1 empty RSP
-            mNEXT               ;4 16~ taken or not taken xloop/loop
+            mNEXT           ;4 16~ taken or not taken xloop/loop
 
 
 ;Z (loop)   R: sys1 sys2 --  | sys1 sys2
@@ -1032,11 +1026,6 @@ JJ          SUB #2,PSP      ; make room in TOS
 ;-------------------------------------------------------------------------------
 ; SYSTEM  CONSTANTS
 ;-------------------------------------------------------------------------------
-
-; CIB           --  Current_Input_Buffer_address
-            FORTHWORD "CIB"
-FCIB        mDOCON
-            .WORD    TIB_ORG    ; constant, BUT modified as VALUE by open and close
 
 ;https://forth-standard.org/standard/core/BL
 ;C BL      -- char            an ASCII space
@@ -1115,7 +1104,7 @@ LESSNUM     MOV #BASE_HOLD,&HP
             FORTHWORD "UM/MOD"
 UMSLASHMOD  PUSH #DROP          ; 3 return address for MU/MOD
 
-; unsigned 32-BIT DIVIDEND : 16-BIT DIVISOR --> 32-BIT QUOTIENT, 16-BIT REMAINDER
+; unsigned 32-BIT DiViDend : 16-BIT DIVisor --> 32-BIT QUOTient, 16-BIT REMainder
 ; 2 times faster if DVDhi = 0 (it's the general case)
 
 ; reg     division        MU/MOD      NUM
@@ -1294,10 +1283,23 @@ KEY         MOV @PC+,PC
 
     .IFDEF SD_CARD_LOADER
     .include "forthMSP430FR_SD_ACCEPT.asm"
-DEFER_ACCEPT
+DEFER_INPUT ; CIB (Current Input Buffer) and ACCEPT must to be redirected for SD_LOAD usage
     .ENDIF
 
-    .IFDEF DEFER_ACCEPT
+    .IFDEF DEFER_INPUT
+
+; CIB           --  addr          of Current Input Buffer
+            FORTHWORD "CIB"
+FCIB        mDOCON
+            .WORD    TIB_ORG        ; constant, may be DEFERed as SDIB_ORG by OPEN.
+
+; : REFILL CIB DUP TIB_LEN ACCEPT ;   -- CIB CIB len    shared by QUIT and [ELSE]
+REFILL      SUB #6,PSP              ;2
+            MOV TOS,4(PSP)          ;3
+            MOV #TIB_LEN,TOS        ;2
+            MOV &FCIB+2,0(PSP)      ;5
+            MOV @PSP,2(PSP)         ;4
+            JMP ACCEPT              ;2
 
 ;https://forth-standard.org/standard/core/ACCEPT
 ;C ACCEPT  addr addr len -- addr len'  get line at addr to interpret len' chars
@@ -1311,12 +1313,20 @@ PARENACCEPT
 
     .ELSE
 
+; : REFILL TIB DUP TIB_LEN ACCEPT ;   -- TIB TIB len    shared by QUIT and [ELSE]
+REFILL      SUB #6,PSP              ;2
+            MOV TOS,4(PSP)          ;3
+            MOV #TIB_LEN,TOS        ;2
+            MOV #TIB_ORG,0(PSP)     ;4
+            MOV @PSP,2(PSP)         ;4
+            JMP ACCEPT              ;2
+
 ;https://forth-standard.org/standard/core/ACCEPT
 ;C ACCEPT  addr addr len -- addr len'  get line at addr to interpret len' chars
             FORTHWORD "ACCEPT"
 ACCEPT
 
-    .ENDIF ; DEFER_ACCEPT
+    .ENDIF ; DEFER_INPUT
 
     .IFDEF  HALFDUPLEX  ; to use FAST FORTH with half duplex input terminal (bluetooth or wifi connexion)
 
@@ -1516,21 +1526,6 @@ PARENEMIT   MOV TOS,Y               ; 1
             JMP YEMIT1              ;9  12~
 
     .ENDIF  ; HALFDUPLEX
-
-; : REFILL TIB DUP TIB_LEN ACCEPT ;   -- cib cib len    shared by QUIT and [ELSE]
-REFILL      SUB #6,PSP              ;2
-            MOV TOS,4(PSP)          ;3
-            MOV #TIB_LEN,TOS        ;2
-            MOV #TIB_ORG,0(PSP)     ;4
-            MOV @PSP,2(PSP)         ;4
-            JMP ACCEPT              ;2
-
-; : SETIB SOURCE 2! 0 >IN ! ;       ; CIB len --        set Input Buffer, shared by INTERPRET and [ELSE]
-SETIB       MOV #0,&TOIN            ;
-            MOV TOS,&SOURCE_LEN     ; -- CIB len'
-            MOV @PSP+,&SOURCE_ADR   ; -- len' 
-            MOV @PSP+,TOS           ; -- 
-            mNEXT                   ;
 
 ;https://forth-standard.org/standard/core/EMIT
 ;C EMIT     c --    output character to the output device ; deferred word
@@ -1778,7 +1773,7 @@ FINDEND     MOV S,0(PSP)            ;3 not found: -- c-addr 0                   
             MOV #xdodoes,rDODOES    ;2
             mNEXT                   ;4 42/47 words
 
-    .IFDEF HRDWMPY
+    .IFDEF MPY_32 
 
 ;https://forth-standard.org/standard/core/toNUMBER
 ;C  convert a string to double number until count2 = 0 or until not convertible char
@@ -2155,6 +2150,13 @@ COUNT       SUB #2,PSP              ;1
             MOV.B -1(TOS),TOS       ;3
             mNEXT                   ;4 15~
 
+; : SETIB SOURCE 2! 0 >IN ! ;       ; org len --        set Input Buffer, shared by INTERPRET and [ELSE]
+SETIB       MOV #0,&TOIN            ;
+            MOV TOS,&SOURCE_LEN     ; -- org len
+            MOV @PSP+,&SOURCE_ADR   ; -- len 
+            MOV @PSP+,TOS           ; -- 
+            mNEXT                   ;
+
 ;C INTERPRET    i*x addr u -- j*x      interpret given buffer
 ; This is the common factor of EVALUATE and QUIT.
 ; set addr u as input buffer then parse it word by word
@@ -2281,15 +2283,17 @@ ABORT       MOV #PSTACK,PSP
             JMP QUIT
 
 WIP_DEFER   ; WIPE resets ALL factory defered words
-            MOV #PARENWARM,&WARM+2  ; kill application interrupts init
-            MOV #PARENSLEEP,&SLEEP+2    ; kill application background task
+            MOV #PARENWARM,&WARM+2      ; (WARM) is WARM    kill user interrupts init
+            MOV #PARENSLEEP,&SLEEP+2    ; (SLEEP) is SLEEP  kill user background task
+
 QAB_DEFER   ; QABORT resets some defered words 
-            MOV #TIB_ORG,&FCIB+2    ;4 TIB is the Current Input Buffer
-            MOV #PARENEMIT,&EMIT+2  ;4 default console output
-            MOV #PARENCR,&CR+2      ;4 CR
-            MOV #PARENKEY,&KEY+2    ;4 KEY
-    .IFDEF DEFER_ACCEPT
-            MOV #PARENACCEPT,&ACCEPT+2  ;4 restore default ACCEPT
+            MOV #PARENEMIT,&EMIT+2      ;4 (EMIT) is EMIT   default console output
+            MOV #PARENCR,&CR+2          ;4 (CR) is CR       default CR
+            MOV #PARENKEY,&KEY+2        ;4 (KEY) is KEY     default KEY
+
+    .IFDEF DEFER_INPUT                  ;  true if SD_LOADER
+            MOV #TIB_ORG,&FCIB+2        ;4 TIB is CIB  (Current Input Buffer)
+            MOV #PARENACCEPT,&ACCEPT+2  ;4 (ACCEPT) is ACCEPT
     .ENDIF
     .IFDEF MSP430ASSEMBLER          ; reset all branch labels
             MOV #0,&CLRBW1          ;3
@@ -2368,13 +2372,10 @@ ERRLINE_END .word   TYPE            ; --                type abort message
             .byte   4,27,"[0m"      ;
             .word   TYPE            ; --                set normal video
 ; ----------------------------------;
-; remove words from PWR_HERE        ;
-; ----------------------------------;
-            .word   PWR_STATE       ;
-; ----------------------------------;
-    .IFDEF LOWERCASE
+            .word   PWR_STATE       ; remove all words beyond PWR_HERE 
+    .IFDEF LOWERCASE                ;
             .word   CAPS_ON         ;
-    .ENDIF
+    .ENDIF                          ;
             .word   ABORT           ; no return
 ; ----------------------------------;
 
@@ -2506,11 +2507,9 @@ SEMICOLON   CMP #0,&STATE           ; in interpret mode semicolon becomes a comm
             MOV TOS,0(PSP)
             MOV &DDP,TOS
             MOV TOS,W
-            ADD #4,W
-            MOV W,&DDP
-            MOV #OPCODE,&LAST_THREAD; lure for semicolon REVEAL
-            MOV #ASMTYPE,&LAST_NFA  ; lure for semicolon REVEAL
-            MOV TOS,&LAST_CFA       ; for >DOES (works fine if DTC=2) and RECURSE
+            MOV #OPCODE,X           ; X = OPCODE as lure for semicolon LAST_THREAD REVEAL
+            MOV #ASMTYPE,Y          ; Y = ASMTYPE as lure for semicolon LAST_NFA REVEAL
+            CALL #HEADEREND
     .ENDIF 
 COLONNEXT
     .SWITCH DTC
@@ -2534,7 +2533,7 @@ SAVE_PSP    MOV PSP,&LAST_PSP       ; save PSP for check compiling, used by QREV
 ;https://forth-standard.org/standard/core/Colon
 ;C : <name>     --      begin a colon definition
             FORTHWORD ":"
-COLON       PUSH #COLONNEXT
+COLON       PUSH #COLONNEXT         ; define COLONNEXT as RET for HEADER
 
 ; HEADER        create an header for a new word. Max count of chars = 126
 ;               common code for VARIABLE, CONSTANT, CREATE, DEFER, :, MARKER, CODE, ASM.
@@ -2556,13 +2555,13 @@ HEADER      mDOCOL
             AND #(THREADS-1)*2,TOS  ; -- xxx        TOS= Thread offset
             ADD TOS,X               ; -- xxx        TOS= Thread   X=VOC_PFAx = thread x of VOC_PFA of CURRENT
     .ENDCASE
-            MOV Y,&LAST_NFA         ; -- xxx        NFA --> LAST_NFA            used by QREVEAL, IMMEDIATE
-            MOV X,&LAST_THREAD      ; -- xxx        VOC_PFAx --> LAST_THREAD    used by QREVEAL
-            MOV W,&LAST_CFA         ; -- xxx        HERE=CFA --> LAST_CFA       used by DOES>, RECURSE
-            ADD #4,W                ; -- xxx        by default make room for two words...
-            MOV W,&DDP              ; -- xxx
             MOV @PSP+,TOS           ; --
-            MOV @RSP+,IP           
+            MOV @RSP+,IP  
+HEADEREND   MOV Y,&LAST_NFA         ; --            NFA --> LAST_NFA            used by QREVEAL, IMMEDIATE
+            MOV X,&LAST_THREAD      ; --            VOC_PFAx --> LAST_THREAD    used by QREVEAL
+            MOV W,&LAST_CFA         ; --            HERE=CFA --> LAST_CFA       used by DOES>, RECURSE
+            ADD #4,W                ; --            by default make room for two words...
+            MOV W,&DDP              ; --    
             RET                     ; 23 words, W is the new DDP value )
                                     ;           X is LAST_THREAD       > used by VARIABLE, CONSTANT, CREATE, DEFER and :
                                     ;           Y is NFA               )
@@ -2593,13 +2592,13 @@ CONSTANT    CALL #HEADER            ; W = DDP = CFA + 2 words
 ;;Place x on the stack. The value of x is that given when name was created,
 ;;until the phrase x TO name is executed, causing a new value of x to be assigned to name.
 ;
-;            FORTHWORD "VALUE"       ; is an alias of CONSTANT
+;            FORTHWORD "VALUE"       ; VALUE is an alias of CONSTANT
 ;            JMP CONSTANT
 ;
 ;;TO name Run-time: ( x -- )
 ;;Assign the value x to name.
 ;
-;            FORTHWORDIMM "TO"       ; is an alias of IS
+;            FORTHWORDIMM "TO"       ; TO is an alias of IS
 ;            JMP IS
 
 ; usage : SDIB_ORG IS CIB           ; modify Current_Input_Buffer address to read a SD file sector
@@ -2647,7 +2646,7 @@ DEFER       CALL #HEADER
 ; ------------------------------------------------------------------------------
     .include "forthMSP430FR_CONDCOMP.asm"
 
-            ; compile the words COMPARE [THEN] [ELSE] [IF] [UNDEFINED] [DEFINED] MARKER 
+            ; compile the words: COMPARE [THEN] [ELSE] [IF] [UNDEFINED] [DEFINED] MARKER 
 
     .ENDIF  ; CONDCOMP
 
@@ -2988,26 +2987,26 @@ MARKTHREAD  MOV Y,0(X)              ;               W=VLK   X=THD   Y=NFA   refr
             MOV     @RSP+,IP        ;
             mNEXT                   ;
 
-            FORTHWORD "PWR_STATE"   ; reinitialize dictionary in state defined by PWR_HERE; executed by power ON
+            FORTHWORD "PWR_STATE"   ; executed by power ON, reinitializes dictionary in state defined by PWR_HERE
 PWR_STATE   mDODOES                 ; DOES part of MARKER : resets pointers DP, voclink and latest
             .word   STATE_DOES      ; execution vector of PWR_STATE
 MARKVOC     .word   lastvoclink     ; initialised by forthMSP430FR.asm as voclink value
 MARKDP      .word   ROMDICT         ; initialised by forthMSP430FR.asm as DP value
 
-            FORTHWORD "RST_STATE"   ; reinitialize dictionary in state defined by RST_HERE; executed by <reset>
+            FORTHWORD "RST_STATE"   ; executed by <reset>, reinitializes dictionary in state defined by RST_HERE;
 RST_STATE   MOV &INIVOC,&MARKVOC    ; INI value saved in FRAM
             MOV &INIDP,&MARKDP      ; INI value saved in FRAM
             JMP PWR_STATE
 
-            FORTHWORD "PWR_HERE"    ; define dictionary bound for power ON
+            FORTHWORD "PWR_HERE"    ; define dictionnary bound for power ON
 PWR_HERE    MOV &LASTVOC,&MARKVOC
             MOV &DDP,&MARKDP
             mNEXT
 
-            FORTHWORD "RST_HERE"    ; define dictionary bound for <reset>...
+            FORTHWORD "RST_HERE"    ; define dictionnary bound for <reset>...
 RST_HERE    MOV &LASTVOC,&INIVOC
             MOV &DDP,&INIDP
-            JMP PWR_HERE            ; ...and for power ON
+            JMP PWR_HERE            ; ...and also for power ON...
 
             FORTHWORD "WIPE"        ; restore the program as it was in forthMSP430FR.txt file
 WIPE        MOV #SIGNATURES,X       ; reset JTAG and BSL signatures   ; unlock JTAG, SBW and BSL
@@ -3015,10 +3014,10 @@ SIGNLOOP    MOV #-1,0(X)            ; reset signature; WARNING ! DON'T CHANGE TH
             ADD #2,X
             CMP #INTVECT,X
             JNZ SIGNLOOP
-            CALL #WIP_DEFER
-            MOV #ROMDICT,&INIDP     ; reinit this factory values :
+            CALL #WIP_DEFER         ; reinit all DEFERed words
+            MOV #ROMDICT,&INIDP     ; reinit this 2 factory values
             MOV #lastvoclink,&INIVOC
-            JMP RST_STATE           ; then reinit RST_STATE and PWR_STATE
+            JMP RST_STATE           ; then execute RST_STATE and PWR_STATE
 
 ; ------------------------------------------------------------------------------
 ; forthMSP430FR : WARM
@@ -3041,7 +3040,6 @@ PARENWARM
 ;            .word   DOT                 ; display SYSSNIV
 ;            .word   DOT                 ; display SYSUNIV
             .word   XSQUOTE
-;            .byte   39," FastForth ",VER,FREQ," (C) J.M.Thoorens "
             .byte   31,"FastForth ",VER," (C)J.M.Thoorens "
             .word   TYPE
             .word   LIT,FRAM_FULL,HERE,MINUS,UDOT
@@ -3067,8 +3065,8 @@ COLD        MOV #0A500h+PMMSWBOR,&PMMCTL0
 
 
 RESET
+    .include "Target.asm"   ; include target specific init code
 
-    .include "TargetInit.asm"   ; include target specific init code
 
 ; reset all interrupt vectors to RESET vector
             MOV #RESET,W            ; W = reset vector
@@ -3086,80 +3084,76 @@ RESETINT    MOV W,0(X)
 INITRAM     MOV #0,0(X)
             ADD #2,X
             CMP #RAMEND,X
-            JLO INITRAM
+            JLO INITRAM             ; 8~ loop
 ;-------------------------------------------------------------------------------
 ; RESET : INIT FORTH machine
 ;-------------------------------------------------------------------------------
-            MOV #RSTACK,SP          ; init return stack
+            MOV #RSTACK,RSP         ; init return stack
             MOV #PSTACK,PSP         ; init parameter stack
     .SWITCH DTC
     .CASE 1
-            MOV #xdocol,rDOCOL
+            MOV #xdocol,rDOCOL      ; 
     .CASE 2
             MOV #EXIT,rEXIT
-    .CASE 3 ; inlined DOCOL, do nothing here
+    .CASE 3                         ; inlined DOCOL, do nothing here
     .ENDCASE
             MOV #RFROM,rDOVAR
             MOV #xdocon,rDOCON
             MOV #xdodoes,rDODOES
 
-            MOV #10,&BASE
-            MOV #-1,&CAPS
+            MOV #10,&BASE           ; init BASE
+            MOV #-1,&CAPS           ; init CAPS ON
 
 ;-------------------------------------------------------------------------------
-; RESET : test TERM_TXD/Deep_RST before init TERM_UART  I/O
+; RESET : test TERM_TXD before init TERM_UART  I/O
 ;-------------------------------------------------------------------------------
     BIC #LOCKLPM5,&PM5CTL0          ; activate all previous I/O settings before DEEP_RST test
-    MOV &SAVE_SYSRSTIV,Y            ;
-    BIT.B #DEEP_RST,&Deep_RST_IN    ; TERM TXD wired to GND via 4k7 resistor ?
+    MOV &SAVE_SYSRSTIV,Y            ;3
+    BIT.B #TXD,&TERM_IN             ; TERM_TXD wired to GND via 4k7 resistor ?
     JNZ TERM_INIT                   ; no
-    XOR #-1,Y                       ; yes : force DEEP_RST
-    ADD #1,Y                        ;       to display SAVE_SYSRSTIV as negative value
-    MOV Y,&SAVE_SYSRSTIV
+    XOR #-1,Y                       ;1 yes : force DEEP_RST (WIPE + COLD)
+    ADD #1,Y                        ;1       to display SAVE_SYSRSTIV as negative value
+    MOV Y,&SAVE_SYSRSTIV            ;3 save
 
 TERM_INIT
 ;-------------------------------------------------------------------------------
 ; RESET : INIT TERM_UART
 ;-------------------------------------------------------------------------------
-    MOV #0081h,&TERMCTLW0       ; Configure TERM_UART  UCLK = SMCLK
+    MOV #0081h,&TERMCTLW0           ; Configure TERM_UART  UCLK = SMCLK
 
-    .include "TERMINALBAUDRATE.asm" ; include code to configure baudrate
+    .include "TERMINALBAUDRATE.asm" ; configure baudrate, no registers used
 
-    BIS.B #TERM_TXRX,&TERM_SEL  ; Configure pins TXD & RXD for TERM_UART (PORTx_SEL0 xor PORTx_SEL1)
-                                ; TERM_DIR is controlled by eUSCI_Ax module
-    BIC #UCSWRST,&TERMCTLW0     ; release from reset...
-    BIS #UCRXIE,&TERMIE         ; ... then enable RX interrupt for wake up on terminal input
+    BIS.B #TERM_BUS,&TERM_SEL       ; Configure pins TXD & RXD for TERM_UART (PORTx_SEL0 xor PORTx_SEL1)
+                                    ; TERM_DIR is controlled by eUSCI_Ax module
+    BIC #UCSWRST,&TERMCTLW0         ; release from reset...
+    BIS #UCRXIE,&TERMIE             ; ... then enable RX interrupt for wake up on terminal input
 
 ;-------------------------------------------------------------------------------
-; RESET : Select  POWER_ON|<reset>|DEEP_RST
+; RESET : Select  POWER_ON|<reset>|DEEP_RST from Y = SAVE_SYSRSTIV
 ;-------------------------------------------------------------------------------
 
 SelectReset MOV #COLD_END,IP    ; define return of WIPE,RST_STATE,PWR_STATE
-            MOV &SAVE_SYSRSTIV,Y;
             CMP #0Ah,Y          ; reset event = security violation BOR ???? not documented...
             JZ WIPE             ; Add WIPE to this reset to do DEEP_RST     --------------
             CMP #16h,Y          ; reset event > software POR : failure or DEEP_RST request
             JHS WIPE            ; U>= ; Add WIPE to this reset to do DEEP_RST
             CMP #2,Y            ; reset event = Brownout ?
-            JNZ RST_STATE       ; else  execute RST_STATE
-            JZ  PWR_STATE       ; yes   execute PWR_STATE
+            JNZ RST_STATE       ; else  execute RST_STATE, return to COLD_END
+            JZ  PWR_STATE       ; yes   execute PWR_STATE, return to COLD_END
 
 ;-------------------------------------------------------------------------------
-; RESET : INIT SD_Card optionally
+; RESET : INIT SD_Card option
 ;-------------------------------------------------------------------------------
 COLD_END
     .IFNDEF SD_CARD_LOADER      ;
         .word   WARM            ; the next step
     .ELSE
         FORTHtoASM
-
-    .IFDEF RAM_1K               ; case of MSP430FR57xx
+        .IFDEF RAM_1K           ; case of MSP430FR57xx
         MOV #0,&CurrentHDL      ; init this FRAM area to pass QABORT
-    .ENDIF
-
+        .ENDIF
         BIT.B #SD_CD,&SD_CDIN   ; SD_memory in SD_Card module ?
         JNZ WARM                ; no
-
     .include "forthMSP430FR_SD_INIT.asm";
         JMP WARM
     .ENDIF
@@ -3183,34 +3177,34 @@ COLD_END
         .IFDEF SD_CARD_READ_WRITE
         .include "forthMSP430FR_SD_RW.asm"  ; SD Read/Write driver
         .ENDIF
-    ;---------------------------------------------------------------------------
-    ; SD TOOLS
-    ;---------------------------------------------------------------------------
+        ;-----------------------------------------------------------------------
+        ; SD TOOLS
+        ;-----------------------------------------------------------------------
         .IFDEF SD_TOOLS
         .include "ADDON/SD_TOOLS.asm"
-        .ENDIF ;  SD_READ_WRITE_TOOLS
-    .ENDIF ; SD_CARD_LOADER
+        .ENDIF
+    .ENDIF
 
 ;-------------------------------------------------------------------------------
 ; UTILITY WORDS OPTION
 ;-------------------------------------------------------------------------------
     .IFDEF UTILITY
     .include "ADDON/UTILITY.asm"
-    .ENDIF ; UTILITY
+    .ENDIF
 
 ;-------------------------------------------------------------------------------
 ; FIXED POINT OPERATORS OPTION
 ;-------------------------------------------------------------------------------
-        .IFDEF FIXPOINT
-        .include "ADDON/FIXPOINT.asm"
-        .ENDIF ; FIXPOINT
+    .IFDEF FIXPOINT
+    .include "ADDON/FIXPOINT.asm"
+    .ENDIF
 
 ;-------------------------------------------------------------------------------
 ; UART to I2C bridge OPTION
 ;-------------------------------------------------------------------------------
-        .IFDEF UARTtoI2C    ; redirects TERMINAL on to I2C address
-        .include "ADDON/UART2MI2C.asm" 
-        .ENDIF
+    .IFDEF UARTtoI2C    ; redirects TERMINAL on to I2C address
+    .include "ADDON/UART2MI2C.asm" 
+    .ENDIF
 
 ;-------------------------------------------------------------------------------
 ; ADD HERE YOUR PROGRAM TO BE INTEGRATED IN CORE (protected against WIPE)

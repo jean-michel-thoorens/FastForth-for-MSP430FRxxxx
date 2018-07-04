@@ -34,6 +34,24 @@
     .include "ADDON/DOUBLE.asm"
     .ENDIF
 
+;https://forth-standard.org/standard/core/AND
+;C AND    x1 x2 -- x3           logical AND
+            FORTHWORD "AND"
+ANDD        AND     @PSP+,TOS
+            mNEXT
+
+;https://forth-standard.org/standard/core/OR
+;C OR     x1 x2 -- x3           logical OR
+            FORTHWORD "OR"
+ORR         BIS     @PSP+,TOS
+            mNEXT
+
+;https://forth-standard.org/standard/core/XOR
+;C XOR    x1 x2 -- x3           logical XOR
+            FORTHWORD "XOR"
+XORR        XOR     @PSP+,TOS
+            mNEXT
+
 ;https://forth-standard.org/standard/core/INVERT
 ;C INVERT   x1 -- x2            bitwise inversion
             FORTHWORD "INVERT"
@@ -63,18 +81,6 @@ RSH_1:      BIC     #1,SR           ; CLRC
             SUB     #1,TOS
             JNZ     RSH_1
 RSH_X:      MOV     W,TOS
-            mNEXT
-
-;https://forth-standard.org/standard/core/OnePlus
-;C 1+      n1/u1 -- n2/u2       add 1 to TOS
-            FORTHWORD "1+"
-            ADD     #1,TOS
-            mNEXT
-
-;https://forth-standard.org/standard/core/OneMinus
-;C 1-      n1/u1 -- n2/u2     subtract 1 from TOS
-            FORTHWORD "1-"
-ONEMINUS    SUB     #1,TOS
             mNEXT
 
 ;https://forth-standard.org/standard/core/TwoTimes
@@ -188,3 +194,20 @@ DOTPAREN    mDOCOL
             FORTHWORD ">BODY"
             ADD     #4,TOS
             mNEXT
+
+
+;https://forth-standard.org/standard/core/toIN
+;C >IN     -- a-addr       holds offset in input stream
+            FORTHWORD ">IN"
+FTOIN       mDOCON
+            .word   TOIN    ; VARIABLE address in RAM space
+
+
+    .IFNDEF PAD
+;https://forth-standard.org/standard/core/PAD
+; PAD           --  pad address
+            FORTHWORD "PAD"
+PAD         mDOCON
+            .WORD    PAD_ORG
+
+    .ENDIF

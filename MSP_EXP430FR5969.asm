@@ -214,30 +214,45 @@
 
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
-; PORTA usage
-SD_SEL      .equ PASEL1 ; to configure UCB0
-SD_REN      .equ PAREN  ; to configure pullup resistors
-SD_BUS      .equ 7000h  ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
-
 
 ; PORT1 usage
 ; P1.0 - LED2 green   output low
 ; P1.1 - Switch S2    input with pullup resistor
-
-; PORT2 usage
-
-
-Deep_RST_IN .equ P2IN  ; TERMINAL TX  pin as FORTH Deep_RST 
-Deep_RST    .equ 1     ; P2.0
-TERM_TXRX   .equ 003h
-TERM_SEL    .equ P2SEL1
-TERM_REN    .equ P2REN
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
             BIS     #1,&PADIR   ; all pins 0 as input else P1.0 (LED2)
             MOV     #0FFFEh,&PAOUT  ; all pins high  else P1.0 (LED2)
             SUB     #2,&PAREN   ; all pins 1 with pull resistors else P1.0 (LED2)
+
+    .IFDEF UCA0_TERM
+; P2.0  UCA0-TXD    --> USB2UART RXD    
+; P2.1  UCA0-RXD    <-- USB2UART TXD 
+TXD         .equ 1      ; P2.0 = TX + FORTH Deep_RST pin
+RXD         .equ 2      ; P2.1 = RX
+TERM_BUS    .equ 3
+TERM_IN     .equ P2IN
+TERM_SEL    .equ P2SEL1
+TERM_REN    .equ P2REN
+    .ENDIF
+
+    .IFDEF UCA1_TERM
+; P2.5  UCA0-TXD    --> USB2UART RXD    
+; P2.6  UCA0-RXD    <-- USB2UART TXD 
+TXD         .equ 20h   ; P2.5 = TXD + FORTH Deep_RST pin
+RXD         .equ 40h   ; P2.6 = RXD
+TERM_BUS    .equ 60h
+TERM_IN     .equ P2IN
+TERM_SEL    .equ P2SEL1
+TERM_REN    .equ P2REN
+    .ENDIF
+
+    .IFDEF UCB0_SD
+SD_SEL      .equ PASEL1 ; to configure UCB0
+SD_REN      .equ PAREN  ; to configure pullup resistors
+SD_BUS      .equ 04C0h  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
+    .ENDIF
+
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4

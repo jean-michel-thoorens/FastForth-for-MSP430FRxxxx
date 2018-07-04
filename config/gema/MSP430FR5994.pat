@@ -53,6 +53,7 @@ SharedRAMEND=\$3BFF!
 ! ----------------------------------------------
 PROGRAMSTART=\$4000!    Code space start
 !FRAMEND=\$43FFF!       256 k FRAM
+FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
 SIGNATURES=\$FF80!      JTAG/BSL signatures
 JTAG_SIG1=\$FF80!       if 0, enable JTAG/SBW
 JTAG_SIG2=\$FF82!       if JTAG_SIG1=\$AAAA, length of password string @ JTAG_PASSWORD

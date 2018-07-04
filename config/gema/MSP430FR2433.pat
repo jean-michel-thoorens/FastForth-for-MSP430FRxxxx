@@ -38,6 +38,7 @@ RAMEND=\$2FFF!
 ! FRAM
 ! ----------------------------------------------
 PROGRAMSTART=\$C400!    Code space start
+FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
 SIGNATURES=\$FF80!      JTAG/BSL signatures
 JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW ; reset by wipe and by S1+<reset>
 JTAG_SIG2=\$FF82!       if JTAG_SIG <> |\$FFFFFFFF, \$00000000|, SBW and JTAG are locked

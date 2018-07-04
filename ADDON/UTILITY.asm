@@ -18,8 +18,14 @@
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-    FORTHWORD "{UTILITY}"
+    FORTHWORD "{TOOLS}"
     mNEXT
+
+    .IFNDEF ANDD
+            FORTHWORD "AND"      ; --      
+ANDD        AND     @PSP+,TOS
+            mNEXT
+    .ENDIF
 
 ;https://forth-standard.org/standard/tools/DotS
             FORTHWORD ".S"      ; --            print <depth> of Param Stack and stack contents if not empty
@@ -59,15 +65,15 @@ DOTRS       MOV     TOS,-2(PSP) ; -- TOS ( tos x x )
 QUESTION    MOV     @TOS,TOS
             MOV     #UDOT,PC
 
+    .SWITCH THREADS
+    .CASE   1
+
 ;https://forth-standard.org/standard/tools/WORDS
 ;X WORDS        --      list all words in first vocabulary in CONTEXT. 38 words
             FORTHWORD "WORDS"
 WORDS       mDOCOL
             .word   CR
             .word   lit,3,SPACES
-
-    .SWITCH THREADS
-    .CASE   1
 
 ;; vvvvvvvv   may be skipped    vvvvvvvv
 ;            .word   XSQUOTE                ; type # of threads in vocabularies
@@ -92,6 +98,21 @@ WORDS2      .word   EXIT                ; --
 
 
     .ELSECASE
+
+        .IFNDEF PAD
+;https://forth-standard.org/standard/core/PAD
+; PAD           --  pad address
+            FORTHWORD "PAD"
+PAD         mDOCON
+            .WORD    PAD_ORG
+        .ENDIF
+
+;https://forth-standard.org/standard/tools/WORDS
+;X WORDS        --      list all words in first vocabulary in CONTEXT. 38 words
+            FORTHWORD "WORDS"
+WORDS       mDOCOL
+            .word   CR
+            .word   lit,3,SPACES
 
 ;; vvvvvvvv   may be skipped    vvvvvvvv
 ;            .word   FBASE,FETCH             

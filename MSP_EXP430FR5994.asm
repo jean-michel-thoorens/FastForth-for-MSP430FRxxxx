@@ -155,32 +155,47 @@
 
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
-; PORTA usage
-SD_SEL      .equ PASEL1  ; word access, to configure UCB0
-SD_REN      .equ PAREN   ; word access, to configure pullup resistors
-SD_BUS      .equ 04C0h   ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
-
-
 ; PORT1 FastForth usage
 ; P1.0    - led1 red
 ; P1.1    - led2 green
-
-
-; PORT2 FastForth usage
-
-Deep_RST_IN .equ P2IN   ; TERMINAL TX  pin as FORTH Deep_RST 
-Deep_RST    .equ 2      ; P2.0 = TX
-TERM_TX     .equ 1      ; P2.0 = TX
-TERM_RX     .equ 2      ; P2.1 = RX
-TERM_TXRX   .equ 003h   ; P2.1 = RX
-TERM_SEL    .equ P2SEL1
-TERM_REN    .equ P2REN
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
             BIS #3,&PADIR       ; all pins 0 as input else LEDs
             MOV #0FFFCh,&PAOUT  ; all pins high  else LEDs
             BIC #3,&PAREN       ; all pins 1 with pull resistors else LEDs
+
+
+; PORT2 FastForth usage
+
+    .IFDEF UCB0_SD
+SD_SEL      .equ PASEL1 ; to configure UCB0
+SD_REN      .equ PAREN  ; to configure pullup resistors
+SD_BUS      .equ 04C0h  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
+    .ENDIF
+
+    .IFDEF UCA0_TERM
+; P2.0  UCA0-TXD    --> USB2UART RXD    
+; P2.1  UCA0-RXD    <-- USB2UART TXD 
+TXD         .equ 1      ; P2.0 = TXD + FORTH Deep_RST pin
+RXD         .equ 2      ; P2.1 = RXD
+TERM_BUS    .equ 3
+TERM_IN     .equ P2IN
+TERM_SEL    .equ P2SEL1
+TERM_REN    .equ P2REN
+    .ENDIF
+
+    .IFDEF UCA1_TERM
+; P2.5  UCA0-TXD    --> USB2UART RXD    
+; P2.6  UCA0-RXD    <-- USB2UART TXD 
+TXD         .equ 20h   ; P2.5 = TXD + FORTH Deep_RST pin
+RXD         .equ 40h   ; P2.6 = RXD
+TERM_BUS    .equ 60h
+TERM_IN     .equ P2IN
+TERM_SEL    .equ P2SEL1
+TERM_REN    .equ P2REN
+    .ENDIF
+
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4
@@ -242,6 +257,12 @@ CTS         .equ  8 ; P4.3
 ; P5.5 Switch S2
 SWITCHIN    .set P5IN    ; port
 s1          .set 020h    ; P5.5 bit position
+
+    .IFDEF UCB1_SD
+SD_SEL      .equ PCSEL1 ; to configure UCB0
+SD_REN      .equ PCREN  ; to configure pullup resistors
+SD_BUS      .equ 0007h  ; pins P5.2 as UCB1CLK, P5.0 as UCB1SIMO & P5.1 as UCB1SOMI
+    .ENDIF
 
 ; PORT6 FastForth usage
 

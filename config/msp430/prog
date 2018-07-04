@@ -22,7 +22,7 @@ fi
 echo $device 
 
 
-#$HOME/MSP430Flasher/MSP430Flasher -s -m SBW2 -n $device -v -w $1.txt  -z [RESET,VCC]
+$HOME/MSP430Flasher/MSP430Flasher -s -m SBW2 -n $device -v -w $1.txt  -z [RESET,VCC]
 MSP430Flasher -s -m SBW2 -n $device -v -w $1.txt  -z [RESET,VCC]
 
 #mspdebug  ezfet prog $1.txt

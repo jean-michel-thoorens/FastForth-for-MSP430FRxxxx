@@ -190,11 +190,14 @@
 ; P1.0 - TX0 --> JP1 --> red LED1 --> GND
 ; P1.1 - RX0
 
-Deep_RST_IN .equ P1IN  ; TERMINAL TX  pin as FORTH Deep_RST 
-Deep_RST    .equ 1     ; TX
-TERM_TXRX   .equ 003h  ; TX RX
-TERM_SEL    .equ P1SEL0
+    .IFDEF UCA0_TERM
+TXD         .equ 1     ; P1.0 = TXD + FORTH Deep_RST pin
+RXD         .equ 2     ; P1.1
+TERM_BUS    .equ 003h  ; TX RX
+TERM_IN     .equ P1IN
 TERM_REN    .equ P1REN
+TERM_SEL    .equ P1SEL0
+    .ENDIF
 
 
     .IFDEF TERMINAL4WIRES

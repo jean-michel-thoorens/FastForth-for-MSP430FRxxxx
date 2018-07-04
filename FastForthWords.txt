@@ -1,39 +1,45 @@
 
 FORTH vocabulary
 ----------------
-ASM             CODE            HI2LO           COLD            WARM            (WARM)          WIPE            RST_HERE        
-PWR_HERE        RST_STATE       PWR_STATE       MOVE            LEAVE           +LOOP           LOOP            DO              
-REPEAT          WHILE           AGAIN           UNTIL           BEGIN           THEN            ELSE            IF              
-;               :               DEFER           DOES>           CREATE          CONSTANT        VARIABLE        POSTPONE        
-RECURSE         IMMEDIATE       IS              [']             ]               [               \               '               
-ABORT"          ABORT           QUIT            EVALUATE        COUNT           LITERAL         ,               EXECUTE         
->NUMBER         FIND            WORD            ."              S"              TYPE            SPACES          SPACE           
-CR              (CR)            NOECHO          ECHO            EMIT            (EMIT)          (ACCEPT)        ACCEPT          
-KEY             (KEY)           C,              ALLOT           HERE            .               D.              U.              
-SIGN            HOLD            #>              #S              #               <#              BL              STATE           
-BASE            >IN             CPL             TIB             PAD             J               I               UNLOOP          
-U<              >               <               =               0>              0<              0=              DABS            
-ABS             NEGATE          XOR             OR              AND             -               +               C!              
-C@              !               @               DEPTH           R@              R>              >R              ROT             
-OVER            SWAP            NIP             DROP            ?DUP            DUP             LIT             EXIT
+COLD            WARM            (WARM)          WIPE            RST_HERE        PWR_HERE        RST_STATE       
+PWR_STATE       MOVE            LEAVE           +LOOP           LOOP            DO              REPEAT          
+WHILE           AGAIN           UNTIL           BEGIN           THEN            ELSE            IF              
+DEFER           DOES>           CREATE          CONSTANT        VARIABLE        :               ;               
+POSTPONE        RECURSE         IMMEDIATE       IS              [']             ]               [               
+\               '               ABORT"          ABORT           QUIT            EVALUATE        COUNT           
+LITERAL         ,               EXECUTE         >NUMBER         FIND            WORD            ."              
+S"              CR              (CR)            TYPE            SPACES          SPACE           NOECHO          
+ECHO            EMIT            (EMIT)          ACCEPT          KEY             (KEY)           C,              
+ALLOT           HERE            .               D.              U.              SIGN            HOLD            
+#>              #S              #               UM/MOD          <#              STATE           BASE            
+BL              J               I               UNLOOP          U<              0>              >               
+<               =               0<              0=              DABS            1-              1+              
+1-              1+              -               +               C!              C@              !               
+@               DEPTH           R@              R>              >R              ROT             OVER            
+SWAP            NIP             DROP            ?DUP            DUP             LIT             EXIT
 
 
 ASSEMBLER vocabulary
 --------------------
-?GOTO           GOTO            FW3             FW2             FW1             BW3             BW2             BW1          
-?JMP            JMP             REPEAT          WHILE           AGAIN           UNTIL           ELSE            THEN         
-IF              0=              0<>             U>=             U<              0<              0>=             S<           
-S>=             RRUM            RLAM            RRAM            RRCM            POPM            PUSHM           CALL         
-PUSH.B          PUSH            SXT             RRA.B           RRA             SWPB            RRC.B           RRC          
-AND.B           AND             XOR.B           XOR             BIS.B           BIS             BIC.B           BIC          
-BIT.B           BIT             DADD.B          DADD            CMP.B           CMP             SUB.B           SUB          
-SUBC.B          SUBC            ADDC.B          ADDC            ADD.B           ADD             MOV.B           MOV          
-RETI            LO2HI           COLON           ENDASM          ENDCODE         (SLEEP)         SLEEP
+
+?GOTO           GOTO            FW3             FW2             FW1             BW3             BW2             
+BW1             ?JMP            JMP             REPEAT          WHILE           AGAIN           UNTIL           
+ELSE            THEN            IF              0=              0<>             U>=             U<              
+0<              0>=             S<              S>=             RRUM            RLAM            RRAM            
+RRCM            POPM            PUSHM           CALL            PUSH.B          PUSH            SXT             
+RRA.B           RRA             SWPB            RRC.B           RRC             AND.B           AND             
+XOR.B           XOR             BIS.B           BIS             BIC.B           BIC             BIT.B           
+BIT             DADD.B          DADD            CMP.B           CMP             SUB.B           SUB             
+SUBC.B          SUBC            ADDC.B          ADDC            ADD.B           ADD             MOV.B           
+MOV             RETI            LO2HI           COLON           ENDASM          ENDCODE         (SLEEP)         
+SLEEP
+
+ASM             CODE            HI2LO           (added in forth vocabulary)
 
 
 CONDCOMP ADD-ON
 ---------------
-[DEFINED]       [UNDEFINED]     [IF]            [ELSE]          [THEN]          COMPARE         MARKER        
+MARKER          [DEFINED]       [UNDEFINED]     [IF]            [ELSE]          [THEN]          COMPARE         
 
 
 VOCABULARY ADD-ON
@@ -43,27 +49,29 @@ DEFINITIONS     ONLY            PREVIOUS        ALSO            ASSEMBLER       
 
 ANS_COMPLEMENT ADD-ON
 ---------------------
->BODY           SOURCE          .(              (               DECIMAL         HEX             FILL            [CHAR]          
-CHAR            +!              MIN             MAX             2/              2*              1-              1+              
-RSHIFT          LSHIFT          INVERT          2OVER           2SWAP           2DROP           2DUP            2!              
-2@              S>D             CELL+           CELLS           CHAR+           CHARS           ALIGN           ALIGNED         
-*/              */MOD           MOD             /               /MOD            *               FM/MOD          SM/REM          
-UM/MOD          M*              UM*             {ANS_COMP}
+PAD             >BODY           SOURCE          .(              (               DECIMAL         HEX             
+FILL            [CHAR]          CHAR            +!              MIN             MAX             2/              
+2*              RSHIFT          LSHIFT          XOR             OR              AND             INVERT          
+2OVER           2SWAP           2DROP           2DUP            2!              2@              S>D             
+CELL+           CELLS           CHAR+           CHARS           ALIGN           ALIGNED         */              
+*/MOD           MOD             /               /MOD            *               FM/MOD          SM/REM          
+M*              UM*             {ANS_COMP}
 
 
 SD_CARD_LOADER ADD-ON
 ---------------------
-LOAD"           {SD_LOAD}
+LOAD"           CIB             (ACCEPT)        {SD_LOAD}
 
 
 SD_CARD_READ_WRITE ADD-ON
 -------------------------
-TERM2SD"        SD_EMIT         WRITE           READ            CLOSE           DEL"            WRITE"          READ"
+TERM2SD"        SD_EMIT         WRITE           READ            CLOSE           DEL"            WRITE"          
+READ"
 
 
 UTILITY ADD-ON
 --------------
-DUMP            U.R             WORDS           ?               .RS             .S              {UTILITY}       
+DUMP            U.R             WORDS           ?               .RS             .S              {TOOLS}       
 
 
 SD_TOOLS ADD-ON
@@ -73,20 +81,11 @@ DIR             FAT             CLUSTER         SECTOR          {SD_TOOLS}
 
 ; a word within brackets [] is an immediate word. (other words may also be immediate)
 ; a word doubled with another word between parentheses () is a DEFERred word, the first being initialised with the second.
-; when ADD-ONs are compiled into the kernel, their respective MARKER word identified with braces {}  does nothing.
-
-; the words that are not commented are ANS94 compliant; search for their definition here: https://forth-standard.org/search
-
+; when ADD-ONs are compiled into the kernel, their respective MARKER word identified with braces {} does nothing.
+; when ADD-ONs are downloaded, their respective MARKER word identified with braces {} removes all ADD-ONs words.
 
 FORTH WORDS
-
-ASM <word>      creates an assembler word which is not interpretable by FORTH (because use of CALL ... RET).
-                this defined <word> must be ended with ENDASM.
-
-CODE <word>     creates an assembler word interpretable by FORTH (MOV @IP+,PC instead of CALL ... RET)
-                this defined <word> must be ended with ENDCODE.
-
-HI2LO           used to switch from a high level (FORTH) to low level (assembler) modes.
+-----------
 
 COLD            Software reset
 
@@ -94,15 +93,15 @@ WARM            DEFERed word, initially executes (WARM)
 
 (WARM)          performs a hot start
 
-WIPE            resets the program memory to its original state.
+WIPE            resets the program memory to its original state (Deep_RST has same effect).
 
 RST_HERE        defines the bound of the program memory protected against COLD or hardware reset.
 
-PWR_HERE        defines the bound of the program memory protected against ON/OFF and against any error occurring.
+PWR_HERE        defines the bound of the program memory protected against ON/OFF and also against any error occurring.
 
-RST_STATE       remove all words defined after RST_HERE
+RST_STATE       removes all words defined after RST_HERE (COLD or <reset> have same effet)
 
-PWR_STATE       remove all words defined after PWR_HERE
+PWR_STATE       removes all words defined after PWR_HERE (an occurring error has same effect)
 
 MOVE            https://forth-standard.org/standard/core/MOVE
 LEAVE           https://forth-standard.org/standard/core/LEAVE
@@ -155,8 +154,8 @@ NOECHO          stop display on output
 ECHO            start display on output
 EMIT            DEFERed word, initially executes (EMIT)
 (EMIT)          https://forth-standard.org/standard/core/EMIT
-(ACCEPT)        https://forth-standard.org/standard/core/ACCEPT
 ACCEPT          DEFERed word, initially executes (ACCEPT)
+(ACCEPT)        https://forth-standard.org/standard/core/ACCEPT
 KEY             DEFERed word, initially executes (KEY)
 (KEY)           https://forth-standard.org/standard/core/KEY
 C,              https://forth-standard.org/standard/core/CComma
@@ -170,14 +169,11 @@ HOLD            https://forth-standard.org/standard/core/HOLD
 #>              https://forth-standard.org/standard/core/num-end
 #S              https://forth-standard.org/standard/core/numS
 #               https://forth-standard.org/standard/core/num
+UM/MOD          https://forth-standard.org/standard/core/UMDivMOD
 <#              https://forth-standard.org/standard/core/num-start
 BL              https://forth-standard.org/standard/core/BL
 STATE           https://forth-standard.org/standard/core/STATE
 BASE            https://forth-standard.org/standard/core/BASE
->IN             https://forth-standard.org/standard/core/toIN
-CPL  -- size    of terminal input buffer TIB
-TIB  -- addr    of terminal input buffer TIB            
-PAD  -- addr    of PAD            
 J               https://forth-standard.org/standard/core/J
 I               https://forth-standard.org/standard/core/I
 UNLOOP          https://forth-standard.org/standard/core/UNLOOP
@@ -191,9 +187,8 @@ U<              https://forth-standard.org/standard/core/Uless
 DABS            https://forth-standard.org/standard/double/DABS
 ABS             https://forth-standard.org/standard/core/ABS
 NEGATE          https://forth-standard.org/standard/core/NEGATE
-XOR             https://forth-standard.org/standard/core/XOR
-OR              https://forth-standard.org/standard/core/OR
-AND             https://forth-standard.org/standard/core/AND
+1-              https://forth-standard.org/standard/core/OneMinus
+1+              https://forth-standard.org/standard/core/OnePlus
 -               https://forth-standard.org/standard/core/Minus
 +               https://forth-standard.org/standard/core/Plus
 C!              https://forth-standard.org/standard/core/CStore
@@ -218,25 +213,22 @@ EXIT            https://forth-standard.org/standard/core/EXIT
 
 ASSEMBLER vocabulary
 --------------------
-ASSEMBLER WORDS set see: http://www.ece.utep.edu/courses/web3376/Notes_files/ee3376-isa.pdf
-                     http://www.ti.com/lit/ug/slau367n/slau367n.pdf#page=157
-                     howto.md for symbolic alias of registers, symbolic jumps (IF ELSE THEN...),..
-
-
+set see: http://www.ece.utep.edu/courses/web3376/Notes_files/ee3376-isa.pdf
+         howto.md for symbolic alias of registers, symbolic jumps (IF ELSE THEN...),..
 
 ?GOTO           used after a conditionnal (0=,0<>,U>=,U<,0<,S<,S>=) to branch to a label FWx or BWx
 GOTO            used as unconditionnal branch to a label FWx or BWx
 
-FW3             FORWARD branch destination n°3
-FW2             
-FW1             
-
 BW3             BACKWARD branch destination n°3
-BW2             
-BW1          
+BW2                                         n°2
+BW1                                         N°1
 
-?JMP            used after a conditionnal (0=,0<>,U>=,U<,0<,S<,S>=) to jump to a defined word
-JMP             unconditionnal jump to a defined word
+FW3             FORWARD branch destination  n°3
+FW2                                         n°2
+FW1                                         n°1
+
+?JMP            used after a conditionnal (0=,0<>,U>=,U<,0<,S<,S>=) to jump to a predefined word
+JMP             unconditionnal jump to a predefined word
 
 REPEAT          assembler version of the FORTH word REPEAT
 WHILE           idem
@@ -255,42 +247,52 @@ U<              conditionnal
 S<              conditionnal
 S>=             conditionnal
 
-ASSEMBLER WORDS set: http://www.ti.com/lit/ug/slau367n/slau367n.pdf
+LO2HI           switches compilation between low level and high level modes without saving IP register.
+COLON           pushes IP then performs LO2HI, used as: CODE <word> ... assembler instr ... COLON ... FORTH words ... ;
+ENDASM          to end an ASM definition.
+ENDCODE         to end a CODE definition.
+SLEEP           DEFERed word which enables to create a background task, initially executes (SLEEP).
+(SLEEP)         the default SLEEP definition: MOV #GIE+LPM0,SR
+
+next assembler words are in FORTH vocabulary:
+
+CODE <word>     creates a FORTH word written in assembler.
+                this defined <word> must be ended with ENDCODE.
+
+ASM <word>      creates a word written in assembler but not interpretable by FORTH (because ended by RET instr.).
+                this defined <word> must be ended with ENDASM. This word will be called only in assembler mode. 
+
+HI2LO           used to switch compilation from high level (FORTH) to low level (assembler).
 
 
-RRUM            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=218
-RLAM            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=208
-RRAM            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=211
-RRCM            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=214
-POPM            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=204    syntax: POPM X,S    to pop X,W,T,S
-PUSHM           http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=205    syntax: PUSHM S,X   to push S,T,W,X
+ASSEMBLER WORDS set:
 
-CALL            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=142
-PUSH.B  PUSH    http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=168
-SXT             http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=182
-RRA.B   RRA     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=173
-SWPB            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=181
-RRC.B   RRC     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=174
-AND.B   AND     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=137
-XOR.B   XOR     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=184
-BIS.B   BIS     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=139
-BIC.B   BIC     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=138
-BIT.B   BIT     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=140
-DADD.B  DADD    http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=149
-CMP.B   CMP     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=147
-SUB.B   SUB     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=179
-SUBC.B  SUBC    http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=180
-ADDC.B  ADDC    http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=136
-ADD.B   ADD     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=135
-MOV.B   MOV     http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=165
-RETI            http://www.ti.com/lit/ug/slau272c/slau272c.pdf#page=170
+RRUM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=218
+RLAM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=208
+RRAM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=211
+RRCM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=214
+POPM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=204    syntax: POPM X,S    to pop X,W,T,S
+PUSHM           http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=205    syntax: PUSHM S,X   to push S,T,W,X
 
-LO2HI           switch between low level and high level interpretation mode (counterpart of HI2LO), without saving IP.
-COLON           pushes IP then performs LO2HI, used as: CODE <word> ... assembler cmd ... COLON ... FORTH words ... ;
-ENDASM          to end an ASM definition
-ENDCODE         to end a CODE definition
-(SLEEP)         the default SLEEP definition
-SLEEP           DEFERed word, initially executes (SLEEP), which enables to create a background task.
+CALL            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=142
+PUSH.B  PUSH    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=168
+SXT             http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=182
+RRA.B   RRA     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=173
+SWPB            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=181
+RRC.B   RRC     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=174
+AND.B   AND     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=137
+XOR.B   XOR     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=184
+BIS.B   BIS     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=139
+BIC.B   BIC     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=138
+BIT.B   BIT     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=140
+DADD.B  DADD    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=149
+CMP.B   CMP     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=147
+SUB.B   SUB     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=179
+SUBC.B  SUBC    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=180
+ADDC.B  ADDC    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=136
+ADD.B   ADD     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=135
+MOV.B   MOV     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=165
+RETI            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=170
 
 
 CONDCOMP ADD-ON
@@ -315,6 +317,8 @@ VOCABULARY <word>     creates a new VOCABULARY named word
 
 ANS_COMPLEMENT ADD-ON
 ---------------------
+PAD             https://forth-standard.org/standard/core/PAD            
+>IN             https://forth-standard.org/standard/core/toIN
 >BODY           https://forth-standard.org/standard/core/toBODY
 SOURCE          https://forth-standard.org/standard/core/SOURCE
 .(              https://forth-standard.org/standard/core/Dotp
@@ -329,11 +333,12 @@ CHAR            https://forth-standard.org/standard/core/CHAR
 2*              https://forth-standard.org/standard/core/TwoTimes
 MIN             https://forth-standard.org/standard/core/MIN
 MAX             https://forth-standard.org/standard/core/MAX
-1-              https://forth-standard.org/standard/core/OneMinus
-1+              https://forth-standard.org/standard/core/OnePlus
 RSHIFT          https://forth-standard.org/standard/core/RSHIFT
 LSHIFT          https://forth-standard.org/standard/core/LSHIFT
 INVERT          https://forth-standard.org/standard/core/INVERT
+XOR             https://forth-standard.org/standard/core/XOR
+OR              https://forth-standard.org/standard/core/OR
+AND             https://forth-standard.org/standard/core/AND
 2OVER           https://forth-standard.org/standard/core/TwoOVER
 2SWAP           https://forth-standard.org/standard/core/TwoSWAP
 2DROP           https://forth-standard.org/standard/core/TwoDROP
@@ -355,20 +360,46 @@ MOD             https://forth-standard.org/standard/core/MOD
 *               https://forth-standard.org/standard/core/Times
 FM/MOD          https://forth-standard.org/standard/core/FMDivMOD
 SM/REM          https://forth-standard.org/standard/core/SMDivREM
-UM/MOD          https://forth-standard.org/standard/core/UMDivMOD
 M*              https://forth-standard.org/standard/core/MTimes
 UM*             https://forth-standard.org/standard/core/UMTimes
-{ANS_COMP}      
+{ANS_COMP}
+
+
+SD_CARD_LOADER ADD-ON
+---------------------
+LOAD"           LOAD" SD_TEST.4TH" loads and compile source file SD_TEST.4TH.
+CIB             Currrent Input Buffer
+(ACCEPT)        init value for ACCEPT
+{SD_LOAD}
+
+
+SD_CARD_READ_WRITE ADD-ON
+-------------------------
+TERM2SD"        TERM2SD" SD_TEST.4TH" copy input file to SD_CARD (use CopySourceFileToTarget_SD_Card.bat to do)
+SD_EMIT         sends output stream at the end of last opened as write file.
+WRITE           write sequentially BUFFER content to a sector
+READ            read sequentially a sector to BUFFER
+CLOSE           close last opened file.
+DEL"            DEL" SD_TEST.4TH" remove this file from SD_CARD.
+WRITE"          WRITE" TRUC" open or create TRUC file ready to write to the end of this file
+READ"           READ" TRUC" open TRUC and load its first sector in BUFFER
 
 
 UTILITY ADD-ON
 --------------
 DUMP            https://forth-standard.org/standard/tools/DUMP  
-U.R               
+U.R   u z --    display unsigned number u with size z
 WORDS           https://forth-standard.org/standard/tools/WORDS 
 ?               https://forth-standard.org/standard/tools/q
-.RS             
+.RS             displays return stack content
 .S              https://forth-standard.org/standard/tools/DotS
-{UTILITY}       
+{TOOLS}         do nothing if compiled in core.
 
+SD_TOOLS ADD-ON
+---------------
+DIR             dump first sector of current directory
+FAT             dump first sector of FAT1
+CLUSTER         .123 CLUSTER displays first sector of cluster 123
+SECTOR          .123456789 SECTOR displays sector 123456789
+{SD_TOOLS}      if you type {SD_TOOLS}  all subsequent loaded words are removed
 

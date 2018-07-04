@@ -119,10 +119,15 @@ BRACKETELSE10                           ;
 ;An ambiguous condition exists if [IF] is POSTPONEd, 
 ;   or if the end of the input buffer is reached and cannot be refilled before the terminating [ELSE] or [THEN] is parsed.
         FORTHWORDIMM "[IF]" ; flag -- 
+BRACKETIF
         CMP #0,TOS
         MOV @PSP+,TOS
         JZ BRACKETELSE
         mNEXT
+
+;        FORTHWORDIMM "[IFNOT]" ; flag -- 
+;        XOR #-1,TOS
+;        JMP BRACKETIF
 
 ;[UNDEFINED]
 ;https://forth-standard.org/standard/tools/BracketUNDEFINED

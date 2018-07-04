@@ -137,32 +137,44 @@
 
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
-; PORTA usage
-
-SD_SEL      .equ PASEL0 ; to configure UCB0
-SD_REN      .equ PAREN  ; to configure pullup resistors
-SD_BUS      .equ 000Eh  ; pins P1.1 as UCB0CLK, P1.2 as UCB0SIMO & P1.3 as UCB0SOMI
-
-; PORT1 usage
-
-Deep_RST_IN .equ P1IN  ; TERMINAL TX  pin as FORTH Deep_RST 
-Deep_RST    .equ 10h   ; P1.4
-TERM_TXRX   .equ 30h
-TERM_SEL    .equ P1SEL0
-TERM_REN    .equ P1REN
-
-; PORT2 usage
-SD_CD       .equ 8        ; P2.3 as SD_CD
-SD_CS       .equ 4        ; P2.2 as SD_CS     
-SD_CDIN     .equ P2IN
-SD_CSOUT    .equ P2OUT
-SD_CSDIR    .equ P2DIR
-
 ; PORTx default wanted state : pins as input with pullup resistor
 
             MOV #-1,&PAOUT  ; OUT1 for all pins
             BIS #-1,&PAREN  ; all pins with pull resistors
           
+; PORT1 usage
+    .IFDEF UCA0_TERM
+TXD         .equ 10h        ; P1.4 = TXD + FORTH Deep_RST pin
+RXD         .equ 20h        ; P1.5
+TERM_BUS    .equ 30h
+TERM_IN     .equ P1IN
+TERM_SEL    .equ P1SEL0
+TERM_REN    .equ P1REN
+    .ENDIF
+
+; PORT2 usage
+    .IFDEF UCB0_SD
+SD_SEL      .equ PASEL0     ; to configure UCB0
+SD_REN      .equ PAREN      ; to configure pullup resistors
+SD_BUS      .equ 000Eh      ; pins P1.1 as UCB0CLK, P1.2 as UCB0SIMO & P1.3 as UCB0SOMI
+    .ENDIF
+
+SD_CD       .equ 8          ; P2.3 as SD_CD
+SD_CS       .equ 4          ; P2.2 as SD_CS     
+SD_CDIN     .equ P2IN
+SD_CSOUT    .equ P2OUT
+SD_CSDIR    .equ P2DIR
+
+
+    .IFDEF UCA1_TERM
+RXD         .equ 20h        ; P2.5
+TXD         .equ 40h        ; P2.6 = TXD + FORTH Deep_RST pin
+TERM_BUS    .equ 60h
+TERM_IN     .equ P2IN       ; TERMINAL TX  pin as FORTH Deep_RST 
+TERM_SEL    .equ P2SEL0
+TERM_REN    .equ P2REN
+    .ENDIF
+
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3

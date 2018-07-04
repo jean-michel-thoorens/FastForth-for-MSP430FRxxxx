@@ -108,7 +108,7 @@ SMSLASHREMnruq
             XOR S,T             ;1           S=divisor T=quot_sign
             CMP #0,T            ;1  -- nr uq  T=quot_sign>=0?
             JGE SMSLASHREMnrnq  ;2           yes
-            XOR #-1,TOS         ;1
+NEGAT       XOR #-1,TOS         ;1
             ADD #1,TOS          ;1
 SMSLASHREMnrnq                  ;   -- nr nq  S=divisor
             mNEXT               ;4 34 words
@@ -129,6 +129,18 @@ QUOTLESSONE ADD     S,0(PSP)        ; add divisor to remainder
 FMSLASHMODEND
             MOV     @RSP+,IP
             mNEXT                   ;
+
+;https://forth-standard.org/standard/core/NEGATE
+;C NEGATE   x1 -- x2            two's complement
+            FORTHWORD "NEGATE"
+            JMP NEGAT 
+
+;https://forth-standard.org/standard/core/ABS
+;C ABS     n1 -- +n2     absolute value
+            FORTHWORD "ABS"
+ABBS        CMP     #0,TOS       ; 1
+            JN      NEGAT 
+            mNEXT
 
 ;https://forth-standard.org/standard/core/Times
 ;C *      n1 n2 -- n3       signed multiply

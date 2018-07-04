@@ -252,9 +252,11 @@
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
 ; PORTA usage
+    .IFDEF UCA0_SD
 SD_SEL      .equ PASEL0 ; to configure UCB0
 SD_REN      .equ PAREN  ; to configure pullup resistors
-SD_BUS      .equ 0700h  ; pins P2.2 as UCB0CLK, P2.0 as UCB0SIMO & P2.1 as UCB0SOMI
+SD_BUS      .equ 0700h  ; pins P2.2 as UCA0CLK, P2.0 as UCA0SIMO & P2.1 as UCA0SOMI
+    .ENDIF ;UCA0_SD
 
 ; PORT1 usage
 ; P1.0 - LED1 red   output low
@@ -289,11 +291,14 @@ SD_CSDIR    .equ P2DIR
 ; P3.4 = TX1
 ; P3.5 = RX1
 
-Deep_RST_IN .equ P3IN   ; TERMINAL TX  pin as FORTH Deep_RST 
-Deep_RST    .equ 10h    ; P3.4 = TX
-TERM_TXRX   .equ 30h    ; P3.5 = RX
-TERM_SEL    .equ P3SEL0
+    .IFDEF UCA1_TERM
+TXD         .equ 10h    ; P3.4 = TXD + FORTH Deep_RST pin
+RXD         .equ 20h    ; P3.4 = RXD
+TERM_BUS    .equ 30h    ; P3.5 = RX
+TERM_IN     .equ P3IN   ; TERMINAL TX  pin as FORTH Deep_RST 
 TERM_REN    .equ P3REN
+TERM_SEL    .equ P3SEL0
+    .ENDIF ;UCA1_TERM
 
 ; PORT4 usage
 

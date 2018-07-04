@@ -31,6 +31,7 @@ TLVEND=\$1A7F!
 RAMSTART=\$1C00!
 RAMEND=\$23FF!
 PROGRAMSTART=\$4400!    Code space start
+FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
 SIGNATURES=\$FF80!      JTAG/BSL signatures
 JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW; must be reset by wipe.
 JTAG_SIG2=\$FF82!       if JTAG_SIG1=\$AAAA, length of password string @ JTAG_PASSWORD
