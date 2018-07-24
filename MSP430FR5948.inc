@@ -45,6 +45,7 @@ TLVEND          .equ 01AFFh      ;
 ; ----------------------------------------------
 RAMSTART        .equ 01C00h
 RAMEND          .equ 023FFh
+RAMLEN          .equ 00800h
 ; ----------------------------------------------
 ; FRAM
 ; ----------------------------------------------
@@ -59,6 +60,7 @@ JTAG_PASSWORD   .equ 0FF88h      ; 256 bits max
 IPE_SIG_VALID   .equ 0FF88h      ; one word
 IPE_STR_PTR_SRC .equ 0FF8Ah      ; one word
 INTVECT         .equ 0FFCCh      ; FFCC-FFFF
+VECTLEN         .equ 34h
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ; ----------------------------------------------
 
@@ -433,4 +435,5 @@ SD_IFG         .equ eUSCI_B0_SFR + 2Ch    ; eUSCI_B0 Interrupt Flags Register
     .ENDIF ;UCB0_SD
 
 
+UCB0STATW       .equ eUSCI_B0_SFR + 08h     ; eUSCI_B0 Status words
 

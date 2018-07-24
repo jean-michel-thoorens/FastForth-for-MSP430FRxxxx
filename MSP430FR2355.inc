@@ -42,6 +42,7 @@ TLVEND          .equ 01A31h      ;
 ; ----------------------------------------------
 RAMSTART        .equ 02000h
 RAMEND          .equ 02FFFh
+RAMLEN          .equ 01000h
 ; ----------------------------------------------
 ; FRAM
 ; ----------------------------------------------
@@ -60,6 +61,7 @@ BSL_I2C_ADRE    .equ 0FF8Ch      ;
 JTAG_PASSWORD   .equ 0FF88h      ; 256 bits
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 INTVECT         .equ 0FFCEh      ; FFCE-FFFF :  24 vectors + reset
+VECTLEN         .equ 32h
 ; ----------------------------------------------
 
 ;   .org    INTVECT             ; FFCE-FFFF 24 vectors + reset
@@ -399,32 +401,5 @@ SD_TXBUF       .equ eUSCI_B1_SFR + 0Eh    ; USCI_B1 Transmit Buffer 8
 SD_IFG         .equ eUSCI_B1_SFR + 2Ch    ; USCI_B1 Interrupt Flags Register
     .ENDIF ;UCB1_SD
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+UCB0STATW       .equ eUSCI_B0_SFR + 08h     ; eUSCI_B0 Status words
 

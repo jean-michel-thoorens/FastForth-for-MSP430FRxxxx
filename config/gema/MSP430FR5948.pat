@@ -143,9 +143,10 @@ SEMI=MOV \@R1+,R13\nMOV \@R13+,R0!
 ! KERNEL CONSTANTS
 ! ----------------------
 INI_THREAD=\$1800!      .word THREADS
-TERMINAL_INT=\$1802!    .word TERMINAL_INT
-FREQ_KHZ=\$1804!        .word FREQUENCY
-HECTOBAUDS=\$1806!      .word TERMINALBAUDRATE/100
+TERMBRW_RST=\$1802!     .word TERMBRW_RST
+TERMMCTLW_RST=\$1804!   .word TERMMCTLW_RST
+FREQ_KHZ=\$1806!        .word FREQUENCY
+
 ! ----------------------
 ! SAVED VARIABLES
 ! ----------------------
@@ -205,23 +206,29 @@ LAST_PSP=\$1DBC!
 
 !STATE=\$1DBE!           Interpreter state
 
-SAV_CURRENT=\$1DC0!     preserve CURRENT when create assembler words
-OPCODE=\$1DC2!          OPCODE adr
-ASMTYPE=\$1DC4!         keep the opcode complement
+SOURCE_LEN=\$1DC0!      len of input stream
+SOURCE_ADR=\$1DC2!      adr of input stream
+TOIN=\$1DC4!            >IN
+DP=\$1DC6!              dictionary ptr
 
-SOURCE_LEN=\$1DC6!      len of input stream
-SOURCE_ADR=\$1DC8!      adr of input stream
-TOIN=\$1DCA!            >IN
-DP=\$1DCC!              dictionary ptr
-LASTVOC=\$1DCE!         keep VOC-LINK
-CONTEXT=\$1DD0!         CONTEXT dictionnary space (8 CELLS)
-CURRENT=\$1DE0!         CURRENT dictionnary ptr
+LASTVOC=\$1DC8!         keep VOC-LINK
+CONTEXT=\$1DCA!         CONTEXT dictionnary space (8 CELLS)
+CURRENT=\$1DDA!         CURRENT dictionnary ptr
 
-!BASE=\$1DE2!           numeric base, must be defined before first reset !
-LINE=\$1DE4!           line in interpretation, activated with NOECHO, desactivated with ECHO
-
+!BASE=\$1DDC!           numeric base, must be defined before first reset !
+LINE=\$1DDE!            line in interpretation, activated with NOECHO, desactivated with ECHO
 ! ---------------------------------------
-!1DE6! 22 bytes RAM free
+!1DE0! 14 RAM bytes free conditionnaly
+! ---------------------------------------
+!SAV_CURRENT=\$21E0!    preserve CURRENT when create assembler words
+!ASMBW1=\$1DE2          assembler backward reference 1
+!ASMBW2=\$1DE4          assembler backward reference 2
+!ASMBW3=\$1DE6          assembler backward reference 3
+!ASMFW1=\$1DE8          assembler forward reference 1
+!ASMFW2=\$1DEA          assembler forward reference 2
+!ASMFW3=\$1DEC          assembler forward reference 3
+! ---------------------------------------
+!1DEE! 14 RAM bytes free
 ! ---------------------------------------
 
 ! ---------------------------------------
@@ -289,7 +296,7 @@ CurrentHdl=\$2032!  contains the address of the last opened file structure, or 0
 ! Load file operation
 ! ---------------------------------------
 pathname=\$2034!
-EndOfPath=\$2436!
+EndOfPath=\$2036!
 
 ! ---------------------------------------
 ! Handle structure

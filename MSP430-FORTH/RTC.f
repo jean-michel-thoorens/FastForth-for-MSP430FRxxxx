@@ -18,11 +18,15 @@
 \ scratch registers Y to S are free for use
 \ under interrupt, IP is free for use
 
-\ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, R7, R6, R5, R4
-\ example : PUSHM IP,Y
+\ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
+\ PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
+
+\ example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
 \
-\ POPM  order :  R4, R5, R6, R7,  Y,  X,  W,  T,  S, IP,TOS,PSP
-\ example : POPM Y,IP
+\ POPM  order :  PC,RSP, SR, R3, rDODOES,rDOCON,rDOVAR,rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
+\ POPM  order :  R0, R1, R2, R3,   R4   ,  R5  ,  R6  ,  R7 , R8, R9,R10,R11,R12,R13,R14,R15
+
+\ example : POPM #6,IP   pop Y,X,W,T,S,IP registers from return stack
 
 \ ASSEMBLER conditionnal usage after IF UNTIL WHILE : S< S>= U< U>= 0= 0<> 0>=
 \ ASSEMBLER conditionnal usage before GOTO ?GOTO     : S< S>= U< U>= 0= 0<> <0 
@@ -137,7 +141,7 @@ CREATE ABUF 20 ALLOT
 : GET_TIME
     ECHO
     CR CR ."    DATE (DMY): "
-[DEFINED] LOAD" [IF]    \ ACCEPT is a dEFERed word and redirected to SD_ACCEPT!"
+[DEFINED] LOAD" [IF]    \ ACCEPT is a dEFERed word and redirected to SD_ACCEPT!
     ABUF ABUF 20 (ACCEPT) EVALUATE CR 3 SPACES DATE!
     CR CR ."    TIME (HMS): "
     ABUF ABUF 20 (ACCEPT) EVALUATE CR 3 SPACES TIME!

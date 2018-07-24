@@ -64,11 +64,13 @@ u1n2MSTAR   CMP     #0,TOS          ; n2 <= -1 ?
             JGE     u1u2MSTAR       ; no
             XOR     #-1,TOS         ; y: n2 --> u2 
             ADD     #1,TOS          ;
-u1u2MSTAR   .word   151Dh           ;           PUSHM IP,S (1+1 push,IP=0Dh)
+u1u2MSTAR   ;.word   151Dh           ;           PUSHM IP,S (1+1 push,IP=0Dh)
+            PUSHM   #2,IP
             ASMtoFORTH
             .word UMSTAR            ; UMSTAR use S,T,W,X,Y
             FORTHtoASM
-            .word   171Ch           ;           POPM S,IP (1+1 pop,S=0Ch)
+;            .word   171Ch           ;           POPM S,IP (1+1 pop,S=0Ch)
+            POPM  #2,IP
             CMP     #0,S            ; result > -1 ?
             JGE     MSTARend        ; yes
             XOR     #-1,0(PSP)      ; no : ud --> d
@@ -96,10 +98,12 @@ d1u2SMSLASHREM                  ;   -- d1 u2
             ADD #1,2(PSP)       ;4           d1lo+1
             ADDC #0,0(PSP)      ;4           d1hi+C
 ud1u2SMSLASHREM                 ;   -- ud1 u2
-           .word 151Ch          ;4          PUSHM S,T (1+1 push,S=0Ch)
+;           .word 151Ch          ;4          PUSHM S,T (1+1 push,S=0Ch)
+            PUSHM  #2,S
             CALL #MUSMOD
             MOV @PSP+,TOS
-           .word 171Bh          ;4          POPM T,S (1+1 pop,T=0Bh)
+;           .word 171Bh          ;4          POPM T,S (1+1 pop,T=0Bh)
+            POPM  #2,S
             CMP #0,T            ;1  -- ur uq  T=rem_sign>=0?
             JGE SMSLASHREMnruq  ;2           yes
             XOR #-1,0(PSP)      ;3

@@ -21,13 +21,13 @@ COMPARE
         MOV @PSP+,Y     ;2 addr2 = Y
         MOV @PSP+,T     ;2 u1 = T     
         MOV @PSP+,X     ;2 addr1 = X
-COMPAR1 MOV T,TOS       ;1
-        ADD S,TOS       ;1
-        JZ  COMPEQUAL   ;2 end of all successfull comparisons
+COMPAR1 MOV T,TOS       ;1 TOS=u1
+        ADD S,TOS       ;1 TOS=u1+u2
+        JZ  COMPEQUAL   ;2 u1=u2=0: end of all successfull comparisons
         SUB #1,T        ;1
         JN COMPLESS     ;2 u1<u2
         SUB #1,S        ;1
-        JN COMPGREATER  ;2 u2<u1
+        JN COMPGREATER  ;2 u1>u2
         ADD #1,X        ;1
         CMP.B @Y+,-1(X) ;4 char1-char2
         JZ COMPAR1      ;2 char1=char2  17~ loop
@@ -129,18 +129,6 @@ BRACKETIF
 ;        XOR #-1,TOS
 ;        JMP BRACKETIF
 
-;[UNDEFINED]
-;https://forth-standard.org/standard/tools/BracketUNDEFINED
-;Compilation:
-;Perform the execution semantics given below.
-;Execution: ( "<spaces>name ..." -- flag )
-;Skip leading space delimiters. Parse name delimited by a space. 
-;Return a false flag if name is the name of a word that can be found,
-;otherwise return a true flag.
-        FORTHWORDIMM  "[UNDEFINED]"
-        mDOCOL
-        .word   FBLANK,WORDD,FIND,NIP,ZEROEQUAL,EXIT
-
 ;[DEFINED]
 ;https://forth-standard.org/standard/tools/BracketDEFINED
 ;Compilation:
@@ -152,8 +140,21 @@ BRACKETIF
 ;otherwise return a false flag. [DEFINED] is an immediate word.
 
         FORTHWORDIMM  "[DEFINED]"
+BRACKETDEFINED
         mDOCOL
         .word   FBLANK,WORDD,FIND,NIP,EXIT
+
+;[UNDEFINED]
+;https://forth-standard.org/standard/tools/BracketUNDEFINED
+;Compilation:
+;Perform the execution semantics given below.
+;Execution: ( "<spaces>name ..." -- flag )
+;Skip leading space delimiters. Parse name delimited by a space. 
+;Return a false flag if name is the name of a word that can be found,
+;otherwise return a true flag.
+        FORTHWORDIMM  "[UNDEFINED]"
+        mDOCOL
+        .word   BRACKETDEFINED,ZEROEQUAL,EXIT
 
 ;; CORE EXT  MARKER
 ;;https://forth-standard.org/standard/core/MARKER

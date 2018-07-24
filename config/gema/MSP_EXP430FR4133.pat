@@ -190,14 +190,13 @@
 ! ============================================
 TERM_TX=1!          ; P1.0 = TX
 TERM_RX=2!          ; P1.1 = RX
-TERM_TXRX=3!
+TERM_BUS=3!
 
+TERM_IN=\$200!
 TERM_REN=\$206!
 TERM_SEL=\$20C!
 TERM_IE=\$21A!
 TERM_IFG=\$21C!
-Deep_RST=1!         ; = TX pin
-Deep_RST_IN=\$200!  ; TERMINAL TX  pin as FORTH Deep_RST
 
 RTS=8!              ; P2.3
 CTS=\$10!           ; P2.4

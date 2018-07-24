@@ -147,7 +147,7 @@ Clust_ClustProcess
 ; ----------------------------------;
             FORTHWORD "DIR"         ; Display DIR sector of CurrentHdl or CurrentDir sector by default 
 ; ----------------------------------;
-    SUB     #4,PSP                  ;
+    SUB     #4,PSP                  ;           Make room for result
     MOV     TOS,2(PSP)              ;           save TOS
     MOV     &DIRClusterL,&ClusterL  ;
     MOV     &DIRClusterH,&ClusterH  ;

@@ -189,13 +189,6 @@ DOTPAREN    mDOCOL
             MOV     &SOURCE_ADR,0(PSP)
             mNEXT
 
-;https://forth-standard.org/standard/core/toBODY
-; >BODY     -- PFA      leave PFA of created word
-            FORTHWORD ">BODY"
-            ADD     #4,TOS
-            mNEXT
-
-
 ;https://forth-standard.org/standard/core/toIN
 ;C >IN     -- a-addr       holds offset in input stream
             FORTHWORD ">IN"

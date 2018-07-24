@@ -11,7 +11,10 @@ rDOCON=R5!
 rDOVAR=R6!
 rEXIT=R7!
 rDOCOL=R7!
-R=R7!
+Q=R4!
+P=R5!
+M=R6!
+L=R7!
 Y=R8!
 X=R9!
 W=R10!
@@ -21,8 +24,14 @@ IP=R13!
 TOS=R14!
 PSP=R15!
 
+
+DOVAR=\$1286!   to reinit rDOVAR : MOV #DOVAR,rDOVAR
+DOCON=\$1285!   to reinit rDOCON : MOV #DOCON,rDOCON
+DODOES=\$1284!  to reinit rDODOES: MOV #DODOES,rDODOES
+
+
 ! forth words filter
-U\.R=U\.R!
+M\*=M\*
 R\>=R\>!
 R\@=R\@!
 \>R=\>R!
@@ -36,9 +45,4 @@ S\"=S\"!
 
 T\{=T\{!
 \}T=\}T!
-!_R=_R
-!_S=_S
-!_T=_T
-!_W=_W
-!_X=_X
-!_Y=_Y
+U\.R=U\.R!

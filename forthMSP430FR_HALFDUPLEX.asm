@@ -7,12 +7,14 @@
 ; (ACCEPT) part I: prepare TERMINAL_INT ;
 ; --------------------------------------;
     .IFDEF TOTAL
-            .word 1537h                 ;6              push R7,R6,R5,R4
+;            .word 1537h                 ;6              push R7,R6,R5,R4
+            PUSHM  #4,R7
     .ENDIF                              ;
             MOV     #ENDACCEPT,S        ;2              S = ACCEPT XOFF return
             MOV     #AKEYREAD1,T        ;2              T = default XON return
-            .word   152Dh               ;5              PUSHM IP,S,T, as IP ret, XOFF ret, XON ret
-            MOV     TOS,W               ;1 -- addr len
+;            .word   152Dh               ;5              PUSHM IP,S,T, as IP ret, XOFF ret, XON ret
+             PUSHM  #3,IP
+           MOV     TOS,W               ;1 -- addr len
             MOV     @PSP,TOS            ;2 -- org ptr                                             )
             ADD     TOS,W               ;1 -- org ptr   W=Bound                                   )
             MOV     #0Dh,T              ;2              T = 'CR' to speed up char loop in part II  > prepare stack and registers
@@ -24,7 +26,8 @@
             JNZ     RXON                ;2                   no : RXON return = AKEYREAD1, to process first char of new line.
 ACCEPTNEXT  ADD     #2,RSP              ;1                   yes: remove AKEYREAD1 as XON return,
             MOV     #SLEEP,X            ;2                        and set XON return = SLEEP
-            .word   153Ch               ;6                        PUSHM S,T,W,X before SLEEP (and so WAKE on any interrupts)
+;            .word   153Ch               ;6                        PUSHM S,T,W,X before SLEEP (and so WAKE on any interrupts)
+            PUSHM  #4,S
 ; --------------------------------------;
 RXON                                    ;
 ; --------------------------------------;
@@ -60,10 +63,6 @@ RXOFF_LOOP  BIT     #UCTXIFG,&TERMIFG   ;3  wait the sending end of XOFF, useles
     ASMWORD "SLEEP"                     ; may be redirected
 SLEEP                                   ;
     MOV #PARENSLEEP,PC                  ;3
-; --------------------------------------;
-
-; --------------------------------------;
-    ASMWORD "(SLEEP)"                   ;
 PARENSLEEP                              ;
     BIS &LPM_MODE,SR                    ;3  enter in LPMx sleep mode with GIE=1
 ; --------------------------------------;   default FAST FORTH mode (for its input terminal use) : LPM0.
@@ -101,8 +100,7 @@ TERMINAL_INT                            ; <--- TEMR RX interrupt vector, delayed
 ; **************************************;      if wake up time increases, max bauds rate decreases...
 ; (ACCEPT) part II under interrupt      ; Org Ptr -- len'
 ; --------------------------------------;
-            ADD     #4,RSP              ;1  remove SR and PC from stack, SR flags are lost (unused by FORTH interpreter)
-            .word   172Ah               ;5  POPM W=buffer_bound,T=0Dh,S=20h
+             POPM  #5,S                 ;8  POPM  Y=SR,X=PC,W=buffer_bound, T=0Dh,S=20h
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
 ; starts the 2th stopwatch              ;
 ; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
@@ -152,7 +150,7 @@ ACCEPTEND   SUB @PSP+,TOS               ; Org Ptr -- len'
             MOV @RSP+,IP                ; 2 and continue with INTERPRET with GIE=0.
                                         ; So FORTH machine is protected against any interrupt...
     .IFDEF TOTAL
-            .word 1734h                 ;6              pop R4,R5,R6,R7
+             POPM  #4,R7                 ;6              pop R4,R5,R6,R7
     .ENDIF
             mNEXT                       ; ...until next falling down to LPMx mode of (ACCEPT) part1,
 ; **************************************;    i.e. when the FORTH interpreter has no more to do.
@@ -162,10 +160,11 @@ ACCEPTEND   SUB @PSP+,TOS               ; Org Ptr -- len'
 ; ------------------------------------------------------------------------------
 
 
-;Z (EMIT)   c --    output character (byte) to the terminal
-; hardware or software control on TX flow seems not necessary with UARTtoUSB bridges because
-; they stop TX when their RX buffer is full. So no problem when the terminal input is echoed to output.
-            FORTHWORD "(EMIT)"
+;https://forth-standard.org/standard/core/EMIT
+;C EMIT     c --    output character to the output device ; deferred word
+            FORTHWORD "EMIT"
+EMIT        MOV @PC+,PC                 ;3  15~
+            .word   PARENEMIT
 PARENEMIT   MOV     TOS,Y               ; 1
             MOV     @PSP+,TOS           ; 2
 YEMIT1      BIT     #UCTXIFG,&TERMIFG   ; 3 wait the sending end of previous char, useless at high baudrates

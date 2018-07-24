@@ -48,6 +48,7 @@ TinyRAM         .equ 00Ah
 TinyRAMEnd      .equ 01Fh
 RAMSTART        .equ 01C00h
 RAMEND          .equ 02BFFh
+RAMLEN          .equ 01000h
 SharedRAMSTART  .equ 02C00h
 SharedRAMEND    .equ 03BFFh
 ; ----------------------------------------------
@@ -64,6 +65,7 @@ JTAG_PASSWORD   .equ 0FF88h      ; 256 bits max
 IPE_SIG_VALID   .equ 0FF88h      ; one word
 IPE_STR_PTR_SRC .equ 0FF8Ah      ; one word
 INTVECT         .equ 0FFB4h      ; FFB4-FFFF
+VECTLEN         .equ 4Ch
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ; ----------------------------------------------
 ;    .org    SIGNATURES
@@ -533,11 +535,11 @@ TERMVEC     .equ 0FFE6h
     .ENDIF ;UCA1_TERM
 
     .IFDEF UCA1_SD
-SD_CTLW0       .equ eUSCI_A1_SFR + 00h    ; eUSCI_A1 Control Word Register 0
-SD_BRW         .equ eUSCI_A1_SFR + 06h    ; eUSCI_A1 Baud Word Rate 0
-SD_RXBUF       .equ eUSCI_A1_SFR + 0Ch    ; eUSCI_A1 Receive Buffer 8
-SD_TXBUF       .equ eUSCI_A1_SFR + 0Eh    ; eUSCI_A1 Transmit Buffer 8
-SD_IFG         .equ eUSCI_A1_SFR + 1Ch    ; eUSCI_A1 Interrupt Flags Register
+SD_CTLW0        .equ eUSCI_A1_SFR + 00h    ; eUSCI_A1 Control Word Register 0
+SD_BRW          .equ eUSCI_A1_SFR + 06h    ; eUSCI_A1 Baud Word Rate 0
+SD_RXBUF        .equ eUSCI_A1_SFR + 0Ch    ; eUSCI_A1 Receive Buffer 8
+SD_TXBUF        .equ eUSCI_A1_SFR + 0Eh    ; eUSCI_A1 Transmit Buffer 8
+SD_IFG          .equ eUSCI_A1_SFR + 1Ch    ; eUSCI_A1 Interrupt Flags Register
     .ENDIF ;UCA1_SD
 
 
@@ -545,12 +547,11 @@ SD_IFG         .equ eUSCI_A1_SFR + 1Ch    ; eUSCI_A1 Interrupt Flags Register
 ; eUSCI_B0
 ; ----------------------------------------------------------------------
     .IFDEF UCB0_SD
-SD_CTLW0       .equ eUSCI_B0_SFR + 00h    ; eUSCI_B0 Control Word Register 0
-SD_BRW         .equ eUSCI_B0_SFR + 06h    ; eUSCI_B0 Baud Word Rate 0
-SD_RXBUF       .equ eUSCI_B0_SFR + 0Ch    ; eUSCI_B0 Receive Buffer 8
-SD_TXBUF       .equ eUSCI_B0_SFR + 0Eh    ; eUSCI_B0 Transmit Buffer 8
-SD_IFG         .equ eUSCI_B0_SFR + 2Ch    ; eUSCI_B0 Interrupt Flags Register
+SD_CTLW0        .equ eUSCI_B0_SFR + 00h    ; eUSCI_B0 Control Word Register 0
+SD_BRW          .equ eUSCI_B0_SFR + 06h    ; eUSCI_B0 Baud Word Rate 0
+SD_RXBUF        .equ eUSCI_B0_SFR + 0Ch    ; eUSCI_B0 Receive Buffer 8
+SD_TXBUF        .equ eUSCI_B0_SFR + 0Eh    ; eUSCI_B0 Transmit Buffer 8
+SD_IFG          .equ eUSCI_B0_SFR + 2Ch    ; eUSCI_B0 Interrupt Flags Register
     .ENDIF ;UCB0_SD
 
-
-
+UCB0STATW       .equ eUSCI_B0_SFR + 08h     ; eUSCI_B0 Status words

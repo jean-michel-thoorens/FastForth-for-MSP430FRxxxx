@@ -87,7 +87,8 @@ CCFS_AllOthers                      ;
 ; ----------------------------------;
     .ELSEIF                         ; case of no hardware multiplier
 ; ----------------------------------; Cluster24<<SecPerClus{1,2,4,8,16,32,64} --> ClusFrstSect
-    .word 0152Ah                    ;6 PUSHM W,X,Y
+;    .word 0152Ah                    ;6 PUSHM W,X,Y
+    PUSHM  #3,W
     MOV.B &SecPerClus,W             ;3 SecPerClus(5-1) = multiplicator
     MOV &ClusterL,X                 ;3 Cluster(16-1) --> MULTIPLICANDlo
     MOV.B &ClusterH,Y               ;3 Cluster(21-17) -->  MULTIPLICANDhi
@@ -105,7 +106,8 @@ CCFS_NEXT                           ;  C = 1, it's done
     ADDC #0,Y                       ;1
     MOV X,&SectorL                  ;3 low result
     MOV Y,&SectorH                  ;3 high result
-    .word 01728h                    ;6 POPM Y,X,W
+;    .word 01728h                    ;6 POPM Y,X,W
+    POPM  #3,W
 ; ----------------------------------;34~ + 5~ by loop
     .ENDIF ; MPY
 ; ----------------------------------;
@@ -325,7 +327,7 @@ CheckCaseOfCloseLoadedFile          ;
 RestorePreviousBuffer               ; W=-1: this LOADed file to close had not a parent file
 ; ----------------------------------;
     MOV     #TIB_ORG,&FCIB+2        ;     restore TIB as Current Input Buffer for next line (next QUIT)
-    MOV     #PARENACCEPT,&ACCEPT+2  ;     restore (ACCEPT) for next line (next QUIT)
+    MOV     #BODYACCEPT,&ACCEPT+2   ;     restore (ACCEPT) for next line (next QUIT)
     JMP     RestoreBufferContext    ;
 ; ----------------------------------;
 CheckPreviousLoadedFile             ;
@@ -546,7 +548,8 @@ OPN_LoadDIRsector                   ; <=== Dir Sector loopback
 OPN_SearchDIRentry                  ; <=== DIR Entry loopback
 ; ----------------------------------;
     MOV     W,Y                     ; 1
-    .word   0E58h                   ; 5 RLAM #4,Y --> * 16
+;    .word   0E58h                   ; 5 RLAM #4,Y --> * 16
+    RLAM.W  #4,Y
     ADD     Y,Y                     ; 1           --> * 2
     MOV     Y,&EntryOfst            ; EntryOfst points to first free entry
     CMP.B   #0,SD_BUF(Y)            ; free entry ? (end of entries in DIR)

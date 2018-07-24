@@ -34,11 +34,15 @@
 \ under interrupt, IP is free for use
 \ interrupts reset SR register !
 
-\ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, R7, R6, R5, R4, R3, R2,RSP, PC
-\ example : PUSHM IP,Y
+\ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
+\ PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
+
+\ example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
 \
-\ POPM  order :  PC ,RSP, R2, R3, R4, R5, R6, R7,  Y,  X,  W,  T,  S, IP,TOS,PSP
-\ example : POPM Y,IP
+\ POPM  order :  PC,RSP, SR, R3, rDODOES,rDOCON,rDOVAR,rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
+\ POPM  order :  R0, R1, R2, R3,   R4   ,  R5  ,  R6  ,  R7 , R8, R9,R10,R11,R12,R13,R14,R15
+
+\ example : POPM #6,IP   pop Y,X,W,T,S,IP registers from return stack
 
 \ ASSEMBLER conditionnal usage after IF UNTIL WHILE : S< S>= U< U>= 0= 0<> 0>=
 \ ASSEMBLER conditionnal usage before ?JMP ?GOTO    : S< S>= U< U>= 0= 0<> 0< 
@@ -310,9 +314,9 @@ BEGIN                           \
 \ ******************************\
 \ RC5_HalfCycle                 \ <--- loop back ---+ with readjusted RC5_Period
 \ ******************************\                   |
-\ MOV #%1000100100,&RC5_TIM_CTL   \ (re)start timer_A | SMCLK/1 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
-\ MOV #%1002100100,&RC5_TIM_CTL   \ (re)start timer_A | SMCLK/2 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
-\ MOV #%1010100100,&RC5_TIM_CTL   \ (re)start timer_A | SMCLK/4 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
+\ MOV #%1000100100,&RC5_TIM_CTL \ (re)start timer_A | SMCLK/1 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
+\ MOV #%1002100100,&RC5_TIM_CTL \ (re)start timer_A | SMCLK/2 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
+\ MOV #%1010100100,&RC5_TIM_CTL \ (re)start timer_A | SMCLK/4 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
 MOV #%1011100100,&RC5_TIM_CTL   \ (re)start timer_A | SMCLK/8 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
 \ RC5_Compute_3/4_Period:       \                   |
     RRUM    #1,X                \ X=1/2 cycle       |
@@ -381,8 +385,8 @@ LO2HI                           \ switch from assembler to FORTH
     ['] LCD_CLEAR IS CR         \ redirects CR
     ['] LCD_WrC  IS EMIT        \ redirects EMIT
     CR ." $" 2 U.R              \ print IR_RC5 code
-    ['] (CR) IS CR              \ restore CR
-    ['] (EMIT) IS EMIT          \ restore EMIT
+    ['] CR >BODY IS CR          \ restore CR
+    ['] EMIT >BODY IS EMIT      \ restore EMIT
 HI2LO                           \ switch from FORTH to assembler
 MOV TOS,&BASE                   \ restore current BASE
 MOV @PSP+,TOS                   \
@@ -398,7 +402,9 @@ ASM BACKGROUND                  \
 \ ...                           \ insert here your background task
 \ ...                           \
 \ ...                           \
-MOV #(SLEEP),PC                 \ Must be the last statement of BACKGROUND
+MOV #SLEEP,X                    \ 2 Must be the last statement of BACKGROUND
+ADD #4,X                        \ 1 X = BODY of SLEEP
+MOV X,PC                        \ 3 
 ENDASM                          \
 \ ------------------------------\
     \
@@ -537,22 +543,25 @@ LO2HI                           \ no need to push IP because (WARM) resets the R
     ['] LCD_HOME IS CR          \ ' CR redirected to LCD_HOME
     ['] LCD_WRC  IS EMIT        \ ' EMIT redirected to LCD_WrC
     CR ." I love you"   
-    ['] (CR) IS CR              \ ' (CR) is CR
-    ['] (EMIT) IS EMIT          \ ' (EMIT) is EMIT
-\    NOECHO                      \ uncomment to run this app without terminal connexion
-    CR
-    ."    RC5toLCD is running. Type STOP to quit"
+    ['] CR >BODY IS CR          \
+    ['] EMIT >BODY IS EMIT      \
+    ." RC5toLCD is running. Type STOP to quit"
     LIT RECURSE IS WARM         \ replace WARM by this START routine
     ABORT                       \ and continue with the next word after WARM...
 ;                               \ ...until interpreter falls in sleep mode within ACCEPT.
     \
 
 CODE STOP                   \ stops multitasking, must to be used before downloading app
-    MOV #SLEEP,X            \
-    MOV #(SLEEP),2(X)       \ restore the default background
+\ restore default action of primary DEFERred word SLEEP, assembly version
+    MOV #SLEEP,X            \ the ASM word SLEEP is only visible in mode assembler. 
+    ADD #4,X                \ X = BODY of SLEEP
+    MOV X,-2(X)             \ restore the default background
+
 COLON
-    ['] (WARM) IS WARM      \ remove START app from FORTH init process
-    ECHO COLD               \ reset CPU, interrupt vectors, and start FORTH
+\ restore default action of primary DEFERred word WARM, FORTH version
+    ['] WARM >BODY IS WARM  \ remove START app from FORTH init process
+
+    COLD                    \ because we want to reset CPU and interrupt vectors
 ;
     \
 

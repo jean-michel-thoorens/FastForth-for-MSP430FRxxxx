@@ -102,16 +102,15 @@
 ! ============================================
 ! FORTH I/O :
 ! ============================================
-TERM_TX=\$10!          ; P3.4 = TX
+TERM_TX=\$10!          ; P3.4 = TX also FORTH Deep_RST pin
 TERM_RX=\$20!          ; P3.5 = RX
-TERM_TXRX=\$30!
+TERM_BUS=\$30!
 
+TERM_IN=\$220!
 TERM_REN=\$226!
 TERM_SEL=\$22C!
 TERM_IE=\$23A!
 TERM_IFG=\$23C!
-Deep_RST=\$10!         ; = TX pin
-Deep_RST_IN=\$220!  ; TERMINAL TX  pin as FORTH Deep_RST
 
 RTS=2!              ; P3.1
 CTS=1!              ; P3.0

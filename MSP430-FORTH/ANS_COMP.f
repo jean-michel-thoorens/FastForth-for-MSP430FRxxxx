@@ -2,9 +2,29 @@
 ; ANS_COMP.f                               words complement to pass CORETEST.4th
 ; ------------------------------------------------------------------------------
 
-\ TARGET SELECTION
+\ TARGET SELECTION (used by preprocessor GEMA to load \config\gema\TARGET.pat)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR2433  MSP_EXP430FR4133    MSP_EXP430FR2355    CHIPSTICK_FR2433
+\ MY_MSP430FR5738_1 MY_MSP430FR5738     MY_MSP430FR5948     MY_MSP430FR5948_1   
+\ JMJ_BOX
+
+\ REGISTERS USAGE
+\ rDODOES to rEXIT must be saved before use and restored after
+\ scratch registers Y to S are free for use
+\ under interrupt, IP is free for use
+
+\ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT, rDOVAR, rDOCON, rDODOES
+\ example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
+\
+\ POPM  order :  rDODOES, rDOCON, rDOVAR, rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
+\ example : POPM #6,IP   pulls Y,X,W,T,S,IP registers from return stack
+
+\ FORTH conditionnals:  unary{ 0= 0< 0> }, binary{ = < > U< }
+
+\ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
+
+\ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  <0
+
     \
 PWR_STATE
     \
@@ -12,7 +32,7 @@ PWR_STATE
     \
 [UNDEFINED] ASM [IF]
 ECHO 
-ASM ; assembler is required! 
+ASM \ assembler is required! 
 [THEN]
     \
 [UNDEFINED] {ANS_COMP} [IF]
@@ -140,11 +160,12 @@ S< IF
     XOR #-1,TOS     \ n2 --> u2 
     ADD #1,TOS      \
 THEN
-PUSHM IP,S          \ UMSTAR use S,T,W,X,Y
+\ PUSHM IP,S          \ UMSTAR use S,T,W,X,Y
+PUSHM #2,IP         \ UMSTAR use S,T,W,X,Y
 LO2HI               \ -- ud1 u2
 UM*       
 HI2LO
-POPM S,IP
+POPM #2,IP           \ pop S,IP
 CMP #0,S            \ sign of result > -1 ?
 S< IF
     XOR #-1,0(PSP)  \ ud --> d
@@ -178,6 +199,8 @@ ENDCODE
 [THEN]
     \
 
+HERE
+
 \ https://forth-standard.org/standard/core/SMDivREM
 \ SM/REM   d1lo d1hi n2 -- r3 q4  symmetric signed div
 CODE SM/REM
@@ -195,11 +218,13 @@ S< IF               \
     ADD #1,2(PSP)   \           d1lo+1
     ADDC #0,0(PSP)  \           d1hi+C
 THEN                \ -- uDVDlo uDVDhi uDIVlo
-PUSHM IP,T          \           save IP,S,T
+\ PUSHM IP,T          \           save IP,S,T
+PUSHM #3,IP         \           save IP,S,T
 LO2HI
     UM/MOD          \ -- uREMlo uQUOTlo
 HI2LO
-POPM T,IP           \           restore T,S,IP
+\ POPM T,IP           \           restore T,S,IP
+POPM #3,IP          \           restore T,S,IP
 CMP #0,T            \           T=rem_sign
 S< IF
     XOR #-1,0(PSP)
@@ -216,6 +241,8 @@ THEN                \ -- n3 n4  S=divisor
 MOV @IP+,PC
 ENDCODE
     \
+
+HERE OVER - DUMP
 
 \ https://forth-standard.org/standard/core/NEGATE
 \ C NEGATE   x1 -- x2            two's complement
@@ -526,14 +553,6 @@ MOV @IP+,PC
 ENDCODE
     \
 
-\ https://forth-standard.org/standard/core/toBODY
-\ >BODY     -- PFA      leave PFA of created word
-CODE >BODY
-ADD #4,TOS
-MOV @IP+,PC
-ENDCODE
-    \
-
 \ https://forth-standard.org/standard/core/toIN
 \ C >IN     -- a-addr       holds offset in input stream
 TOIN CONSTANT >IN
@@ -542,12 +561,13 @@ TOIN CONSTANT >IN
 [UNDEFINED] PAD [IF]
 
 \ https://forth-standard.org/standard/core/PAD
-\  PAD           --  pad address
+\  PAD           --  addr
 PAD_ORG CONSTANT PAD
 
 [THEN]
 
     \
 RST_HERE
+[THEN]
+
     \
-ECHO 

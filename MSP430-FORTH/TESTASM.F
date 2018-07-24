@@ -6,46 +6,38 @@
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133  MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
 
+\ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
+\ PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
+
+\ example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
+\
+\ POPM  order :  PC,RSP, SR, R3, rDODOES,rDOCON,rDOVAR,rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
+\ POPM  order :  R0, R1, R2, R3,   R4   ,  R5  ,  R6  ,  R7 , R8, R9,R10,R11,R12,R13,R14,R15
+
+\ example : POPM #6,IP   pop Y,X,W,T,S,IP registers from return stack
+
+
+
+ECHO
 
 \ -----------------------------------------------------------------------
 \ test CPUx instructions PUSHM, POPM, RLAM, RRAM, RRCM, RRUM
 \ -----------------------------------------------------------------------
 CODE TESTPUSHM
+\            PUSHM  #16,R14     \ uncomment to test error "out of bounds"
+\            PUSHM  #2,R0       \ uncomment to test error "out of bounds"
+\            PUSHM  #0,IP       \ uncomment to test error "out of bounds"
+\            POPM   #17,R15     \ uncomment to test error "out of bounds"
+\            POPM   #2,R0       \ uncomment to test error "out of bounds"
+\            POPM   #0,IP       \ uncomment to test error "out of bounds"
             MOV     #22222,Y
             MOV     #3,X
             MOV     #2,W
             MOV     #1,T
             MOV     #0,S
-\            PUSHM   Y,IP       \ uncomment to test error (registers bad order) 
-            PUSHM   IP,W        \ PUSHM order : PSP,TOS,IP,S,T,W,X,Y,rEXIT,rDOVAR,rDOCON,rDODOES
-            POPM    W,IP        \ POPM order  : rDODOES,rDOCON,rDOVAR,rEXIT,Y,X,W,T,S,IP,TOS,PSP
-            SUB     #10,PSP
-            MOV     TOS,8(PSP)  \ save old TOS
-            MOV     S,6(PSP)
-            MOV     T,4(PSP)
-            MOV     W,2(PSP)
-            MOV     X,0(PSP)
-            MOV     Y,TOS
-\            RLAM    #0,TOS     \ uncomment to test error (bad shift value)
-            RRAM    #1,TOS      \ 0 < shift value < 5
-            RLAM    #2,TOS
-            RRCM    #1,TOS
-            RRUM    #1,TOS
-            COLON               \ high level part of the word starts here...
-            space . . . . .
-            ;                   \ and finishes here.
-    \
-TESTPUSHM  ; you should see 11111 3 2 1 0 -->
 
-CODE TESTPOPM
-            MOV     #22222,Y
-            MOV     #3,X
-            MOV     #2,W
-            MOV     #1,T
-            MOV     #0,S
-\            PUSHM   W,IP        \ uncomment to test error "out of bounds" 
-            PUSHM   IP,W        \ PUSHM order : PSP,TOS,IP,S,T,W,X,Y,rEXIT,rDOVAR,rDOCON,rDODOES
-            POPM    W,IP        \ POPM order  : rDODOES,rDOCON,rDOVAR,rEXIT,Y,X,W,T,S,IP,TOS,PSP
+            PUSHM   #4,IP       \ PUSHM IP,S,T,W
+            POPM    #4,IP       \ POPM  W,T,S,IP
             SUB     #10,PSP
             MOV     TOS,8(PSP)  \ save old TOS
             MOV     S,6(PSP)
@@ -62,6 +54,13 @@ CODE TESTPOPM
             COLON               \ high level part of the word starts here...
             space . . . . .
             ;                   \ and finishes here.
+    \
+TESTPUSHM  ; you should see 11111 3 2 1 0 -->
+
+CODE TESTPOPM
+            JMP TESTPUSHM
+ENDCODE
+
     \
 TESTPOPM  ; you should see 11111 3 2 1 0 -->
 
@@ -179,15 +178,6 @@ ENDCODE
 
 
 \ -----------------------------------------------------------------------
-\ tests behaviour of assembly error 
-\ -----------------------------------------------------------------------
-\ R16 causes an error, assembler context is aborted and the word TEST7 is "hidden".
-
-\ CODE TEST7
-\            MOV 0(PSP),0(R16)  ; display an error "out of bounds" -->
-
-
-\ -----------------------------------------------------------------------
 \ tests access to a CREATED word with assembler 
 \ -----------------------------------------------------------------------
 
@@ -273,4 +263,54 @@ TABLE10 PFA_TABLE ! TABLE 10 DUMP
     \
 TABLE20 PFA_TABLE ! TABLE 10 DUMP
     \
+
+\ -----------------------------------------------------------------------
+\ tests behaviour of assembly error 
+\ -----------------------------------------------------------------------
+\ R16 causes an error, assembler context is aborted and the word TEST7 is "hidden".
+
+\CODE TEST7
+\           MOV 0(truc),0(R16)  ; display an error "out of bounds" -->
+
+; -----------------------------------------------------------------------
+; create a primary DEFERred assembly word
+; -----------------------------------------------------------------------
+
+DEFER TRUC              ; here, TRUC is a secondary DEFERred word (i.e. without BODY)
+    \
+
+CODENNM                 ; leaves its execution address (CFA) on stack
+    SUB #2,PSP
+    MOV TOS,0(PSP)
+    MOV @IP+,PC
+ENDCODE IS TRUC         ; TRUC becomes a primary DEFERred word
+                        ; with its default action (DUP) located at its BODY addresse.
+    \
+TRUC .                  ; display TOS value -->
+    \
+
+' TRUC >BODY IS TRUC    ; TRUC is reinitialzed with its default action
+    \
+
+TRUC .                  ; display TOS value --> 
+    \
+' DROP IS TRUC          ; TRUC is redirected to DROP
+    \
+TRUC                   ; The generated error displays stack empty! in reverse video, removes the TRUC definition and restarts the interpretation after the end of the file. And as you see, FastForth is able to display long lines, interesting, doesn't it? --> 
+   
+bla
+bla
+bla
+
+
+
+
+
+
+
+bla
+...
+
+
+
 

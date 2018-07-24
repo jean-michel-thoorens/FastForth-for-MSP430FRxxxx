@@ -61,7 +61,7 @@ FDIV2
 ;            MOV 4(PSP),T   ; DVDlo
 ;            MOV 2(PSP),Y   ; DVDhi
 ;            MOV #0,X       ; REMlo = 0
-Q6432       .word 1537h     ; PUSHM R7,R4
+Q6432       PUSHM  #4,R7    ; PUSHM R7,R4
             MOV #0,W        ; REMhi = 0
             MOV @PSP,R6     ; DIVlo
             MOV #32,R5      ; init loop count
@@ -91,7 +91,7 @@ Q6432END
     
             MOV R7,0(PSP)   ; QUOTlo
             MOV R4,TOS      ; QUOThi
-            .word 1734h     ; POPM R4,R7
+            POPM  #4,R7     ; POPM R4 R5 R6 R7
 ;            MOV @IP+,PC    ; 33 words
 
 FDIVSGN AND #-1,S       ; clear V, set N
@@ -162,7 +162,7 @@ FNUMS       MOV @PSP,X              ; -- Qlo Qhi    X = Qlo
             CMP #10,&BASE
             JNZ FNUMS2
             ADD #1,TOS              ;                   TOS = limit for base 10
-FNUMS2      .word 151Eh             ;                   PUSHM TOS,IP  TOS=limit IP count
+FNUMS2      PUSHM  #2,TOS           ;                   PUSHM TOS,IP  TOS=limit IP count
             MOV #FNUMSNEXT,IP       ; -- Qhi Qlo limit
             MOV #0,S
 FNUMSLOOP   PUSH S                  ;                   R-- limit IP count
@@ -179,7 +179,7 @@ FNUMS2CHAR  ADD #30h,TOS
             ADD #1,S                ;                       count+1
             CMP 2(RSP),S            ;3                      count=limit ?
             JLO FNUMSLOOP           ;                       no
-            .word 171Dh             ; -- Qhi Qlorem limit   POPM IP,TOS ;
+            POPM  #2,TOS            ; -- Qhi Qlorem limit   POPM IP,TOS
             MOV #0,0(PSP)           ; -- Qhi 0 limit
             MOV #HOLDS_ORG,X        ; -- Qhi 0 len          X= org
             JMP HOLDS1
@@ -188,7 +188,7 @@ FNUMS2CHAR  ADD #30h,TOS
 ; don't use S reg (keep sign)
         FORTHWORD "UDM*"
 UDMT    PUSH IP         ; 3
-        .word 1537h     ; 6 PUSHM R7,R4     save R7 ~ R4 regs
+        PUSHM  #4,R7     ; 6 PUSHM R7,R4     save R7 ~ R4 regs
         MOV 4(PSP),IP   ; 3 MDlo
         MOV 2(PSP),T    ; 3 MDhi
         MOV @PSP,W      ; 2 MRlo
@@ -219,7 +219,7 @@ UDMT4   ADD IP,IP       ; 1 (RLA LSBs) MDlo *2
         JLO UDMT1       ; 2 IF BIT IN CARRY: FINISHED    32 * 16~ (average loop)
         MOV R6,0(PSP)   ; 3
         MOV R7,TOS      ; 1 high result in TOS
-        .word 1734h     ; 6  POPM R4,R7  restore R4 ~ R7 regs
+        POPM  #4,R7     ; 6  POPM R4 R5 R6 R7
         MOV @RSP+,IP    ; 2
         MOV @IP+,PC
 

@@ -16,7 +16,7 @@
 
 regmspinc       equ     1
 
-                if      (MOMCPUNAME<>"MSP430")
+                if      (MOMCPUNAME<>"MSP430")&&(MOMCPUNAME<>"MSP430X")
                  fatal  "Falscher Prozessortyp eingestellt: nur MSP430 erlaubt!"
 		endif
 
@@ -164,10 +164,10 @@ Z             equ 0002h
 N             equ 0004h
 V             equ 0100h
 GIE           equ 0008h
-CPUOFF        equ 0010h
-OSCOFF        equ 0020h
-SCG0          equ 0040h
-SCG1          equ 0080h
+CPUOFF        equ 0010h ; CPU Off.                  1=turn_off_CPU
+OSCOFF        equ 0020h ; Oscillator Off.           1=turn_off_LFXT1CLK
+SCG0          equ 0040h ; System Clock Generator 0. 1=turn_off_DCO
+SCG1          equ 0080h ; System Clock Generator 1. 1=turn_off_SMCLK
 UF9           equ 0200h ; = SR(9) User Flag 1 used by ?NUMBER --> INTERPRET --> LITERAL to process double numbers, else free for use.  
 UF10          equ 0400h ; = SR(10) User Flag 2  
 UF11          equ 0800h ; = SR(11) User Flag 3  

@@ -2,6 +2,8 @@
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133  MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
+\ MY_MSP430FR5738_1 MY_MSP430FR5738     MY_MSP430FR5948     MY_MSP430FR5948_1   
+\ JMJ_BOX
 
 
 \ Fast Forth For Texas Instrument MSP430FRxxxx FRAM devices
@@ -24,12 +26,6 @@
 \ rDODOES to rEXIT must be saved before use and restored after
 \ scratch registers Y to S are free for use
 \ under interrupt, IP is free for use
-
-\ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT, rDOVAR, rDOCON, rDODOES
-\ example : PUSHM IP,Y
-\
-\ POPM  order :  rDODOES, rDOCON, rDOVAR, rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
-\ example : POPM Y,IP
 
 \ FORTH conditionnals:  unary{ 0= 0< 0> }, binary{ = < > U< }
 
@@ -306,7 +302,8 @@ THEN
         ADD #1,TOS
 THEN
 \ UDM*
-            PUSHM R5,R4     \ 6 save R5 ~ R4 regs
+\            PUSHM R5,R4     \ 6 save R5 ~ R4 regs
+            PUSHM #2,R5      \ 6 save R5,R4 regs
             MOV 4(PSP),Y    \ 3 MDlo
             MOV 2(PSP),T    \ 3 MDhi
             MOV @PSP+,W     \ 2 MRlo        -- d1lo d1hi +n2
@@ -324,7 +321,8 @@ BEGIN       BIT X,W         \ 1 test actual bit
             ADDC R4,R4      \ 1 (RLA LSBs) MDLO *2
             ADD X,X         \ 1 (RLA) NEXT BIT TO TEST
 U>= UNTIL   MOV R5,W        \ 1 IF BIT IN CARRY: FINISHED    32 * 16~ (average loop)
-            POPM R4,R5      \ 6 restore R4 ~ R5 regs
+\            POPM R4,R5      \ 6 restore R4 ~ R5 regs
+            POPM #2,R5      \ 6 restore R4 R5 regs
 \ UDM*END
     MOV TOS,T               \
     MOV @PSP,TOS            \

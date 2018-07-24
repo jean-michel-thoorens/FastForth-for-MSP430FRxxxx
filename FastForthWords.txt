@@ -1,22 +1,22 @@
 
 FORTH vocabulary
 ----------------
-COLD            WARM            (WARM)          WIPE            RST_HERE        PWR_HERE        RST_STATE       
-PWR_STATE       MOVE            LEAVE           +LOOP           LOOP            DO              REPEAT          
-WHILE           AGAIN           UNTIL           BEGIN           THEN            ELSE            IF              
+COLD            WARM            WIPE            RST_HERE        PWR_HERE        RST_STATE       PWR_STATE       
+MOVE            LEAVE           +LOOP           LOOP            DO              REPEAT          WHILE           
+AGAIN           UNTIL           BEGIN           THEN            ELSE            IF              >BODY           
 DEFER           DOES>           CREATE          CONSTANT        VARIABLE        :               ;               
 POSTPONE        RECURSE         IMMEDIATE       IS              [']             ]               [               
 \               '               ABORT"          ABORT           QUIT            EVALUATE        COUNT           
 LITERAL         ,               EXECUTE         >NUMBER         FIND            WORD            ."              
-S"              CR              (CR)            TYPE            SPACES          SPACE           NOECHO          
-ECHO            EMIT            (EMIT)          ACCEPT          KEY             (KEY)           C,              
-ALLOT           HERE            .               D.              U.              SIGN            HOLD            
-#>              #S              #               UM/MOD          <#              STATE           BASE            
-BL              J               I               UNLOOP          U<              0>              >               
-<               =               0<              0=              DABS            1-              1+              
-1-              1+              -               +               C!              C@              !               
-@               DEPTH           R@              R>              >R              ROT             OVER            
-SWAP            NIP             DROP            ?DUP            DUP             LIT             EXIT
+S"              CR              TYPE            SPACES          SPACE           NOECHO          ECHO            
+EMIT            ACCEPT          KEY             C,              ALLOT           HERE            .               
+D.              U.              SIGN            HOLD            #>              #S              #               
+UM/MOD          <#              STATE           BASE            BL              J               I               
+UNLOOP          U<              0>              >               <               =               0<              
+0=              DABS            1-              1+              1-              1+              -               
++               C!              C@              !               @               DEPTH           R@              
+R>              >R              ROT             OVER            SWAP            NIP             DROP            
+?DUP            DUP             LIT             EXIT
 
 
 ASSEMBLER vocabulary
@@ -31,8 +31,7 @@ RRA.B           RRA             SWPB            RRC.B           RRC             
 XOR.B           XOR             BIS.B           BIS             BIC.B           BIC             BIT.B           
 BIT             DADD.B          DADD            CMP.B           CMP             SUB.B           SUB             
 SUBC.B          SUBC            ADDC.B          ADDC            ADD.B           ADD             MOV.B           
-MOV             RETI            LO2HI           COLON           ENDASM          ENDCODE         (SLEEP)         
-SLEEP
+MOV             RETI            LO2HI           COLON           ENDASM          ENDCODE         SLEEP
 
 ASM             CODE            HI2LO           (added in forth vocabulary)
 
@@ -49,7 +48,7 @@ DEFINITIONS     ONLY            PREVIOUS        ALSO            ASSEMBLER       
 
 ANS_COMPLEMENT ADD-ON
 ---------------------
-PAD             >BODY           SOURCE          .(              (               DECIMAL         HEX             
+PAD             SOURCE          .(              (               DECIMAL         HEX             
 FILL            [CHAR]          CHAR            +!              MIN             MAX             2/              
 2*              RSHIFT          LSHIFT          XOR             OR              AND             INVERT          
 2OVER           2SWAP           2DROP           2DUP            2!              2@              S>D             
@@ -60,7 +59,7 @@ M*              UM*             {ANS_COMP}
 
 SD_CARD_LOADER ADD-ON
 ---------------------
-LOAD"           CIB             (ACCEPT)        {SD_LOAD}
+LOAD"           CIB
 
 
 SD_CARD_READ_WRITE ADD-ON
@@ -69,9 +68,17 @@ TERM2SD"        SD_EMIT         WRITE           READ            CLOSE           
 READ"
 
 
-UTILITY ADD-ON
---------------
-DUMP            U.R             WORDS           ?               .RS             .S              {TOOLS}       
+SD_CARD_READ_WRITE ADD-ON
+-------------------------
+TERM2SD"        SD_EMIT         WRITE           READ            CLOSE           DEL"            WRITE"          
+READ"
+
+
+UTILITY BOOTLOADER
+------------------
+BOOT
+
+QUIT becomes a DEFERed word
 
 
 SD_TOOLS ADD-ON
@@ -80,7 +87,6 @@ DIR             FAT             CLUSTER         SECTOR          {SD_TOOLS}
 
 
 ; a word within brackets [] is an immediate word. (other words may also be immediate)
-; a word doubled with another word between parentheses () is a DEFERred word, the first being initialised with the second.
 ; when ADD-ONs are compiled into the kernel, their respective MARKER word identified with braces {} does nothing.
 ; when ADD-ONs are downloaded, their respective MARKER word identified with braces {} removes all ADD-ONs words.
 
@@ -89,9 +95,7 @@ FORTH WORDS
 
 COLD            Software reset
 
-WARM            DEFERed word, initially executes (WARM)
-
-(WARM)          performs a hot start
+WARM            DEFERed word, performs a hot start
 
 WIPE            resets the program memory to its original state (Deep_RST has same effect).
 
@@ -148,16 +152,12 @@ S"              https://forth-standard.org/standard/core/Sq
 TYPE            https://forth-standard.org/standard/core/TYPE
 SPACES          https://forth-standard.org/standard/core/SPACES
 SPACE           https://forth-standard.org/standard/core/SPACE
-CR              DEFERed word, initially executes (CR)
-(CR)            https://forth-standard.org/standard/core/CR
+CR              DEFERed word, https://forth-standard.org/standard/core/CR
 NOECHO          stop display on output 
 ECHO            start display on output
-EMIT            DEFERed word, initially executes (EMIT)
-(EMIT)          https://forth-standard.org/standard/core/EMIT
-ACCEPT          DEFERed word, initially executes (ACCEPT)
-(ACCEPT)        https://forth-standard.org/standard/core/ACCEPT
-KEY             DEFERed word, initially executes (KEY)
-(KEY)           https://forth-standard.org/standard/core/KEY
+EMIT            DEFERed word, https://forth-standard.org/standard/core/EMIT
+ACCEPT          DEFERed word, https://forth-standard.org/standard/core/ACCEPT
+KEY             DEFERed word, https://forth-standard.org/standard/core/KEY
 C,              https://forth-standard.org/standard/core/CComma
 ALLOT           https://forth-standard.org/standard/core/ALLOT
 HERE            https://forth-standard.org/standard/core/HERE
@@ -251,16 +251,23 @@ LO2HI           switches compilation between low level and high level modes with
 COLON           pushes IP then performs LO2HI, used as: CODE <word> ... assembler instr ... COLON ... FORTH words ... ;
 ENDASM          to end an ASM definition.
 ENDCODE         to end a CODE definition.
-SLEEP           DEFERed word which enables to create a background task, initially executes (SLEEP).
-(SLEEP)         the default SLEEP definition: MOV #GIE+LPM0,SR
+SLEEP           DEFERed word which enables to create a background task, default SLEEP definition: MOV #GIE+LPM0,SR
 
-next assembler words are in FORTH vocabulary:
+next assembler words are set in FORTH vocabulary:
 
-CODE <word>     creates a FORTH word written in assembler.
-                this defined <word> must be ended with ENDCODE.
+CODE <word>     creates a word written in assembler.
+                this defined <word> must be ended with ENDCODE unless COLON or LO2HI use.
+
+DFRCODE <word>  creates a DEFERed word with its default execute part ready to be written in assembler.
+                this defined <word> must be ended with ENDCODE unless COLON or LO2HI use.
+                if we write: DFRCODE truc
+                             COLON ;
+                we obtain same as: DEFER truc
+                                   :NONAME ; IS truc
 
 ASM <word>      creates a word written in assembler but not interpretable by FORTH (because ended by RET instr.).
-                this defined <word> must be ended with ENDASM. This word will be called only in assembler mode. 
+                this defined <word> must be ended with ENDASM. 
+                This word will be recognized only in assembler mode. 
 
 HI2LO           used to switch compilation from high level (FORTH) to low level (assembler).
 
@@ -271,8 +278,8 @@ RRUM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=218
 RLAM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=208
 RRAM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=211
 RRCM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=214
-POPM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=204    syntax: POPM X,S    to pop X,W,T,S
-PUSHM           http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=205    syntax: PUSHM S,X   to push S,T,W,X
+POPM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=204
+PUSHM           http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=205
 
 CALL            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=142
 PUSH.B  PUSH    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=168
@@ -368,10 +375,9 @@ UM*             https://forth-standard.org/standard/core/UMTimes
 SD_CARD_LOADER ADD-ON
 ---------------------
 LOAD"           LOAD" SD_TEST.4TH" loads and compile source file SD_TEST.4TH.
-CIB             Currrent Input Buffer
-(ACCEPT)        init value for ACCEPT
-{SD_LOAD}
+CIB             Currrent Input Buffer, TIB by default.
 
+ACCEPT becomes a DEFERed word
 
 SD_CARD_READ_WRITE ADD-ON
 -------------------------

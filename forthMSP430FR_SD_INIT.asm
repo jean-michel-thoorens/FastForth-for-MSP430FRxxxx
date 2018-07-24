@@ -141,12 +141,11 @@
 ; ===========================================================
 
     .IFDEF RAM_1K               ; case of MSP430FR57xx : SD datas are in FRAM
-        MOV #SD_ORG_DATA,X      ; so are not initialised by COLD/RESET
+        MOV #SD_LEN_DATA,X      ; so are not initialised by COLD/RESET
 InitSDdata                      ;
-        MOV #0,0(X)             ;
-        ADD #2,X                ;
-        CMP #SD_END_DATA,X      ;
-        JNE InitSDdata          ;
+        SUB #2,X
+        MOV #0,SD_ORG_DATA(X)   ;
+        JNZ InitSDdata          ;
     .ENDIF
 
 ; ===========================================================

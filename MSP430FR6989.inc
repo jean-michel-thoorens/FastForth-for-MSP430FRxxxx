@@ -41,18 +41,20 @@ TLVEND         .equ 01AFFh      ;
 ; ----------------------------------------------
 RAMSTART       .equ 01C00h
 RAMEND         .equ 023FFh
+RAMLEN          .equ 00800h
 ; ----------------------------------------------
 ; FRAM
 ; ----------------------------------------------
-PROGRAMSTART   .equ 04400h      ; Code space start
-SIGNATURES     .equ 0FF80h      ; JTAG, BSL and IP Encapsulation signatures 1 and 2
+PROGRAMSTART    .equ 04400h      ; Code space start
+SIGNATURES      .equ 0FF80h      ; JTAG, BSL and IP Encapsulation signatures 1 and 2
 JTAG_SIG1       .equ 0FF80h      ; if 0, enable JTAG/SBW
 JTAG_SIG2       .equ 0FF82h      ; if JTAG_SIG1=0xAAAA, length of password string @ JTAG_PASSWORD
 BSL_SIG1        .equ 0FF84h      ;
 BSL_SIG2        .equ 0FF86h      ;
-JTAG_PASSWORD  .equ 0FF86h      ; up to 0FFC5h : 256 bits
-INTVECT        .equ 0FFC6h      ; FFC6-FFFF
-BSL_PASSWORD   .equ 0FFE0h      ; up to 0FFFFh : 256 bits
+JTAG_PASSWORD   .equ 0FF86h      ; up to 0FFC5h : 256 bits
+INTVECT         .equ 0FFC6h      ; FFC6-FFFF
+VECTLEN         .equ 3Ah
+BSL_PASSWORD    .equ 0FFE0h      ; up to 0FFFFh : 256 bits
 ; ----------------------------------------------
 
 ; ----------------------------------------------
@@ -533,5 +535,5 @@ SD_TXBUF       .equ eUSCI_B0_SFR + 0Eh    ; eUSCI_B0 Transmit Buffer 8
 SD_IFG         .equ eUSCI_B0_SFR + 2Ch    ; eUSCI_B0 Interrupt Flags Register
     .ENDIF ;UCB0_SD
 
-
+UCB0STATW       .equ eUSCI_B0_SFR + 08h     ; eUSCI_B0 Status words
 

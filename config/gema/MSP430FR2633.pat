@@ -127,9 +127,10 @@ SEMI=MOV \@R1+,R13\nMOV \@R13+,R0!
 ! KERNEL CONSTANTS
 ! ----------------------
 INI_THREAD=\$1800!      .word THREADS
-TERMINAL_INT=\$1802!    .word TERMINAL_INT
-FREQ_KHZ=\$1804!        .word FREQUENCY
-HECTOBAUDS=\$1806!      .word TERMINALBAUDRATE/100
+TERMBRW_RST=\$1802!     .word TERMBRW_RST
+TERMMCTLW_RST=\$1804!   .word TERMMCTLW_RST
+FREQ_KHZ=\$1806!        .word FREQUENCY
+
 ! ----------------------
 ! SAVED VARIABLES
 ! ----------------------
@@ -191,22 +192,29 @@ LAST_PSP=\$21BC!
 
 !STATE=\$21BE!           Interpreter state
 
-SAV_CURRENT=\$21C0!     preserve CURRENT when create assembler words
-OPCODE=\$21C2!          OPCODE adr
-ASMTYPE=\$21C4!         keep the opcode complement
+SOURCE_LEN=\$21C0!      len of input stream
+SOURCE_ADR=\$21C2!      adr of input stream
+TOIN=\$21C4!            >IN
+DP=\$21C6!              dictionary ptr
 
-SOURCE_LEN=\$21C6!      len of input stream
-SOURCE_ADR=\$21C8!      adr of input stream
-TOIN=\$21CA!            >IN
-DP=\$21CC!              dictionary ptr
-LASTVOC=\$21CE!         keep VOC-LINK
-CONTEXT=\$21D0!         CONTEXT dictionnary space (8 CELLS)
-CURRENT=\$21E0!         CURRENT dictionnary ptr
+LASTVOC=\$21C8!         keep VOC-LINK
+CONTEXT=\$21CA!         CONTEXT dictionnary space (8 CELLS)
+CURRENT=\$21DA!         CURRENT dictionnary ptr
 
-!BASE=\$21E2!           numeric base, must be defined before first reset !
-LINE=\$21E4!           line in interpretation, activated with NOECHO, desactivated with ECHO
+!BASE=\$21DC!           numeric base, must be defined before first reset !
+LINE=\$21DE!            line in interpretation, activated with NOECHO, desactivated with ECHO
 ! ---------------------------------------
-!21E6! 22 RAM bytes free
+!21E0! 14 RAM bytes free conditionnaly
+! ---------------------------------------
+!SAV_CURRENT=\$21E0!    preserve CURRENT when create assembler words
+!ASMBW1=\$21E2          assembler backward reference 1
+!ASMBW2=\$21E4          assembler backward reference 2
+!ASMBW3=\$21E6          assembler backward reference 3
+!ASMFW1=\$21E8          assembler forward reference 1
+!ASMFW2=\$21EA          assembler forward reference 2
+!ASMFW3=\$21EC          assembler forward reference 3
+! ---------------------------------------
+!21EE! 14 RAM bytes free
 ! ---------------------------------------
 
 ! ---------------------------------------

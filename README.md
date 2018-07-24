@@ -9,19 +9,23 @@ For only 3 kbytes in addition, you have the primitives to access the sd\_card FA
 It works with all SD CARD memories from 64MB to 64GB. Read or write a byte is done in less than a microsecond @ 16MHz.
 This enables to make a fast data logger with a small footprint as a MSP430FR5738 QFN24. To compare with a LPC800 ARM entry-level...
 
-With all options its size is about 10kB. 
+With all core options its size is under 9.5kB. 
 
 	Tested on MSP-EXP430{FR5969,FR5994,FR6989,FR4133,FR2355,FR2433} launchpads and CHIPSTICKFR2433,
-    at 0.5, 1, 2, 4, 8, 12, 16 MHz plus 20MHz and 24MHz for FR2355,FR573x devices.
+    at 0.5, 1, 2, 4, 8, 12, 16 MHz plus 20MHz and 24MHz for FR23xx,FR57xx devices.
 
     For the moment, the IDE works under WINDOWS...
 	
-    Files launchpad_5Mbds.txt are 16threads vocabularies 16MHz executables, with 5MBds "4 WIRES" terminal,
-    usable with PL2303HXD only.
+    Files launchpad_921600bds.txt are 16threads vocabularies 16MHz executables, with
+    "3 WIRES" (XON/XOFF flow control) and "4 WIRES" (Hardware flow control) 921600Bds terminal.
+
     Launchpad_115200.txt files are same except 115200Bds for unlucky linux men without TERATERM. 
     For the launchpad MSP-EXP430FR5994 with SD_CARD, full version is available. For others, you must 
     recompile forthMSP430FR.asm with SD_CARD_LOADER and SD_CARD_READ_WRITE switches turned ON
     (uncomment their line).
+    
+    if you use a cable with a PL2303HXD, terminal baudrate can be boosted on the fly to 5Mbds! 
+    Try it by downloading MSP430-FORTH\CHNGBAUD.f. 
 
     Once the Fast Forth code is loaded in the target FRAM memory, you can add it assembly code or 
     FORTH code, or both, by downloading your source files that embedded Fast Forth interprets and
@@ -32,7 +36,7 @@ With all options its size is about 10kB.
     source file.f in a targeted source file.4th ready to download.
     A set of .bat files is furnished to do this automatically. See it all in the \MSP430-FORTH folder.
 
-	The download, interpretation and compilation of a source file.4th is done at a throughput
+    The download, interpretation and compilation of a source file.4th is done at a throughput
     of 40/80/120 kbytes/sec with a 8/16/24 MHz clock. 
     Considering a ratio 5/1, that of the compiled code is 8/16/24 kbytes/sec.
 
@@ -48,6 +52,72 @@ With all options its size is about 10kB.
 What is new ?
 -------------
 
+    FastForth V206: just 6kb for 16MHz + 5Mbds terminal + macro assembler + conditional compiler!
+                 -       - 
+
+        The terminal baudrate can be changed on the fly. Download MSP430-FORTH\CHNGBAUD.f to do.
+
+        forthMSP430FR.asm: 
+
+                the DTC model chosen for Fast forth is 2. The others become experimental.
+
+                Bugs corrected: ALSO and :NONAME (option).
+
+                The structure of primary DEFERred words as KEY,EMIT,CR,WARM... is modified,
+                                 -------
+                the address of their default execute part, without name, can be found with:
+                ' <name> >BODY
+
+                    example, after this entry: ' DROP IS KEY
+                    KEY (or ' KEY EXECUTE) runs DROP i.e. the redirection made by IS,
+                    ' KEY >BODY EXECUTE runs KEY, the default action at the BODY address.
+
+                    and: ' KEY >BODY IS KEY
+                    restore the default action of this primary DEFERred word.
+                                                       -------
+
+                    WARNING! you cannot do that with words created by DEFER !
+                    DEFER creates only secondary DEFERred words, without BODY !
+                                       ---------
+
+                    to build a primary DEFERred FORTH word, 
+                               -------
+                    you must create a DEFERred word followed by
+                    a :NONAME definition, ended by ; IS <name>:
+
+                        DEFER truc
+
+                        :NONAME         \ does nothing (for the example)
+                            DUP
+                            DROP
+                        ; IS truc
+
+                    The advantage of creating primary DEFERred words is to set their
+                    default state, enabling to reinitialize them easily.
+
+        forthMSP430FR_ASM.asm:
+
+                All assembly code is revamped.
+
+                POPM and PUSHM instructions now follow the TI syntax :-(
+
+                Added CODENNM as assembly counterpart of :NONAME (option)
+
+                    to build the primary DEFERred assembly word "machin" :
+                                 -------
+
+                        DEFER machin
+
+                        CODENNM
+                            NOP2        \ assembly instruction
+                            NOP3        \ assembly instruction
+                            MOV @IP+,PC \ mandatory before ENDCODE
+                        ENDCODE IS machin
+
+                        you can obviously mix LOW/HIGH levels in CODENNM
+                        and :NONAME areas...
+
+
     FastForth V205
         Added MSP-EXP430FR2355 launchpad
         Added word :NONAME (option).
@@ -58,7 +128,7 @@ What is new ?
         Words AND, OR, XOR are moved as complement in ANS_COMP.f file.
         Simplified preprocessor files in \config\gema\ folder: only two for one target:
             one for the device, other for the target (launchpad or user application/module).
-            and similarly with the assembly files: device.inc and target.asm, for compiling FastForth.
+            and similarly with the assembly files: Device.inc and Target.asm, for compiling FastForth.
         Corrected startup time in target.asm files.
         Modified Clock config in MSP_EXP430FR2433.asm and MSP_EXP430FR4133.ASM, allowing clock modulation.
 
@@ -1298,7 +1368,7 @@ ANNEXE
 
 The embedded assembler don't recognize the (useless) TI's symbolic addressing mode: ADD.B EDE,TONI.
 
-REGISTERS correspondence (preprocessor gema.exe allow you to use FASTFORTH registers's names).
+REGISTERS correspondence (the preprocessor gema.exe allow you to use FASTFORTH or TI registers's names).
 
     embedded ASM    TI      FASTFORTH   comment 
                              
@@ -1322,8 +1392,8 @@ REGISTERS correspondence (preprocessor gema.exe allow you to use FASTFORTH regis
 REGISTERS use
 
     The FASTFORTH registers rDOCOL, rDOVAR, rDOCON and rDODOES must be preserved, 
-    PUSHM R7,R4 before use and POPM R4,R7 after.
-    don't use R3 and use R2 only with register addressing mode.
+    PUSHM #4,R7 before use and POPM #4,R7 after.
+    don't use R3 and use R2 only with BIC, BIT, BIS instructions in register mode.
 
 
 PARAMETERS STACK use
@@ -1336,12 +1406,10 @@ PARAMETERS STACK use
         SUB #2,PSP                  \ insert a empty 2th cell
         MOV TOS,0(PSP)              \ fill this 2th cell with first cell
         MOV <what you want>,TOS     \ MOV or MOV.B <what you want>,TOS ; i.e. update first cell
-        ...
 
     to pop one cell from the PSP stack :
 
         MOV @PSP+,TOS               \ first cell TOS is lost and replaced by the 2th.
-        ...
 
     don't never pop a byte with instruction MOV.B @PSP+, because generates a stack misalignement...
 
@@ -1352,40 +1420,33 @@ RETURN STACK use
     to push one cell on the RSP stack :
 
         PUSH <what you want>        \
-        ...
 
     to pop one cell from the RSP stack :
 
         MOV @RSP+,<where you want>   \
-        ...
 
     don't never pop a byte with instruction MOV.B @RSP+, ...
 
 
     to push multiple registers on the RSP stack :
 
-        PUSHM Rx,Ry                 \ x > y 
-        ...
+        PUSHM #n,Rx                 \  with 0 <= x-(n-1) < 16
 
     to pop multiple registers from the RSP stack :
 
-        POPM Ry,Rx                  \ y < x
-        ...
+        POPM #n,Rx                  \  with 0 <= x-(n-1) < 16
 
-CPUx instructions PUSHM / POPM (my own syntax, not the TI's one, too bad :-)
+    PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
+    PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
 
-    PUSHM order : PSP,TOS, IP,   S,   T,   W,  X,  Y, R7, R6, R5, R4
-    PUSHM order : R15,R14,R13, R12, R11, R10, R9, R8, R7, R6, R5, R4
+    example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
 
-    example : PUSHM IP,Y    \ push R13, R12, R11, R10, R9, R8 registers onto the stack RSP
+    POPM  order :  PC,RSP, SR, R3, rDODOES,rDOCON,rDOVAR, rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
+    POPM  order :  R0, R1, R2, R3,   R4   ,  R5  ,  R6  ,   R7 , R8, R9,R10,R11,R12,R13,R14,R15
 
+    example : POPM #6,IP   pulls Y,X,W,T,S,IP registers from return stack
 
-    POPM  order : R4, R5, R6, R7,  Y,  X,  W,   T,  S, IP,TOS,PSP
-    POPM  order : R4, R5, R6, R7, R8, R9, R10,R11,R12,R13,R14,R15
-
-    example : POPM Y,IP     \ restore R8, R9, R10,R11,R12,R13 registers from the stack RSP
-
-    error occurs if bad order (PUSHM Y,IP for example)
+    error occurs if n is out of bounds
 
 
 CPUx instructions RRCM,RRAM,RLAM,RRUM
