@@ -131,89 +131,80 @@ SEMI=MOV \@R1+,R13\nMOV \@R13+,R0!
 ! FastForth INFO(DCBA) memory map (256 bytes):
 ! ============================================
 
-! ----------------------
-! KERNEL CONSTANTS
-! ----------------------
 INI_THREAD=\$1800!      .word THREADS
 TERMBRW_RST=\$1802!     .word TERMBRW_RST
 TERMMCTLW_RST=\$1804!   .word TERMMCTLW_RST
 FREQ_KHZ=\$1806!        .word FREQUENCY
 
-! ----------------------
-! SAVED VARIABLES
-! ----------------------
-
 SAVE_SYSRSTIV=\$1808!   to enable SYSRSTIV read
 LPM_MODE=\$180A!        LPM0+GIE is the default mode
 INIDP=\$180C!           define RST_STATE, init by wipe
 INIVOC=\$180E!          define RST_STATE, init by wipe
+GPFLAGS=\$1810!
 
-RXON=\$1810!
-RXOFF=\$1812!
-
-ReadSectorWX=\$1814!    call with W = SectorLO  X = SectorHI
-WriteSectorWX=\$1816!   call with W = SectorLO  X = SectorHI
-GPFLAGS=\$1818!
-
+RXON=\$1812!
+RXOFF=\$1814!
+ReadSectorWX=\$1816!    call with W = SectorLO  X = SectorHI
+WriteSectorWX=\$1818!   call with W = SectorLO  X = SectorHI
 
 ! ---------------------------------------
 ! FAT16 FileSystemInfos 
 ! ---------------------------------------
-FATtype=\$181A!
-BS_FirstSectorL=\$181C!
-BS_FirstSectorH=\$181E!
-OrgFAT1=\$1820!
-FATSize=\$1822!
-OrgFAT2=\$1824!
-OrgRootDir=\$1826!
-OrgClusters=\$1828!         Sector of Cluster 0
-SecPerClus=\$182A!
+FATtype=\$182C!
+BS_FirstSectorL=\$182E!
+BS_FirstSectorH=\$1830!
+OrgFAT1=\$1832!
+FATSize=\$1834!
+OrgFAT2=\$1836!
+OrgRootDir=\$1838!
+OrgClusters=\$183A!         Sector of Cluster 0
+SecPerClus=\$183C!
 
 ! ---------------------------------------
 ! SD command
 ! ---------------------------------------
-SD_CMD_FRM=\$182C!  6 bytes SD_CMDx inverted frame \${CRC,ll,LL,hh,HH,CMD}
-SD_CMD_FRM0=\$182C! CRC:ll  word access
-SD_CMD_FRM1=\$182D! ll      byte access
-SD_CMD_FRM2=\$182E! LL:hh   word access
-SD_CMD_FRM3=\$182F! hh      byte access
-SD_CMD_FRM4=\$1830! HH:CMD  word access
-SD_CMD_FRM5=\$1831! CMD     byte access
-SectorL=\$1832!     2 words
-SectorH=\$1834!
+SD_CMD_FRM=\$183E!  6 bytes SD_CMDx inverted frame \${CRC,ll,LL,hh,HH,CMD}
+SD_CMD_FRM0=\$183E! CRC:ll  word access
+SD_CMD_FRM1=\$183F! ll      byte access
+SD_CMD_FRM2=\$1840! LL:hh   word access
+SD_CMD_FRM3=\$1841! hh      byte access
+SD_CMD_FRM4=\$1842! HH:CMD  word access
+SD_CMD_FRM5=\$1843! CMD     byte access
+SectorL=\$1844!     2 words
+SectorH=\$1846!
 
 ! ---------------------------------------
 ! BUFFER management
 ! ---------------------------------------
-BufferPtr=\$1836! 
-BufferLen=\$1838!
+BufferPtr=\$1848! 
+BufferLen=\$184A!
 
 ! ---------------------------------------
 ! FAT entry
 ! ---------------------------------------
-ClusterL=\$183A!     16 bits wide (FAT16)
-ClusterH=\$183C!     16 bits wide (FAT16)
-NewClusterL=\$183E!  16 bits wide (FAT16) 
-NewClusterH=\$1840!  16 bits wide (FAT16) 
-CurFATsector=\$1842!
+ClusterL=\$184C!     16 bits wide (FAT16)
+ClusterH=\$184E!     16 bits wide (FAT16)
+NewClusterL=\$1850!  16 bits wide (FAT16) 
+NewClusterH=\$1852!  16 bits wide (FAT16) 
+CurFATsector=\$1854!
 
 ! ---------------------------------------
 ! DIR entry
 ! ---------------------------------------
-DIRclusterL=\$1844!  contains the Cluster of current directory ; 1 if FAT16 root directory
-DIRclusterH=\$1846!  contains the Cluster of current directory ; 1 if FAT16 root directory
-EntryOfst=\$1848!  
+DIRclusterL=\$1856!  contains the Cluster of current directory ; 1 if FAT16 root directory
+DIRclusterH=\$1858!  contains the Cluster of current directory ; 1 if FAT16 root directory
+EntryOfst=\$185A!  
 
 ! ---------------------------------------
 ! Handle Pointer
 ! ---------------------------------------
-CurrentHdl=\$184A!  contains the address of the last opened file structure, or 0
+CurrentHdl=\$185C!  contains the address of the last opened file structure, or 0
 
 ! ---------------------------------------
 ! Load file operation
 ! ---------------------------------------
-pathname=\$184C!    address of pathname string
-EndOfPath=\$184E!
+pathname=\$185E!    address of pathname string
+EndOfPath=\$1860!
 
 ! ---------------------------------------
 ! Handle structure
@@ -241,15 +232,15 @@ HDLW_BUFofst=22!    BUFFER offset ; used by LOAD" and by WRITE"
 
 
 !OpenedFirstFile     ; "openedFile" structure 
+FirstHandle=\$1862!
 HandleMax=5!
 HandleLenght=24!
-FirstHandle=\$1858!
-HandleEnd=\$18D0!
+HandleEnd=\$18DA!
 
 !Stack of return IP for LOADed files, preincrement stack structure
-LOADPTR=\$18D0!
-LOAD_STACK=\$18D2!
-LOAD_STACK_END=\$18F6!
+LOADPTR=\$18DA!
+LOAD_STACK=\$18DC!
+LOAD_STACK_END=\$1900!
 
 ! ============================================
 ! FORTH RAM areas :

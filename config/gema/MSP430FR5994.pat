@@ -177,28 +177,21 @@ SEMI=MOV \@R1+,R13\nMOV \@R13+,R0!
 ! FastForth INFO(DCBA) memory map (256 bytes):
 ! ============================================
 
-! ----------------------
-! KERNEL CONSTANTS
-! ----------------------
 INI_THREAD=\$1800!      .word THREADS
 TERMBRW_RST=\$1802!     .word TERMBRW_RST
 TERMMCTLW_RST=\$1804!   .word TERMMCTLW_RST
 FREQ_KHZ=\$1806!        .word FREQUENCY
 
-! ----------------------
-! SAVED VARIABLES
-! ----------------------
 SAVE_SYSRSTIV=\$1808!   to enable SYSRSTIV read
 LPM_MODE=\$180A!        LPM0+GIE is the default mode
 INIDP=\$180C!           define RST_STATE, init by wipe
 INIVOC=\$180E!          define RST_STATE, init by wipe
+GPFLAGS=\$1810!
 
-RXON=\$1810!
-RXOFF=\$1812!
-
-ReadSectorWX=\$1814!    call with W = SectorLO  X = SectorHI
-WriteSectorWX=\$1816!   call with W = SectorLO  X = SectorHI
-GPFLAGS=\$1818!
+RXON=\$1812!
+RXOFF=\$1814!
+ReadSectorWX=\$1816!    call with W = SectorLO  X = SectorHI
+WriteSectorWX=\$1818!   call with W = SectorLO  X = SectorHI
 
 ! ============================================
 ! FORTH RAM areas :
@@ -364,21 +357,20 @@ HDLW_BUFofst=22!    BUFFER offset ; used by LOAD" and by WRITE"
 !OpenedFirstFile     ; "openedFile" structure 
 HandleMax=8!
 HandleLenght=24!
-FirstHandle=\$2040!
-HandleEnd=\$2100!
+FirstHandle=\$2038!
+HandleEnd=\$20F8!
 
 !Stack of return IP for LOADed files, preincrement stack structure
-LOADPTR=\$2100!
-LOAD_STACK=\$2102!
-LOAD_STACK_END=\$2138!
+LOADPTR=\$20F8!
+LOAD_STACK=\$20FA!
+LOAD_STACK_END=\$2130!
 
 !SD_card Input Buffer, lenght = CPL = 84
-SDIB_I2CADR=\$2138!
-SDIB_I2CCNT=\$213A!
-SDIB_ORG=\$213C!
+SDIB_I2CADR=\$2130!
+SDIB_I2CCNT=\$2132!
+SDIB_ORG=\$2134!
 
-SD_END_DATA=\$2190!
-
+SD_END_DATA=\$2188!
 
 
 ! ============================================

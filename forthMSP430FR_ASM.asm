@@ -710,7 +710,7 @@ TYPE3DOES                                   ; -- PFADOES
             .word   WORDD,QNUMBER
             .word   QBRAN,NotFound          ;                       ABORT
             FORTHtoASM
-            POPM  #2,S                    ;               POPM T,S
+            POPM  #2,S                      ;               POPM T,S
             ASMtoFORTH
             .word   PARAM2                  ; -- PFADOES 0x000N     S=ASMTYPE = 0x000R
             FORTHtoASM
@@ -724,16 +724,16 @@ TYPE3DOES                                   ; -- PFADOES
 PxxxINSTRU  MOV     S,Y                     ;                       S=REG, Y=REG to test
             RLAM    #3,X                    ;                       OPCODE bit 0200h --> C                  
             JNC     PUSHMINSTRU             ;                       W=n-1 Y=REG
-POPMINSTRU  SUB     W,S                     ;                       to make POPM opcode, keep first REG to POP; TI is complicated....
+POPMINSTRU  SUB     W,S                     ;                       to make POPM opcode, compute first REG to POP; TI is complicated....
 PUSHMINSTRU SUB     W,Y                     ;                       Y=REG-(n-1)
             CMP     #16,Y
             JHS     BOUNDERRWM1             ;                       JC=JHS    (U>=)
-            RLAM.W  #4,W                    ;                       W = n << 4      
+            RLAM    #4,W                    ;                       W = n << 4      
             JMP     BIS_ASMTYPE             ; PFADOES --            
 RxxMINSTRU  CMP     #4,W                    ;
             JHS     BOUNDERRWM1             ;                       JC=JHS    (U>=)
             SWPB    W                       ; -- PFADOES            W = n << 8
-            RLAM.W  #2,W                    ; RLAM #2,R10           W = N << 10
+            RLAM    #2,W                    ;                       W = N << 10
             JMP     BIS_ASMTYPE             ; PFADOES --
 
             asmword "RRCM"
@@ -776,7 +776,7 @@ RxxMINSTRU  CMP     #4,W                    ;
 CODE_JMP    mDOCON                      ; branch always
             .word   3C00h
 
-            asmword "S>="               ; if >= assertion
+            asmword "S>="               ; if >= assertion (opposite of jump if < )
             mDOCON
             .word   3800h
 
@@ -901,7 +901,6 @@ BACKWUSE            ; -- OPCODE
 BACKWSET            ; --
     MOV &DDP,0(Y)   ;               [ASMBWx] = DDP
     mNEXT
-;    JMP ASM_UNTIL1  ;               resolve backward branch with W
 
 ; backward label 1
             asmword "BW1"
@@ -927,17 +926,16 @@ FORWARDDOES
     MOV &DDP,W      ;
     MOV @TOS,TOS
     MOV @TOS,Y      ;               Y=[ASMFWx]
-    MOV #0,0(TOS)   ;               preset [ASMFWx] for next use
     CMP #0,Y        ;               ASMFWx = 0 ? (FWx is free?)
+    MOV #0,0(TOS)   ;               preset [ASMFWx] for next use
 FORWUSE             ; PFA -- @OPCODE
-    JNZ ASM_THEN1     ;               no
+    JNZ ASM_THEN1   ;               no
 FORWSET             ; OPCODE PFA -- 
     MOV @PSP+,0(W)  ; -- PFA        compile incomplete opcode
     ADD #2,&DDP     ;               increment DDP
     MOV W,0(TOS)    ;               store @OPCODE into ASMFWx
     MOV @PSP+,TOS   ;   --
     mNEXT
-;    JMP ASM_THEN1   ;               resolve forward branch with Y
 
 
 ; forward label 1
