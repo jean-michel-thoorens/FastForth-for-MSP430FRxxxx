@@ -141,10 +141,12 @@ CREATE ABUF 20 ALLOT
 : GET_TIME
     ECHO
     CR CR ."    DATE (DMY): "
-[DEFINED] LOAD" [IF]    \ ACCEPT is a dEFERed word and redirected to SD_ACCEPT!
-    ABUF ABUF 20 (ACCEPT) EVALUATE CR 3 SPACES DATE!
+[DEFINED] LOAD" [IF]    \ " \ ACCEPT is a dEFERed word and redirected to SD_ACCEPT!
+    ABUF ABUF 20 ['] ACCEPT >BODY EXECUTE \ execute default value of ACCEPT
+    EVALUATE CR 3 SPACES DATE!
     CR CR ."    TIME (HMS): "
-    ABUF ABUF 20 (ACCEPT) EVALUATE CR 3 SPACES TIME!
+    ABUF ABUF 20 ['] ACCEPT >BODY EXECUTE \ execute default value of ACCEPT
+    EVALUATE CR 3 SPACES TIME!
 [ELSE]                  \ ACCEPT is not a DEFERed word
     ABUF ABUF 20 ACCEPT EVALUATE CR 3 SPACES DATE!
     CR CR ."    TIME (HMS): "

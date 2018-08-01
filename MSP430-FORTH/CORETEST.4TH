@@ -1071,27 +1071,20 @@ TESTING INPUT: ACCEPT
 
 CREATE ABUF 80 CHARS ALLOT
 
-[DEFINED] LOAD" [IF]
-: (ACCEPT)
-    ['] ACCEPT >BODY EXECUTE
-;
 : ACCEPT-TEST
-    CR ." PLEASE TYPE UP TO 80 CHARACTERS:" CR
-    ABUF 80 (ACCEPT)                \ JMT: because ACCEPT is deferred
-    CR ." RECEIVED: " [CHAR] " EMIT
-    ABUF SWAP TYPE [CHAR] " EMIT CR
-;
+    CR ." PLEASE TYPE UP TO 80 CHARACTERS: "
+[DEFINED] LOAD" [IF] \ " \ JMT: because ACCEPT is deferred
+    ABUF 80 ['] ACCEPT >BODY EXECUTE \ JMT: execute default part of ACCEPT
 [ELSE]
-: ACCEPT-TEST
-    CR ." PLEASE TYPE UP TO 80 CHARACTERS:" CR
     ABUF 80 ACCEPT
+[THEN]
     CR ." RECEIVED: " [CHAR] " EMIT
     ABUF SWAP TYPE [CHAR] " EMIT CR
 ;
-[THEN]      \ LOAD"
-
 
 T{ ACCEPT-TEST -> }T
+ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba
+
 \ ------------------------------------------------------------------------
 TESTING DICTIONARY SEARCH RULES
 

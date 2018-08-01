@@ -171,7 +171,7 @@ LO2HI
                                     WRITE" YOURFILE.TXT"
                                     ['] SD_EMIT IS EMIT
                                     PROGRAMSTART HERE OVER - DUMP
-                                    ['] (EMIT) IS EMIT
+                                    ['] EMIT >BODY IS EMIT
                                     CLOSE
                                 ELSE 1 - ?DUP
                                     0= IF
@@ -179,7 +179,7 @@ LO2HI
                                         ['] SD_EMIT IS EMIT
                                         CR
                                         PROGRAMSTART HERE OVER - DUMP
-                                        ['] (EMIT) IS EMIT
+                                        ['] EMIT >BODY IS EMIT
                                         CLOSE
                                     ELSE 1 - ?DUP
                                         0= IF
