@@ -27,32 +27,33 @@ BSL=\$1000!
 ! ----------------------------------------------
 ! FRAM                          ; INFO B, A, TLV
 ! ----------------------------------------------
-INFOSTART=\$1800!
-INFODSTART=\$1800!
-INFODEND=\$187F!
-INFOCSTART=\$1880!
-INFOCEND=\$18FF!
-INFOBSTART=\$1900!
-INFOBEND=\$197F!
-INFOASTART=\$1980!
-INFOAEND=\$19FF!
-INFOEND=\$19FF!
-TLVSTART=\$1A00!        Device Descriptor Info (Tag-Lenght-Value)
-TLVEND=\$1AFF!
+INFO_ORG=\$1800!
+INFO_LEN=\$0200!
+INFOD_ORG=\$1800!
+INFOD_LEN=\$0080!
+INFOC_ORG=\$1880!
+INFOC_LEN=\$0080!
+INFOB_ORG=\$1900!
+INFOB_LEN=\$0080!
+INFOA_ORG=\$1980!
+INFOA_LEN=\$0080!
+TLV_ORG=\$1A00!      ; Device Descriptor Info (Tag-Lenght-Value)
+TLV_LEN=\$0100!      ;
+
 ! ----------------------------------------------
 ! RAM
 ! ----------------------------------------------
-TinyRAM=\$0A!
-TinyRAMEnd=\$1F!
-RAMSTART=\$1C00!
-RAMEND=\$2BFF!
-SharedRAMSTART=\$2C00!
-SharedRAMEND=\$3BFF!
+TinyRAM_ORG=\$0A!
+TinyRAM_LEN=\$16!
+RAM_ORG=\$1C00!
+RAM_LEN=\$1000!
+SharedRAM_ORG=\$2C00!
+SharedRAM_LEN=\$1000!
 ! ----------------------------------------------
 ! FRAM
 ! ----------------------------------------------
-PROGRAMSTART=\$4000!    Code space start
-!FRAMEND=\$43FFF!       256 k FRAM
+MAIN_ORG=\$4000!        Code space start
+MAIN_LEN=\$43FFF!       256 k FRAM
 FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
 SIGNATURES=\$FF80!      JTAG/BSL signatures
 JTAG_SIG1=\$FF80!       if 0, enable JTAG/SBW
@@ -62,8 +63,9 @@ BSL_SIG2=\$FF86!
 JTAG_PASSWORD=\$FF88!   256 bits max
 IPE_SIG_VALID=\$FF88!   one word
 IPE_STR_PTR_SRC=\$FF8A! one word
-INTVECT=\$FFB4!         FFB4-FFFF
 BSL_PASSWORD=\$FFE0!    256 bits
+VECT_ORG=\0FFB4!        FFB4-FFFF
+VECT_LEN=\$4C!
 
 
 LEA_Vec=\$FFB4!
@@ -228,36 +230,36 @@ BASE_HOLD=\$1DB2!   \ BASE HOLD area, grow down
 ! NOT SAVED VARIABLES
 ! ----------------------
 
-HP=\$1DB2!              HOLD ptr
-CAPS=\$1DB4!            CAPS ON/OFF flag, must be set to -1 before first reset !
+HP=\$1DB2!          \ HOLD ptr
+CAPS=\$1DB4!        \ CAPS ON/OFF flag, must be set to -1 before first reset !
 LAST_NFA=\$1DB6!
 LAST_THREAD=\$1DB8!
 LAST_CFA=\$1DBA!
 LAST_PSP=\$1DBC!
 
-!STATE=\$1DBE!           Interpreter state
+!STATE=\$1DBE!       \ Interpreter state
 
-SOURCE_LEN=\$1DC0!      len of input stream
-SOURCE_ADR=\$1DC2!      adr of input stream
-TOIN=\$1DC4!            >IN
-DP=\$1DC6!              dictionary ptr
+SOURCE_LEN=\$1DC0!  \ len of input stream
+SOURCE_ADR=\$1DC2!  \ adr of input stream
+TOIN=\$1DC4!        \ >IN
+DP=\$1DC6!          \ dictionary ptr
 
-LASTVOC=\$1DC8!         keep VOC-LINK
-CONTEXT=\$1DCA!         CONTEXT dictionnary space (8 CELLS)
-CURRENT=\$1DDA!         CURRENT dictionnary ptr
+LASTVOC=\$1DC8!     \ keep VOC-LINK
+CONTEXT=\$1DCA!     \ CONTEXT dictionnary space (8 CELLS)
+CURRENT=\$1DDA!     \ CURRENT dictionnary ptr
 
-!BASE=\$1DDC!           numeric base, must be defined before first reset !
-LINE=\$1DDE!            line in interpretation, activated with NOECHO, desactivated with ECHO
+!BASE=\$1DDC!        \ numeric base, must be defined before first reset !
+LINE=\$1DDE!        \ line in interpretation, activated with NOECHO, desactivated with ECHO
 ! ---------------------------------------
 !1DE0! 14 RAM bytes free conditionnaly
 ! ---------------------------------------
-!SAV_CURRENT=\$21E0!    preserve CURRENT when create assembler words
-!ASMBW1=\$1DE2          assembler backward reference 1
-!ASMBW2=\$1DE4          assembler backward reference 2
-!ASMBW3=\$1DE6          assembler backward reference 3
-!ASMFW1=\$1DE8          assembler forward reference 1
-!ASMFW2=\$1DEA          assembler forward reference 2
-!ASMFW3=\$1DEC          assembler forward reference 3
+SAV_CURRENT=\$1DE0! \ preserve CURRENT when create assembler words
+ASMBW1=\$1DE2!      \ assembler backward reference 1
+ASMBW2=\$1DE4!      \ assembler backward reference 2
+ASMBW3=\$1DE6!      \ assembler backward reference 3
+ASMFW1=\$1DE8!      \ assembler forward reference 1
+ASMFW2=\$1DEA!      \ assembler forward reference 2
+ASMFW3=\$1DEC!      \ assembler forward reference 3
 ! ---------------------------------------
 !1DEE! 14 RAM bytes free
 ! ---------------------------------------

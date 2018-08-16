@@ -29,28 +29,28 @@ BSL             .equ 1000h
 ; ----------------------------------------------
 ; FRAM                          ; INFO B, A, TLV
 ; ----------------------------------------------
-INFOSTART       .equ 01800h
-INFODSTART      .equ 01800h
-INFODEND        .equ 0187Fh
-INFOCSTART      .equ 01880h
-INFOCEND        .equ 018FFh
-INFOBSTART      .equ 01900h
-INFOBEND        .equ 0197Fh
-INFOASTART      .equ 01980h
-INFOAEND        .equ 019FFh
-TLVSTART        .equ 01A00h      ; Device Descriptor Info (Tag-Lenght-Value)
-TLVEND          .equ 01AFFh      ;
+INFO_ORG        .equ 01800h
+INFO_LEN        .equ 00200h
+INFOD_ORG       .equ 01800h
+INFOD_LEN       .equ 00080h
+INFOC_ORG       .equ 01880h
+INFOC_LEN       .equ 00080h
+INFOB_ORG       .equ 01900h
+INFOB_LEN       .equ 00080h
+INFOA_ORG       .equ 01980h
+INFOA_LEN       .equ 00080h
+TLV_ORG         .equ 01A00h      ; Device Descriptor Info (Tag-Lenght-Value)
+TLV_LEN         .equ 00100h      ;
 ; ----------------------------------------------
 ; RAM
 ; ----------------------------------------------
-RAMSTART        .equ 01C00h
-RAMEND          .equ 023FFh
-RAMLEN          .equ 00800h
+RAM_ORG         .equ 01C00h
+RAM_LEN         .equ 00800h
 ; ----------------------------------------------
 ; FRAM
 ; ----------------------------------------------
-PROGRAMSTART    .equ 04400h      ; Code space start
-FRAMEND         .equ 0FFFFh      ; 48 k FRAM
+MAIN_ORG        .equ 04400h      ; Code space start
+MAIN_LEN        .equ 14000h      ; 63 k FRAM
 SIGNATURES      .equ 0FF80h      ; JTAG/BSL signatures
 JTAG_SIG1       .equ 0FF80h      ; if 0, enable JTAG/SBW
 JTAG_SIG2       .equ 0FF82h      ; if JTAG_SIG1=0xAAAA, length of password string @ JTAG_PASSWORD
@@ -59,8 +59,8 @@ BSL_SIG2        .equ 0FF86h      ;
 JTAG_PASSWORD   .equ 0FF88h      ; 256 bits max
 IPE_SIG_VALID   .equ 0FF88h      ; one word
 IPE_STR_PTR_SRC .equ 0FF8Ah      ; one word
-INTVECT         .equ 0FFCCh      ; FFCC-FFFF
-VECTLEN         .equ 34h
+VECT_ORG        .equ 0FFCCh      ; FFCC-FFFF
+VECT_LEN        .equ 34h
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ; ----------------------------------------------
 

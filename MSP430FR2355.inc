@@ -31,22 +31,21 @@ BSL2            .equ 0FFC00h
 ; ----------------------------------------------
 ; FRAM                          ; INFO B, TLV
 ; ----------------------------------------------
-TINYRAMSTART    .equ 6
-TINYRAMEND      .equ 1Fh
-INFOSTART       .equ 01800h
-INFOEND         .equ 019FFh
-TLVSTART        .equ 01A00h      ; Device Descriptor Info (Tag-Lenght-Value)
-TLVEND          .equ 01A31h      ;
+TINYRAM_ORG     .equ 6
+TINYRAM_LEN     .equ 1Ah
+INFO_ORG        .equ 01800h
+INFO_LEN        .equ 00200h
+TLV_ORG         .equ 01A00h      ; Device Descriptor Info (Tag-Lenght-Value)
+TLV_LEN         .equ 00032h      ;
 ; ----------------------------------------------
 ; RAM
 ; ----------------------------------------------
-RAMSTART        .equ 02000h
-RAMEND          .equ 02FFFh
-RAMLEN          .equ 01000h
+RAM_ORG         .equ 02000h
+RAM_LEN         .equ 01000h
 ; ----------------------------------------------
 ; FRAM
 ; ----------------------------------------------
-PROGRAMSTART    .equ 08000h      ; Code space start
+MAIN_ORG        .equ 08000h      ; Code space start
 ; ----------------------------------------------
 ; Interrupt Vectors and signatures - MSP430FR2355
 ; ----------------------------------------------
@@ -60,8 +59,8 @@ BSL_CONF        .equ 0FF8Ah      ;
 BSL_I2C_ADRE    .equ 0FF8Ch      ;
 JTAG_PASSWORD   .equ 0FF88h      ; 256 bits
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
-INTVECT         .equ 0FFCEh      ; FFCE-FFFF :  24 vectors + reset
-VECTLEN         .equ 32h
+VECT_ORG        .equ 0FFCEh      ; FFCE-FFFF :  24 vectors + reset
+VECT_LEN        .equ 32h
 ; ----------------------------------------------
 
 ;   .org    INTVECT             ; FFCE-FFFF 24 vectors + reset

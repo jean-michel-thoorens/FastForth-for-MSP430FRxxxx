@@ -15,15 +15,22 @@
 ! C400-FF7F = code memory (FRAM 15232 B)
 ! FF80-FFFF = interrupt vectors (FRAM 127 B)
 ! ----------------------------------------------
-INFOSTART=\$1800!
-INFOBSTART=\$1800!
-INFOBEND=\$19FF!
-INFOEND=\$19FF!
-TLVSTAT=\$1A00!         Device Descriptor Info (Tag-Lenght-Value)
-TLVEND=\$1A7F! 
-RAMSTART=\$2000!
-RAMEND=\$27FF!
-PROGRAMSTART=\$C400!    Code space start
+! ----------------------------------------------
+! FRAM                          ! INFO B, TLV
+! ----------------------------------------------
+INFO_ORG=\$1800!
+INFO_LEN=\$0200!
+TLV_ORG=\$1A00!      ! Device Descriptor Info (Tag-Lenght-Value)
+TLV_LEN=\$0080!      !
+! ----------------------------------------------
+! RAM
+! ----------------------------------------------
+RAM_ORG=\$2000!
+RAM_LEN=\$0800!
+! ----------------------------------------------
+! FRAM
+! ----------------------------------------------
+MAIN_ORG=\$C400!    Code space start
 FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
 SIGNATURES=\$FF80!      JTAG/BSL signatures
 JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW; must be reset by wipe.
@@ -31,8 +38,9 @@ JTAG_SIG2=\$FF82!       if JTAG_SIG1=\$AAAA, length of password string @ JTAG_PA
 BSL_SIG1=\$FF84!  
 BSL_SIG2=\$FF86!  
 JTAG_PASSWORD=\$FF88!   256 bits
-INTVECT=\$FFE2!         FFE2-FFFF
 BSL_PASSWORD=\$FFE0!    256 bits
+VECT_ORG=\$FFE2!         FFE2-FFFF
+VECT_LEN=\$1E!
 
 
 LCD_Vec=\$FFE2!

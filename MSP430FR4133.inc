@@ -19,30 +19,27 @@ PAGESIZE        .equ 512         ; MPU unit
 ; ----------------------------------------------
 ; FRAM                          ; INFO B, TLV
 ; ----------------------------------------------
-INFOSTART       .equ 01800h
-INFOBSTART      .equ 01800h
-INFOBEND        .equ 019FFh
-INFOEND         .equ 019FFh
-TLVSTART        .equ 01A00h      ; Device Descriptor Info (Tag-Lenght-Value)
-TLVEND          .equ 01A7Fh      ;
+INFO_ORG        .equ 01800h
+INFO_LEN        .equ 00200h
+TLV_ORG         .equ 01A00h      ; Device Descriptor Info (Tag-Lenght-Value)
+TLV_LEN         .equ 00080h      ;
 ; ----------------------------------------------
 ; RAM
 ; ----------------------------------------------
-RAMSTART        .equ 02000h
-RAMEND          .equ 027FFh
-RAMLEN          .equ 00800h
+RAM_ORG         .equ 02000h
+RAM_LEN         .equ 00800h
 ; ----------------------------------------------
 ; FRAM
 ; ----------------------------------------------
-PROGRAMSTART    .equ 0C400h      ; Code space start
+MAIN_ORG        .equ 0C400h      ; Code space start
 SIGNATURES      .equ 0FF80h      ; JTAG/BSL signatures
 JTAG_SIG1       .equ 0FF80h      ; if 0 (electronic fuse=0) enable JTAG/SBW ; reset by wipe and by S1+<reset>
 JTAG_SIG2       .equ 0FF82h      ; if JTAG_SIG <> |0xFFFFFFFF, 0x00000000|, SBW and JTAG are locked
 BSL_SIG1        .equ 0FF84h      ;
 BSL_SIG2        .equ 0FF86h      ;
 JTAG_PASSWORD   .equ 0FF88h      ; 256 bits
-INTVECT         .equ 0FFE2h      ; FFE2-FFFF
-VECTLEN         .equ 1Eh
+VECT_ORG        .equ 0FFE2h      ; FFE2-FFFF
+VECT_LEN        .equ 1Eh
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 
 ; ----------------------------------------------

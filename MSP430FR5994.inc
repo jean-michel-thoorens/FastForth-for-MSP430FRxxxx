@@ -30,32 +30,32 @@ BSL             .equ 1000h
 ; ----------------------------------------------
 ; FRAM                          ; INFO B, A, TLV
 ; ----------------------------------------------
-INFOSTART       .equ 01800h
-INFODSTART      .equ 01800h
-INFODEND        .equ 0187Fh
-INFOCSTART      .equ 01880h
-INFOCEND        .equ 018FFh
-INFOBSTART      .equ 01900h
-INFOBEND        .equ 0197Fh
-INFOASTART      .equ 01980h
-INFOAEND        .equ 019FFh
-TLVSTART        .equ 01A00h      ; Device Descriptor Info (Tag-Lenght-Value)
-TLVEND          .equ 01AFFh      ;
+INFO_ORG        .equ 01800h
+INFO_LEN        .equ 00200h
+INFOD_ORG       .equ 01800h
+INFOD_LEN       .equ 00080h
+INFOC_ORG       .equ 01880h
+INFOC_LEN       .equ 00080h
+INFOB_ORG       .equ 01900h
+INFOB_LEN       .equ 00080h
+INFOA_ORG       .equ 01980h
+INFOA_LEN       .equ 00080h
+TLV_ORG         .equ 01A00h      ; Device Descriptor Info (Tag-Lenght-Value)
+TLV_LEN         .equ 00100h      ;
 ; ----------------------------------------------
 ; RAM
 ; ----------------------------------------------
-TinyRAM         .equ 00Ah
-TinyRAMEnd      .equ 01Fh
-RAMSTART        .equ 01C00h
-RAMEND          .equ 02BFFh
-RAMLEN          .equ 01000h
-SharedRAMSTART  .equ 02C00h
-SharedRAMEND    .equ 03BFFh
+TinyRAM_ORG     .equ 00Ah
+TinyRAM_LEN     .equ 016h
+RAM_ORG         .equ 01C00h
+RAM_LEN         .equ 01000h
+SharedRAM_ORG   .equ 02C00h
+SharedRAM_LEN   .equ 01000h
 ; ----------------------------------------------
 ; FRAM
 ; ----------------------------------------------
-PROGRAMSTART    .equ 04000h      ; Code space start
-FRAMEND         .equ 043FFFh     ; 256 k FRAM
+MAIN_ORG        .equ 04000h      ; Code space start
+MAIN_LEN        .equ 40000h      ; 256 k FRAM
 SIGNATURES      .equ 0FF80h      ; JTAG/BSL signatures
 JTAG_SIG1       .equ 0FF80h      ; if 0, enable JTAG/SBW
 JTAG_SIG2       .equ 0FF82h      ; if JTAG_SIG1=0xAAAA, length of password string @ JTAG_PASSWORD
@@ -64,8 +64,8 @@ BSL_SIG2        .equ 0FF86h      ;
 JTAG_PASSWORD   .equ 0FF88h      ; 256 bits max
 IPE_SIG_VALID   .equ 0FF88h      ; one word
 IPE_STR_PTR_SRC .equ 0FF8Ah      ; one word
-INTVECT         .equ 0FFB4h      ; FFB4-FFFF
-VECTLEN         .equ 4Ch
+VECT_ORG        .equ 0FFB4h      ; FFB4-FFFF
+VECT_LEN        .equ 4Ch
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ; ----------------------------------------------
 ;    .org    SIGNATURES

@@ -24,26 +24,26 @@ PAGESIZE=512!         ; MPU unit
 ! ----------------------------------------------
 ! BSL
 ! ----------------------------------------------
-BSL1=\$01000!
-BSL2=\$0FFC00!
+BSL1=\$1000!
+BSL2=\$FFC00!
 ! ----------------------------------------------
 ! FRAM                          ! INFO B, TLV
 ! ----------------------------------------------
-TINYRAMSTART=\$6!
-TINYRAMEND=\$1F!
-INFOSTART=\$01800!
-INFOEND=\$019FF!
-TLVSTART=\$01A00!      ! Device Descriptor Info (Tag-Lenght-Value)
-TLVEND=\$01A31!      !
+TINYRAM_ORG=\$6!
+TINYRAM_LEN=\$1A!
+INFO_ORG=\$1800!
+INFO_LEN=\$0200!
+TLV_ORG=\$1A00!      ! Device Descriptor Info (Tag-Lenght-Value)
+TLV_LEN=\$0032!      !
 ! ----------------------------------------------
 ! RAM
 ! ----------------------------------------------
-RAMSTART=\$2000!
-RAMEND=\$2FFF!
+RAM_ORG=\$2000!
+RAM_LEN=\$1000!
 ! ----------------------------------------------
 ! FRAM
 ! ----------------------------------------------
-PROGRAMSTART=\$8000!      ! Code space start
+MAIN_ORG=\$8000!      ! Code space start
 ! ----------------------------------------------
 ! Interrupt Vectors and signatures - MSP430FR2355
 ! ----------------------------------------------
@@ -58,7 +58,8 @@ BSL_CONF=\$FF8A!
 BSL_I2C_ADRE=\$FF8C!
 JTAG_PASSWORD=\$FF88!   256 bits
 BSL_PASSWORD=\$FFE0!    256 bits
-INTVECT=\$FFCE!         FFCE-FFFF :  24 vectors + reset
+VECT_ORG=\$FFCE!         FFCE-FFFF :  24 vectors + reset
+VECT_LEN=\$32!
 
 P4_Vec=\$FFCE!
 P3_Vec=\$FFD0!

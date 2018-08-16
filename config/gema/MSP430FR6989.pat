@@ -18,20 +18,23 @@
 ! C200-FF7F = code memory (FRAM 15743 B)
 ! FF80-FFFF = interrupt vectors (FRAM 127 B)
 ! ----------------------------------------------
-INFOSTART=\$1800!
-INFODSTART=\$1800!
-INFODEND=\$187F!
-INFOCSTART=\$1880!
-INFOCEND=\$18FF!
-INFOBSTART=\$1900!
-INFOBEND=\$197F!
-INFOASTART=\$1980!
-INFOAEND=\$19FF!
-TLVSTAT=\$1A00!         Device Descriptor Info (Tag-Lenght-Value)
-TLVEND=\$1AFF!
-RAMSTART=\$1C00!
-RAMEND=\$23FF!
-PROGRAMSTART=\$4400!    Code space start
+INFO_ORG=\$1800!
+INFO_LEN=\$0200!
+INFOD_ORG=\$1800!
+INFOD_LEN=\$0080!
+INFOC_ORG=\$1880!
+INFOC_LEN=\$0080!
+INFOB_ORG=\$1900!
+INFOB_LEN=\$0080!
+INFOA_ORG=\$1980!
+INFOA_LEN=\$0080!
+TLV_ORG=\$1A00!      ; Device Descriptor Info (Tag-Lenght-Value)
+TLV_LEN=\$0100!      ;
+
+RAM_ORG=\$1C00!
+RAM_LEN=\$0800!
+
+MAIN_ORG=\$4400!        Code space start
 FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
 SIGNATURES=\$FF80!      JTAG/BSL signatures
 JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW; must be reset by wipe.
@@ -39,8 +42,9 @@ JTAG_SIG2=\$FF82!       if JTAG_SIG1=\$AAAA, length of password string @ JTAG_PA
 BSL_SIG1=\$FF84!
 BSL_SIG2=\$FF86!
 JTAG_PASSWORD=\$FF88!   256 bits
-INTVECT=\$FFC6!         FFCE-FFFF
 BSL_PASSWORD=\$FFE0!    256 bits
+VECT_ORG=\$FFC6!        FFC6-FFFF
+VECT_LEN=\$3A!
 
 
 AES_Vec=\$FFC6!

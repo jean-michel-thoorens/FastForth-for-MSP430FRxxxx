@@ -140,7 +140,7 @@
 ; 0- Init FRAM SD datas, case of MSP430FR57xx
 ; ===========================================================
 
-    .IFDEF RAM_1K               ; case of MSP430FR57xx : SD datas are in FRAM
+    .IF RAM_LEN < 2048          ; case of MSP430FR57xx : SD datas are in FRAM
         MOV #SD_LEN_DATA,X      ; so are not initialised by COLD/RESET
 InitSDdata                      ;
         SUB #2,X

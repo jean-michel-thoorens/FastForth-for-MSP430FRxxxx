@@ -74,15 +74,6 @@ QUESTION    MOV     @TOS,TOS
 WORDS       mDOCOL
             .word   CR
             .word   lit,3,SPACES
-
-;; vvvvvvvv   may be skipped    vvvvvvvv
-;            .word   XSQUOTE                ; type # of threads in vocabularies
-;            .byte   23,"monothread vocabularies"
-;            .word   TYPE
-;            .word   CR     
-;            .word   lit,3,SPACES
-;; ^^^^^^^^   may be skipped    ^^^^^^^^
-
             .word   LIT,CONTEXT,FETCH   ; -- VOC_BODY
 WORDS1      .word   FETCH               ; -- NFA
             .word   QDUP                ; -- 0 | -- NFA NFA 
@@ -113,19 +104,6 @@ PAD         mDOCON
 WORDS       mDOCOL
             .word   CR
             .word   lit,3,SPACES
-
-;; vvvvvvvv   may be skipped    vvvvvvvv
-;            .word   FBASE,FETCH             
-;            .word   LIT,0Ah,FBASE,STORE
-;            .word   LIT,THREADS,DOT
-;            .word   XSQUOTE                ; type # of threads in vocabularies
-;            .byte   20,"threads vocabularies"
-;            .word   TYPE
-;            .word   FBASE,STORE
-;            .word   CR     
-;            .word   lit,3,SPACES
-;; ^^^^^^^^   may be skipped    ^^^^^^^^
-
             .word   LIT,CONTEXT,FETCH
             .word   PAD,LIT,THREADS,DUP,PLUS
             .word   MOVE

@@ -22,32 +22,32 @@ PAGESIZE        .equ 512         ; MPU unit
 ; ----------------------------------------------
 ; FRAM                          ; INFO B, A, TLV
 ; ----------------------------------------------
-INFOSTART       .equ 01800h
-INFOBSTART      .equ 01800h
-INFOBEND        .equ 0187Fh
-INFOASTART      .equ 01880h
-INFOAEND        .equ 018FFh
-TLVSTAT         .equ 01A00h      ; Device Descriptor Info (Tag-Lenght-Value)
-TLVEND          .equ 01A7Fh      ;
+INFO_ORG        .equ 01800h
+INFO_LEN        .equ 00100h
+INFOB_ORG       .equ 01800h
+INFOB_LEN       .equ 00080h
+INFOA_ORG       .equ 01880h
+INFOA_LEN       .equ 00080h
+; ----------------------------------------------
+TLV_ORG         .equ 01A00h      ; Device Descriptor Info (Tag-Lenght-Value)
+TLV_LEN         .equ 00080h      ;
 ; ----------------------------------------------
 ; RAM
 ; ----------------------------------------------
-RAMSTART        .equ 01C00h
-RAMEND          .equ 01FFFh
-RAMLEN          .equ 00400h
-RAM_1K
+RAM_ORG         .equ 01C00h
+RAM_LEN         .equ 00400h
 ; ----------------------------------------------
 ; FRAM
 ; ----------------------------------------------
-PROGRAMSTART    .equ 0C200h      ; Code space start
+MAIN_ORG        .equ 0C200h      ; Code space start
 SIGNATURES      .equ 0FF80h      ; JTAG/BSL signatures
 JTAG_SIG1       .equ 0FF80h      ; if 0 (electronic fuse=0) enable JTAG/SBW; must be reset by wipe.
 JTAG_SIG2       .equ 0FF82h      ; if JTAG_SIG1=0xAAAA, length of password string @ JTAG_PASSWORD
 BSL_SIG1        .equ 0FF84h      ;
 BSL_SIG2        .equ 0FF86h      ;
 JTAG_PASSWORD   .equ 0FF88h      ; 256 bits
-INTVECT         .equ 0FFCEh      ; FFCE-FFFF
-VECTLEN         .equ 32h
+VECT_ORG        .equ 0FFCEh      ; FFCE-FFFF
+VECT_LEN        .equ 32h
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ; ----------------------------------------------
 
@@ -72,10 +72,10 @@ BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ;        .word  reset        ; $FFD2  -  I/O Port 3
 ;        .word  reset        ; $FFD4  -  TB2_1
 ;        .word  reset        ; $FFD6  -  TB2_0
-;        .word  reset        ; $FFD8  -  I/O Port P2
+;        .word  reset        ; $FFD8  -  I/O Port 2
 ;        .word  reset        ; $FFDA  -  TB1_1
 ;        .word  reset        ; $FFDC  -  TB1_0
-;        .word  reset        ; $FFDE  -  I/O Port P1
+;        .word  reset        ; $FFDE  -  I/O Port 1
 ;;   .org BSL_PASSWORD       ;Start of BSL PASSWORD
 ;        .word  reset        ; $FFE0  -  TA1_1
 ;        .word  reset        ; $FFE2  -  TA1_0

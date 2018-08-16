@@ -1,3 +1,22 @@
+; -*- coding: utf-8 -*-
+; http://patorjk.com/software/taag/#p=display&f=Banner&t=Fast Forth
+
+; Fast Forth For Texas Instrument MSP430FRxxxx FRAM devices
+; Copyright (C) <2015>  <J.M. THOORENS>
+;
+; This program is free software: you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation, either version 3 of the License, or
+; (at your option) any later version.
+;
+; This program is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 
 
     FORTHWORD "{FIXPOINT}"
@@ -35,24 +54,29 @@ HOLDSNEXT   MOV Y,&HP       ; 3
         MOV @PSP+,TOS
         MOV @IP+,PC
 
+    .IFDEF MPY ; hardware multiplier
 
        FORTHWORD "F/"      ; s15.16 / s15.16 --> s15.16 result
-FDIV    MOV 2(PSP),S        ;
-        XOR TOS,S           ; MDhi XOR MRhi --> S keep sign of result
+FDIV
+        PUSHM #4,R7         ; PUSHM R7,R4
+        MOV @PSP+,R6        ; DIVlo
+        MOV @PSP+,X         ; DVDhi --> REMlo
+        MOV #0,W            ; REMhi = 0
+        MOV @PSP,Y          ; DVDlo --> DVDhi
         MOV #0,T            ; DVDlo = 0
-        MOV 4(PSP),Y        ; DVDlo --> DVDhi
-        MOV 2(PSP),X        ; DVDhi --> REMlo
-        BIT #8000,X         ; MD < 0 ? 
-        JZ FDIV1            ; no
+        MOV X,S             ;
+        XOR TOS,S           ; MDhi XOR MRhi --> S keep sign of result
+        AND #-1,X           ; MD < 0 ? 
+        JGE FDIV1           ; no
         XOR #-1,Y           ; lo
         XOR #-1,X           ; hi
         ADD #1,Y            ; lo
         ADDC #0,X           ; hi
-FDIV1   BIT #8000,TOS
-        JZ FDIV2
-        XOR #-1,0(PSP)
+FDIV1   AND #-1,TOS
+        JGE FDIV2
+        XOR #-1,R6
         XOR #-1,TOS
-        ADD #1,0(PSP)
+        ADD #1,R6
         ADDC #0,TOS
 FDIV2   
 ; unsigned 32-BIT DIVIDEND : 32-BIT DIVISOR --> 32-BIT QUOTIENT, 32-BIT REMAINDER
@@ -61,10 +85,7 @@ FDIV2
 ;            MOV 4(PSP),T   ; DVDlo
 ;            MOV 2(PSP),Y   ; DVDhi
 ;            MOV #0,X       ; REMlo = 0
-Q6432       PUSHM  #4,R7    ; PUSHM R7,R4
-            MOV #0,W        ; REMhi = 0
-            MOV @PSP,R6     ; DIVlo
-            MOV #32,R5      ; init loop count
+Q6432       MOV #32,R5      ; init loop count
 Q321        CMP TOS,W       ;1 REMhi <> DIVhi ?
             JNZ Q322        ;2 yes
             CMP R6,X        ;1 REMlo U< DIVlo ?
@@ -86,35 +107,28 @@ Q323        ADDC R7,R7      ;1 RLC quotLO
             JMP Q323
 Q6432END
 ;            MOV X,4(PSP)   ; REMlo    
-;            MOV W,2(PSP)   ; REMhi
-            ADD #4,PSP      ; skip REMlo REMhi
-    
-            MOV R7,0(PSP)   ; QUOTlo
-            MOV R4,TOS      ; QUOThi
-            POPM  #4,R7     ; POPM R4 R5 R6 R7
+;            MOV W,2(PSP)   ; REMhi    
 ;            MOV @IP+,PC    ; 33 words
+        AND #-1,S           ; clear V, set N
+        JGE FDIVEND         ; if positive
+        XOR #-1,R7
+        XOR #-1,R4
+        ADD #1,R7
+        ADDC #0,R4
+FDIVEND MOV R7,0(PSP)       ; QUOTlo
+        MOV R4,TOS          ; QUOThi
+        POPM  #4,R7         ; POPM R4 R5 R6 R7
+        MOV @IP+,PC 
 
-FDIVSGN AND #-1,S       ; clear V, set N
-        JGE FDIVEND     ; if positive
-        XOR #-1,0(PSP)
-        XOR #-1,TOS
-        ADD #1,0(PSP)
-        ADDC #0,TOS
-FDIVEND MOV @IP+,PC 
-
-    .IFDEF MPY ; hardware multiplier
-
-; F#S    Qlo Qhi -- Qhi 0   convert fractionnal part of Q15.16 fixed point number
+; F#S    Qlo Qhi u -- Qhi 0   convert fractionnal part of Q15.16 fixed point number
+;                             with u digits
     FORTHWORD "F#S"
-FNUMS       MOV @PSP,X              ; -- Qlo Qhi    X = Qlo
-            MOV TOS,0(PSP)          ; -- Qhi Qhi
-            SUB #2,PSP              ; -- Qhi x Qhi
-            MOV X,0(PSP)            ; -- Qhi Qlo Qhi
-            MOV #4,T                ; -- Qhi Qlo x      T = limit for base 16
-            CMP #10,&BASE
-            JNZ FNUMS2
-            ADD #1,T                ;                   T = limit for base 10
-FNUMS2      MOV #0,S                ;                   S = count
+FNUMS
+            MOV 2(PSP),X            ; -- Qlo Qhi u      X = Qlo
+            MOV @PSP,2(PSP)         ; -- Qhi Qhi u
+            MOV X,0(PSP)            ; -- Qhi Qlo u
+            MOV TOS,T               ;                   T = limit
+            MOV #0,S                ;                   S = count
 FNUMSLOOP   MOV @PSP,&MPY           ;                   Load 1st operand
             MOV &BASE,&OP2          ;                   Load 2nd operand
             MOV &RES0,0(PSP)        ; -- Qhi Qlo' x     low result on stack
@@ -146,7 +160,75 @@ FNUMS2CHAR  ADD #30h,TOS
 
     .ELSE ; no hardware multiplier
 
-; F#S    Qlo Qhi -- Qhi 0   convert fractionnal part of Q15.16 fixed point number
+       FORTHWORD "F/"      ; s15.16 / s15.16 --> s15.16 result
+FDIV
+        PUSHM  #4,R7        ; PUSHM R7,R4
+        MOV @PSP+,R6        ; DIVlo
+        MOV @PSP+,X         ; DVDhi --> REMlo
+        MOV #0,W            ; REMhi = 0
+        MOV @PSP,Y          ; DVDlo --> DVDhi
+        MOV #0,T            ; DVDlo = 0
+        MOV X,S             ;
+        XOR TOS,S           ; MDhi XOR MRhi --> S keep sign of result
+        AND #-1,X           ; MD < 0 ? 
+        JGE FDIV1           ; no
+        XOR #-1,Y           ; lo
+        XOR #-1,X           ; hi
+        ADD #1,Y            ; lo
+        ADDC #0,X           ; hi
+FDIV1   AND #-1,TOS
+        JGE FDIV2
+        XOR #-1,R6
+        XOR #-1,TOS
+        ADD #1,R6
+        ADDC #0,TOS
+FDIV2   
+; unsigned 32-BIT DIVIDEND : 32-BIT DIVISOR --> 32-BIT QUOTIENT, 32-BIT REMAINDER
+; DVDhi|DVDlo : DVRhi|DVRlo --> QUOThi|QUOTlo, REMAINDER
+;            FORTHWORD "UD/MOD"
+;            MOV 4(PSP),T   ; DVDlo
+;            MOV 2(PSP),Y   ; DVDhi
+;            MOV #0,X       ; REMlo = 0
+Q6432       MOV #32,R5      ; init loop count
+Q321        CMP TOS,W       ;1 REMhi <> DIVhi ?
+            JNZ Q322        ;2 yes
+            CMP R6,X        ;1 REMlo U< DIVlo ?
+Q322        JLO Q323        ;2 yes: REM U< DIV
+            SUB R6,X        ;1 no:  REMlo - DIVlo  (carry is set)
+            SUBC TOS,W      ;1      REMhi - DIVhi
+Q323        ADDC R7,R7      ;1 RLC quotLO
+            ADDC R4,R4      ;1 RLC quotHI
+            SUB #1,R5       ;1 Decrement loop counter
+            JN Q6432END     ;2 loop back if count>=0    
+            ADD T,T         ;1 RLA DVDlo
+            ADDC Y,Y        ;1 RLC DVDhi
+            ADDC X,X        ;1 RLC REMlo
+            ADDC W,W        ;1 RLC REMhi
+            JNC Q321        ; 
+            SUB R6,X        ;1 REMlo - DIVlo
+            SUBC TOS,W      ;1 REMhi - DIVhi
+            BIS #1,SR
+            JMP Q323
+Q6432END
+;            MOV X,4(PSP)   ; REMlo    
+;            MOV W,2(PSP)   ; REMhi
+;            ADD #4,PSP     ; skip REMlo REMhi
+    
+            MOV R7,0(PSP)   ; QUOTlo
+            MOV R4,TOS      ; QUOThi
+            POPM  #4,R7     ; POPM R4 R5 R6 R7
+;            MOV @IP+,PC    ; 33 words
+
+FDIVSGN AND #-1,S       ; clear V, set N
+        JGE FDIVEND     ; if positive
+        XOR #-1,0(PSP)
+        XOR #-1,TOS
+        ADD #1,0(PSP)
+        ADDC #0,TOS
+FDIVEND MOV @IP+,PC 
+
+; F#S    Qlo Qhi u -- Qhi 0   convert fractionnal part of Q15.16 fixed point number
+;                             with u digits
     FORTHWORD "F#S"
 ; create a counted string at PAD+CPL+2
 ; with digit high result of Qdlo * base
@@ -154,17 +236,13 @@ FNUMS2CHAR  ADD #30h,TOS
 ; mov &BASE,S , jmp UMSTAR1 without hardware MPY
 ; result: digit in tos (high) to convert in digit
 ; 
-FNUMS       MOV @PSP,X              ; -- Qlo Qhi    X = Qlo
-            MOV TOS,0(PSP)          ; -- Qhi Qhi
-            SUB #2,PSP              ; -- Qhi x Qhi
-            MOV X,0(PSP)            ; -- Qhi Qlo Qhi
-            MOV #4,TOS              ; -- Qhi Qlo limit      TOS = count for base 16
-            CMP #10,&BASE
-            JNZ FNUMS2
-            ADD #1,TOS              ;                   TOS = limit for base 10
-FNUMS2      PUSHM  #2,TOS           ;                   PUSHM TOS,IP  TOS=limit IP count
+FNUMS
+            MOV 2(PSP),X            ; -- Qlo Qhi u      X = Qlo
+            MOV @PSP,2(PSP)         ; -- Qhi Qhi u
+            MOV X,0(PSP)            ; -- Qhi Qlo u
+            PUSHM #2,TOS            ;                   PUSHM TOS,IP  TOS=limit IP
+            MOV #0,S                ;                   S=count
             MOV #FNUMSNEXT,IP       ; -- Qhi Qlo limit
-            MOV #0,S
 FNUMSLOOP   PUSH S                  ;                   R-- limit IP count
             MOV &BASE,TOS           ; -- Qhi Qlo base
             MOV #UMSTAR,PC 
@@ -179,7 +257,7 @@ FNUMS2CHAR  ADD #30h,TOS
             ADD #1,S                ;                       count+1
             CMP 2(RSP),S            ;3                      count=limit ?
             JLO FNUMSLOOP           ;                       no
-            POPM  #2,TOS            ; -- Qhi Qlorem limit   POPM IP,TOS
+            POPM #2,TOS             ; -- Qhi Qlorem limit   POPM IP,TOS
             MOV #0,0(PSP)           ; -- Qhi 0 limit
             MOV #HOLDS_ORG,X        ; -- Qhi 0 len          X= org
             JMP HOLDS1
@@ -244,10 +322,10 @@ FSTAR1   mDOCOL
 
     .ENDIF
 
-        FORTHWORD "F."      ; display a Q15.16 number
+        FORTHWORD "F."      ; display a Q15.16 number with 4 digits after comma
         mDOCOL
         .word   LESSNUM,DUP,TOR,DABBS
-        .word   FNUMS,lit,',',HOLD,NUMS
+        .word   lit,4,FNUMS,lit,',',HOLD,NUMS
         .word   RFROM,SIGN,NUMGREATER,TYPE,SPACE,EXIT
         
         FORTHWORD "S>F"     ; convert a signed number to a Q15.16 (signed) number

@@ -12,86 +12,11 @@ S"              CR              TYPE            SPACES          SPACE           
 EMIT            ACCEPT          KEY             C,              ALLOT           HERE            .               
 D.              U.              SIGN            HOLD            #>              #S              #               
 UM/MOD          <#              STATE           BASE            BL              J               I               
-UNLOOP          U<              0>              >               <               =               0<              
-0=              DABS            1-              1+              1-              1+              -               
-+               C!              C@              !               @               DEPTH           R@              
-R>              >R              ROT             OVER            SWAP            NIP             DROP            
-?DUP            DUP             LIT             EXIT
-
-
-ASSEMBLER vocabulary
---------------------
-
-?GOTO           GOTO            FW3             FW2             FW1             BW3             BW2             
-BW1             ?JMP            JMP             REPEAT          WHILE           AGAIN           UNTIL           
-ELSE            THEN            IF              0=              0<>             U>=             U<              
-0<              0>=             S<              S>=             RRUM            RLAM            RRAM            
-RRCM            POPM            PUSHM           CALL            PUSH.B          PUSH            SXT             
-RRA.B           RRA             SWPB            RRC.B           RRC             AND.B           AND             
-XOR.B           XOR             BIS.B           BIS             BIC.B           BIC             BIT.B           
-BIT             DADD.B          DADD            CMP.B           CMP             SUB.B           SUB             
-SUBC.B          SUBC            ADDC.B          ADDC            ADD.B           ADD             MOV.B           
-MOV             RETI            LO2HI           COLON           ENDASM          ENDCODE         SLEEP
-
-ASM             CODE            HI2LO           (added in forth vocabulary)
-
-
-CONDCOMP ADD-ON
----------------
-MARKER          [DEFINED]       [UNDEFINED]     [IF]            [ELSE]          [THEN]          COMPARE         
-
-
-VOCABULARY ADD-ON
------------------
-DEFINITIONS     ONLY            PREVIOUS        ALSO            ASSEMBLER       FORTH           VOCABULARY
-
-
-ANS_COMPLEMENT ADD-ON
----------------------
-PAD             SOURCE          .(              (               DECIMAL         HEX             
-FILL            [CHAR]          CHAR            +!              MIN             MAX             2/              
-2*              RSHIFT          LSHIFT          XOR             OR              AND             INVERT          
-2OVER           2SWAP           2DROP           2DUP            2!              2@              S>D             
-CELL+           CELLS           CHAR+           CHARS           ALIGN           ALIGNED         */              
-*/MOD           MOD             /               /MOD            *               FM/MOD          SM/REM          
-M*              UM*             {ANS_COMP}
-
-
-SD_CARD_LOADER ADD-ON
----------------------
-LOAD"           CIB
-
-
-SD_CARD_READ_WRITE ADD-ON
--------------------------
-TERM2SD"        SD_EMIT         WRITE           READ            CLOSE           DEL"            WRITE"          
-READ"
-
-
-SD_CARD_READ_WRITE ADD-ON
--------------------------
-TERM2SD"        SD_EMIT         WRITE           READ            CLOSE           DEL"            WRITE"          
-READ"
-
-
-UTILITY BOOTLOADER
-------------------
-BOOT
-
-QUIT becomes a DEFERed word
-
-
-SD_TOOLS ADD-ON
----------------
-DIR             FAT             CLUSTER         SECTOR          {SD_TOOLS}
-
-
-; a word within brackets [] is an immediate word. (other words may also be immediate)
-; when ADD-ONs are compiled into the kernel, their respective MARKER word identified with braces {} does nothing.
-; when ADD-ONs are downloaded, their respective MARKER word identified with braces {} removes all ADD-ONs words.
-
-FORTH WORDS
------------
+UNLOOP          U<              >               <               =               0<              0=              
+DABS            1-              1+              1-              1+              -               +               
+C!              C@              !               @               DEPTH           R@              R>              
+>R              ROT             OVER            SWAP            NIP             DROP            ?DUP            
+DUP             LIT             EXIT
 
 COLD            Software reset
 
@@ -181,7 +106,6 @@ U<              https://forth-standard.org/standard/core/Uless
 >               https://forth-standard.org/standard/core/more
 <               https://forth-standard.org/standard/core/less
 =               https://forth-standard.org/standard/core/Equal
-0>              https://forth-standard.org/standard/core/Zeromore
 0<              https://forth-standard.org/standard/core/Zeroless
 0=              https://forth-standard.org/standard/core/ZeroEqual
 DABS            https://forth-standard.org/standard/double/DABS
@@ -210,11 +134,24 @@ LIT             execution part of LITERAL
 EXIT            https://forth-standard.org/standard/core/EXIT
 
 
-
 ASSEMBLER vocabulary
 --------------------
-set see: http://www.ece.utep.edu/courses/web3376/Notes_files/ee3376-isa.pdf
-         howto.md for symbolic alias of registers, symbolic jumps (IF ELSE THEN...),..
+
+?GOTO           GOTO            FW3             FW2             FW1             BW3             BW2             
+BW1             ?JMP            JMP             REPEAT          WHILE           AGAIN           UNTIL           
+ELSE            THEN            IF              0=              0<>             U>=             U<              
+0<              0>=             S<              S>=             RRUM            RLAM            RRAM            
+RRCM            POPM            PUSHM           CALL            PUSH.B          PUSH            SXT             
+RRA.B           RRA             SWPB            RRC.B           RRC             AND.B           AND             
+XOR.B           XOR             BIS.B           BIS             BIC.B           BIC             BIT.B           
+BIT             DADD.B          DADD            CMP.B           CMP             SUB.B           SUB             
+SUBC.B          SUBC            ADDC.B          ADDC            ADD.B           ADD             MOV.B           
+MOV             RETI            LO2HI           COLON           ENDASM          ENDCODE         SLEEP
+
+ASM             CODE            HI2LO           (added in forth vocabulary)
+
+see: http://www.ece.utep.edu/courses/web3376/Notes_files/ee3376-isa.pdf
+     howto.md for symbolic alias of registers, symbolic jumps (IF ELSE THEN...),..
 
 ?GOTO           used after a conditionnal (0=,0<>,U>=,U<,0<,S<,S>=) to branch to a label FWx or BWx
 GOTO            used as unconditionnal branch to a label FWx or BWx
@@ -304,6 +241,8 @@ RETI            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=170
 
 CONDCOMP ADD-ON
 ---------------
+MARKER          [DEFINED]       [UNDEFINED]     [IF]            [ELSE]          [THEN]          COMPARE         
+
 [DEFINED]       https://forth-standard.org/standard/tools/BracketDEFINED
 [UNDEFINED]     https://forth-standard.org/standard/tools/BracketUNDEFINED
 [IF]            https://forth-standard.org/standard/tools/BracketIF
@@ -312,8 +251,11 @@ CONDCOMP ADD-ON
 COMPARE         https://forth-standard.org/standard/string/COMPARE
 MARKER          https://forth-standard.org/standard/core/MARKER
 
-VOCABULARY ADD-ON (not ANS)
+
+VOCABULARY ADD-ON
 -----------------
+DEFINITIONS     ONLY            PREVIOUS        ALSO            ASSEMBLER       FORTH           VOCABULARY
+
 DEFINITIONS     https://forth-standard.org/standard/search/DEFINITIONS
 ONLY            https://forth-standard.org/standard/search/ONLY
 PREVIOUS        https://forth-standard.org/standard/search/PREVIOUS
@@ -322,8 +264,62 @@ ASSEMBLER       assembler VOCABULARY
 FORTH           FORTH VOCABULARY
 VOCABULARY <word>     creates a new VOCABULARY named word
 
+
+NONAME ADD-ON
+---------------------
+:NONAME         CODENNM
+
+:NONAME         https://forth-standard.org/standard/core/ColonNONAME 
+CODENNM         assembly counterpart of :NONAME
+
+
+SD_CARD_LOADER ADD-ON
+---------------------
+LOAD"           CIB
+
+LOAD"           LOAD" SD_TEST.4TH" loads and compile source file SD_TEST.4TH.
+CIB             Currrent Input Buffer, TIB by default.
+
+ACCEPT becomes a DEFERed word
+
+
+SD_CARD_READ_WRITE ADD-ON
+-------------------------
+TERM2SD"        SD_EMIT         WRITE           READ            CLOSE           DEL"            WRITE"          
+READ"
+
+TERM2SD"        TERM2SD" SD_TEST.4TH" copy input file to SD_CARD (use CopySourceFileToTarget_SD_Card.bat to do)
+SD_EMIT         sends output stream at the end of last opened as write file.
+WRITE           write sequentially BUFFER content to a sector
+READ            read sequentially a sector to BUFFER
+CLOSE           close last opened file.
+DEL"            DEL" SD_TEST.4TH" remove this file from SD_CARD.
+WRITE"          WRITE" TRUC" open or create TRUC file ready to write to the end of this file
+READ"           READ" TRUC" open TRUC and load its first sector in BUFFER
+
+
+
+BOOTLOADER
+----------
+BOOT
+
+QUIT becomes a DEFERed word
+
+
+; when ADD-ONs are compiled into the kernel, their respective MARKER word identified with braces {} does nothing.
+; when ADD-ONs are downloaded, their respective MARKER word identified with braces {} removes all ADD-ONs words.
+
+
 ANS_COMPLEMENT ADD-ON
 ---------------------
+PAD             SOURCE          .(              (               DECIMAL         HEX             
+FILL            [CHAR]          CHAR            +!              MIN             MAX             2/              
+2*              RSHIFT          LSHIFT          XOR             OR              AND             INVERT          
+2OVER           2SWAP           2DROP           2DUP            2!              2@              S>D             
+CELL+           CELLS           CHAR+           CHARS           ALIGN           ALIGNED         */              
+*/MOD           MOD             /               /MOD            *               FM/MOD          SM/REM          
+M*              UM*             {ANS_COMP}
+
 PAD             https://forth-standard.org/standard/core/PAD            
 >IN             https://forth-standard.org/standard/core/toIN
 >BODY           https://forth-standard.org/standard/core/toBODY
@@ -372,27 +368,29 @@ UM*             https://forth-standard.org/standard/core/UMTimes
 {ANS_COMP}
 
 
-SD_CARD_LOADER ADD-ON
----------------------
-LOAD"           LOAD" SD_TEST.4TH" loads and compile source file SD_TEST.4TH.
-CIB             Currrent Input Buffer, TIB by default.
+FIXPOINT ADD-ON
+---------------
 
-ACCEPT becomes a DEFERed word
+2CONSTANT       S>F             F.              F*              F#S             
+F/              F-              F+              HOLDS           {FIXPOINT}
 
-SD_CARD_READ_WRITE ADD-ON
--------------------------
-TERM2SD"        TERM2SD" SD_TEST.4TH" copy input file to SD_CARD (use CopySourceFileToTarget_SD_Card.bat to do)
-SD_EMIT         sends output stream at the end of last opened as write file.
-WRITE           write sequentially BUFFER content to a sector
-READ            read sequentially a sector to BUFFER
-CLOSE           close last opened file.
-DEL"            DEL" SD_TEST.4TH" remove this file from SD_CARD.
-WRITE"          WRITE" TRUC" open or create TRUC file ready to write to the end of this file
-READ"           READ" TRUC" open TRUC and load its first sector in BUFFER
-
+2CONSTANT       https://forth-standard.org/standard/double/TwoCONSTANT
+S>F             u/n -- Qlo Qhi       convert u/n in a s15.16 value
+F.              display a s15.16 value
+F*              s15.16 multiplication  
+F#S             Qlo Qhi u -- Qhi 0    
+                convert fractionnal part of a s15.16 value displaying u digits
+F/              s15.16 division        
+F-              s15.16 soustraction
+F+              s15.16 addition
+HOLDS           https://forth-standard.org/standard/core/HOLDS
+{FIXPOINT}      do nothing if compiled in core, else remove all FIXPOINT add-on.
 
 UTILITY ADD-ON
 --------------
+
+DUMP            U.R             WORDS           ?               .RS             .S              {TOOLS}
+
 DUMP            https://forth-standard.org/standard/tools/DUMP  
 U.R   u z --    display unsigned number u with size z
 WORDS           https://forth-standard.org/standard/tools/WORDS 
@@ -401,11 +399,16 @@ WORDS           https://forth-standard.org/standard/tools/WORDS
 .S              https://forth-standard.org/standard/tools/DotS
 {TOOLS}         do nothing if compiled in core.
 
+
 SD_TOOLS ADD-ON
 ---------------
+
+DIR             FAT             CLUSTER         SECTOR          {SD_TOOLS}
+
 DIR             dump first sector of current directory
 FAT             dump first sector of FAT1
 CLUSTER         .123 CLUSTER displays first sector of cluster 123
 SECTOR          .123456789 SECTOR displays sector 123456789
 {SD_TOOLS}      if you type {SD_TOOLS}  all subsequent loaded words are removed
+
 

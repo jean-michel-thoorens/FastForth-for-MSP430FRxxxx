@@ -210,7 +210,7 @@ HANDSHAKIN  .set    P2IN
 
 RTS         .set    8           ; P2.3 bit position
 
-            BIS #00800h,&PADIR  ; all pins as input else RTS P2.3
+            BIS #00800h,&PADIR  ; all pins as input else RTS P2.3 as output
             BIS #-1,&PAREN      ; all input pins with resistor
 
         .IFDEF TERMINAL5WIRES
