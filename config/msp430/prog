@@ -1,33 +1,23 @@
 #!/bin/bash
 device=$1
 if   [ ${device:0:16}  == "MSP_EXP430FR5739" ]; then
-    device=MSP430FR5739 
-elif [ ${device:0:16}  == "MSP_EXP430FR5969" ]; then 
+    device=MSP430FR5739
+elif [ ${device:0:16}  == "MSP_EXP430FR5969" ]; then
     device=MSP430FR5969
-elif [ ${device:0:16}  == "MSP_EXP430FR5994" ]; then 
+elif [ ${device:0:16}  == "MSP_EXP430FR5994" ]; then
     device=MSP430FR5994
-elif [ ${device:0:16}  == "MSP_EXP430FR6989" ]; then 
+elif [ ${device:0:16}  == "MSP_EXP430FR6989" ]; then
     device=MSP430FR6989
-elif [ ${device:0:16}  == "MSP_EXP430FR4133" ]; then 
+elif [ ${device:0:16}  == "MSP_EXP430FR4133" ]; then
     device=MSP430FR4133
-elif [ ${device:0:16}  == "CHIPSTICK_FR2433" ]; then 
+elif [ ${device:0:16}  == "CHIPSTICK_FR2433" ]; then
     device=MSP430FR2433
-elif [ ${device:0:15}  == "MY_MSP430FR5738" ]; then  
-    device=MSP430FR5738
-elif [ ${device:0:15}  == "MY_MSP430FR5948" ]; then  
-    device=MSP430FR5948
-elif [c${device:0:7}   == "JMJ_BOX" ]; then          
-    device=MSP430FR5738
+elif [ ${device:0:16}  == "MSP_EXP430FR2433" ]; then
+    device=MSP430FR2433
+elif [ ${device:0:16}  == "MSP_EXP430FR2355" ]; then
+    device=MSP430FR2355
 fi
-echo $device 
+echo $device
 
-
-$HOME/MSP430Flasher/MSP430Flasher -s -m SBW2 -n $device -v -w $1.txt  -z [RESET,VCC]
 MSP430Flasher -s -m SBW2 -n $device -v -w $1.txt  -z [RESET,VCC]
 
-#mspdebug  ezfet prog $1.txt
-#mspdebug  --allow-fw-update tilib
-
-#mspdebug  tilib  prog $device $1.txt
-#mspdebug --fet-list tilib
-#mspdebug --fet-list ezfet

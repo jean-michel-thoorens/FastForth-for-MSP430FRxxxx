@@ -31,7 +31,7 @@ exit
 
 
 :preprocess
-%~d1\prog\gema\gema.exe -nobackup -line -t -f  %~d1\config\gema\%~n2.pat %1 %~dp1\last.4th 
+%~d1\prog\gema\gema.exe -nobackup -line -t '\n=\r\n;\r\n=\r\n' -f  %~d1\config\gema\%~n2.pat %1 %~dp1\last.4th 
 exit
 
 :: %~dpn1.f is the symbolic source file

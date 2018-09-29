@@ -1,0 +1,21 @@
+# Fichier généré automatiquement - utilisez le menu de configuration de
+# minicom pour changer les paramètres.
+pu pname9           YUYNNascii
+pu pprog9           /usr/bin/ascii-xfr -sv
+pu port             /dev/ttyUSB0
+pu baudrate         4000000
+pu updir            /media/jeanmi/DATA/CloudStation/projets/msp430/MSP430-FORTH
+pu rtscts           No
+pu xonxoff          Yes
+pu zauto            I
+pu mfcolor          GREEN
+pu mbcolor          BLACK
+pu tfcolor          GREEN
+pu sfcolor          GREEN
+pu macenab          No
+pu histlines        5000
+pu convcap          No 
+pu askdndir         Yes
+pu addlinefeed      No 
+pu linewrap         Yes
+pu addcarreturn     Yes

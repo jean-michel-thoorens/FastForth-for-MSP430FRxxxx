@@ -296,10 +296,10 @@ CURRENT=\$1DDA!         CURRENT dictionnary ptr
 
 !BASE=\$1DDC!           numeric base, must be defined before first reset !
 LINE=\$1DDE!            line in interpretation, activated with NOECHO, desactivated with ECHO
-! ---------------------------------------
-!1DE0! 14 RAM bytes free conditionnaly
-! ---------------------------------------
-!SAV_CURRENT=\$21E0!    preserve CURRENT when create assembler words
+! -----------------------------------------
+!1DE0! 14 RAM bytes free out of compilation
+! -----------------------------------------
+!SAV_CURRENT=\$1DE0!    preserve CURRENT when create assembler words
 !ASMBW1=\$1DE2          assembler backward reference 1
 !ASMBW2=\$1DE4          assembler backward reference 2
 !ASMBW3=\$1DE6          assembler backward reference 3
@@ -541,7 +541,7 @@ UCA0BRW=\$5C6!
 UCA0BR0=\$5C6!      \ eUSCI_A baud rate 0
 UCA0BR1=\$5C7!      \ eUSCI_A baud rate 1
 UCA0MCTLW=\$5C8!    \ eUSCI_A modulation control
-UCA0STAT=\$5CA!     \ eUSCI_A status
+UCA0STATW=\$5CA!     \ eUSCI_A status
 UCA0RXBUF=\$5CC!    \ eUSCI_A receive buffer
 UCA0TXBUF=\$5CE!    \ eUSCI_A transmit buffer
 UCA0ABCTL=\$5D0!    \ eUSCI_A LIN control

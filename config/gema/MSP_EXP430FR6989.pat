@@ -18,15 +18,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+\.f=\.4th!      to change file type
 !
+@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 !
 ! ======================================================================
 ! MSP430FR6989 Config
 ! ======================================================================
-
 @define{@read{@mergepath{@inpath{};MSP430FR6989.pat;}}}
 @define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
-@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 
 ! ======================================================================
 ! MSP_EXP430FR6989 board
@@ -111,6 +111,22 @@ TERM_REN=\$226!
 TERM_SEL=\$22C!
 TERM_IE=\$23A!
 TERM_IFG=\$23C!
+
+TERM_CTLW0=\$5E0!    \ eUSCI_A control word 0
+TERM_CTLW1=\$5E2!    \ eUSCI_A control word 1
+TERM_BRW=\$5E6!
+TERM_BR0=\$5E6!      \ eUSCI_A baud rate 0
+TERM_BR1=\$5E7!      \ eUSCI_A baud rate 1
+TERM_MCTLW=\$5E8!    \ eUSCI_A modulation control
+TERM_STAT=\$5EA!     \ eUSCI_A status
+TERM_RXBUF=\$5EC!    \ eUSCI_A receive buffer
+TERM_TXBUF=\$5EE!    \ eUSCI_A transmit buffer
+TERM_ABCTL=\$5F0!    \ eUSCI_A LIN control
+TERM_IRTCTL=\$5F2!   \ eUSCI_A IrDA transmit control
+TERM_IRRCTL=\$5F3!   \ eUSCI_A IrDA receive control
+TERM_IE=\$5FA!       \ eUSCI_A interrupt enable
+TERM_IFG=\$5FC!      \ eUSCI_A interrupt flags
+TERM_IV=\$5FE!       \ eUSCI_A interrupt vector word
 
 RTS=2!              ; P3.1
 CTS=1!              ; P3.0

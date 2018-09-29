@@ -1,12 +1,16 @@
 ; -----------------------------------
-; RC5toLCD.4th
+; RC5toLCD.f
 ; -----------------------------------
+\
+\ FastForth Compiling options used :
+\ DTC=2, FREQUENCY=8/16/24MHz, THREADS=16, 
+\ nnn bauds, 3WIRES, 4WIRES,
+\ ASSEMBLER, CONDCOMP, NONAME, UTILITY.
 
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR2355
-
-    \
+\
 \ Copyright (C) <2016>  <J.M. THOORENS>
 \
 \ This program is free software: you can redistribute it and/or modify
@@ -21,52 +25,52 @@
 \
 \ You should have received a copy of the GNU General Public License
 \ along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
+\
+\
 \ ===========================================================================
 \ remember: for good downloading to target, all lines must be ended with CR+LF !
 \ ===========================================================================
-
-
+\
+\
 \ REGISTERS USAGE
 \ R4 to R7 must be saved before use and restored after
 \ scratch registers Y to S are free for use
 \ under interrupt, IP is free for use
 \ interrupts reset SR register !
-
+\
 \ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
 \ PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
-
+\
 \ example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
 \
 \ POPM  order :  PC,RSP, SR, R3, rDODOES,rDOCON,rDOVAR,rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
 \ POPM  order :  R0, R1, R2, R3,   R4   ,  R5  ,  R6  ,  R7 , R8, R9,R10,R11,R12,R13,R14,R15
-
+\
 \ example : POPM #6,IP   pop Y,X,W,T,S,IP registers from return stack
-
+\
 \ ASSEMBLER conditionnal usage after IF UNTIL WHILE : S< S>= U< U>= 0= 0<> 0>=
 \ ASSEMBLER conditionnal usage before ?JMP ?GOTO    : S< S>= U< U>= 0= 0<> 0< 
-
+\
 \ FORTH conditionnal    : 0= 0< = < > U<
-
+\
 \ display on a LCD 2x20 CHAR the code sent by an IR remote under philips RC5 protocol
 \ target : any TI MSP-EXP430FRxxxx launchpad (FRAM)
 \ LPM_MODE = LPM0 because use SMCLK for LCDVo
-
+\
 \ DEMO : driver for IR remote compatible with the PHILIPS RC5 protocol
 \ plus : driver for 5V LCD 2x20 characters display with 4 bits data interface
 \        without usage of an auxiliary 5V to feed the LCD_Vo
 \        and without potentiometer to adjust the LCD contrast :
 \        to adjust LCD contrast, just press S1 (-) or S2 (+)
 \        LCDVo current consumption ~ 500 uA.
-
+\
 \ ===================================================================================
 \ notice : adjust WDT_TIM_EX0,LCD_TIM_CTL,LCD_TIM_EX0 and 20_us to the target frequency if <> 8MHz !
 \ ===================================================================================
-
-
+\
+\
 \ layout : I/O are defined in the launchpad.pat file (don't work with ChipStick_FR2433)
-
+\
 \  GND  <-------+---0V0---------->  1 LCD_Vss
 \  VCC  >------ | --3V6-----+---->  2 LCD_Vdd
 \               |           |
@@ -83,27 +87,26 @@
 \       <------------------------> 12 LCD_DB5
 \       <------------------------> 13 LCD_DB5
 \       <------------------------> 14 LCD_DB7
-
+\
 \       <----- LCD contrast + <---    Sw1   <--- (finger) :-)
 \       <----- LCD contrast - <---    Sw2   <--- (finger) :-)
-
+\
 \ rc5   <--- OUT IR_Receiver (1 TSOP32236)
 
 [DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]     \ remove application
 
 [DEFINED] ASM [IF]      \ security test
-    \
+
 MARKER {RC5TOLCD}
-    \
+
 [UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {ANS_COMP}
-    \
+
 CODE MAX    \    n1 n2 -- n3       signed maximum
     CMP @PSP,TOS    \ n2-n1
     S<  ?GOTO FW1   \ n2<n1
 BW1 ADD #2,PSP
     MOV @IP+,PC
 ENDCODE
-    \
 
 CODE MIN    \    n1 n2 -- n3       signed minimum
     CMP @PSP,TOS     \ n2-n1
@@ -113,7 +116,6 @@ FW1 MOV @PSP+,TOS
 ENDCODE
 
 [THEN]
-    \
 
 [UNDEFINED] U.R [IF]        \ defined in {UTILITY}
 : U.R                       \ u n --           display u unsigned in n width (n >= 2)
@@ -121,7 +123,6 @@ ENDCODE
   R> OVER - 0 MAX SPACES TYPE
 ;
 [THEN]
-    \
 
 \ CODE 20_US                      \ n --      n * 20 us
 \ BEGIN                           \ 3 cycles loop + 6~  
@@ -138,7 +139,6 @@ ENDCODE
 \     MOV     @PSP+,TOS           \ 2
 \     MOV     @IP+,PC             \ 4
 \ ENDCODE
-\     \
 
 CODE 20_US                  \ n --      n * 20 us
 BEGIN                       \ here we presume that LCD_TIM_IFG = 1...
@@ -151,7 +151,6 @@ U< UNTIL                    \ 2 ...so add a dummy loop with U< instead of 0=
 MOV @PSP+,TOS               \ 2
 MOV @IP+,PC                 \ 4
 ENDCODE
-    \
 
 CODE TOP_LCD                    \ LCD Sample
 \                               \ if write : %xxxxWWWW --
@@ -172,7 +171,6 @@ THEN                            \ read LCD bits pattern
     AND.B #LCD_DB,TOS           \
     MOV @IP+,PC
 ENDCODE
-    \
 
 CODE LCD_W                      \ byte --       write byte to LCD 
     SUB #2,PSP                  \
@@ -184,54 +182,48 @@ COLON                           \ high level word starts here
     TOP_LCD 2 20_US             \ write high nibble first
     TOP_LCD 2 20_US 
 ;
-    \
 
 CODE LCD_WrC                    \ char --         Write Char
     BIS.B #LCD_RS,&LCD_CMD_OUT  \ lcd_rs=1
     JMP LCD_W 
 ENDCODE
-    \
 
 CODE LCD_WrF                    \ func --         Write Fonction
     BIC.B #LCD_RS,&LCD_CMD_OUT  \ lcd_rs=0
     JMP LCD_W 
 ENDCODE
-    \
 
 : LCD_Clear 
     $01 LCD_WrF 100 20_us      \  $01 LCD_WrF 80 20_us ==> bad init !
 ;
-    \
 
 : LCD_Home 
     $02 LCD_WrF 100 20_us 
 ;
-    \
 
 [UNDEFINED] OR [IF]
-    \
+
 \ https://forth-standard.org/standard/core/OR
 \ C OR     x1 x2 -- x3           logical OR
 CODE OR
 BIS @PSP+,TOS
 MOV @IP+,PC
 ENDCODE
-    \
 
 [THEN]
-    \
+
 : LCD_Entry_set     $04 OR LCD_WrF ;
-    \
+
 : LCD_DSP_Ctrl      $08 OR LCD_WrF ;
-    \
+
 : LCD_DSP_Shift     $10 OR LCD_WrF ;
-    \
+
 : LCD_Fn_Set        $20 OR LCD_WrF ;
-    \
+
 : LCD_CGRAM_Set     $40 OR LCD_WrF ;
-    \
+
 : LCD_Goto          $80 OR LCD_WrF ;
-    \
+
 CODE LCD_R                      \ -- byte       read byte from LCD
     BIC.B #LCD_DB,&LCD_DB_DIR   \ LCD_Data as intput
     BIS.B #LCD_RW,&LCD_CMD_OUT  \ lcd_rw=1
@@ -244,19 +236,16 @@ HI2LO                           \ switch from FORTH to assembler
     MOV @RSP+,IP                \ restore IP saved by COLON
     MOV @IP+,PC                 \
 ENDCODE
-    \
 
 CODE LCD_RdS                    \ -- status       Read Status
     BIC.B #LCD_RS,&LCD_CMD_OUT  \ lcd_rs=0
     JMP LCD_R
 ENDCODE
-    \
 
 CODE LCD_RdC                    \ -- char         Read Char
     BIS.B #LCD_RS,&LCD_CMD_OUT  \ lcd_rs=1
     JMP LCD_R
 ENDCODE
-    \
 
 
 \ ******************************\
@@ -284,7 +273,6 @@ BW3                             \ from end of RC5_INT
 BIC #$78,0(RSP)                 \ 4  SCG0,OSCOFF,CPUOFF and GIE are OFF in retiSR to force LPM0_LOOP despite pending interrupt
 RETI                            \ 5
 ENDASM
-    \
 
 \ ******************************\
 ASM RC5_INT                     \   wake up on Px.RC5 change interrupt
@@ -299,9 +287,15 @@ ASM RC5_INT                     \   wake up on Px.RC5 change interrupt
 \ ******************************\
 \ RC5_FirstStartBitHalfCycle:   \
 \ ******************************\                division in RC5_TIM_CTL (SMCLK/1|SMCLK/1|SMCLK/2|SMCLK/4|SMCLK/8)
-\ MOV #0,&RC5_TIM_EX0           \ predivide by 1 in RC5_TIM_EX0 register ( 125kHz|  1MHz |  2MHZ |  4MHZ |  8MHZ ), reset value
-  MOV #1,&RC5_TIM_EX0           \ predivide by 2 in RC5_TIM_EX0 register ( 250kHZ|  2MHz |  4MHZ |  8MHZ | 16MHZ )
-\ MOV #2,&RC5_TIM_EX0           \ predivide by 3 in RC5_TIM_EX0 register ( 375kHz|  3MHz |  6MHZ | 12MHZ | 24MHZ )
+\ FREQ_KHZ @ 8000 = [IF]        \ 8 MHz ?
+\     MOV #0,&RC5_TIM_EX0       \ predivide by 1 in RC5_TIM_EX0 register ( 125kHz|  1MHz |  2MHZ |  4MHZ |  8MHZ ), reset value
+\ [THEN]
+FREQ_KHZ @ 16000 = [IF]         \ 16 MHz ?
+    MOV #1,&RC5_TIM_EX0         \ predivide by 2 in RC5_TIM_EX0 register ( 250kHZ|  2MHz |  4MHZ |  8MHZ | 16MHZ )
+[THEN]
+FREQ_KHZ @ 24000 = [IF]         \ 24 MHz ?
+    MOV #2,&RC5_TIM_EX0         \ predivide by 3 in RC5_TIM_EX0 register ( 375kHz|  3MHz |  6MHZ | 12MHZ | 24MHZ )
+[THEN]
 \ MOV #3,&RC5_TIM_EX0           \ predivide by 4 in RC5_TIM_EX0 register ( 500kHZ|  4MHz |  8MHZ | 16MHZ )
 \ MOV #4,&RC5_TIM_EX0           \ predivide by 6 in RC5_TIM_EX0 register ( 625kHz|  5MHz | 10MHZ | 20MHZ )
 \ MOV #5,&RC5_TIM_EX0           \ predivide by 6 in RC5_TIM_EX0 register ( 750kHz|  6MHz | 12MHZ | 24MHZ )
@@ -394,20 +388,23 @@ MOV @PSP+,TOS                   \
 GOTO BW3
 \ ******************************\
 ENDASM
-    \ 
 
 \ ------------------------------\
-ASM BACKGROUND                  \ 
+ASM BACKGROUND                  \
 \ ------------------------------\
 \ ...                           \ insert here your background task
 \ ...                           \
 \ ...                           \
-MOV #SLEEP,X                    \ 2 Must be the last statement of BACKGROUND
-ADD #4,X                        \ 1 X = BODY of SLEEP
-MOV X,PC                        \ 3 
+BIS #LPM_MODE,SR                \
 ENDASM                          \
-\ ------------------------------\
-    \
+\ ******************************\
+\ here start all interrupts     \
+\ ******************************\
+\ here return all interrupts    \
+\ ******************************\
+CODENNM                         \
+JMP BACKGROUND                  \
+ENDCODE DROP                    \
 
 CODE START                      \
 \ ------------------------------\
@@ -549,26 +546,44 @@ LO2HI                           \ no need to push IP because (WARM) resets the R
     LIT RECURSE IS WARM         \ replace WARM by this START routine
     ABORT                       \ and continue with the next word after WARM...
 ;                               \ ...until interpreter falls in sleep mode within ACCEPT.
-    \
 
 CODE STOP                   \ stops multitasking, must to be used before downloading app
 \ restore default action of primary DEFERred word SLEEP, assembly version
     MOV #SLEEP,X            \ the ASM word SLEEP is only visible in mode assembler. 
     ADD #4,X                \ X = BODY of SLEEP
     MOV X,-2(X)             \ restore the default background
-
 COLON
 \ restore default action of primary DEFERred word WARM, FORTH version
     ['] WARM >BODY IS WARM  \ remove START app from FORTH init process
-
     COLD                    \ because we want to reset CPU and interrupt vectors
 ;
-    \
 
 ECHO
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
-    \
+
 [THEN]      \ ASM
-    \
+
+
+: BS 8 EMIT ;   \ 8 EMIT = BackSpace EMIT
+: ESC #27 EMIT ;
+: specs         \ to see Fast Forth specifications
+PWR_STATE       \ remove specs definition when running, and before bytes free processing
+6 0 DO BS LOOP  \ to reach start of line
+ESC ." [7m"     \ set reverse video
+." FastForth "
+INI_THREAD @ U. BS ." Threads " \ vocabularies threads
+." DeviceID=$"
+$10 BASE ! $1A04 @ U. #10 BASE ! 
+FREQ_KHZ @ 0 1000 UM/MOD U. BS
+?DUP
+IF   ." ," U. BS                \ if remainder
+THEN ." MHz "                   \ MCLK
+FRAM_FULL HERE - U. ." bytes free"
+ESC ." [0m"                     \ clear reverse video
+;
+
+specs   \ here FastForth type a (volatile) message with some informations
+
+
 START

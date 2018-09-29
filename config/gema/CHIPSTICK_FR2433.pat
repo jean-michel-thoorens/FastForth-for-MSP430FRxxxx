@@ -18,15 +18,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+\.f=\.4th!      to change file type
 !
+@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 !
 ! ======================================================================
 ! MSP430FR2433 Config
 ! ======================================================================
-
 @define{@read{@mergepath{@inpath{};MSP430FR2433.pat;}}}
 @define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
-@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 
 ! ---------------------------------------------------
 ! CHIPSTICK_FR2433 <--> OUTPUT WORLD
@@ -76,21 +76,26 @@ TERM_SEL=\$20C!
 TERM_IE=\$21A!
 TERM_IFG=\$21C!
 
+TERM_CTLW0=\$500!    \ eUSCI_A control word 0        
+TERM_CTLW1=\$502!    \ eUSCI_A control word 1        
+TERM_BRW=\$506!         
+TERM_BR0=\$506!      \ eUSCI_A baud rate 0           
+TERM_BR1=\$507!      \ eUSCI_A baud rate 1           
+TERM_MCTLW=\$508!    \ eUSCI_A modulation control    
+TERM_STATW=\$50A!     \ eUSCI_A status                
+TERM_RXBUF=\$50C!    \ eUSCI_A receive buffer        
+TERM_TXBUF=\$50E!    \ eUSCI_A transmit buffer       
+TERM_ABCTL=\$510!    \ eUSCI_A LIN control           
+TERM_IRTCTL=\$512!   \ eUSCI_A IrDA transmit control 
+TERM_IRRCTL=\$513!   \ eUSCI_A IrDA receive control  
+TERM_IE=\$51A!       \ eUSCI_A interrupt enable      
+TERM_IFG=\$51C!      \ eUSCI_A interrupt flags       
+TERM_IV=\$51E!       \ eUSCI_A interrupt vector word 
+
 RTS=4!              ; P3.2
 CTS=1!              ; P3.0
 HANDSHAKIN=\$220!
 HANDSHAKOUT=\$222!
-
-SD_CD=8!        ; P2.3 as SD_CD
-SD_CS=4!        ; P2.2 as SD_CS     
-SD_CDIN=\$201!
-SD_CSOUT=\$203!
-SD_CSDIR=\$205!
-
-SD_SEL=\$20C!   ; to configure UCB0
-SD_REN=\$206!   ; to configure pullup resistors
-SD_BUS=\$0E!    ; pins P1.1 as UCB0CLK, P1.2 as UCB0SIMO & P1.3 as UCB0SOMI
-
 
 ! ============================================
 ! APPLICATION I/O :
@@ -161,4 +166,15 @@ I2CS_Vec=\$FFE0!
 SSDA=\$40!          P1.2
 SSCL=\$80!          P1.3
 S_BUS=\$C0!
+
+
+SD_CD=8!        ; P2.3 as SD_CD
+SD_CS=4!        ; P2.2 as SD_CS     
+SD_CDIN=\$201!
+SD_CSOUT=\$203!
+SD_CSDIR=\$205!
+
+SD_SEL=\$20C!   ; to configure UCB0
+SD_REN=\$206!   ; to configure pullup resistors
+SD_BUS=\$0E!    ; pins P1.1 as UCB0CLK, P1.2 as UCB0SIMO & P1.3 as UCB0SOMI
 

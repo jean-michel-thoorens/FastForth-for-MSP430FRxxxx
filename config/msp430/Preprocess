@@ -1,1 +1,4 @@
-gema -nobackup -line -t -f  $FF/config/gema/$2.pat $1.f $1.4th 
+gema -nobackup -line -t '\n=\r\n;\r\n=\r\n'  -f  $FF/config/gema/$2.pat $1.f LAST.4th 
+
+cat LAST.4th | sed -i -e 's/\n/\r\n/g' LAST.4th > /dev/ttyUSB0
+

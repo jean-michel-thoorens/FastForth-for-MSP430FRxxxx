@@ -18,15 +18,14 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-!
+\.f=\.4th!      to change file type
+@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 !
 ! ======================================================================
 ! MSP430FR5994 Config
 ! ======================================================================
-
 @define{@read{@mergepath{@inpath{};MSP430FR5994.pat;}}}
 @define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
-@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 
 ! ======================================================================
 ! MSP_EXP430FR5994 board
@@ -154,6 +153,22 @@ TERM_SEL=\$20D!
 TERM_IE=\$21B!
 TERM_IFG=\$21D!
 
+TERM_CTLW0=\$5C0!    \ eUSCI_A control word 0        
+TERM_CTLW1=\$5C2!    \ eUSCI_A control word 1        
+TERM_BRW=\$5C6!         
+TERM_BR0=\$5C6!      \ eUSCI_A baud rate 0           
+TERM_BR1=\$5C7!      \ eUSCI_A baud rate 1           
+TERM_MCTLW=\$5C8!    \ eUSCI_A modulation control    
+TERM_STATW=\$5CA!     \ eUSCI_A status                
+TERM_RXBUF=\$5CC!    \ eUSCI_A receive buffer        
+TERM_TXBUF=\$5CE!    \ eUSCI_A transmit buffer       
+TERM_ABCTL=\$5D0!    \ eUSCI_A LIN control           
+TERM_IRTCTL=\$5D2!   \ eUSCI_A IrDA transmit control 
+TERM_IRRCTL=\$5D3!   \ eUSCI_A IrDA receive control  
+TERM_IE=\$5DA!       \ eUSCI_A interrupt enable      
+TERM_IFG=\$5DC!      \ eUSCI_A interrupt flags       
+TERM_IV=\$5DE!       \ eUSCI_A interrupt vector word 
+
 RTS=4!              ; P4.2
 CTS=2!              ; P4.1
 HANDSHAKIN=\$221!
@@ -169,6 +184,27 @@ SD_CSDIR=\$225!
 SD_SEL1=\$20C!      ; word access, to configure UCB0
 SD_REN=\$206!       ; word access, to configure pullup resistors
 SD_BUS=\$04C0!      ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
+
+SD_CTLW0=\$640!    \ eUSCI_B control word 0          
+SD_CTLW1=\$642!    \ eUSCI_B control word 1 
+SD_BRW=\$646!         
+SD_BR0=\$646!      \ eUSCI_B bit rate 0              
+SD_BR1=\$647!      \ eUSCI_B bit rate 1              
+SD_STATW=\$648!    \ eUSCI_B status word 
+SD_NT0=\$649!      \ eUSCI_B hardware count           
+SD_TBCNT=\$64A!    \ eUSCI_B byte counter threshold  
+SD_RXBUF=\$64C!    \ eUSCI_B receive buffer          
+SD_TXBUF=\$64E!    \ eUSCI_B transmit buffer         
+SD_I2COA0=\$654!   \ eUSCI_B I2C own address 0       
+SD_I2COA1=\$656!   \ eUSCI_B I2C own address 1       
+SD_I2COA2=\$658!   \ eUSCI_B I2C own address 2       
+SD_I2COA3=\$65A!   \ eUSCI_B I2C own address 3       
+SD_ADDRX=\$65C!    \ eUSCI_B received address        
+SD_ADDMASK=\$65E!  \ eUSCI_B address mask            
+SD_I2CSA=\$660!    \ eUSCI I2C slave address         
+SD_IE=\$66A!       \ eUSCI interrupt enable          
+SD_IFG=\$66C!      \ eUSCI interrupt flags           
+SD_IV=\$66E!       \ eUSCI interrupt vector word     
 
 
 ! ============================================

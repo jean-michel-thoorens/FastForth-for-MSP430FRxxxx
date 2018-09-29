@@ -1,9 +1,5 @@
 
 
-    .IFNDEF LOWERCASE
-    .WARNING "uncomment LOWERCASE ADD-ON to pass coretest COMPARE !"
-    .ENDIF ; LOWERCASE
-
 ;COMPARE ( c-addr1 u1 c-addr2 u2 -- n )
 ;https://forth-standard.org/standard/string/COMPARE
 ;Compare the string specified by c-addr1 u1 to the string specified by c-addr2 u2. 

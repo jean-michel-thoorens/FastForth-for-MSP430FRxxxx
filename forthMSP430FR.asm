@@ -48,8 +48,8 @@ VER .equ "V206"
 ;MSP_EXP430FR5969   ; compile for MSP-EXP430FR5969 launchpad        ;  26 + 3950 bytes
 ;MSP_EXP430FR5994   ; compile for MSP-EXP430FR5994 launchpad        ;  26 + 3968 bytes
 ;MSP_EXP430FR6989   ; compile for MSP-EXP430FR6989 launchpad        ;  26 + 3978 bytes
-MSP_EXP430FR4133   ;; compile for MSP-EXP430FR4133 launchpad        ;  26 + 4012 bytes
-;MSP_EXP430FR2355   ; compile for MSP-EXP430FR2355 launchpad        ;  26 + 3944 bytes
+;MSP_EXP430FR4133   ; compile for MSP-EXP430FR4133 launchpad        ;  26 + 4012 bytes
+MSP_EXP430FR2355   ;; compile for MSP-EXP430FR2355 launchpad        ;  26 + 3944 bytes
 ;MSP_EXP430FR2433   ; compile for MSP-EXP430FR2433 launchpad        ;  26 + 3930 bytes
 ;CHIPSTICK_FR2433   ; compile for the "CHIPSTICK" of M. Ken BOAK    ;  26 + 3922 bytes
 
@@ -62,7 +62,7 @@ THREADS     .equ 16 ;  1,  2 ,  4 ,  8 ,  16,  32  search entries in dictionnary
                     ; +0, +28, +40, +56, +90, +154 bytes, usefull to speed compilation;
                     ; choose 16
 
-FREQUENCY   .equ 16  ; fully tested at 0.25,0.5,1,2,4,8,16 (and 24 for MSP430FR57xx) MHz
+FREQUENCY   .equ 24  ; fully tested at 0.25,0.5,1,2,4,8,16 (and 24 for MSP430FR57xx) MHz
 
 ;-------------------------------------------------------------------------------
 ; KERNEL ADD-ON SWITCHES
@@ -70,7 +70,7 @@ FREQUENCY   .equ 16  ; fully tested at 0.25,0.5,1,2,4,8,16 (and 24 for MSP430FR5
 MSP430ASSEMBLER     ;; + 1814 bytes : adds embedded assembler with TI syntax; without, you can do all but all much more slowly...
 CONDCOMP            ;; +  324 bytes : adds conditionnal compilation : MARKER [UNDEFINED] [DEFINED] [IF] [ELSE] [THEN] COMPARE
 FIXPOINT_INPUT      ;; +   78 bytes : adds the interpretation input for S15.16 numbers, mandatory for FIXPOINT
-LOWERCASE           ;; +   46 bytes : enables to write strings in lowercase.
+LOWERCASE           ;; +   46 bytes : enables to write strings in lowercase (whose VT100 set_up sequences...)
 VOCABULARY_SET      ;; +  104 bytes : adds words: VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83)
 ;SD_CARD_LOADER      ; + 1748 bytes : to LOAD source files from SD_card
 ;SD_CARD_READ_WRITE  ; + 1192 bytes : to read, create, write and del files + source files direct copy from PC to SD_Card
@@ -84,7 +84,7 @@ NONAME              ;; +   64 bytes : adds :NONAME CODENNM (CODENoNaMe)
 ; Tip: when added here, ADD-ONs become protected against WIPE and Deep Reset...                         |
 ;-------------------------------------------------------------------------------                        v
 ;UARTtoI2C           ;                to redirect source file to a I2C TERMINAL FastForth device    UART2IIC.f
-;FIXPOINT            ; +  422/532 bytes (MPY/noMPY): add HOLDS F+ F- F/ F* F#S F. S>F 2@ 2CONSTANT  FIXPOINT.f
+;FIXPOINT            ; +  422/528 bytes (MPY/noMPY): add HOLDS F+ F- F/ F* F#S F. S>F 2@ 2CONSTANT  FIXPOINT.f
 UTILITY             ;; +  434/524 bytes (1/16threads) : add .S .RS WORDS U.R DUMP ?                 UTILITY.f
 ;SD_TOOLS            ; +  142 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, adds UTILITY     SD_TOOLS.f
 ;ANS_CORE_COMPLIANT  ; +  876 bytes : required to pass coretest.4th ; (includes items below)        ANS_COMP.f
@@ -98,7 +98,7 @@ UTILITY             ;; +  434/524 bytes (1/16threads) : add .S .RS WORDS U.R DUM
 ; FAST FORTH TERMINAL configuration
 ;-------------------------------------------------------------------------------
 
-TERMINALBAUDRATE    .equ 115200 ; choose value considering the frequency and the UART2USB bridge, see explanations below.
+TERMINALBAUDRATE    .equ 6000000 ; choose value considering the frequency and the UART2USB bridge, see explanations below.
                     .include "TERMINALBAUDRATE.inc"
 
 ;HALFDUPLEX          ; to use FAST FORTH with half duplex terminal
@@ -1063,35 +1063,35 @@ FSTATE      mDOCON
 ; ANS complement OPTION
 ;-------------------------------------------------------------------------------
     .IFDEF ANS_CORE_COMPLIANT
-    .include "ADDON\ANS_COMPLEMENT.asm"
+    .include "ADDON/ANS_COMPLEMENT.asm"
     .ELSEIF
 
 ;-------------------------------------------------------------------------------
 ; ALIGNMENT OPERATORS OPTION
 ;-------------------------------------------------------------------------------
         .IFDEF ALIGNMENT ; included in ANS_COMPLEMENT
-        .include "ADDON\ALIGNMENT.asm"
+        .include "ADDON/ALIGNMENT.asm"
         .ENDIF ; ALIGNMENT
 
 ;-------------------------------------------------------------------------------
 ; PORTABILITY OPERATORS OPTION
 ;-------------------------------------------------------------------------------
         .IFDEF PORTABILITY
-        .include "ADDON\PORTABILITY.asm"
+        .include "ADDON/PORTABILITY.asm"
         .ENDIF ; PORTABILITY
 
 ;-------------------------------------------------------------------------------
 ; DOUBLE OPERATORS OPTION
 ;-------------------------------------------------------------------------------
         .IFDEF DOUBLE ; included in ANS_COMPLEMENT
-        .include "ADDON\DOUBLE.asm"
+        .include "ADDON/DOUBLE.asm"
         .ENDIF ; DOUBLE
 
 ;-------------------------------------------------------------------------------
 ; ARITHMETIC OPERATORS OPTION
 ;-------------------------------------------------------------------------------
         .IFDEF ARITHMETIC ; included in ANS_COMPLEMENT
-        .include "ADDON\ARITHMETIC.asm"
+        .include "/ADDON/ARITHMETIC.asm"
         .ENDIF ; ARITHMETIC
 
     .ENDIF ; ANS_COMPLEMENT
@@ -1269,13 +1269,13 @@ CCOMMA      MOV &DDP,W
 ; TERMINAL I/O, input part
 ; ------------------------------------------------------------------------------
 
-
 ;https://forth-standard.org/standard/core/KEY
 ;C KEY      -- c      wait character from input device ; primary DEFERred word
             FORTHWORD "KEY"
-KEY         MOV @PC+,PC
-            .word   BODYKEY
-BODYKEY     MOV &TERMRXBUF,Y        ; empty buffer
+KEY         MOV @PC+,PC             ;3 Code Field Address (CFA) of KEY
+PFAKEY      .word   BODYKEY         ;  Parameter Field Address (PFA) of KEY
+BODYKEY                             ;  BODY of KEY = default execution of KEY
+            MOV &TERMRXBUF,Y        ; empty buffer
             SUB #2,PSP              ; 1  push old TOS..
             MOV TOS,0(PSP)          ; 4  ..onto stack
             CALL #RXON
@@ -1291,32 +1291,10 @@ KEYLOOP     BIT #UCRXIFG,&TERMIFG   ; loop if bit0 = 0 in interupt flag register
 
     .IFDEF SD_CARD_LOADER
     .include "forthMSP430FR_SD_ACCEPT.asm"
-DEFER_INPUT ; CIB (Current Input Buffer) and ACCEPT must to be redirected for SD_LOAD usage
+DEFER_ACCEPT ; CIB (Current Input Buffer) and ACCEPT must to be redirected for SD_LOAD usage
     .ENDIF
 
-    .IFDEF DEFER_INPUT
-
-; CIB           --  addr          of Current Input Buffer
-            FORTHWORD "CIB"
-FCIB        mDOCON
-            .WORD    TIB_ORG        ; constant, may be redirected as SDIB_ORG by OPEN.
-
-; : REFILL CIB DUP TIB_LEN ACCEPT ;   -- CIB CIB len    shared by QUIT and [ELSE]
-REFILL      SUB #6,PSP              ;2
-            MOV TOS,4(PSP)          ;3
-            MOV #TIB_LEN,TOS        ;2
-            MOV &FCIB+2,0(PSP)      ;5
-            MOV @PSP,2(PSP)         ;4
-            JMP ACCEPT              ;2
-
-;https://forth-standard.org/standard/core/ACCEPT
-;C ACCEPT  addr addr len -- addr len'  get line at addr to interpret len' chars
-            FORTHWORD "ACCEPT"
-ACCEPT      MOV @PC+,PC             ;3
-            .word   BODYACCEPT
-BODYACCEPT
-
-    .ELSE
+    .IFNDEF DEFER_ACCEPT
 
 ; : REFILL TIB DUP TIB_LEN ACCEPT ;   -- TIB TIB len    shared by QUIT and [ELSE]
 REFILL      SUB #6,PSP              ;2
@@ -1331,7 +1309,29 @@ REFILL      SUB #6,PSP              ;2
             FORTHWORD "ACCEPT"
 ACCEPT
 
-    .ENDIF ; DEFER_INPUT
+    .ELSE
+
+; CIB           --  addr          of Current Input Buffer
+            FORTHWORD "CIB"         ; constant, may be redirected as SDIB_ORG by OPEN.
+FCIB        mDOCON                  ; Code Field Address (CFA) of FCIB 
+PFACIB      .WORD    TIB_ORG        ; Parameter Field Address (PFA) of FCIB
+
+; : REFILL CIB DUP TIB_LEN ACCEPT ;   -- CIB CIB len    shared by QUIT and [ELSE]
+REFILL      SUB #6,PSP              ;2
+            MOV TOS,4(PSP)          ;3
+            MOV #TIB_LEN,TOS        ;2
+            MOV &PFACIB,0(PSP)      ;5
+            MOV @PSP,2(PSP)         ;4
+            JMP ACCEPT              ;2
+
+;https://forth-standard.org/standard/core/ACCEPT
+;C ACCEPT  addr addr len -- addr len'  get line at addr to interpret len' chars
+            FORTHWORD "ACCEPT"
+ACCEPT      MOV @PC+,PC             ;3 Code Field Address (CFA) of ACCEPT
+PFAACCEPT   .word   BODYACCEPT      ;  Parameter Field Address (PFA) of ACCEPT
+BODYACCEPT                          ;  BODY of ACCEPT = default execution of ACCEPT
+
+    .ENDIF ; DEFER_ACCEPT
 
     .IFDEF  HALFDUPLEX  ; to use FAST FORTH with half duplex input terminal (bluetooth or wifi connexion)
 
@@ -1345,7 +1345,7 @@ ACCEPT
 ; 3- the time between sending XON/RTS_low and clearing UCRXIFG on first received char,
 ; everything must be done to reduce these times, taking into account the necessity of switching to SLEEP (LPMx mode).
 ; ----------------------------------;
-; (ACCEPT) I prepare TERMINAL_INT   ;
+; ACCEPT part I prepare TERMINAL_INT;
 ; ----------------------------------;
     .IFDEF TOTAL
             PUSHM #4,R7             ;6              push R7,R6,R5,R4
@@ -1401,10 +1401,11 @@ RXOFF                               ;
 
 
 ; ----------------------------------;
-    ASMWORD "SLEEP"                 ; may be redirected
-SLEEP       MOV @PC+,PC             ;3
-            .word   BODYSLEEP       ;
-BODYSLEEP  BIS &LPM_MODE,SR         ;3  enter in LPMx sleep mode with GIE=1
+    ASMWORD "SLEEP"                 ;   may be redirected
+SLEEP       MOV @PC+,PC             ;3  Code Field Address (CFA) of SLEEP
+PFASLEEP    .word   BODYSLEEP       ;   Parameter Field Address (PFA) of SLEEP
+BODYSLEEP                           ;   BODY of SLEEP = default execution of SLEEP
+           BIS &LPM_MODE,SR         ;3  enter in LPMx sleep mode with GIE=1
 ; ----------------------------------;   default FAST FORTH mode (for its input terminal use) : LPM0.
 
 ;###############################################################################################################
@@ -1520,14 +1521,14 @@ ACCEPTEND   SUB @PSP+,TOS           ; Org Ptr -- len'
 ;https://forth-standard.org/standard/core/EMIT
 ;C EMIT     c --    output character to the output device ; primary DEFERred word
             FORTHWORD "EMIT"
-EMIT        MOV @PC+,PC             ;3  15~
-            .word   BODYEMIT
-BODYEMIT    MOV TOS,Y               ; 1
+EMIT        MOV @PC+,PC             ;3 Code Field Address (CFA) of EMIT
+PFAEMIT     .word   BODYEMIT        ;  Parameter Field Address (PFA) of EMIT
+BODYEMIT                            ;  BODY of EMIT = default execution of EMIT
+            MOV TOS,Y               ; 1
             MOV @PSP+,TOS           ; 2
             JMP YEMIT1              ;9  12~
 
     .ENDIF  ; HALFDUPLEX
-
 
 ;Z ECHO     --      connect console output (default)
             FORTHWORD "ECHO"
@@ -1589,9 +1590,10 @@ TWODROP     ADD #2,PSP              ;
 ;https://forth-standard.org/standard/core/CR
 ;C CR      --               send CR to the output device
             FORTHWORD "CR"
-CR          MOV @PC+,PC
-            .word   BODYCR
-BODYCR     mDOCOL
+CR          MOV @PC+,PC             ;3 Code Field Address (CFA) of CR
+PFACR       .word   BODYCR          ;  Parameter Field Address (PFA) of CR
+BODYCR                              ;  BODY of CR = default execution of CR
+            mDOCOL
             .word   XSQUOTE
             .byte   2,13,10
             .word   TYPE,EXIT
@@ -1709,7 +1711,6 @@ EOL_END     MOV &DDP,TOS            ;3 -- c-addr
             MOV.B Y,0(TOS)          ;3
             mNEXT                   ;4 -- c-addr     40 words      Z=1 <==> lenght=0 <==> EOL
 
-
 ;https://forth-standard.org/standard/core/FIND
 ;C FIND   c-addr -- c-addr 0   if not found ; flag Z=1
 ;C                  xt -1      if found     ; flag Z=0
@@ -1801,7 +1802,6 @@ TONUMEND    MOV S,0(PSP)            ;3 -- ud1lo ud1hi adr2 count2
             MOV Y,2(PSP)            ;3 -- ud1lo ud2hi adr2 count2
             MOV X,4(PSP)            ;3 -- ud2lo ud2hi adr2 count2
             mNEXT                   ;4 41 words
-
 
 ; ?NUMBER makes the interface between >NUMBER and INTERPRET; it's a subset of INTERPRET.
 ; convert a string to a signed number; FORTH 2012 prefixes $, %, # are recognized
@@ -2228,9 +2228,9 @@ BOOT    ASMtoFORTH                  ;
 ;https://forth-standard.org/standard/core/QUIT
 ;c QUIT  --     interpret line by line the input stream, primary DEFERred word
         FORTHWORD "QUIT"
-QUIT    MOV @PC+,PC
-        .word   BODYQUIT           ; this word may be replaced by BOOT
-BODYQUIT
+QUIT    MOV @PC+,PC                 ;3 Code Field Address (CFA) of QUIT
+PFAQUIT .word   BODYQUIT            ;  Parameter Field Address (PFA) of QUIT
+BODYQUIT                            ;  BODY of QUIT = default execution of QUIT
 
     .ELSE ; if no BOOTLOADER, QUIT is not DEFERred
 
@@ -2270,16 +2270,16 @@ ABORT       MOV #PSTACK,PSP
             JMP QUIT
 
 WIP_DEFER   ; WIPE resets ALL factory primary DEFERred words
-            MOV #BODYWARM,&WARM+2       ; ' WARM >BODY IS WARM    default init
-            MOV #SLEEP+4,&SLEEP+2       ; MOV #SLEEP,X ADD #4,X MOV X,-2(X) default background task
+            MOV #BODYWARM,&PFAWARM      ; ' WARM >BODY IS WARM    default init
+            MOV #BODYSLEEP,&PFASLEEP    ; MOV #SLEEP,X ADD #4,X MOV X,-2(X) default background task
 QAB_DEFER   ; QABORT resets some primary DEFERred words
-            MOV #BODYEMIT,&EMIT+2       ;4 ' EMIT >BODY IS EMIT   default console output
-            MOV #BODYCR,&CR+2           ;4 ' CR >BODY IS CR       default CR
-            MOV #BODYKEY,&KEY+2         ;4 ' KEY >BODY IS KEY     default KEY
+            MOV #BODYEMIT,&PFAEMIT      ;4 ' EMIT >BODY IS EMIT   default console output
+            MOV #BODYCR,&PFACR          ;4 ' CR >BODY IS CR       default CR
+            MOV #BODYKEY,&PFAKEY        ;4 ' KEY >BODY IS KEY     default KEY
 
-    .IFDEF DEFER_INPUT                  ;  true if SD_LOADER
-            MOV #BODYACCEPT,&ACCEPT+2   ;4 ' ACCEPT >BODY IS ACCEPT
-            MOV #TIB_ORG,&FCIB+2        ;4 TIB_ORG TO CIB  (Current Input Buffer)
+    .IFDEF DEFER_ACCEPT                  ;  true if SD_LOADER
+            MOV #BODYACCEPT,&PFAACCEPT  ;4 ' ACCEPT >BODY IS ACCEPT
+            MOV #TIB_ORG,&PFACIB        ;4 TIB_ORG TO CIB  (Current Input Buffer)
     .ENDIF
     .IFDEF MSP430ASSEMBLER              ; reset all 6 branch labels
             MOV #10,Y
@@ -2303,6 +2303,9 @@ THREEDROP   ADD #4,PSP
             mNEXT
 
 QABORTYES   MOV #4882h,&YEMIT       ;       restore default YEMIT = set ECHO
+; ----------------------------------;
+QABORT_SDCARD                       ;       
+; ----------------------------------;
     .IFDEF SD_CARD_LOADER           ;       close all handles
             MOV &CurrentHdl,T
 QABORTCLOSE CMP #0,T
@@ -2315,13 +2318,14 @@ QABORTCLOSEND
 ; ----------------------------------;
 QABORTYESNOECHO                     ; <== WARM jumps here, thus, if NOECHO, TERMINAL can be disconnected without freezing the app
 ; ----------------------------------;
-            CALL #QAB_DEFER         ; restore default part of primary DEFERred words ....except WARM and SLEEP.
+            CALL #QAB_DEFER
 ; ----------------------------------;
 QABORTTERM                          ; wait the end of source file downloading
 ; ----------------------------------;
     .IFDEF TERMINAL3WIRES           ;
             BIT #UCTXIFG,&TERMIFG   ; TX buffer empty ?
             JZ QABORTTERM           ; no
+; ----------------------------------;
             MOV #17,&TERMTXBUF      ; yes move XON char into TX_buf
     .ENDIF                          ;
     .IFDEF TERMINAL4WIRES           ;
@@ -2335,22 +2339,23 @@ QABUSBLOOPI NOP                     ; 1~        <---+   |
             JNZ QABUSBLOOPI         ; 2~ > 4~ loop -+   |
             SUB #1,Y                ; 1~                |
             JNZ QABUSBLOOPJ         ; 2~ --> 36~ loop --+
-            BIT #UCRXIFG,&TERMIFG   ; 4 new char in TERMXBUF after refill time out ?
+            BIT #UCRXIFG,&TERMIFG   ; 4 new char in TERMRXBUF after refill time out ?
             JNZ QABORTLOOP          ; 2 yes, the input stream (download source file) is still active
 ; ----------------------------------;
-; Display WARM/ABORT message        ;   no, the input stream is quiet (end of download source file)
+; Display ABORT message             ;   no, the input stream is quiet (end of download source file)
 ; ----------------------------------;
             mDOCOL                  ;
             .word   XSQUOTE         ; -- c-addr u c-addr1 u1
-            .byte   4,27,"[7m"      ;
+            .byte   4,27,"[7m"      ;    type ESC[7m
             .word   TYPE            ; -- c-addr u       set reverse video
 ERRLINE     .word   lit,LINE,FETCH,QDUP;       if LINE <> 0
             .word   QBRAN,ERRLINE_END
+            .word   ECHO            ;
             .word   XSQUOTE         ;       displays the line where error occured
             .byte   5,"line:"       ;
             .word   TYPE            ;
-            .word   ONEMINUS,UDOT   ;
-            .word   ECHO            ;
+            .word   ONEMINUS        ;
+            .word   UDOT            ;
 ERRLINE_END .word   TYPE            ; --                type abort message
             .word   XSQUOTE         ; -- c-addr2 u2
             .byte   4,27,"[0m"      ;
@@ -2626,7 +2631,7 @@ DEFER       CALL #HEADER             ; that create a secondary DEFERred word (wh
             JMP REVEAL
 
 ;https://forth-standard.org/standard/core/toBODY
-; >BODY     -- PFA      leave BODY of a CREATEd word or of a primary DEFERred word
+; >BODY     -- addr      leave BODY of a CREATEd word or of a primary DEFERred word
             FORTHWORD ">BODY"
             ADD     #4,TOS
             mNEXT
@@ -2798,6 +2803,7 @@ MOVUP2      MOV.B @X,0(Y)       ; if X=src < Y=dst copy W bytes up
             JNZ MOVUP1
 MOVE_X      mNEXT
 
+
 ;-------------------------------------------------------------------------------
 ; WORDS SET for VOCABULARY, not ANS compliant
 ;-------------------------------------------------------------------------------
@@ -2832,9 +2838,11 @@ VOCDOES     .word   LIT,CONTEXT,STORE
     .IFDEF VOCABULARY_SET
             FORTHWORD "FORTH"
     .ENDIF ; VOCABULARY_SET
-FORTH       mDODOES                     ; leave BODYFORTH on the stack and run VOCDOES
-            .word   VOCDOES
-BODYFORTH   .word   lastforthword
+FORTH                                   ; leave BODYFORTH on the stack and run VOCDOES
+            mDODOES                     ; Code Field Address (CFA) of FORTH
+PFAFORTH    .word   VOCDOES             ; Parameter Field Address (PFA) of FORTH
+BODYFORTH                               ; BODY of FORTH
+            .word   lastforthword
     .SWITCH THREADS
     .CASE   2
             .word   lastforthword1
@@ -3018,9 +3026,9 @@ SIGNLOOP    SUB #2,X
 ;Z WARM   --    ; deferred word used to init your application
                 ; define this word:  : START ...init app here... LIT RECURSE IS WARM (WARM) ;
             FORTHWORD "WARM"
-WARM        MOV @PC+,PC                 ;3
-            .word   BODYWARM
-BODYWARM
+WARM        MOV @PC+,PC                 ;3  Code Field Address (CFA) of WARM
+PFAWARM     .word   BODYWARM            ;   Parameter Field Address (PFA) of WARM
+BODYWARM                                ;   BODY of WARM (default execution of WARM)
 ;            SUB     #4,PSP
 ;            MOV     &SYSSNIV,0(PSP)
 ;            MOV     &SYSUNIV,2(PSP)
@@ -3134,7 +3142,10 @@ COLD_END
     .ELSE
         FORTHtoASM
         .IF RAM_LEN < 2048      ; case of MSP430FR57xx : SD datas are in FRAM
-        MOV #0,&CurrentHDL      ; init this FRAM area to pass QABORT
+            MOV #SD_LEN,X       ; so are not initialised by COLD/RESET
+ClearSDdata SUB #2,X            ;
+            MOV #0,SD_ORG(X)    ;
+            JNZ ClearSDdata     ;
         .ENDIF
         BIT.B #SD_CD,&SD_CDIN   ; SD_memory in SD_Card module ?
         JNZ WARM                ; no

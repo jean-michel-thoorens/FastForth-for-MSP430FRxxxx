@@ -18,19 +18,19 @@ IF /I "%~x1" == ".4TH" GOTO 4th
 :: %~d1 is the drive of arg %1
 :: %~n2 is your selected template by SelectTarget.bat or your scite $(1)
 
-IF "%~x1" == "" ( 
+IF "%~x1" == "" (
 echo no file to be preprocessed!
-goto badend 
+goto badend
 )
 
 IF NOT EXIST %~dpn1.f (
 echo %~dpn1.f not found!
-goto badend 
+goto badend
 )
 
 IF NOT EXIST %~d1\config\gema\%~n2.pat (
 echo %~d1\config\gema\%~n2.pat not found!
-goto badend 
+goto badend
 )
 
 IF /I "%3" == "" GOTO preprocessF
@@ -46,7 +46,7 @@ exit
 
 
 :preprocessF
-@%~d1\prog\gema\gema.exe -nobackup -line -t -f  %~d1\config\gema\%~n2.pat %~dpn1.f %~dpn1.4th 
+@%~d1\prog\gema\gema.exe -nobackup -line -t '\n=\r\n;\r\n=\r\n' -f  %~d1\config\gema\%~n2.pat %~dpn1.f %~dpn1.4th
 
 :DownloadF
 @taskkill /F /IM ttermpro.exe 1> NUL 2>&1
@@ -80,7 +80,7 @@ shift /3
 
 IF NOT EXIST %~dpn1.4th (
 echo %~dpn1.4th not found!
-goto badend 
+goto badend
 )
 
 if /I "%2"=="" GOTO Download4th
@@ -89,10 +89,11 @@ if /I "%2"=="NOECHO" GOTO Download4th
 if /I "%2"=="HALF" GOTO Download4th
 
 echo unexpected 2th parameter %2 !
-goto badend 
+goto badend
 
 
 :Download4th
+
 @taskkill /F /IM ttermpro.exe 1> NUL 2>&1
 
 :Win324th

@@ -16,15 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+\.f=\.4th!      to change file type
 !
+@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 !
 ! ======================================================================
 ! MSP430FR2355 Config
 ! ======================================================================
-
 @define{@read{@mergepath{@inpath{};MSP430FR2355.pat;}}}
 @define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
-!@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
 
 ! ======================================================================
 ! INIT MSP-EXP430FR2355 board
@@ -162,21 +162,26 @@ TERM_IE=\$23B!
 TERM_IFG=\$23D!
 TERM_Vec=\$FFE2!        UCA1
 
+TERM_CTLW0=\$580!    \ eUSCI_A1 control word 0
+TERM_CTLW1=\$582!    \ eUSCI_A1 control word 1
+TERM_BRW=\$586!
+TERM_BR0=\$586!      \ eUSCI_A1 baud rate 0
+TERM_BR1=\$587!      \ eUSCI_A1 baud rate 1
+TERM_MCTLW=\$588!    \ eUSCI_A1 modulation control
+TERM_STATW=\$58A!     \ eUSCI_A1 status
+TERM_RXBUF=\$58C!    \ eUSCI_A1 receive buffer
+TERM_TXBUF=\$58E!    \ eUSCI_A1 transmit buffer
+TERM_ABCTL=\$590!    \ eUSCI_A1 LIN control
+TERM_IRTCTL=\$592!   \ eUSCI_A1 IrDA transmit control
+TERM_IRRCTL=\$593!   \ eUSCI_A1 IrDA receive control
+TERM_IE=\$59A!       \ eUSCI_A1 interrupt enable
+TERM_IFG=\$59C!      \ eUSCI_A1 interrupt flags
+TERM_IV=\$59E!       \ eUSCI_A1 interrupt vector word
+
 RTS=1!                  P2.0
 CTS=2!                  P2.1
 HANDSHAKIN=\$201!
 HANDSHAKOUT=\$203!
-
-SD_CD=\$10!             P4.4 as SD_CD
-SD_CDIN=\$221!
-SD_CS=\$20!             P2.5 as SD_CS     
-SD_CSOUT=\$203!
-SD_CSDIR=\$205!
-
-SD_SEL=\$22D!           P4SEL0 to configure UCB1
-SD_REN=\$227!           P4REN to configure pullup resistors
-SD_BUS=\$7000!          pins P4.5 as UCB1CLK, P4.6 as UCB1SIMO & P4.7 as UCB1SOMI
-
 
 ! ============================================
 ! APPLICATION I/O :
@@ -295,4 +300,15 @@ I2CS_Vec=\$FFE0!        UCB0
 SSDA=4!                 P1.2
 SSCL=8!                 P1.3
 S_BUS=\$0C!
+
+SD_CD=\$10!             P4.4 as SD_CD
+SD_CDIN=\$221!
+SD_CS=\$20!             P2.5 as SD_CS     
+SD_CSOUT=\$203!
+SD_CSDIR=\$205!
+
+SD_SEL=\$22D!           P4SEL0 to configure UCB1
+SD_REN=\$227!           P4REN to configure pullup resistors
+SD_BUS=\$7000!          pins P4.5 as UCB1CLK, P4.6 as UCB1SIMO & P4.7 as UCB1SOMI
+
 

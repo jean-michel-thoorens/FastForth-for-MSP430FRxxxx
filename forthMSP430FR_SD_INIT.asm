@@ -137,18 +137,6 @@
 ; FirstSectorOfCluster(n) = OrgCluster + n*BPB_SecPerClus       ==> cluster(6) = 30368
 
 ; ===========================================================
-; 0- Init FRAM SD datas, case of MSP430FR57xx
-; ===========================================================
-
-    .IF RAM_LEN < 2048          ; case of MSP430FR57xx : SD datas are in FRAM
-        MOV #SD_LEN_DATA,X      ; so are not initialised by COLD/RESET
-InitSDdata                      ;
-        SUB #2,X
-        MOV #0,SD_ORG_DATA(X)   ;
-        JNZ InitSDdata          ;
-    .ENDIF
-
-; ===========================================================
 ; 1- Init eUSCI dedicated to SD_Card SPI driver
 ; ===========================================================
 
@@ -180,7 +168,7 @@ SEND_CMD0                           ; CMD0 : GO_IDLE_STATE expected SPI_R1 respo
     JZ      INIT_CMD8               ; if idle state
 SD_INIT_ERROR                       ;
     MOV     #SD_CARD_ERROR,PC       ; ReturnError = $04R1, case of defectuous card (or insufficient SD_POWER_ON clk)
-; ----------------------------------;
+; ----------------------------------; see forthMSP430FR_SD_lowLvl.asm
 INIT_CMD8                           ; mandatory if SD_Card >= V2.x     [11:8]supply voltage(VHS)
 ; ----------------------------------;
     CALL    #SPI_GET                ; (needed to pass SanDisk ultra 8GB "HC I")

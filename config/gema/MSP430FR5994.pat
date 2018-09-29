@@ -164,7 +164,6 @@ NOP=MOV \#0,R3!     \                one word one cycle
 NOP2=\$3C00 ,!      \ compile JMP 0  one word two cycles
 NOP3=MOV R0,R0!     \ MOV PC,PC      one word three cycles
 NEXT=MOV \@R13+,R0! \ MOV @IP+,PC   
-SEMI=MOV \@R1+,R13\nMOV \@R13+,R0!
 
 
 ! =================================================
@@ -757,7 +756,6 @@ MPUSAM=\$5A6!       \ MPU access management
 MPUIPC0=\$5AA!      \ MPU IP control 0                      
 MPUIPSEGB2=\$5AC!   \ MPU IP Encapsulation Segment Border 2 
 MPUIPSEGB1=\$5AE!   \ MPU IP Encapsulation Segment Border 1 
-
 
 UCA0CTLW0=\$5C0!    \ eUSCI_A control word 0        
 UCA0CTLW1=\$5C2!    \ eUSCI_A control word 1        
