@@ -18,8 +18,11 @@
 !
 \.f=\.4th!      to change file type
 !
-@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
-!
+!========================
+! remove comments        
+!========================
+\\*\n=
+\s\\*\n=\n
 ! ======================================================================
 ! MSP430FR2355 Config
 ! ======================================================================
@@ -155,9 +158,9 @@ TERM_TX=\$8!            P4.3 = TX also Deep_RST pin
 TERM_RX=\$4!            P4.2 = RX
 TERM_BUS=\$0C!
 
-TERM_IN=\$220!
+TERM_IN=\$221!          P4
 TERM_REN=\$227!
-TERM_SEL=\$22D!
+TERM_SEL=\$22B!
 TERM_IE=\$23B!
 TERM_IFG=\$23D!
 TERM_Vec=\$FFE2!        UCA1
@@ -168,7 +171,7 @@ TERM_BRW=\$586!
 TERM_BR0=\$586!      \ eUSCI_A1 baud rate 0
 TERM_BR1=\$587!      \ eUSCI_A1 baud rate 1
 TERM_MCTLW=\$588!    \ eUSCI_A1 modulation control
-TERM_STATW=\$58A!     \ eUSCI_A1 status
+TERM_STATW=\$58A!    \ eUSCI_A1 status
 TERM_RXBUF=\$58C!    \ eUSCI_A1 receive buffer
 TERM_TXBUF=\$58E!    \ eUSCI_A1 transmit buffer
 TERM_ABCTL=\$590!    \ eUSCI_A1 LIN control

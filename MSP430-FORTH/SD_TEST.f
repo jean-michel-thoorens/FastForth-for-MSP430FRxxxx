@@ -1,23 +1,27 @@
-
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133  MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
+\
 
+; -----------
+; SD_TEST.f
+; -----------
+\
 \ how to test SD_CARD driver on your launchpad:
-
-
+\
+\
 \ remove the jumpers RX, TX of programming port (don't remove GND, TST, RST and VCC)
 \ wire PL2303TA/HXD: GND <-> GND, RX <-- TX, TX --> RX
 \ connect it to your PC on a free USB port
 \ connect the PL2303TA/HXD cable to your PC on another free USB port
 \ configure TERATERM as indicated in forthMSP430FR.asm
-
-
+\
+\
 \ if you have a MSP-EXP430FR5994 launchpad, program it with MSP_EXP430FR5994_3Mbds_SD_CARD.txt
 \ to do, drag and drop this file onto prog.bat
 \ nothing else to do!
-
-
+\
+\
 \ else edit forthMSP430FR.asm with scite editor
 \   uncomment your target, copy it
 \   paste it into (SHIFT+F8) param1
@@ -36,22 +40,21 @@
 \   program your target via TI interface (CTRL+1)
 \
 \   then wire your SD_Card module as described in your MSP430-FORTH\target.pat file
-
-
-
-
+\
+\
+\
 \ format FAT16 or FAT32 a SD_CARD memory (max 64GB) with "FRxxxx" in the disk name
 \ drag and drop \MSP430_COND\MISC folder on the root of this SD_CARD memory (FastForth doesn't do yet)
 \ put it in your target SD slot
 \ if no reset, type COLD from the console input (teraterm) to reset FAST FORTH
-
+\
 \ with MSP430FR5xxx or MSP430FR6xxx targets, you can first set RTC:
 \ by downloading RTC.f with SendSourceFileToTarget.bat
 \ then terminal input asks you to type (with spaces) (DMY), then (HMS),
 \ So, subsequent copied files will be dated:
-
+\
 \ with CopySourceFileToTarget_SD_Card.bat (or better, from scite editor, menu tools):
-
+\
 \   copy TESTASM.4TH        to \MISC\TESTASM.4TH    (add path \MISC in the window opened by TERATERM)
 \   copy TSTWORDS.4TH       to \TSTWORDS.4TH
 \   copy CORETEST_xMPY.4TH  to \CORETEST.4TH        (x=S for FR4133, else x=H; suppr _xMPY in the window opened by TERATERM)
@@ -61,13 +64,12 @@
 \   copy RTC.f              to \RTC.4TH             ( doesn't work with if FR2xxx or FR4xxx)
 
 PWR_STATE
-    \
+
 [DEFINED] {SD_TEST} [IF] {SD_TEST} [THEN]   \ remove {SD_TEST} 
-    \
+
 [DEFINED] ASM [DEFINED] TERM2SD" AND [IF]   \ requirements test
-    \
+
 MARKER {SD_TEST}
-    \
 
 [UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {ANS_COMP}
     CODE MAX    \    n1 n2 -- n3       signed maximum
@@ -76,7 +78,6 @@ MARKER {SD_TEST}
     BW1 ADD #2,PSP
         MOV @IP+,PC
     ENDCODE
-    \
 
     CODE MIN    \    n1 n2 -- n3       signed minimum
         CMP @PSP,TOS    \ n2-n1
@@ -85,8 +86,6 @@ MARKER {SD_TEST}
         MOV @IP+,PC
     ENDCODE
 [THEN]
-    \
-
 
 [UNDEFINED] U.R [IF]    \ defined in {UTILITY}
 : U.R                       \ u n --           display u unsigned in n width (n >= 2)
@@ -94,7 +93,6 @@ MARKER {SD_TEST}
 R> OVER - 0 MAX SPACES TYPE
 ;
 [THEN]
-    \
 
 [UNDEFINED] DUMP [IF]    \ defined in {UTILITY}
 \ https://forth-standard.org/standard/tools/DUMP
@@ -118,8 +116,6 @@ LO2HI
   R> BASE !                 \ restore current base
 ;
 [THEN]
-    \
-
 
 : SD_TEST
 \ BEGIN
@@ -136,7 +132,6 @@ LO2HI
     ."    9 Load TST_WORDS" CR
     ."    your choice : "
     KEY CR
-    
     48 - ?DUP
     0= IF
         LOAD" RTC.4TH"
@@ -200,9 +195,9 @@ LO2HI
 
 \ AGAIN          \ LOAD" don't work with loop tests.......
 ;
-    \
+
 PWR_HERE \ to don't forget, otherwise SD_TEST destroys itself by downloading files comprising "PWR_HERE" command...
-    \
+
 [THEN]
-    \
+
 SD_TEST

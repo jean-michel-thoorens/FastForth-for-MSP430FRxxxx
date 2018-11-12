@@ -166,31 +166,27 @@ TERM_REN    .equ P2REN
     .ENDIF
 
             MOV #-1,&PAREN      ; all inputs with pull resistors
-            BIS #00003h,&PADIR  ; all pins as input else LED1/LED2 as output
+            MOV #00003h,&PADIR  ; all pins as input else LED1/LED2 as output
             MOV #0FFFCh,&PAOUT  ; all pins with pullup resistors and LED1/LED2 = output low
 
     .IFDEF TERMINAL4WIRES
-; RTS output must be wired to the CTS input of UART2USB bridge 
+; RTS output is wired to the CTS input of UART2USB bridge 
 ; configure RTS as output high to disable RX TERM during start FORTH
-; notice that this pin RTS may be permanently wired on SBWTCK (TEST) without disturbing SBW 2 wires programming
 HANDSHAKOUT .equ    P1OUT
 HANDSHAKIN  .equ    P1IN
-RTS         .equ    1           ; P1.0 bit position
-
-            BIS #1,&PAOUT       ; P1.0 RTS as output high
-
+RTS         .equ    1           ; P1.0
+;            BIS.B #RTS,&P1DIR   ; RTS as output high
+            BIS.B #RTS,&P1OUT   ; RTS as output high
         .IFDEF TERMINAL5WIRES
-
 ; CTS input must be wired to the RTS output of UART2USB bridge 
-; configure CTS as input low
-CTS         .equ    2           ; P1.1 bit position
-            BIC  #2,&PADIR      ; CTS input pull down resistor
-
+; configure CTS as input low (true) to avoid lock when CTS is not wired
+CTS         .equ    2           ; P1.1
+            BIC.B #CTS,&P1DIR   ; CTS input pulled down
+;            BIC.B #CTS,&P1OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
-
     .ENDIF  ; TERMINAL4WIRES
 
-          
+
     .IFDEF UCB0_TERM        ; for MSP_EXP430FR2433_I2C
 I2CM_BUS        .equ    0Ch   ; P1.2=SDA P1.3=SCL
 I2CM_SEL        .equ    P1SEL0
@@ -228,8 +224,7 @@ I2CT_SLA_REN    .equ   P2REN
 ; FRAM config
 ; ----------------------------------------------------------------------
 
-    .IF FREQUENCY = 16
-NWAITS            = 1
+    .IF  FREQUENCY > 8
             MOV.B   #0A5h, &FRCTL0_H     ; enable FRCTL0 access
             MOV.B   #10h, &FRCTL0         ; 1 waitstate @ 16 MHz
             MOV.B   #01h, &FRCTL0_H       ; disable FRCTL0 access
@@ -499,9 +494,10 @@ NWAITS            = 1
     .ENDIF
 
             BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV preserving a pending request for DEEP_RST
-            CMP #2,&SAVE_SYSRSTIV       ; POWER ON ?
-            JZ      ClockWaitX          ; yes
-            .word   0749h               ; no  RRUM #1,X --> wait anyway 250 ms because FLL lock time = 200 ms
+;            MOV &SAVE_SYSRSTIV,TOS  ;
+;            CMP #2,TOS              ; POWER ON ?
+;            JZ      ClockWaitX      ; yes
+;            RRUM    #1,X            ; wait only 250 ms
 ClockWaitX  MOV     #5209,Y             ; wait 0.5s before starting after POR
 
 ClockWaitY  SUB     #1,Y                ;1

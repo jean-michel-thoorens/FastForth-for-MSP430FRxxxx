@@ -130,20 +130,14 @@
 
 
 ; ----------------------------------------------------------------------
-; INIT order : LOCK I/O, WDT, GPIOs, FRAM, Clock, UARTs
+; INIT order : WDT, GPIOs, FRAM, Clock, RTC, REF
 ; ----------------------------------------------------------------------
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : LOCK PMM_LOCKLPM5
-; ----------------------------------------------------------------------
-
-;              BIS     #LOCKLPM5,&PM5CTL0 ; unlocked by WARM
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : WATCHDOG TIMER A
 ; ----------------------------------------------------------------------
 
-        MOV #WDTPW+WDTHOLD+WDTCNTCL,&WDTCTL    ; stop WDT
+            MOV #WDTPW+WDTHOLD+WDTCNTCL,&WDTCTL    ; stop WDT
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : I/O
@@ -168,13 +162,13 @@
 
 ; PORT2 FastForth usage
 
-    .IFDEF UCB0_SD
+    .IFDEF UCB0_SD ; see device.inc
 SD_SEL      .equ PASEL1 ; to configure UCB0
 SD_REN      .equ PAREN  ; to configure pullup resistors
 SD_BUS      .equ 04C0h  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
     .ENDIF
 
-    .IFDEF UCA0_TERM
+    .IFDEF UCA0_TERM ; see device.inc
 ; P2.0  UCA0-TXD    --> USB2UART RXD    
 ; P2.1  UCA0-RXD    <-- USB2UART TXD 
 TXD         .equ 1      ; P2.0 = TXD + FORTH Deep_RST pin
@@ -185,7 +179,7 @@ TERM_SEL    .equ P2SEL1
 TERM_REN    .equ P2REN
     .ENDIF
 
-    .IFDEF UCA1_TERM
+    .IFDEF UCA1_TERM ; see device.inc
 ; P2.5  UCA0-TXD    --> USB2UART RXD    
 ; P2.6  UCA0-RXD    <-- USB2UART TXD 
 TXD         .equ 20h   ; P2.5 = TXD + FORTH Deep_RST pin
@@ -206,44 +200,27 @@ TERM_REN    .equ P2REN
 ; PORT3 FastForth usage
 
 ; PORT4 FastForth usage
-SD_CS       .equ 1        ; P4.0 as SD_CS     
+SD_CS       .equ 1              ; P4.0 as SD_CS     
 SD_CSOUT    .equ P4OUT
 SD_CSDIR    .equ P4DIR
 
 
+            MOV #-1,&PBREN      ; REN1 all pullup resistors
+            MOV #-1,&PBOUT
 
     .IFDEF TERMINAL4WIRES
-
 ; RTS output is wired to the CTS input of UART2USB bridge 
-; CTS is not used by FORTH terminal
 ; configure RTS as output high to disable RX TERM during start FORTH
-
-HANDSHAKOUT .equ  P4OUT
-HANDSHAKIN  .equ  P4IN
-
-RTS         .equ  4 ; P4.2
-
-            BIS     #00400h,&PBDIR  ; all pins as input else P4.2 (RTS)
-            BIS     #-1,&PBREN      ; all input pins with resistor
-
+HANDSHAKOUT .equ    P4OUT
+HANDSHAKIN  .equ    P4IN
+RTS         .equ    4           ; P4.2
+            BIS.B #RTS,&P4DIR   ; RTS as output high
         .IFDEF TERMINAL5WIRES
-
-CTS         .equ  8 ; P4.3
-
-            MOV     #0F7FFh,&PBOUT  ; P4.2 (RTS) as output HIGH, P4.3 (CTS) I pull down, others I pull up, 
-
-        .ELSEIF
-
-            MOV     #-1,&PBOUT      ; P4.2 (RTS) as output HIGH, others I pull up, 
-
+; CTS input must be wired to the RTS output of UART2USB bridge 
+; configure CTS as input low (true) to avoid lock when CTS is not wired
+CTS         .equ  8             ; P4.3
+            BIC.B #CTS,&P4OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
-
-    .ELSEIF
-
-; PORTx default wanted state : pins as input with pullup resistor
-            MOV     #-1,&PBOUT   ; OUT1
-            BIS     #-1,&PBREN   ; REN1 all pullup resistors
-
     .ENDIF  ; TERMINAL4WIRES
 
 ; ----------------------------------------------------------------------
@@ -258,7 +235,7 @@ CTS         .equ  8 ; P4.3
 SWITCHIN    .set P5IN    ; port
 s1          .set 020h    ; P5.5 bit position
 
-    .IFDEF UCB1_SD
+    .IFDEF UCB1_SD ; see device.inc
 SD_SEL      .equ PCSEL1 ; to configure UCB0
 SD_REN      .equ PCREN  ; to configure pullup resistors
 SD_BUS      .equ 0007h  ; pins P5.2 as UCB1CLK, P5.0 as UCB1SIMO & P5.1 as UCB1SOMI
@@ -310,10 +287,10 @@ SD_CDIN     .equ P7IN
 ; FRAM config
 ; ----------------------------------------------------------------------
 
-    .IF FREQUENCY = 16
-            MOV.B   #0A5h, &FRCTL0_H     ; enable FRCTL0 access
-            MOV.B   #10h, &FRCTL0         ; 1 waitstate @ 16 MHz
-            MOV.B   #01h, &FRCTL0_H       ; disable FRCTL0 access
+    .IF  FREQUENCY > 8
+            MOV.B   #0A5h, &FRCTL0_H    ; enable FRCTL0 access
+            MOV.B   #10h, &FRCTL0       ; 1 waitstate @ 16 MHz
+            MOV.B   #01h, &FRCTL0_H     ; disable FRCTL0 access
     .ENDIF
 
 ; ----------------------------------------------------------------------
@@ -333,7 +310,7 @@ SD_CDIN     .equ P7IN
 
     .ELSEIF FREQUENCY = 0.5
             MOV     #0,&CSCTL1                  ; Set 1MHZ DCO setting
-            MOV     #DIVA_2 + DIVS_2 + DIVM_2,&CSCTL3             ; set all dividers as 2
+            MOV     #DIVA_0 + DIVS_2 + DIVM_2,&CSCTL3             ; set all dividers as 2
             MOV     #8,X
 
     .ELSEIF FREQUENCY = 1
@@ -370,17 +347,29 @@ SD_CDIN     .equ P7IN
     .ELSE
             MOV     #SELA_VLOCLK+SELS_DCOCLK+SELM_DCOCLK,&CSCTL2
     .ENDIF
-            MOV.B   #01h, &CSCTL0_H                               ; Lock CS Registers
+            MOV.B   #1, &CSCTL0_H   ; Lock CS Registers
 
-            BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV preserving a pending request for DEEP_RST
-            CMP #2,&SAVE_SYSRSTIV   ; POWER ON ?
-            JZ      ClockWaitX      ; yes
-            .word   0759h           ; no  RRUM #2,X --> wait only 125 ms
+            BIS &SYSRSTIV,&SAVE_SYSRSTIV    ; store volatile SYSRSTIV preserving a pending request for DEEP_RST
+;            MOV &SAVE_SYSRSTIV,TOS  ;
+;            CMP #2,TOS              ; POWER ON ?
+;            JZ      ClockWaitX      ; yes
+;            RRUM    #2,X            ; no: wait only 125 ms
 ClockWaitX  MOV     #5209,Y         ; wait 0.5s before starting after POWER ON
 ClockWaitY  SUB     #1,Y            ;1
             JNZ     ClockWaitY      ;2 5209x3 = 15625 cycles delay = 15.625ms @ 1MHz
             SUB     #1,X            ; x 32 @ 1 MHZ = 500ms
             JNZ     ClockWaitX      ; time to stabilize power source ( 500ms )
+
+; ----------------------------------------------------------------------
+; POWER ON RESET AND INITIALIZATION : RTC_C REGISTERS
+; ----------------------------------------------------------------------
+
+    .IFDEF LF_XTAL ; see device.inc
+; LFXIN : PJ.4, LFXOUT : PJ.5
+            BIS.B   #010h,&PJSEL0       ; SEL0 for only LFXIN
+            MOV.B   #0A5h,&RTCCTL0_H    ; unlock RTC_C
+            BIC.B   #RTCHOLD,&RTCCTL1   ; Clear RTCHOLD = start RTC_C
+    .ENDIF
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : REF
@@ -389,20 +378,5 @@ ClockWaitY  SUB     #1,Y            ;1
             MOV   #8, &REFCTL
 
 ; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : RTC_C REGISTERS
+; POWER ON RESET AND INITIALIZATION next : see RESET in forthMSP430.asm
 ; ----------------------------------------------------------------------
-
-    .IFDEF LF_XTAL
-; LFXIN : PJ.4, LFXOUT : PJ.5
-    BIS.B   #010h,&PJSEL0   ; SEL0 for only LFXIN
-    MOV.B   #0A5h,&RTCCTL0_H ; unlock RTC_C
-    BIC.B   #RTCHOLD,&RTCCTL1 ; Clear RTCHOLD = start RTC_C
-    .ENDIF
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : SYS REGISTERS
-; ----------------------------------------------------------------------
-
-; SYS code                                  
-; see COLD word
-

@@ -223,25 +223,25 @@ SD_CSDIR    .equ P2DIR
 ; configure RTS as output high to disable RX TERM during start FORTH
 
 ; P2.7 is used to power the accelerometer and NTC voltage divider ==> output low = power OFF
-    BIS #07FEFh,&PAREN  ; all input pins with pull up resistor else P2.7 and P1.4 with pull down
+
+    MOV #07FEFh,&PAREN  ; all input pins with pull up resistor else P2.7 and P1.4 with pull down
+    MOV #-1,&PAOUT
 
     .IFDEF TERMINAL4WIRES
-
-HANDSHAKOUT .equ  P2OUT
-HANDSHAKIN  .equ  P2IN
-
-RTS         .equ  4 ; P2.2
-    BIS #00400h,&PADIR  ; RTS P2.2 output high
-
+; RTS output is wired to the CTS input of UART2USB bridge 
+; configure RTS as output high to disable RX TERM during start FORTH
+HANDSHAKOUT .equ    P2OUT
+HANDSHAKIN  .equ    P2IN
+RTS         .equ    4           ; P2.2
+            BIS.B #RTS,&P2DIR   ; RTS as output high
         .IFDEF TERMINAL5WIRES
-
-CTS         .equ  8 ; P2.3
-
-    BIS #00800h,&PAOUT  ; CTS input low
-
+; CTS input must be wired to the RTS output of UART2USB bridge 
+; configure CTS as input low (true) to avoid lock when CTS is not wired
+CTS         .equ    8           ; P2.3
+            BIC.B #CTS,&P2OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
-
     .ENDIF  ; TERMINAL4WIRES
+
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4
@@ -359,10 +359,11 @@ S1          .equ 1
     .ENDIF
             MOV.B   #01h, &CSCTL0_H                     ; Lock CS Registers
 
-            BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV preserving a pending request for DEEP_RST
-            CMP #2,&SAVE_SYSRSTIV   ; POWER ON ?
-            JZ      ClockWaitX      ; yes
-            .word   0759h           ; no  RRUM #2,X --> wait only 125 ms
+            BIS &SYSRSTIV,&SAVE_SYSRSTIV    ; store volatile SYSRSTIV preserving a pending request for DEEP_RST
+;            MOV &SAVE_SYSRSTIV,TOS  ;
+;            CMP #2,TOS              ; POWER ON ?
+;            JZ      ClockWaitX      ; yes
+;            RRUM    #2,X            ; wait only 125 ms
 ClockWaitX  MOV     #5209,Y         ; wait 0.5s before starting after POWER ON
 ClockWaitY  SUB     #1,Y            ;1
             JNZ     ClockWaitY      ;2 5209x3 = 15625 cycles delay = 15.625ms @ 1MHz

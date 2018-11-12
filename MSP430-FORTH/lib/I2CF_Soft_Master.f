@@ -296,16 +296,14 @@ BIC.B #M_BUS,&I2CSM_REN         \ SDA + SCL pullup/down disable
 \ ------------------------------\
 LO2HI
 ." \ type stop to stop :-)"
-LIT recurse is WARM             \ insert this starting routine between COLD and WARM...
-(WARM)                          \ ...and continue with (WARM)
-;
-    \
+    LIT RECURSE IS WARM         \ insert this starting routine between COLD and WARM...
+    ['] WARM >BODY EXECUTE      \ ...and continue with WARM (very, very usefull after COLD or RESET !:-)
+ ;
 
-: STOP                  \ stops multitasking, must to be used before downloading app
-    ['] (WARM) IS WARM  \ remove START app from FORTH init process
-    ECHO COLD           \ reset CPU, interrupt vectors, and start FORTH
+: STOP                          \ stops multitasking, must to be used before downloading app
+    ['] WARM >BODY  IS WARM     \ remove START app from FORTH init process
+    ECHO COLD                   \ reset CPU, interrupt vectors, and start FORTH
 ;
-    \
 
 RST_HERE                   \ set here the reset dictionnary 
 

@@ -348,15 +348,14 @@ MOV #INT_RC5,&IR_Vec            \ init IR vector interrupt
 LO2HI
 ." RC5toI2CF_Master is running. Type STOP to quit"
 \ NOECHO                          \ uncomment to run this app without terminal connexion
-LIT RECURSE IS WARM             \ insert this starting routine between COLD and WARM...
-(WARM) ;                        \ ...and continue with WARM (very, very usefull after COLD or RESET !:-)
-    \
+    LIT RECURSE IS WARM         \ insert this starting routine between COLD and WARM...
+    ['] WARM >BODY EXECUTE      \ ...and continue with WARM (very, very usefull after COLD or RESET !:-)
+ ;
 
-: STOP                  \ stops multitasking, must to be used before downloading app
-    ['] (WARM) IS WARM  \ remove START app from FORTH init process
-    ECHO COLD           \ reset CPU, interrupt vectors, and start FORTH
+: STOP                          \ stops multitasking, must to be used before downloading app
+    ['] WARM >BODY  IS WARM     \ remove START app from FORTH init process
+    ECHO COLD                   \ reset CPU, interrupt vectors, and start FORTH
 ;
-    \
 
 ECHO
 

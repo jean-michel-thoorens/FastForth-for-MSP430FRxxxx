@@ -25,7 +25,8 @@ IF /I "%3" == "" GOTO preprocessF
 exit
 
 :preprocessF
-@%~d1\prog\gema\gema.exe -nobackup -line -t '\n=\r\n;\r\n=\r\n' -f  %~dpn2.pat %~dpn1.f %~dpn1.4th
+::@%~d1\prog\gema\gema.exe -nobackup -line -t '\n=\r\n;\r\n=\r\n' -f  %~dpn2.pat %~dpn1.f %~dpn1.4th
+@%~d1\prog\gema\gema.exe -nobackup -line -t '-\r\n=\r\n' -f  %~dpn2.pat %~dpn1.f %~dpn1.4th
 
 :DownloadF
 @taskkill /F /IM ttermpro.exe 1> NULL 2>&1

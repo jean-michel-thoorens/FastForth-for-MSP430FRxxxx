@@ -223,7 +223,7 @@
 
             BIS     #1,&PADIR   ; all pins 0 as input else P1.0 (LED2)
             MOV     #0FFFEh,&PAOUT  ; all pins high  else P1.0 (LED2)
-            SUB     #2,&PAREN   ; all pins 1 with pull resistors else P1.0 (LED2)
+            BIC     #1,&PAREN   ; all pins 1 with pull resistors else P1.0 (LED2)
 
     .IFDEF UCA0_TERM
 ; P2.0  UCA0-TXD    --> USB2UART RXD    
@@ -257,13 +257,30 @@ SD_BUS      .equ 04C0h  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0S
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4
 ; ----------------------------------------------------------------------
-; PB = P4:P3
-
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
+
+            MOV #-1,&PBREN  ; all pins as input with resistor
+            MOV #-1,&PBOUT  ; all pins as input with resistor
 
 ; PORT3 usage
 
 ; PORT4 usage
+
+    .IFDEF TERMINAL4WIRES
+; RTS output is wired to the CTS input of UART2USB bridge 
+; configure RTS as output high to disable RX TERM during start FORTH
+HANDSHAKOUT .equ    P4OUT
+HANDSHAKIN  .equ    P4IN
+RTS         .equ    2           ; P4.1
+            BIS.B #RTS,&P4DIR   ; RTS as output high
+        .IFDEF TERMINAL5WIRES
+; CTS input must be wired to the RTS output of UART2USB bridge 
+; configure CTS as input low (true) to avoid lock when CTS is not wired
+CTS         .equ    1           ; P4.0
+            BIC.B #CTS,&P4OUT   ; CTS input pulled down
+        .ENDIF  ; TERMINAL5WIRES
+    .ENDIF  ; TERMINAL4WIRES
+
 SD_CD       .equ 4        ; P4.2 as SD_CD
 SD_CS       .equ 8        ; P4.3 as SD_CS     
 SD_CDIN     .equ P4IN
@@ -272,38 +289,6 @@ SD_CSDIR    .equ P4DIR
 
 ; P4.5 - switch S1
 ; P4.6 - LED1 red
-
-    .IFDEF TERMINAL4WIRES
-
-; RTS output is wired to the CTS input of UART2USB bridge 
-; configure RTS as output high to disable RX TERM during start FORTH
-
-HANDSHAKOUT .equ  P4OUT
-HANDSHAKIN  .equ  P4IN
-RTS         .equ  2 ; P4.1
-
-            BIS #04200h,&PBDIR  ; all pins as input else P4.1 (RTS), P4.6 (LED1)
-            BIS #-1,&PBREN      ; all inputs with resistor
-
-        .IFDEF TERMINAL5WIRES
-
-CTS         .equ  1 ; P4.0 
-
-            MOV #0BEFFh,&PBOUT  ; that acts as pull up , P4.6 (LED1) output LOW, RTS output HIGH, CTS input LOW
-
-        .ELSEIF
-
-            MOV #0BFFFh,&PBOUT  ; that acts as pull up , P4.6 (LED1) output LOW, RTS output HIGH
-
-        .ENDIF  ; TERMINAL5WIRES
-
-    .ELSEIF
-            BIS #04000h,&PBDIR  ; all pins as input else P4.6 (LED1)
-            BIS #-1,&PBREN      ; all inputs with resistor
-            MOV #0BFFFh,&PBOUT  ; that acts as pull up, P4.6 (LED1) output LOW
-
-    .ENDIF  ; TERMINAL4WIRES
-
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORTJ
@@ -314,13 +299,13 @@ CTS         .equ  1 ; P4.0
 ; PORTx default wanted state : pins as input with pullup resistor
 
             MOV.B #-1,&PJOUT    ; pullup resistors
-            BIS.B #-1,&PJREN    ; enable pullup/pulldown resistors
+            MOV.B #-1,&PJREN    ; enable pullup/pulldown resistors
 
 ; ----------------------------------------------------------------------
 ; FRAM config
 ; ----------------------------------------------------------------------
 
-    .IF FREQUENCY = 16
+    .IF  FREQUENCY > 8
             MOV.B   #0A5h, &FRCTL0_H     ; enable FRCTL0 access
             MOV.B   #10h, &FRCTL0         ; 1 waitstate @ 16 MHz
             MOV.B   #01h, &FRCTL0_H       ; disable FRCTL0 access
@@ -382,10 +367,11 @@ CTS         .equ  1 ; P4.0
     .ENDIF
             MOV.B   #01h, &CSCTL0_H                               ; Lock CS Registers
 
-            BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV preserving a pending request for DEEP_RST
-            CMP #2,&SAVE_SYSRSTIV   ; POWER ON ?
-            JZ      ClockWaitX      ; yes
-            .word   0759h           ; no  RRUM #2,X --> wait only 125 ms
+            BIS &SYSRSTIV,&SAVE_SYSRSTIV    ; store volatile SYSRSTIV preserving a pending request for DEEP_RST
+;            MOV &SAVE_SYSRSTIV,TOS  ;
+;            CMP #2,TOS              ; POWER ON ?
+;            JZ      ClockWaitX      ; yes
+;            RRUM    #2,X            ; wait only 125 ms
 ClockWaitX  MOV     #5209,Y         ; wait 0.5s before starting after POWER ON
 ClockWaitY  SUB     #1,Y            ;1
             JNZ     ClockWaitY      ;2 5209x3 = 15625 cycles delay = 15.625ms @ 1MHz

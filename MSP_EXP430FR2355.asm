@@ -151,7 +151,7 @@
 ;               P2.5  -   J2.10     <----   SD_CD (Card Detect)
 
             MOV #-1,&PAREN      ; all inputs with pull resistors
-            BIS #00001h,&PADIR  ; all pins as input else LED1 as output
+            MOV #1,&PADIR       ; all pins as input else LED1 as output
             MOV #0FFFEh,&PAOUT  ; all pins with pullup resistors else LED1 = output low
 
     .IFDEF UCA0_TERM
@@ -166,27 +166,22 @@ TERM_SEL    .equ P1SEL0
     .ENDIF
 
     .IFDEF TERMINAL4WIRES
-
-; RTS output must be wired to the CTS input of UART2USB bridge 
+; RTS output is wired to the CTS input of UART2USB bridge 
 ; configure RTS as output high (false) to disable RX TERM during start FORTH
 HANDSHAKOUT .equ    P2OUT
 HANDSHAKIN  .equ    P2IN
-RTS         .equ    1           ; P2.0 bit position
-
-            BIS.B #1,&P2OUT     ; P2.0 RTS as output high
-
-        .IFDEF TERMINAL5WIRES   ; included in 4WIRES configuration
-
+RTS         .equ    1           ; P2.0
+            BIS.B #RTS,&P2DIR   ; RTS as output high
+        .IFDEF TERMINAL5WIRES
 ; CTS input must be wired to the RTS output of UART2USB bridge 
-; configure CTS as input low (true)
-CTS         .equ    2           ; P2.1 bit position
-            BIC.B  #2,&P2DIR    ; CTS input pull down resistor
-
+; configure CTS as input low (true) to avoid lock when CTS is not wired
+CTS         .equ    2           ; P2.1
+            BIC.B #CTS,&P2OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
-
     .ENDIF  ; TERMINAL4WIRES
 
-SD_CD       .equ  20h
+
+SD_CD       .equ  20h           ; P2.5
 SD_CDIN     .equ  P2IN
 
 ; ----------------------------------------------------------------------
@@ -246,13 +241,11 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 ; FRAM config
 ; ----------------------------------------------------------------------
 
-    .IF FREQUENCY = 16
+    .IF (FREQUENCY >8 ) && ( FREQUENCY <= 16)
             MOV.B   #0A5h, &FRCTL0_H     ; enable FRCTL0 access
             MOV.B   #10h, &FRCTL0         ; 1 waitstate @ 16 MHz
             MOV.B   #01h, &FRCTL0_H       ; disable FRCTL0 access
-    .ENDIF
-
-    .IF FREQUENCY = 24
+    .ELSEIF FREQUENCY > 16
             MOV.B   #0A5h, &FRCTL0_H     ; enable FRCTL0 access
             MOV.B   #20h, &FRCTL0         ; 2 waitstate @ 24 MHz
             MOV.B   #01h, &FRCTL0_H       ; disable FRCTL0 access
@@ -270,10 +263,13 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 
 ; CS code for MSP430FR2355
 
-; to measure REFO frequency, output the ACLK on P1.1: 
+; to measure SMCLK frequency, wires SMCLK on P1.0: 
+;    BIS.B #1,&P1SEL1
+;    BIS.B #1,&P1DIR
+
+; to measure REFO frequency, wires ACLK on P1.1: 
 ;    BIS.B #2,&P1SEL1
 ;    BIS.B #2,&P1DIR
-; result : REFO = xx.xxx kHz
 
 
     .IF FREQUENCY = 0.5
@@ -349,8 +345,6 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00B6h,&CSCTL1      ; Set 8MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
-;            MOV     #00F2h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=F2h
-                                        ; fCOCLKDIV = 32768 x (242+1) = 7.963 MHz ; measured : 7.943MHz
 ;            MOV     #00F3h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=F3h
                                         ; fCOCLKDIV = 32768 x (243+1) = 7.995 MHz ; measured : 7.976MHz
             MOV     #00F4h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=F4h
@@ -358,10 +352,6 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 
 ;            MOV     #00F5h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=F5h
                                         ; fCOCLKDIV = 32768 x (245+1) = 8.061 MHz ; measured : 8.042MHz
-
-;            MOV     #00F8h,&CSCTL2      ; don't work with cp2102 (by low value)
-;            MOV     #00FAh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=FAh
-
 ; =====================================
             MOV     #128,X
 
@@ -372,8 +362,6 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00B8h,&CSCTL1      ; Set 12MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
-;            MOV     #016Ch,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E6h
-                                        ; fCOCLKDIV = 32768 x 364+1) = 12.960 MHz ; measured : 11.xxxMHz
 ;            MOV     #016Dh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E7h
                                         ; fCOCLKDIV = 32768 x 365+1) = 11.993 MHz ; measured : 11.xxxMHz
             MOV     #016Eh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E8h
@@ -390,8 +378,6 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00BAh,&CSCTL1      ; Set 16MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
-;            MOV     #01E6h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E6h
-                                        ; fCOCLKDIV = 32768 x 486+1) = 15.958 MHz ; measured : 15.92MHz
 ;            MOV     #01E7h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E7h
                                         ; fCOCLKDIV = 32768 x 487+1) = 15.991 MHz ; measured : 15.95MHz
             MOV     #01E8h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E8h
@@ -408,8 +394,6 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00BCh,&CSCTL1      ; Set 20MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
-;            MOV     #0260h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=260h
-                                        ; fCOCLKDIV = 32768 x 608+1) = 19.956 MHz ; measured : 19.xxxMHz
 ;            MOV     #0261h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=261h
                                         ; fCOCLKDIV = 32768 x 609+1) = 19.988 MHz ; measured : 19.xxxMHz
             MOV     #0262h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=262h
@@ -426,8 +410,6 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00BEh,&CSCTL1      ; Set 24MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
-;            MOV     #02DAh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=2DAh
-                                        ; fCOCLKDIV = 32768 x 730+1) = 23.953 MHz ; measured : 23.xxxMHz
 ;            MOV     #02DBh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=2DBh
                                         ; fCOCLKDIV = 32768 x 731+1) = 23.986 MHz ; measured : 23.xxxMHz
             MOV     #02DCh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=2DCh
@@ -450,9 +432,10 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
     .ENDIF
 
             BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV preserving a pending request for DEEP_RST
-            CMP #2,&SAVE_SYSRSTIV       ; POWER ON ?
-            JZ      ClockWaitX          ; yes
-            .word   0749h               ; no  RRUM #1,X --> wait anyway 250 ms because FLL lock time = 200 ms
+;            MOV &SAVE_SYSRSTIV,TOS  ;
+;            CMP #2,TOS              ; POWER ON ?
+;            JZ      ClockWaitX      ; yes
+;            RRUM    #1,X            ; wait only 250 ms
 ClockWaitX  MOV     #5209,Y             ; wait 0.5s before starting after POR
 
 ClockWaitY  SUB     #1,Y                ;1

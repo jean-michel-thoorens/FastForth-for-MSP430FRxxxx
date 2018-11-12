@@ -1,6 +1,6 @@
 ; Target.asm
 
-; to Init I/O, Clock, FRAM....
+; to Init I/O, Clock, FRAM, RTC, ... only for FastForth and SD_options use
     .IFDEF MSP_EXP430FR5739
     .include "MSP_EXP430FR5739.asm"
     .ENDIF
@@ -22,10 +22,8 @@
     .IFDEF MSP_EXP430FR2355
     .include "MSP_EXP430FR2355.asm"
     .ENDIF
-    .IFDEF MSP_EXP430FR2433_I2C
-    .include "MSP_EXP430FR2433.asm"
-    .ENDIF
     .IFDEF CHIPSTICK_FR2433
     .include "CHIPSTICK_FR2433.asm"
     .ENDIF
+
 

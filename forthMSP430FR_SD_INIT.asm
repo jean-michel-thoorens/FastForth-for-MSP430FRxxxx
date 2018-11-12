@@ -137,18 +137,7 @@
 ; FirstSectorOfCluster(n) = OrgCluster + n*BPB_SecPerClus       ==> cluster(6) = 30368
 
 ; ===========================================================
-; 1- Init eUSCI dedicated to SD_Card SPI driver
-; ===========================================================
-
-    MOV #0A981h,&SD_CTLW0           ; UCxxCTL1  = CKPH, MSB, MST, SPI_3, SMCLK  + UCSWRST
-    MOV #FREQUENCY*3,&SD_BRW        ; UCxxBRW init SPI CLK = 333 kHz ( < 400 kHz) for SD_Card init
-    BIS.B #SD_CS,&SD_CSDIR          ; SD_CS as output high
-    BIS #SD_BUS,&SD_SEL             ; Configure pins as SIMO, SOMI & SCK (PxDIR.y are controlled by eUSCI module)
-;    BIC #SD_BUS,&SD_REN             ; disable pullup resistors for SIMO/SOMI/SCK pins
-    BIC #1,&SD_CTLW0                ; release eUSCI from reset
-
-; ===========================================================
-; 2- Init SD_Card
+; Init SD_Card
 ; ===========================================================
 
 SD_POWER_ON

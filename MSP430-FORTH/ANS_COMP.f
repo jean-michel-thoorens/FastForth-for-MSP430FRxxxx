@@ -1,60 +1,59 @@
-; ------------------------------------------------------------------------------
-; ANS_COMP.f                               words complement to pass CORETEST.4th
-; ------------------------------------------------------------------------------
 
-\ TARGET SELECTION (used by preprocessor GEMA to load \config\gema\TARGET.pat)
+; -----------------------------------------------------
+; ANS_COMP.f    words complement to pass CORETEST.4th
+; -----------------------------------------------------
+\
+\ TARGET Current Selection 
+\ (used by preprocessor GEMA to load the pattern: \config\gema\TARGET.pat)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR2433  MSP_EXP430FR4133    MSP_EXP430FR2355    CHIPSTICK_FR2433
-\ MY_MSP430FR5738_1 MY_MSP430FR5738     MY_MSP430FR5948     MY_MSP430FR5948_1   
-\ JMJ_BOX
-
+\
 \ REGISTERS USAGE
 \ rDODOES to rEXIT must be saved before use and restored after
 \ scratch registers Y to S are free for use
 \ under interrupt, IP is free for use
-
+\
 \ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT, rDOVAR, rDOCON, rDODOES
 \ example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
 \
 \ POPM  order :  rDODOES, rDOCON, rDOVAR, rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
 \ example : POPM #6,IP   pulls Y,X,W,T,S,IP registers from return stack
-
+\
 \ FORTH conditionnals:  unary{ 0= 0< 0> }, binary{ = < > U< }
-
+\
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
+\
+\ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
-\ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  <0
-
-    \
 PWR_STATE
-    \
-[DEFINED] {ANS_COMP} [IF] {ANS_COMP} [THEN] \ remove {ANS_COMP} if outside core  
-    \
+
+[DEFINED] {ANS_COMP} [IF] {ANS_COMP} [THEN] \ remove {ANS_COMP} if outside protected core  
+
 [UNDEFINED] ASM [IF]
-ECHO 
-ASM \ assembler is required! 
+ECHO ASM ; assembler is required! <-- 
 [THEN]
-    \
+
 [UNDEFINED] {ANS_COMP} [IF]
 
 MARKER {ANS_COMP}
-    \
 
+[UNDEFINED] AND [IF]
 \ https://forth-standard.org/standard/core/AND
 \ C AND    x1 x2 -- x3           logical AND
 CODE AND
 AND @PSP+,TOS
 MOV @IP+,PC
 ENDCODE
-    \
+[THEN]
 
+[UNDEFINED] OR[IF]
 \ https://forth-standard.org/standard/core/OR
 \ C OR     x1 x2 -- x3           logical OR
 CODE OR
 BIS @PSP+,TOS
 MOV @IP+,PC
 ENDCODE
-    \
+[THEN]
 
 \ https://forth-standard.org/standard/core/XOR
 \ C XOR    x1 x2 -- x3           logical XOR
@@ -62,7 +61,7 @@ CODE XOR
 XOR @PSP+,TOS
 MOV @IP+,PC
 ENDCODE
-    \
+[THEN]
 
 \ https://forth-standard.org/standard/core/INVERT
 \ INVERT   x1 -- x2            bitwise inversion
@@ -70,7 +69,6 @@ CODE INVERT
 XOR #-1,TOS
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/LSHIFT
 \ LSHIFT  x1 u -- x2    logical L shift u places
@@ -84,7 +82,6 @@ CODE LSHIFT
 THEN        MOV W,TOS
             MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/RSHIFT
 \ RSHIFT  x1 u -- x2    logical R7 shift u places
@@ -99,7 +96,6 @@ CODE RSHIFT
 THEN        MOV W,TOS
             MOV @IP+,PC
 ENDCODE
-    \
 
 [UNDEFINED] MAX [IF]
 \ https://forth-standard.org/standard/core/MAX
@@ -110,7 +106,6 @@ CODE MAX
 BW1 ADD #2,PSP
     MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/MIN
 \ MIN    n1 n2 -- n3       signed minimum
@@ -121,15 +116,13 @@ FW1 MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE
 [THEN]
-    \
 
 \ https://forth-standard.org/standard/core/TwoTimes
 \ 2*      x1 -- x2         arithmetic left shift
 CODE 2*
-ADD TOS,TOS            
-MOV @IP+,PC            
+ADD TOS,TOS
+MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/TwoDiv
 \ 2/      x1 -- x2        arithmetic right shift
@@ -137,17 +130,15 @@ CODE 2/
 RRA TOS
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ --------------------
 \ ARITHMETIC OPERATORS
 \ --------------------
-
 $1A04 C@ $EF > [IF] ; test tag value MSP430FR413x subfamily without hardware_MPY 
-    \
+
 \ https://forth-standard.org/standard/core/MTimes
 \ M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
-CODE M*            
+CODE M*
 MOV @PSP,S          \ S= n1
 CMP #0,S            \ n1 > -1 ?
 S< IF
@@ -160,7 +151,6 @@ S< IF
     XOR #-1,TOS     \ n2 --> u2 
     ADD #1,TOS      \
 THEN
-\ PUSHM IP,S          \ UMSTAR use S,T,W,X,Y
 PUSHM #2,IP         \ UMSTAR use S,T,W,X,Y
 LO2HI               \ -- ud1 u2
 UM*       
@@ -175,9 +165,9 @@ S< IF
 THEN
 MOV @IP+,PC
 ENDCODE
-    \
+
 [ELSE]              ; MSP430FRxxxx with hardware_MPY
-    \
+
 \ https://forth-standard.org/standard/core/UMTimes
 \ UM*     u1 u2 -- udlo udhi   unsigned 16x16->32 mult.
 CODE UM*
@@ -187,7 +177,6 @@ BW1 MOV TOS,&OP2        \ Load 2nd operand
     MOV &RES1,TOS       \ high result in TOS
     MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/MTimes
 \ M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
@@ -195,11 +184,8 @@ CODE M*
     MOV @PSP,&MPYS      \ Load 1st operand for signed multiplication
     GOTO BW1
 ENDCODE
-    \
-[THEN]
-    \
 
-HERE
+[THEN]
 
 \ https://forth-standard.org/standard/core/SMDivREM
 \ SM/REM   d1lo d1hi n2 -- r3 q4  symmetric signed div
@@ -218,12 +204,10 @@ S< IF               \
     ADD #1,2(PSP)   \           d1lo+1
     ADDC #0,0(PSP)  \           d1hi+C
 THEN                \ -- uDVDlo uDVDhi uDIVlo
-\ PUSHM IP,T          \           save IP,S,T
 PUSHM #3,IP         \           save IP,S,T
 LO2HI
     UM/MOD          \ -- uREMlo uQUOTlo
 HI2LO
-\ POPM T,IP           \           restore T,S,IP
 POPM #3,IP          \           restore T,S,IP
 CMP #0,T            \           T=rem_sign
 S< IF
@@ -240,16 +224,12 @@ BW2
 THEN                \ -- n3 n4  S=divisor
 MOV @IP+,PC
 ENDCODE
-    \
-
-HERE OVER - DUMP
 
 \ https://forth-standard.org/standard/core/NEGATE
 \ C NEGATE   x1 -- x2            two's complement
 CODE NEGATE
 GOTO BW1 
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/ABS
 \ C ABS     n1 -- +n2     absolute value
@@ -258,7 +238,6 @@ CMP #0,TOS       \  1
 0< ?GOTO BW2
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/FMDivMOD
 \ FM/MOD   d1 n1 -- r q   floored signed div'n
@@ -276,49 +255,42 @@ THEN
 MOV @RSP+,IP
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/Times
 \ *      n1 n2 -- n3       signed multiply
 : *
 M* DROP
 ;
-    \
 
 \ https://forth-standard.org/standard/core/DivMOD
 \ /MOD   n1 n2 -- r3 q4     signed division
 : /MOD
 >R DUP 0< R> FM/MOD
 ;
-    \
 
 \ https://forth-standard.org/standard/core/Div
 \ /      n1 n2 -- n3       signed quotient
 : /
 >R DUP 0< R> FM/MOD NIP
 ;
-    \
 
 \ https://forth-standard.org/standard/core/MOD
 \ MOD    n1 n2 -- n3       signed remainder
 : MOD
 >R DUP 0< R> FM/MOD DROP
 ;
-    \
 
 \ https://forth-standard.org/standard/core/TimesDivMOD
 \ */MOD  n1 n2 n3 -- r4 q5    signed mult/div
 : */MOD
 >R M* R> FM/MOD
 ;
-    \
 
 \ https://forth-standard.org/standard/core/TimesDiv
 \ */     n1 n2 n3 -- n4        n1*n2/q3
 : */
 >R M* R> FM/MOD NIP
 ;
-    \
 
 \ ----------------------------------------------------------------------
 \ DOUBLE OPERATORS
@@ -329,17 +301,15 @@ M* DROP
 : S>D
     DUP 0<
 ;
-    \
 
 \ https://forth-standard.org/standard/core/TwoFetch
 \ 2@    a-addr -- x1 x2    fetch 2 cells ; the lower address will appear on top of stack
 CODE 2@
-SUB #2, PSP
+SUB #2,PSP
 MOV 2(TOS),0(PSP)
 MOV @TOS,TOS
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/TwoStore
 \ 2!    x1 x2 a-addr --    store 2 cells ; the top of stack is stored at the lower adr
@@ -349,7 +319,6 @@ MOV @PSP+,2(TOS)
 MOV @PSP+,TOS
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/TwoDUP
 \ 2DUP   x1 x2 -- x1 x2 x1 x2   dup top 2 cells
@@ -359,7 +328,6 @@ MOV TOS,2(PSP)      \ -- x1 x2 x x2
 MOV 4(PSP),0(PSP)   \ -- x1 x2 x1 x2
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/TwoDROP
 \ 2DROP  x1 x2 --          drop 2 cells
@@ -368,7 +336,6 @@ ADD #2,PSP
 MOV @PSP+,TOS
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/TwoSWAP
 \ 2SWAP  x1 x2 x3 x4 -- x3 x4 x1 x2
@@ -381,7 +348,6 @@ MOV 2(PSP),TOS      \ -- x3 x2 x1 x2    W=x4
 MOV W,2(PSP)        \ -- x3 x4 x1 x2
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/TwoOVER
 \ 2OVER  x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2
@@ -392,12 +358,10 @@ MOV 8(PSP),0(PSP)   \ -- x1 x2 x3 x4 x1 x4
 MOV 6(PSP),TOS      \ -- x1 x2 x3 x4 x1 x2
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ ----------------------------------------------------------------------
 \ ALIGNMENT OPERATORS
 \ ----------------------------------------------------------------------
-
 \ https://forth-standard.org/standard/core/ALIGNED
 \ ALIGNED  addr -- a-addr       align given addr
 CODE ALIGNED
@@ -405,7 +369,6 @@ BIT #1,TOS
 ADDC #0,TOS
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/ALIGN
 \ ALIGN    --                         align HERE
@@ -414,18 +377,15 @@ BIT #1,&DP  \ 3
 ADDC #0,&DP \ 4
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ ---------------------
 \ PORTABILITY OPERATORS
 \ ---------------------
-
 \ https://forth-standard.org/standard/core/CHARS
 \ CHARS    n1 -- n2            chars->adrs units
 CODE CHARS
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/CHARPlus
 \ CHAR+    c-addr1 -- c-addr2   add char size
@@ -433,7 +393,6 @@ CODE CHAR+
 ADD #1,TOS
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/CELLS
 \ CELLS    n1 -- n2            cells->adrs units
@@ -441,7 +400,6 @@ CODE CELLS
 ADD TOS,TOS
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/CELLPlus
 \ CELL+    a-addr1 -- a-addr2      add cell size
@@ -449,11 +407,10 @@ CODE CELL+
 ADD #2,TOS
 MOV @IP+,PC
 ENDCODE
-    \
+
 \ ---------------------------
 \ BLOCK AND STRING COMPLEMENT
 \ ---------------------------
-
 \ https://forth-standard.org/standard/core/CHAR
 \ CHAR   -- char           parse ASCII character
 : CHAR
@@ -466,8 +423,6 @@ ENDCODE
     CHAR lit lit , ,
 ; IMMEDIATE
 
-    \
-
 \ https://forth-standard.org/standard/core/PlusStore
 \ +!     n/u a-addr --       add n/u to memory
 CODE +!
@@ -475,7 +430,6 @@ ADD @PSP+,0(TOS)
 MOV @PSP+,TOS
 MOV @IP+,PC
 ENDCODE
-    \ 
 
 \ https://forth-standard.org/standard/core/FILL
 \ FILL   c-addr u char --  fill memory with char
@@ -493,35 +447,30 @@ THEN
 MOV @PSP+,TOS     \ empties stack
 MOV @IP+,PC
 ENDCODE
-    \ 
 
 \ --------------------
 \ INTERPRET COMPLEMENT
 \ --------------------
-
 \ https://forth-standard.org/standard/core/HEX
 CODE HEX
 MOV #$10,&BASE
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/DECIMAL
 CODE DECIMAL
 MOV #$0A,&BASE
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/p
 \ (         --          skip input until char ) or EOL
 : ( 
 $29 WORD DROP
 ; IMMEDIATE
-    \
 
 [DEFINED] CAPS_ON [IF]
-    \
+
 \ https://forth-standard.org/standard/core/Dotp
 \ .(        --          type comment immediatly.
 : .(
@@ -530,7 +479,7 @@ $29 WORD
 COUNT TYPE
 CAPS_ON
 ; IMMEDIATE
-    \
+
 [ELSE]
 \ https://forth-standard.org/standard/core/Dotp
 \ .(        --          type comment immediatly.
@@ -538,9 +487,8 @@ CAPS_ON
 $29 WORD
 COUNT TYPE
 ; IMMEDIATE
-    \
+
 [THEN]
-    \
 
 \ https://forth-standard.org/standard/core/SOURCE
 \ SOURCE    -- adr u    of current input buffer
@@ -551,12 +499,10 @@ MOV &SOURCE_LEN,TOS
 MOV &SOURCE_ADR,0(PSP)
 MOV @IP+,PC
 ENDCODE
-    \
 
 \ https://forth-standard.org/standard/core/toIN
 \ C >IN     -- a-addr       holds offset in input stream
 TOIN CONSTANT >IN
-    \
 
 [UNDEFINED] PAD [IF]
 
@@ -566,8 +512,8 @@ PAD_ORG CONSTANT PAD
 
 [THEN]
 
-    \
 RST_HERE
+
 [THEN]
 
-    \
+ECHO

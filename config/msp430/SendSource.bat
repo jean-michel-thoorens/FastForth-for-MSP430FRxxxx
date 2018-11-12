@@ -46,7 +46,8 @@ exit
 
 
 :preprocessF
-@%~d1\prog\gema\gema.exe -nobackup -line -t '\n=\r\n;\r\n=\r\n' -f  %~d1\config\gema\%~n2.pat %~dpn1.f %~dpn1.4th
+::@%~d1\prog\gema\gema.exe -nobackup -line -t '\n=\r\n;\r\n=\r\n' -f  %~d1\config\gema\%~n2.pat %~dpn1.f %~dpn1.4th
+@%~d1\prog\gema\gema.exe -nobackup -line -t '-\r\n=\r\n' -f  %~d1\config\gema\%~n2.pat %~dpn1.f %~dpn1.4th
 
 :DownloadF
 @taskkill /F /IM ttermpro.exe 1> NUL 2>&1
@@ -104,5 +105,6 @@ goto badend
 @"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d1\config\msp430\SendFile.ttl %~dpn1.4TH /C %2
 
 :End4th
+@COPY "%~dpn1.4th" "%~dp1\LAST.4th" > NUL
 exit
 

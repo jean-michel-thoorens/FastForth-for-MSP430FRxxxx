@@ -290,7 +290,7 @@ SD_CSDIR    .equ P8DIR
 ; FRAM config
 ; ----------------------------------------------------------------------
 
-    .IF FREQUENCY = 16
+    .IF  FREQUENCY > 8
             MOV.B   #0A5h, &FRCTL0_H     ; enable FRCTL0 access
             MOV.B   #10h, &FRCTL0         ; 1 waitstate @ 16 MHz
             MOV.B   #01h, &FRCTL0_H       ; disable FRCTL0 access
@@ -583,9 +583,10 @@ SD_CSDIR    .equ P8DIR
     .ENDIF
 
             BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV preserving a pending request for DEEP_RST
-            CMP #2,&SAVE_SYSRSTIV       ; POWER ON ?
-            JZ      ClockWaitX          ; yes
-            .word   0749h               ; no  RRUM #1,X --> wait anyway 250 ms because FLL lock time = 200 ms
+;            MOV &SAVE_SYSRSTIV,TOS  ;
+;            CMP #2,TOS              ; POWER ON ?
+;            JZ      ClockWaitX      ; yes
+;            RRUM    #1,X            ; wait only 250 ms
 ClockWaitX  MOV     #5209,Y             ; wait 0.5s before starting after POR
 
 ClockWaitY  SUB     #1,Y                ;1

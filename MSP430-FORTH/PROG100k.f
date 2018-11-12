@@ -1,12 +1,11 @@
 ; -----------------------------------
-; PROG100k.f = 110 x RC5toLCD.4th
+; PROG100k.f = 110 x RC5toLCD.f
 ; -----------------------------------
 
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR2355
-
-    \
+\
 \ Copyright (C) <2016>  <J.M. THOORENS>
 \
 \ This program is free software: you can redistribute it and/or modify
@@ -21,52 +20,52 @@
 \
 \ You should have received a copy of the GNU General Public License
 \ along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
+\
+\
 \ ===========================================================================
 \ remember: for good downloading to target, all lines must be ended with CR+LF !
 \ ===========================================================================
-
-
+\
+\
 \ REGISTERS USAGE
 \ R4 to R7 must be saved before use and restored after
 \ scratch registers Y to S are free for use
 \ under interrupt, IP is free for use
 \ interrupts reset SR register !
-
+\
 \ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
 \ PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
-
+\
 \ example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
 \
 \ POPM  order :  PC,RSP, SR, R3, rDODOES,rDOCON,rDOVAR,rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
 \ POPM  order :  R0, R1, R2, R3,   R4   ,  R5  ,  R6  ,  R7 , R8, R9,R10,R11,R12,R13,R14,R15
-
+\
 \ example : POPM #6,IP   pop Y,X,W,T,S,IP registers from return stack
-
+\
 \ ASSEMBLER conditionnal usage after IF UNTIL WHILE : S< S>= U< U>= 0= 0<> 0>=
 \ ASSEMBLER conditionnal usage before ?JMP ?GOTO    : S< S>= U< U>= 0= 0<> 0< 
-
+\
 \ FORTH conditionnal    : 0= 0< = < > U<
-
+\
 \ display on a LCD 2x20 CHAR the code sent by an IR remote under philips RC5 protocol
 \ target : any TI MSP-EXP430FRxxxx launchpad (FRAM)
 \ LPM_MODE = LPM0 because use SMCLK for LCDVo
-
+\
 \ DEMO : driver for IR remote compatible with the PHILIPS RC5 protocol
 \ plus : driver for 5V LCD 2x20 characters display with 4 bits data interface
 \        without usage of an auxiliary 5V to feed the LCD_Vo
 \        and without potentiometer to adjust the LCD contrast :
 \        to adjust LCD contrast, just press S1 (-) or S2 (+)
 \        LCDVo current consumption ~ 500 uA.
-
+\
 \ ===================================================================================
 \ notice : adjust WDT_TIM_EX0,LCD_TIM_CTL,LCD_TIM_EX0 and 20_us to the target frequency if <> 8MHz !
 \ ===================================================================================
-
-
+\
+\
 \ layout : I/O are defined in the launchpad.pat file (don't work with ChipStick_FR2433)
-
+\
 \  GND  <-------+---0V0---------->  1 LCD_Vss
 \  VCC  >------ | --3V6-----+---->  2 LCD_Vdd
 \               |           |
@@ -83,27 +82,26 @@
 \       <------------------------> 12 LCD_DB5
 \       <------------------------> 13 LCD_DB5
 \       <------------------------> 14 LCD_DB7
-
+\
 \       <----- LCD contrast + <---    Sw1   <--- (finger) :-)
 \       <----- LCD contrast - <---    Sw2   <--- (finger) :-)
-
+\
 \ rc5   <--- OUT IR_Receiver (1 TSOP32236)
 
 [DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]     \ remove application
 
 [DEFINED] ASM [IF]      \ security test
-    \
+
 MARKER {RC5TOLCD}
-    \
+
 [UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {ANS_COMP}
-    \
+
 CODE MAX    \    n1 n2 -- n3       signed maximum
     CMP @PSP,TOS    \ n2-n1
     S<  ?GOTO FW1   \ n2<n1
 BW1 ADD #2,PSP
     MOV @IP+,PC
 ENDCODE
-    \
 
 CODE MIN    \    n1 n2 -- n3       signed minimum
     CMP @PSP,TOS     \ n2-n1
@@ -565,7 +563,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -1051,7 +1049,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -1537,7 +1535,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -2023,7 +2021,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -2509,7 +2507,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -2995,7 +2993,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -3481,7 +3479,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -3967,7 +3965,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -4453,7 +4451,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -4939,7 +4937,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -5425,7 +5423,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -5911,7 +5909,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -6397,7 +6395,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -6883,7 +6881,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -7369,7 +7367,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -7855,7 +7853,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -8341,7 +8339,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -8827,7 +8825,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -9313,7 +9311,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -9799,7 +9797,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -10285,7 +10283,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -10771,7 +10769,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -11257,7 +11255,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -11743,7 +11741,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -12229,7 +12227,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -12715,7 +12713,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -13201,7 +13199,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -13687,7 +13685,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -14173,7 +14171,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -14659,7 +14657,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -15145,7 +15143,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -15631,7 +15629,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -16117,7 +16115,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -16603,7 +16601,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -17089,7 +17087,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -17575,7 +17573,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -18061,7 +18059,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -18547,7 +18545,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -19033,7 +19031,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -19519,7 +19517,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -20005,7 +20003,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -20491,7 +20489,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -20977,7 +20975,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -21463,7 +21461,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -21949,7 +21947,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -22435,7 +22433,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -22921,7 +22919,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -23407,7 +23405,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -23893,7 +23891,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -24379,7 +24377,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -24865,7 +24863,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -25351,7 +25349,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -25837,7 +25835,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -26323,7 +26321,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -26809,7 +26807,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -27295,7 +27293,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -27781,7 +27779,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -28267,7 +28265,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -28753,7 +28751,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -29239,7 +29237,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -29725,7 +29723,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -30211,7 +30209,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -30697,7 +30695,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -31183,7 +31181,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -31669,7 +31667,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -32155,7 +32153,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -32641,7 +32639,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -33127,7 +33125,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -33613,7 +33611,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -34099,7 +34097,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -34585,7 +34583,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -35071,7 +35069,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -35557,7 +35555,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -36043,7 +36041,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -36529,7 +36527,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -37015,7 +37013,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -37501,7 +37499,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -37987,7 +37985,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -38473,7 +38471,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -38959,7 +38957,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -39445,7 +39443,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -39931,7 +39929,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -40417,7 +40415,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -40903,7 +40901,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -41389,7 +41387,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -41875,7 +41873,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -42361,7 +42359,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -42847,7 +42845,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -43333,7 +43331,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -43819,7 +43817,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -44305,7 +44303,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -44791,7 +44789,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -45277,7 +45275,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -45763,7 +45761,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -46249,7 +46247,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -46735,7 +46733,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -47221,7 +47219,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -47707,7 +47705,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -48193,7 +48191,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -48679,7 +48677,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -49165,7 +49163,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -49651,7 +49649,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -50137,7 +50135,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -50623,7 +50621,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -51109,7 +51107,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -51595,7 +51593,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -52081,7 +52079,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -52567,7 +52565,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -53053,7 +53051,7 @@ COLON
 ;
     \
 
-ECHO
+
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
     \
@@ -53063,21 +53061,116 @@ RST_HERE    ; this app is protected against <reset>
 
 
 
+; -----------------------------------
+; RC5toLCD.f
+; -----------------------------------
+\
+\ FastForth Compiling options used :
+\ DTC=2, FREQUENCY=8/16/24MHz, THREADS=16, 
+\ 921600 bauds, 3WIRES, 4WIRES,
+\ ASSEMBLER, CONDCOMP, LOWERCASE, NONAME, UTILITY.
+
+\ TARGET SELECTION
+\ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
+\ MSP_EXP430FR2355
+\ MY_MSP430FR5738_1 MY_MSP430FR5738     MY_MSP430FR5948     MY_MSP430FR5948_1   
+\
+\ Copyright (C) <2016>  <J.M. THOORENS>
+\
+\ This program is free software: you can redistribute it and/or modify
+\ it under the terms of the GNU General Public License as published by
+\ the Free Software Foundation, either version 3 of the License, or
+\ (at your option) any later version.
+\
+\ This program is distributed in the hope that it will be useful,
+\ but WITHOUT ANY WARRANTY\ without even the implied warranty of
+\ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+\ GNU General Public License for more details.
+\
+\ You should have received a copy of the GNU General Public License
+\ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+\
+\
+\ ===========================================================================
+\ remember: for good downloading to target, all lines must be ended with CR+LF !
+\ ===========================================================================
+\
+\
+\ REGISTERS USAGE
+\ R4 to R7 must be saved before use and restored after
+\ scratch registers Y to S are free for use
+\ under interrupt, IP is free for use
+\ interrupts reset SR register !
+\
+\ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
+\ PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
+\
+\ example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
+\
+\ POPM  order :  PC,RSP, SR, R3, rDODOES,rDOCON,rDOVAR,rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
+\ POPM  order :  R0, R1, R2, R3,   R4   ,  R5  ,  R6  ,  R7 , R8, R9,R10,R11,R12,R13,R14,R15
+\
+\ example : POPM #6,IP   pop Y,X,W,T,S,IP registers from return stack
+\
+\ ASSEMBLER conditionnal usage after IF UNTIL WHILE : S< S>= U< U>= 0= 0<> 0>=
+\ ASSEMBLER conditionnal usage before ?JMP ?GOTO    : S< S>= U< U>= 0= 0<> 0< 
+\
+\ FORTH conditionnal    : 0= 0< = < > U<
+\
+\ display on a LCD 2x20 CHAR the code sent by an IR remote under philips RC5 protocol
+\ target : any TI MSP-EXP430FRxxxx launchpad (FRAM)
+\ LPM_MODE = LPM0 because use SMCLK for LCDVo
+\
+\ DEMO : driver for IR remote compatible with the PHILIPS RC5 protocol
+\ plus : driver for 5V LCD 2x20 characters display with 4 bits data interface
+\        without usage of an auxiliary 5V to feed the LCD_Vo
+\        and without potentiometer to adjust the LCD contrast :
+\        to adjust LCD contrast, just press S1 (-) or S2 (+)
+\        LCDVo current consumption ~ 500 uA.
+\
+\ ===================================================================================
+\ notice : adjust WDT_TIM_EX0,LCD_TIM_CTL,LCD_TIM_EX0 and 20_us to the target frequency if <> 8MHz !
+\ ===================================================================================
+\
+\
+\ layout : I/O are defined in the launchpad.pat file (don't work with ChipStick_FR2433)
+\
+\  GND  <-------o---0V0---------->  1 LCD_Vss
+\  VCC  >-------|---3V6-----o---->  2 LCD_Vdd
+\               |           |
+\              ___    470n ---
+\               ^          ---
+\              / \ 1N4148   |
+\              ---          |
+\          100n |    2k2    |
+\ TB0.2 >---||--o--^/\/\/v--o---->  3 LCD_Vo (= 0V6 without modulation)
+\       ------------------------->  4 LCD_RW
+\       ------------------------->  5 LCD_RW
+\       ------------------------->  6 LCD_EN
+\       <------------------------> 11 LCD_DB4
+\       <------------------------> 12 LCD_DB5
+\       <------------------------> 13 LCD_DB5
+\       <------------------------> 14 LCD_DB7
+\
+\       <----- LCD contrast + <---    Sw1   <--- (finger) :-)
+\       <----- LCD contrast - <---    Sw2   <--- (finger) :-)
+\
+\ rc5   <--- OUT IR_Receiver (1 TSOP32236)
+
 [DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]     \ remove application
 
 [DEFINED] ASM [IF]      \ security test
-    \
+
 MARKER {RC5TOLCD}
-    \
+
 [UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {ANS_COMP}
-    \
+
 CODE MAX    \    n1 n2 -- n3       signed maximum
     CMP @PSP,TOS    \ n2-n1
     S<  ?GOTO FW1   \ n2<n1
 BW1 ADD #2,PSP
     MOV @IP+,PC
 ENDCODE
-    \
 
 CODE MIN    \    n1 n2 -- n3       signed minimum
     CMP @PSP,TOS     \ n2-n1
@@ -53087,7 +53180,6 @@ FW1 MOV @PSP+,TOS
 ENDCODE
 
 [THEN]
-    \
 
 [UNDEFINED] U.R [IF]        \ defined in {UTILITY}
 : U.R                       \ u n --           display u unsigned in n width (n >= 2)
@@ -53095,37 +53187,18 @@ ENDCODE
   R> OVER - 0 MAX SPACES TYPE
 ;
 [THEN]
-    \
-
-\ CODE 20_US                      \ n --      n * 20 us
-\ BEGIN                           \ 3 cycles loop + 6~  
-\ \    MOV     #5,W                \ 3 MCLK = 1 MHz
-\ \    MOV     #23,W               \ 3 MCLK = 4 MHz
-\ \    MOV     #51,W               \ 3 MCLK = 8 MHz
-\     MOV     #104,W              \ 3 MCLK = 16 MHz
-\ \    MOV     #158,W              \ 3 MCLK = 24 MHz
-\     BEGIN                       \ 3 cycles loop ==> 3 * W / F us = 100 us - 1 @ 8 MHz
-\         SUB #1,W                \ 1
-\     0= UNTIL                    \ 2
-\     SUB     #1,TOS              \ 1
-\ 0= UNTIL                        \ 2
-\     MOV     @PSP+,TOS           \ 2
-\     MOV     @IP+,PC             \ 4
-\ ENDCODE
-\     \
 
-CODE 20_US                  \ n --      n * 20 us
-BEGIN                       \ here we presume that LCD_TIM_IFG = 1...
+CODE 20_US                      \ n --      n * 20 us
+BEGIN                           \ here we presume that LCD_TIM_IFG = 1...
     BEGIN
-        BIT #1,&LCD_TIM_CTL      \ 3
-    0<> UNTIL               \ 2         loop until LCD_TIM_IFG set
-    BIC #1,&LCD_TIM_CTL          \ 3         clear LCD_TIM_IFG
-    SUB #1,TOS              \ 1
-U< UNTIL                    \ 2 ...so add a dummy loop with U< instead of 0=
-MOV @PSP+,TOS               \ 2
-MOV @IP+,PC                 \ 4
+        BIT #1,&LCD_TIM_CTL     \ 3
+    0<> UNTIL                   \ 2         loop until LCD_TIM_IFG set
+    BIC #1,&LCD_TIM_CTL         \ 3         clear LCD_TIM_IFG
+    SUB #1,TOS                  \ 1
+U< UNTIL                        \ 2 ...so add a dummy loop with U< instead of 0=
+MOV @PSP+,TOS                   \ 2
+MOV @IP+,PC                     \ 4
 ENDCODE
-    \
 
 CODE TOP_LCD                    \ LCD Sample
 \                               \ if write : %xxxxWWWW --
@@ -53146,7 +53219,6 @@ THEN                            \ read LCD bits pattern
     AND.B #LCD_DB,TOS           \
     MOV @IP+,PC
 ENDCODE
-    \
 
 CODE LCD_W                      \ byte --       write byte to LCD 
     SUB #2,PSP                  \
@@ -53158,54 +53230,48 @@ COLON                           \ high level word starts here
     TOP_LCD 2 20_US             \ write high nibble first
     TOP_LCD 2 20_US 
 ;
-    \
 
 CODE LCD_WrC                    \ char --         Write Char
     BIS.B #LCD_RS,&LCD_CMD_OUT  \ lcd_rs=1
     JMP LCD_W 
 ENDCODE
-    \
 
 CODE LCD_WrF                    \ func --         Write Fonction
     BIC.B #LCD_RS,&LCD_CMD_OUT  \ lcd_rs=0
     JMP LCD_W 
 ENDCODE
-    \
 
 : LCD_Clear 
     $01 LCD_WrF 100 20_us      \  $01 LCD_WrF 80 20_us ==> bad init !
 ;
-    \
 
 : LCD_Home 
     $02 LCD_WrF 100 20_us 
 ;
-    \
 
 [UNDEFINED] OR [IF]
-    \
+
 \ https://forth-standard.org/standard/core/OR
 \ C OR     x1 x2 -- x3           logical OR
 CODE OR
 BIS @PSP+,TOS
 MOV @IP+,PC
 ENDCODE
-    \
 
 [THEN]
-    \
+
 : LCD_Entry_set     $04 OR LCD_WrF ;
-    \
+
 : LCD_DSP_Ctrl      $08 OR LCD_WrF ;
-    \
+
 : LCD_DSP_Shift     $10 OR LCD_WrF ;
-    \
+
 : LCD_Fn_Set        $20 OR LCD_WrF ;
-    \
+
 : LCD_CGRAM_Set     $40 OR LCD_WrF ;
-    \
+
 : LCD_Goto          $80 OR LCD_WrF ;
-    \
+
 CODE LCD_R                      \ -- byte       read byte from LCD
     BIC.B #LCD_DB,&LCD_DB_DIR   \ LCD_Data as intput
     BIS.B #LCD_RW,&LCD_CMD_OUT  \ lcd_rw=1
@@ -53218,19 +53284,16 @@ HI2LO                           \ switch from FORTH to assembler
     MOV @RSP+,IP                \ restore IP saved by COLON
     MOV @IP+,PC                 \
 ENDCODE
-    \
 
 CODE LCD_RdS                    \ -- status       Read Status
     BIC.B #LCD_RS,&LCD_CMD_OUT  \ lcd_rs=0
     JMP LCD_R
 ENDCODE
-    \
 
 CODE LCD_RdC                    \ -- char         Read Char
     BIS.B #LCD_RS,&LCD_CMD_OUT  \ lcd_rs=1
     JMP LCD_R
 ENDCODE
-    \
 
 
 \ ******************************\
@@ -53258,7 +53321,6 @@ BW3                             \ from end of RC5_INT
 BIC #$78,0(RSP)                 \ 4  SCG0,OSCOFF,CPUOFF and GIE are OFF in retiSR to force LPM0_LOOP despite pending interrupt
 RETI                            \ 5
 ENDASM
-    \
 
 \ ******************************\
 ASM RC5_INT                     \   wake up on Px.RC5 change interrupt
@@ -53273,24 +53335,21 @@ ASM RC5_INT                     \   wake up on Px.RC5 change interrupt
 \ ******************************\
 \ RC5_FirstStartBitHalfCycle:   \
 \ ******************************\                division in RC5_TIM_CTL (SMCLK/1|SMCLK/1|SMCLK/2|SMCLK/4|SMCLK/8)
-\ MOV #0,&RC5_TIM_EX0           \ predivide by 1 in RC5_TIM_EX0 register ( 125kHz|  1MHz |  2MHZ |  4MHZ |  8MHZ ), reset value
-  MOV #1,&RC5_TIM_EX0           \ predivide by 2 in RC5_TIM_EX0 register ( 250kHZ|  2MHz |  4MHZ |  8MHZ | 16MHZ )
-\ MOV #2,&RC5_TIM_EX0           \ predivide by 3 in RC5_TIM_EX0 register ( 375kHz|  3MHz |  6MHZ | 12MHZ | 24MHZ )
-\ MOV #3,&RC5_TIM_EX0           \ predivide by 4 in RC5_TIM_EX0 register ( 500kHZ|  4MHz |  8MHZ | 16MHZ )
-\ MOV #4,&RC5_TIM_EX0           \ predivide by 6 in RC5_TIM_EX0 register ( 625kHz|  5MHz | 10MHZ | 20MHZ )
-\ MOV #5,&RC5_TIM_EX0           \ predivide by 6 in RC5_TIM_EX0 register ( 750kHz|  6MHz | 12MHZ | 24MHZ )
-\ MOV #6,&RC5_TIM_EX0           \ predivide by 7 in RC5_TIM_EX0 register ( 875kHz|  7MHz | 14MHZ | 28MHZ )
-\ MOV #7,&RC5_TIM_EX0           \ predivide by 8 in RC5_TIM_EX0 register (  1MHz |  8MHz | 16MHZ | 32MHZ )
+\ FREQ_KHZ @ 8000 = [IF]        \ 8 MHz ?
+\     MOV #0,&RC5_TIM_EX0       \ predivide by 1 in RC5_TIM_EX0 register, reset value
+\ [THEN]
+FREQ_KHZ @ 16000 = [IF]         \ 16 MHz ?
+    MOV #1,&RC5_TIM_EX0         \ predivide by 2 in RC5_TIM_EX0 register
+[THEN]
+FREQ_KHZ @ 24000 = [IF]         \ 24 MHz ?
+    MOV #2,&RC5_TIM_EX0         \ predivide by 3 in RC5_TIM_EX0 register
+[THEN]
 MOV #1778,X                     \ RC5_Period * 1us
-\ MOV #222,X                    \ RC5_Period * 8us (SMCLK/1 and first column above)
 MOV #14,W                       \ count of loop
 BEGIN                           \
 \ ******************************\
 \ RC5_HalfCycle                 \ <--- loop back ---+ with readjusted RC5_Period
 \ ******************************\                   |
-\ MOV #%1000100100,&RC5_TIM_CTL \ (re)start timer_A | SMCLK/1 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
-\ MOV #%1002100100,&RC5_TIM_CTL \ (re)start timer_A | SMCLK/2 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
-\ MOV #%1010100100,&RC5_TIM_CTL \ (re)start timer_A | SMCLK/4 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
 MOV #%1011100100,&RC5_TIM_CTL   \ (re)start timer_A | SMCLK/8 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
 \ RC5_Compute_3/4_Period:       \                   |
     RRUM    #1,X                \ X=1/2 cycle       |
@@ -53356,9 +53415,9 @@ MOV #$10,&BASE                  \ set hex base
 MOV TOS,0(PSP)                  \ save TOS
 MOV X,TOS                       \
 LO2HI                           \ switch from assembler to FORTH
-    ['] LCD_CLEAR IS CR         \ redirects CR
-    ['] LCD_WrC  IS EMIT        \ redirects EMIT
-    CR ." $" 2 U.R              \ print IR_RC5 code
+    ['] LCD_CLEAR IS CR         \ redirects CR to LCD
+    ['] LCD_WrC  IS EMIT        \ redirects EMIT to LCD
+    CR ." $" 2 U.R              \ print IR_RC5 code to LCD
     ['] CR >BODY IS CR          \ restore CR
     ['] EMIT >BODY IS EMIT      \ restore EMIT
 HI2LO                           \ switch from FORTH to assembler
@@ -53368,23 +53427,45 @@ MOV @PSP+,TOS                   \
 GOTO BW3
 \ ******************************\
 ENDASM
-    \ 
 
 \ ------------------------------\
-ASM BACKGROUND                  \ 
+ASM BACKGROUND                  \
 \ ------------------------------\
 \ ...                           \ insert here your background task
 \ ...                           \
 \ ...                           \
-MOV #SLEEP,X                    \ 2 Must be the last statement of BACKGROUND
-ADD #4,X                        \ 1 X = BODY of SLEEP
-MOV X,PC                        \ 3 
+BIS #LPM_MODE,SR                \
 ENDASM                          \
+\ ******************************\
+\ here start all interrupts     \
+\ ******************************\
+\ here return all interrupts    \
+\ ******************************\
+CODENNM                         \
+JMP BACKGROUND                  \
+ENDCODE DROP                    \
+
+
+
 \ ------------------------------\
-    \
+CODE STOP                       \ stops multitasking, must to be used before downloading app
+\ ------------------------------\
+\ restore default action of primary DEFERred word SLEEP (assembly version)
+    MOV #SLEEP,X                \ the ASM word SLEEP is only visible in mode assembler. 
+    ADD #4,X                    \ X = BODY of SLEEP, X-2 = PFA of SLEEP
+    MOV X,-2(X)                 \ restore the default background
+COLON
+\ restore default action of primary DEFERred word WARM (FORTH version)
+['] WARM >BODY IS WARM          \ remove START from FORTH init process
+ECHO                            \
+." RC5toLCD is removed." CR     \ display message      
+."    type START to restart"    \
+COLD                            \ performs reset     
+;
 
-CODE START                      \
 \ ------------------------------\
+CODE START                      \ this routine completes the init of system, i.e. FORTH + this app.
+\ ------------------------------\
 \ LCD_TIM_CTL =  %0000 0010 1001 0100\$3C0
 \                    - -             \CNTL Counter lentgh \ 00 = 16 bits
 \                        --          \TBSSEL TimerB clock select \ 10 = SMCLK
@@ -53410,27 +53491,17 @@ CODE START                      \
 \ LCD_TIM_CCRx                   \
 \ -------------------------------\
 \ LCD_TIM_EX0                    \ 
-\ ------------------------------\
-\ set LCD_TIM_ to make 50kHz PWM \ for LCD_Vo, works without interrupt
-\ ------------------------------\
-\    MOV #%1000010100,&LCD_TIM_CTL \ SMCLK/1, up mode, clear timer, no int
-\    MOV #0,&LCD_TIM_EX0        \ predivide by 1 in LCD_TIM_EX0 register (1 MHZ)
 \ ------------------------------\
-\    MOV #%1001010100,&LCD_TIM_CTL \ SMCLK/2, up mode, clear timer, no int
-\    MOV #1,&LCD_TIM_EX0        \ predivide by 2 in LCD_TIM_EX0 register (2 MHZ)
-\ ------------------------------\
-\    MOV #%1010010100,&LCD_TIM_CTL \ SMCLK/4, up mode, clear timer, no int
-\    MOV #1,&LCD_TIM_EX0        \ predivide by 2 in LCD_TIM_EX0 register (4 MHZ)
+\ set LCD_TIM_ to make 50kHz PWM \ for LCD_Vo; works without interrupt
 \ ------------------------------\
-\    MOV #%1011010100,&LCD_TIM_CTL \ SMCLK/8, up mode, clear timer, no int
+MOV #%1011010100,&LCD_TIM_CTL   \ SMCLK/8, up mode, clear timer, no int
 \    MOV #0,&LCD_TIM_EX0        \ predivide by 1 in LCD_TIM_EX0 register (8 MHZ)
-\ ------------------------------\
-    MOV #%1011010100,&LCD_TIM_CTL \ SMCLK/8, up mode, clear timer, no int
+FREQ_KHZ @ 16000 = [IF]         \ if 16 MHz
     MOV #1,&LCD_TIM_EX0         \ predivide by 2 in LCD_TIM_EX0 register (16 MHZ)
-\ ------------------------------\
-\    MOV #%1011010100,&LCD_TIM_CTL \ SMCLK/8, up mode, clear timer, no int
-\    MOV #2,&LCD_TIM_EX0        \ predivide by 3 in LCD_TIM_EX0 register (24 MHZ)
-\ ------------------------------\
+[THEN]
+FREQ_KHZ @ 24000 = [IF]         \ if 24 MHz
+    MOV #2,&LCD_TIM_EX0         \ predivide by 3 in LCD_TIM_EX0 register (24 MHZ)
+[THEN]
     MOV #19,&LCD_TIM_CCR0       \ 19+1=20*1us=20us
 \ ------------------------------\
 \ set LCD_TIM_.2 to generate PWM for LCD_Vo
@@ -53470,8 +53541,7 @@ CODE START                      \
 \                        ---    \ TAIDEX    pre divisor
 \ ------------------------------\
 \          %0000 0000 0000 0101 \ TAxCCR0
-    MOV ##1638,&WDT_TIM_CCR0    \ init WDT for LFXT: 32768/20=1638 ==> 50ms
-\    MOV ##400,&WDT_TIM_CCR0      \ init WDT for VLO: 8000/20=400 ==> 50ms
+    MOV ##1638,&WDT_TIM_CCR0    \ else init WDT_TIM_ for LFXT: 32768/20=1638 ==> 50ms
 \ ------------------------------\
 \          %0000 0000 0001 0000 \ TAxCCTL0
 \                   -           \ CAP capture/compare mode = compare
@@ -53486,17 +53556,33 @@ CODE START                      \
 \    MOV #LPM4,&LPM_MODE         \ with MSP430FR59xx
 \    MOV #LPM2,&LPM_MODE         \ with MSP430FR57xx, terminal input don't work for LPMx > 2
 \                               \ with MSP430FR2xxx, terminal input don't work for LPMx > 0 ; LPM0 is the default value
-
 \ ------------------------------\
 \ redirects to background task  \
 \ ------------------------------\
     MOV #SLEEP,X                \
     MOV #BACKGROUND,2(X)        \
+\ ------------------------------\ usefull only when any RESET event occurs
+\ activate I/O                  \ because when we type START, it is already done by WARM
+\ ------------------------------\ before its redirection by executing START !
+BIC #1,&PM5CTL0                 \ activate all previous I/O settings; if not activated, nothing works !
+BIS.B #TERM_BUS,&TERM_SEL       \ Configure pins TXD & RXD for TERM_UART use; if not configured, no TERMINAL !
+\ ------------------------------\
+\ RESET events handling         \ search "SYSRSTIV" in your device datasheet
+\ ------------------------------\
+MOV &SAVE_SYSRSTIV,Y            \
+\ CMP #2,Y                        \ Power_ON event
+\ 0= ?JMP STOP                    \ uncomment if you want to loose application in this case...
+CMP #4,Y                        \
+0= ?JMP STOP                    \ hardware RESET performs STOP. Should be mandatory...
+\ CMP #6,Y                        \
+\ 0= ?JMP STOP                    \ COLD event performs STOP... uncomment if it's that you want.
+\ CMP #$0A,Y                      \
+\ 0= ?JMP STOP                    \ fault event (violation memory protected areas) performs STOP
+\ CMP #$16,Y                      \
+\ U>= ?JMP STOP                   \ all other fault events + Deep Reset perform STOP
+\ ------------------------------\
+COLON                           \
 \ ------------------------------\
-
-LO2HI                           \ no need to push IP because (WARM) resets the Return Stack ! 
-
-\ ------------------------------\
 \ Init LCD 2x20                 \
 \ ------------------------------\
     $03E8 20_US                 \ 1-  wait 20 ms
@@ -53516,38 +53602,46 @@ LO2HI                           \ no need to push IP because (WARM) resets the R
     LCD_Clear                   \ 10- "LCD_Clear"
     ['] LCD_HOME IS CR          \ ' CR redirected to LCD_HOME
     ['] LCD_WRC  IS EMIT        \ ' EMIT redirected to LCD_WrC
-    CR ." I love you"   
+    CR ." I love you"                          \ display on LCD
     ['] CR >BODY IS CR          \
     ['] EMIT >BODY IS EMIT      \
-    ." RC5toLCD is running. Type STOP to quit"
-    LIT RECURSE IS WARM         \ replace WARM by this START routine
-    ABORT                       \ and continue with the next word after WARM...
-;                               \ ...until interpreter falls in sleep mode within ACCEPT.
-    \
-
-CODE STOP                   \ stops multitasking, must to be used before downloading app
-\ restore default action of primary DEFERred word SLEEP, assembly version
-    MOV #SLEEP,X            \ the ASM word SLEEP is only visible in mode assembler. 
-    ADD #4,X                \ X = BODY of SLEEP
-    MOV X,-2(X)             \ restore the default background
-
-COLON
-\ restore default action of primary DEFERred word WARM, FORTH version
-    ['] WARM >BODY IS WARM  \ remove START app from FORTH init process
-
-    COLD                    \ because we want to reset CPU and interrupt vectors
-;
-    \
+    ." RC5toLCD is running. Type STOP to quit" \ display on FastForth Terminal
+\ ------------------------------\
+\ START replaces WARM           \
+\ ------------------------------\
+    LIT RECURSE IS WARM         \ START replaces WARM...
+    ABORT                       \ ...and continue with ABORT
+;                               \
 
 ECHO
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
-    \
-[THEN]      \ ASM
-    \
 
+[THEN]      \ ASM
 
+: BS 8 EMIT ;   \ 8 EMIT = BackSpace EMIT
+: ESC #27 EMIT ;
+
+\ to see this end of compilation message you must turn ON LOWERCASE add-on before compiling FastForth
+\ else escape sequences doesn't work.
+
+: specs         \ to see Fast Forth specifications
+PWR_STATE       \ remove specs definition when running, and before bytes free processing
+6 0 DO BS LOOP  \ to reach start of line
+ESC ." [7m"     \ escape sequence to set reverse video
+." FastForth "
+INI_THREAD @ U. BS ." Threads " \ vocabularies threads
+." DeviceID=$"
+$10 BASE ! $1A04 @ U. #10 BASE ! 
+FREQ_KHZ @ 0 1000 UM/MOD U. BS
+?DUP
+IF   ." ," U. BS                \ if remainder
+THEN ." MHz "                   \ MCLK
+SIGNATURES HERE - U. ." bytes free"
+ESC ." [0m"     \ escape sequence to clear reverse video
+;
+
+specs   \ here FastForth type a (volatile) message with some informations
 
 
 START
-

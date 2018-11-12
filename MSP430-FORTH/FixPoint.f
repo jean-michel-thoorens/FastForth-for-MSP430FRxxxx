@@ -1,42 +1,39 @@
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR2433  MSP_EXP430FR4133    MSP_EXP430FR2355    CHIPSTICK_FR2433
-\ MY_MSP430FR5738_1 MY_MSP430FR5738     MY_MSP430FR5948     MY_MSP430FR5948_1   
-\ JMJ_BOX
 
+; -----------------------------------------------------
+; FIXPOINT.f
+; -----------------------------------------------------
 \ REGISTERS USAGE
 \ rDODOES to rEXIT must be saved before use and restored after
 \ scratch registers Y to S are free for use
 \ under interrupt, IP is free for use
-
+\ 
 \ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
 \ PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
-
+\
 \ example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
 \
 \ POPM  order :  PC,RSP, SR, R3, rDODOES,rDOCON,rDOVAR,rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
 \ POPM  order :  R0, R1, R2, R3,   R4   ,  R5  ,  R6  ,  R7 , R8, R9,R10,R11,R12,R13,R14,R15
-
+\
 \ example : POPM #6,IP   pop Y,X,W,T,S,IP registers from return stack
-
+\
 \ FORTH conditionnals:  unary{ 0= 0< 0> }, binary{ = < > U< }
-
+\
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
-
-\ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  <0
-
-
+\
+\ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
+\
+\
 PWR_STATE
-    \
 
 [DEFINED] {FIXPOINT} [IF] {FIXPOINT} [THEN]     \ remove {FIXPOINT} if outside core 
-    \
 
 [UNDEFINED] {FIXPOINT} [IF]   \ assembler required, don't replicate {FIXPOINT} inside core
-    \
 
 MARKER {FIXPOINT}
-    \
 
 \ https://forth-standard.org/standard/core/HOLDS
 \ Adds the string represented by addr u to the pictured numeric output string
@@ -56,14 +53,12 @@ REPEAT      MOV Y,&HP       \ 3
             MOV @PSP+,TOS   \ 2
             MOV @IP+,PC     \ 4  15 words
 ENDCODE
-    \
 
 CODE F+                     \ add Q15.16 numbers
     ADD @PSP+,2(PSP)        \ -- sumlo  d1hi d2hi
     ADDC @PSP+,TOS          \ -- sumlo sumhi
     MOV @IP+,PC
 ENDCODE
-    \
 
 CODE F-                     \ substract Q15.16 numbers
     SUB @PSP+,2(PSP)        \ -- diflo d1hi d2hi
@@ -71,15 +66,8 @@ CODE F-                     \ substract Q15.16 numbers
     MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE
-    \
-
-
-\ HERE
-
 
 $1A04 C@ $EF > [IF] ; test tag value MSP430FR413x subfamily without hardware_MPY 
-    \
-
 
 CODE F/                     \ Q15.16 / Q15.16 --> Q15.16 result
         PUSHM #4,R7    
@@ -133,7 +121,6 @@ FW1
 \           MOV X,4(PSP)    \ REMlo    
 \           MOV W,2(PSP)    \ REMhi
 \           ADD #4,PSP      \ skip REMlo REMhi
-
             MOV R7,0(PSP)   \ QUOTlo
             MOV R4,TOS      \ QUOThi
             POPM #4,R7      \ restore R4 to R7
@@ -146,7 +133,6 @@ S< IF   XOR #-1,0(PSP)      \ INV(QUOTlo)
         ADDC #0,TOS         \ INV(QUOThi)+C
 THEN    MOV @IP+,PC
 ENDCODE
-    \ 
 
 \ F#S    Qlo Qhi u -- Qhi 0   convert fractional part Qlo of Q15.16 fixed point number
 \                             with u digits
@@ -176,7 +162,6 @@ U>= UNTIL
             MOV #HOLDS_ORG,0(PSP)   \ -- Qhi 0 addr len
             JMP HOLDS
 ENDCODE
-    \
 
 \ unsigned multiply 32*32 = 64
 \ don't use S reg (keep sign)
@@ -214,7 +199,6 @@ U>= UNTIL   MOV R6,0(PSP)   \ 2+2 IF BIT IN CARRY: FINISHED    32 * 16~ (average
             MOV @RSP+,IP    \ 2
             MOV @IP+,PC
 ENDCODE
-    \
 
 CODE F*                 \ s15.16 * s15.16 --> s15.16 result
     MOV 2(PSP),S        \
@@ -233,10 +217,8 @@ THEN
     MOV @PSP+,0(PSP)    \ -- RES1 RES2
     GOTO BW1            \ goto end of F/ to process sign of result
 ENDCODE
-    \
 
 [ELSE] \ hardware multiplier
-    \
 
 CODE F/                     \ Q15.16 / Q15.16 --> Q15.16 result
 \ TOS = DVRhi
@@ -293,37 +275,6 @@ THEN    MOV R7,0(PSP)       \ 3 QUOTlo
         POPM #4,R7          \ 6 restore R4 to R7
         MOV @IP+,PC         \ 4
 ENDCODE
-    \
-
-
-\ \ F#S    Qhi Qlo -- Qhi 0   convert fractionnal part of Q15.16 fixed point number (direct order)
-\ CODE F#S
-\             MOV @PSP,X              \ -- Qlo Qhi    X = Qlo
-\             MOV TOS,0(PSP)          \ -- Qhi Qhi
-\             SUB #2,PSP              \ -- Qhi x Qhi
-\             MOV X,0(PSP)            \ -- Qhi Qlo Qhi
-\             MOV #4,T                \ -- Qhi Qlo x      T = limit for base 16
-\             CMP #10,&BASE
-\ 0= IF       ADD #1,T                \                   T = limit for base 10
-\ THEN        MOV #0,S                \                   S = count
-\ BEGIN       MOV @PSP,&MPY           \                   Load 1st operand
-\             MOV &BASE,&OP2          \                   Load 2nd operand
-\             MOV &RES0,0(PSP)        \ -- Qhi RESlo x        low result on stack
-\             MOV &RES1,TOS           \ -- Qhi RESlo REShi    high result in TOS
-\             CMP #10,TOS             \                   digit to char
-\     U>= IF  ADD #7,TOS
-\     THEN    ADD #$30,TOS
-\             MOV.B TOS,HOLDS_ORG(S)  \ -- Qhi RESlo char     char to string
-\             ADD #1,S                \                   count+1
-\             CMP T,S                 \                   count=limit ?
-\ U>= UNTIL   MOV #0,0(PSP)           \ -- Qhi 0 REShi
-\             MOV S,TOS               \ -- Qhi 0 limit
-\             SUB #2,PSP              \ -- Qhi 0 x len
-\             MOV #HOLDS_ORG,0(PSP)   \ -- Qhi 0 addr len
-\             JMP HOLDS
-\ ENDCODE
-\     \
-
 
 \ F#S    Qlo Qhi u -- Qhi 0   convert fractionnal part of Q15.16 fixed point number
 \                             with u digits
@@ -349,7 +300,6 @@ BEGIN       MOV @PSP,&MPY           \                   Load 1st operand
             MOV #HOLDS_ORG,0(PSP)   \ -- Qhi 0 addr len
             JMP HOLDS
 ENDCODE
-    \
 
 CODE F*                 \ signed s15.16 multiplication --> s15.16 result
     MOV 4(PSP),&MPYS32L \ 5 Load 1st operand
@@ -363,28 +313,39 @@ CODE F*                 \ signed s15.16 multiplication --> s15.16 result
     MOV &RES2,TOS       \ 5
     MOV @IP+,PC
 ENDCODE
-    \
 
 [THEN]  \ hardware multiplier
-    \
 
-: F.                \ display a Q15.16 number with 4 digits after comma
-    <# DUP >R DABS  \ -- Qlo Qhi            R-- sign
-    4 F#S           \ -- sign Qhi 0
-    $2C HOLD #S     \ -- sign 0 0           $2C = char ,
-    R> SIGN #>      \ -- addr len           R-- 
+CODE F.             \ display a Q15.16 number with 4/5/16 digits after comma
+MOV TOS,S           \ S = sign
+MOV #4,T            \ T = 4     preset 4 digits for base 16 and by default
+MOV &BASE,W
+CMP ##10,W
+0= IF               \           if base 10
+    ADD #1,T        \ T = 5     set 5 digits
+ELSE
+    CMP #%10,W
+    0= IF           \           if base 2
+        MOV #16,T   \ T = 16    set 16 digits
+    THEN
+THEN
+PUSHM #3,IP         \                   R-- IP sign #digit
+LO2HI
+    <# DABS         \ -- uQlo uQhi      R-- IP sign #digit
+    R> F#S          \ -- uQhi 0         R-- IP sign
+    $2C HOLD        \                   $2C = char ','
+    #S              \ -- 0 0
+    R> SIGN #>      \ -- addr len       R-- IP
     TYPE SPACE      \ --         
 ;
-    \
 
 CODE S>F         \ convert a signed number to a Q15.16 (signed) number
     SUB #2,PSP
     MOV #0,0(PSP)
     MOV @IP+,PC
 ENDCODE
-    \
 
-[UNDEFINED] 2CONSTANT [IF]
+[UNDEFINED] 2@ [IF]
 
 \ https://forth-standard.org/standard/core/TwoFetch
 \ 2@    a-addr -- x1 x2    fetch 2 cells ; the lower address will appear on top of stack
@@ -394,22 +355,19 @@ MOV 2(TOS),0(PSP)
 MOV @TOS,TOS
 NEXT
 ENDCODE
-    \
+[THEN] \ of [UNDEFINED] 2@
+
+[UNDEFINED] 2CONSTANT [IF]
 
 \ https://forth-standard.org/standard/double/TwoCONSTANT
 : 2CONSTANT \  udlo/dlo/Qlo udhi/dhi/Qhi --         to create double or Q15.16 CONSTANT
-CREATE
-, ,             \ compile Qhi then Qlo
-DOES>
-2@              \ execution part    addr -- Qhi Qlo
+CREATE , ,  \ compile Qhi then Qlo
+DOES> 2@    \ execution part    addr -- Qhi Qlo
 ;
 
-[THEN] \of [UNDEFINED] 2CONSTANT [IF]
-
-    \
+[THEN] \ of [UNDEFINED] 2CONSTANT
 
 [THEN] \ of [UNDEFINED] {FIXPOINT}
-    \
 
 PWR_HERE
 
@@ -417,24 +375,44 @@ PWR_HERE
 ; (volatile) tests
 ; -----------------------
 
-    \
 3,14159 2CONSTANT PI
 PI -1,0 F* 2CONSTANT -PI
-    \
-PI 2,0 F* F.  
-PI -2,0 F* F.
--PI 2,0 F* F.
--PI -2,0 F* F.
-PI 2,0 F/ F.  
-PI -2,0 F/ F.
--PI 2,0 F/ F.
--PI -2,0 F/ F.
-    \
-\ 181,01933598 181,01933598 f* f. \ sqrt(32768)^2 = 32768,0
-181,019335 181,019335 f* f. \ sqrt(32768)^2 = 32768,0
-    \
-32767,999 1,0 f* F.
-32767,999 1,0 f/ F.
-    \
--32768,0 1,0 f* F.
--32768,0 1,0 f/ F.
+
+$10 BASE !  PI F. 
+           -PI F.
+%10 BASE !  PI F. 
+           -PI F.
+#10 BASE !  PI F. 
+           -PI F.
+
+PI 2,0 F* F.      
+PI -2,0 F* F.    
+-PI 2,0 F* F.    
+-PI -2,0 F* F.    
+
+PI 2,0 F/ F.      
+PI -2,0 F/ F.    
+-PI 2,0 F/ F.    
+-PI -2,0 F/ F.    
+
+32767,99999 1,0 f* F. 
+32767,99999 1,0 f/ F. 
+32767,99999 2,0 f/ F. 
+32767,99999 4,0 f/ F. 
+32767,99999 8,0 f/ F. 
+32767,99999 16,0 f/ F.
+
+-32767,0 -1,0 f* F.   
+-32767,0 -1,0 f/ F.   
+-32767,0 -2,0 f/ F.   
+-32767,0 -4,0 f/ F.   
+-32767,0 -8,0 f/ F.   
+-32767,0 -16,0 f/ F.  
+-32767,0 -32,0 f/ F.  
+-32767,0 -64,0 f/ F.  
+
+; sqrt(32768)^2 = 32768
+181,01933598375 181,01933598375 f* f.  
+181,01933598375 -181,01933598375 f* f.
+-181,01933598375 181,01933598375 f* f.
+-181,01933598375 -181,01933598375 f* f.

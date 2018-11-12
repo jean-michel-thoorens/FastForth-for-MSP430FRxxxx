@@ -151,14 +151,13 @@ CODE START                      \
     LO2HI
     ." RC5toLCD is running. Type STOP to quit"
     LIT RECURSE IS WARM         \ insert this starting routine between COLD and WARM...
-    (WARM) ;                    \ ...and continue with WARM (very, very usefull after COLD or RESET !:-)
-    \
+    ['] WARM >BODY EXECUTE      \ ...and continue with WARM (very, very usefull after COLD or RESET !:-)
+ ;
 
-: STOP                  \ stops multitasking, must to be used before downloading app
-    ['] (WARM) IS WARM  \ remove START app from FORTH init process
-    ECHO COLD           \ reset CPU, interrupt vectors, and start FORTH
+: STOP                          \ stops multitasking, must to be used before downloading app
+    ['] WARM >BODY  IS WARM     \ remove START app from FORTH init process
+    ECHO COLD                   \ reset CPU, interrupt vectors, and start FORTH
 ;
-    \
 
 \ HERE OVER - DUMP              \ general minidump, part 2
 

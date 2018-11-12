@@ -46,17 +46,18 @@ exit
 
 
 :preprocessF
-@%~d1\prog\gema\gema.exe -nobackup -line -t '\n=\r\n;\r\n=\r\n' -f  %~d1\config\gema\%~n2.pat %~dpn1.f %~dpn1.4th
+::@%~d1\prog\gema\gema.exe -nobackup -line -t '\n=\r\n;\r\n=\r\n' -f  %~d1\config\gema\%~n2.pat %~dpn1.f %~dpn1.4th
+@%~d1\prog\gema\gema.exe -nobackup -line -t '-\r\n=\r\n' -f  %~d1\config\gema\%~n2.pat %~dpn1.f %~dpn1.4th
 
 :DownloadF
 @taskkill /F /IM ttermpro.exe 1> NUL 2>&1
 
 :win32F
-@"C:\Program Files\teraterm\ttpmacro.exe" /V %~d1\config\msp430\SendToSD.ttl %~dpn1.4th /C  1> NUL 2>&1
+@"C:\Program Files\teraterm\ttpmacro.exe" /V %~d0\config\msp430\SendToSD.ttl %~dpn1.4th /C  1> NUL 2>&1
 @IF NOT ERRORLEVEL 1 GOTO EndF
 
 :win64F
-@"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d1\config\msp430\SendToSD.ttl %~dpn1.4th /C
+@"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d0\config\msp430\SendToSD.ttl %~dpn1.4th /C
 
 :EndF
 @MOVE "%~dpn1.4th" "%~dp1\LAST.4th" > NUL
@@ -103,5 +104,6 @@ goto badend
 @"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d0\config\msp430\SendtoSD.ttl %~dpn1.4th /C
 
 :End4th
+@COPY "%~dpn1.4th" "%~dp1\LAST.4th" > NUL
 exit
 

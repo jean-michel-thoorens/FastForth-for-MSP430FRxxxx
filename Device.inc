@@ -114,14 +114,6 @@ UCA1_SD
     .include "MSP430FR2433.inc"
     .ENDIF
 
-    .IFDEF MSP_EXP430FR2433_I2C
-    .warning "Code for MSP_EXP430FR2433_I2C"
-LF_XTAL
-UCA1_SD
-UCB0_TERM
-    .include "MSP430FR2433.inc"
-    .ENDIF
-
     .IFDEF CHIPSTICK_FR2433
     .warning "Code for CHIPSTICK_FR2433"
 UCA0_TERM 
@@ -136,7 +128,4 @@ UCA1_TERM
 UCB1_SD
     .include "MSP430FR2355.inc"
     .ENDIF
-
-
-
 

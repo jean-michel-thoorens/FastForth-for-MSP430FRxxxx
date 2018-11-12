@@ -261,15 +261,14 @@ BIS.B #S_BUS,&I2CS_SEL1         \ enable I2C I/O
 \ ------------------------------\
 COLON
 ." I2C_Slave is running. Type STOP to quit"
-LIT recurse is WARM         \ insert this routine between COLD and WARM...
-(WARM) ;                    \ ...and continue with WARM
-    \
+    LIT RECURSE IS WARM         \ insert this starting routine between COLD and WARM...
+    ['] WARM >BODY EXECUTE      \ ...and continue with WARM (very, very usefull after COLD or RESET !:-)
+ ;
 
-: STOP                  \ stops multitasking, must to be used before downloading app
-    ['] (WARM) IS WARM  \ remove START app from FORTH init process
-    ECHO COLD           \ reset CPU, interrupt vectors, and start FORTH
+: STOP                          \ stops multitasking, must to be used before downloading app
+    ['] WARM >BODY  IS WARM     \ remove START app from FORTH init process
+    ECHO COLD                   \ reset CPU, interrupt vectors, and start FORTH
 ;
-    \
 
 ECHO
 PWR_HERE

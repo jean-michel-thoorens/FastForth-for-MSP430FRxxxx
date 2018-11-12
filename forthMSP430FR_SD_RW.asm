@@ -668,7 +668,7 @@ OPND_End                            ;
     .word   PARENOPEN               ;                   reopen same filepath but as write
     FORTHtoASM                      ;
     MOV     @RSP+,IP                ;
-    BIC     #UCRXIFG,&TERMIFG       ;   clean up RX buffer  
+    BIC     #UCRXIFG,&TERM_IFG      ;   clean up RX buffer  
 ; ----------------------------------;
 T2S_GetSliceLoop                    ;   tranfert by slices of 512 bytes terminal input to file on SD_CARD via SD_BUF 
 ; ----------------------------------;
@@ -677,9 +677,9 @@ T2S_GetSliceLoop                    ;   tranfert by slices of 512 bytes terminal
 ; ----------------------------------;
 T2S_FillBufferLoop                  ;
 ; ----------------------------------;
-    BIT     #UCRXIFG,&TERMIFG       ;3 new char in TERMRXBUF ?
+    BIT     #UCRXIFG,&TERM_IFG      ;3 new char in TERMRXBUF ?
     JZ      T2S_FillBufferLoop      ;2
-    MOV.B   &TERMRXBUF,X            ;3
+    MOV.B   &TERM_RXBUF,X           ;3
     CMP.B   #4,X                    ;1 EOT sent by TERATERM ?
     JZ      T2S_END                 ;2 yes
     MOV.B   X,SD_BUF(Y)             ;3

@@ -1083,8 +1083,7 @@ CREATE ABUF 80 CHARS ALLOT
 ;
 
 T{ ACCEPT-TEST -> }T
-ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba
-
+\ ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba
 \ ------------------------------------------------------------------------
 TESTING DICTIONARY SEARCH RULES
 
@@ -1134,7 +1133,5 @@ T{ s12 s11 COMPARE -> -1 }T
 $0A BASE !  \ happy end of core test
 
 [ELSE]      \ if ANS_COMP is not present
-DOWNLOAD_FIRST_ANS_COMP_!
+    DOWNLOAD FIRST ANS_COMP!
 [THEN]
-
-ECHO

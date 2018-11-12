@@ -1,42 +1,44 @@
-\ ------------------------------------------------------------------------------
-\ UTILITY.f
-\ ------------------------------------------------------------------------------
 
+; ------------------------------------------------------------------------------
+; UTILITY.f
+; ------------------------------------------------------------------------------
+\
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133  MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
-
+\
 \ must be preprocessed with yourtarget.pat file because PSTACK,CONTEXT,INI_THREAD
-
+\
 \ REGISTERS USAGE
-\ rDODOES to rEXIT must be saved before use and restored after
+\ R4 to R7 must be saved before use and restored after
 \ scratch registers Y to S are free for use
 \ under interrupt, IP is free for use
-
+\
 \ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
 \ PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
-
+\
 \ example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
 \
 \ POPM  order :  PC,RSP, SR, R3, rDODOES,rDOCON,rDOVAR,rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
 \ POPM  order :  R0, R1, R2, R3,   R4   ,  R5  ,  R6  ,  R7 , R8, R9,R10,R11,R12,R13,R14,R15
-
+\
 \ example : POPM #6,IP   pop Y,X,W,T,S,IP registers from return stack
-
+\
+\
 \ FORTH conditionnals:  unary{ 0= 0< 0> }, binary{ = < > U< }
-
+\
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
-
-\ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  <0
+\
+\ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
 PWR_STATE
-    \
+
 [DEFINED] {TOOLS} [IF] {TOOLS} [THEN]     \ remove {UTILITY} if outside core 
-    \
+
 [UNDEFINED] {TOOLS} [IF]  \ don't replicate {UTILITY} if inside core
-    \
+
 MARKER {TOOLS} 
-    \
+
 [UNDEFINED] ? [IF]    \
 \ https://forth-standard.org/standard/tools/q
 \ ?         adr --            display the content of adr
@@ -45,7 +47,6 @@ CODE ?
     MOV #U.,PC  \ goto U.
 ENDCODE
 [THEN]
-    \
 
 [UNDEFINED] .S [IF]    \
 \ https://forth-standard.org/standard/tools/DotS
@@ -75,7 +76,6 @@ COLON
     2 +LOOP
 ;
 [THEN]
-    \
 
 [UNDEFINED] .RS [IF]    \
 \ .RS            --            display <depth> of Return Stack and stack contents if not empty
@@ -86,44 +86,31 @@ CODE .RS
     GOTO    BW1
 ENDCODE
 [THEN]
-    \
 
 [UNDEFINED] WORDS [IF]
-    \
+
 [UNDEFINED] AND [IF]
-    \
+
 \ https://forth-standard.org/standard/core/AND
 \ C AND    x1 x2 -- x3           logical AND
 CODE AND
 AND @PSP+,TOS
 MOV @IP+,PC
 ENDCODE
-    \
+
 [THEN]
-    \
+
 [UNDEFINED] PAD [IF]
-    \
+
 \ https://forth-standard.org/standard/core/PAD
 \ C PAD    -- addr
 PAD_ORG CONSTANT PAD
-    \
+
 [THEN]
-    \
+
 \ https://forth-standard.org/standard/tools/WORDS
 \ list all words of vocabulary first in CONTEXT.
 : WORDS                             \ --            
-
-\ \ vvvvvvvv   may be skipped    vvvvvvvv
-\ BASE @                              \ -- BASE
-\ #10 BASE !
-\ CR ."    "
-\ INI_THREAD @ DUP
-\ 1 = IF DROP ." monothread"
-\     ELSE . ." threads"
-\     THEN ."  vocabularies"
-\ BASE !                              \ --
-\ \ ^^^^^^^^   may be skipped    ^^^^^^^^
-
 CR ."    "                          \
 CONTEXT @                           \ -- VOC_BODY                   MOVE all threads of VOC_BODY in PAD
     PAD INI_THREAD @ DUP +          \ -- VOC_BODY PAD THREAD*2
@@ -155,7 +142,6 @@ CONTEXT @                           \ -- VOC_BODY                   MOVE all thr
     DROP                            \ --
 ;
 [THEN]
-    \
 
 [UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {ANS_COMP}
     CODE MAX    \    n1 n2 -- n3       signed maximum
@@ -173,7 +159,6 @@ CONTEXT @                           \ -- VOC_BODY                   MOVE all thr
         MOV @IP+,PC
     ENDCODE
 [THEN]
-    \
 
 [UNDEFINED] U.R [IF]
 : U.R                       \ u n --           display u unsigned in n width (n >= 2)
@@ -181,7 +166,6 @@ CONTEXT @                           \ -- VOC_BODY                   MOVE all thr
 R> OVER - 0 MAX SPACES TYPE
 ;
 [THEN]
-    \
 
 [UNDEFINED] DUMP [IF]    \
 \ https://forth-standard.org/standard/tools/DUMP
@@ -204,11 +188,10 @@ LO2HI
   $10 +LOOP
   R> BASE !                 \ restore current base
 ;
-[THEN]
-    \
+[THEN]  \ of [UNDEFINED] DUMP
 
-[THEN]
-    \
+[THEN]  \ of [UNDEFINED] {TOOLS}
+
 PWR_HERE
 ECHO
 
@@ -228,6 +211,5 @@ THEN    BS ." MHz "            \ MCLK
 FRAM_FULL HERE - U. ." bytes free"
 ESC ." [0m"                     \ reset reverse video
 ;
-    \
 
 specs

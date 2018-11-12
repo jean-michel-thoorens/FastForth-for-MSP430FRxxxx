@@ -204,13 +204,11 @@ BIC.B #M_BUS,&I2CM_OUT          \ OUT0 : preset output low
 BIS.B #M_BUS,&I2CM_SEL1         \ SEL11 : enable I2C I/O
 COLON
 ." type stop to stop :-)"
-LIT RECURSE IS WARM             \ insert this starting routine between COLD and WARM...
-(WARM)                          \ ...and continue with (WARM)
-;
+    LIT RECURSE IS WARM         \ insert this starting routine between COLD and WARM...
+    ['] WARM >BODY EXECUTE      \ ...and continue with WARM (very, very usefull after COLD or RESET !:-)
+ ;
 
-: STOP                  \ stops multitasking, must to be used before downloading app
-    ['] (WARM) IS WARM  \ remove START app from FORTH init process
-    ECHO COLD           \ reset CPU, interrupt vectors, and start FORTH
+: STOP                          \ stops multitasking, must to be used before downloading app
+    ['] WARM >BODY  IS WARM     \ remove START app from FORTH init process
+    ECHO COLD                   \ reset CPU, interrupt vectors, and start FORTH
 ;
-    \
-

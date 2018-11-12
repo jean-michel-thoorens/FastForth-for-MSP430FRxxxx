@@ -7,34 +7,31 @@
 ; (ACCEPT) part I: prepare TERMINAL_INT ;
 ; --------------------------------------;
     .IFDEF TOTAL
-;            .word 1537h                 ;6              push R7,R6,R5,R4
-            PUSHM  #4,R7
+            PUSHM   #4,R7               ;6              push R7,R6,R5,R4
     .ENDIF                              ;
             MOV     #ENDACCEPT,S        ;2              S = ACCEPT XOFF return
             MOV     #AKEYREAD1,T        ;2              T = default XON return
-;            .word   152Dh               ;5              PUSHM IP,S,T, as IP ret, XOFF ret, XON ret
-             PUSHM  #3,IP
-           MOV     TOS,W               ;1 -- addr len
+            PUSHM   #3,IP               ;5              PUSHM IP,S,T, as IP ret, XOFF ret, XON ret
+            MOV     TOS,W               ;1 -- addr len
             MOV     @PSP,TOS            ;2 -- org ptr                                             )
             ADD     TOS,W               ;1 -- org ptr   W=Bound                                   )
             MOV     #0Dh,T              ;2              T = 'CR' to speed up char loop in part II  > prepare stack and registers
             MOV     #20h,S              ;2              S = 'BL' to speed up char loop in part II )  for TERMINAL_INT use
-            BIT     #UCRXIFG,&TERMIFG   ;3              RX_Int ?
+            BIT     #UCRXIFG,&TERM_IFG  ;3              RX_Int ?
             JZ      ACCEPTNEXT          ;2              no : case of quiet input terminal
-            MOV     &TERMRXBUF,Y        ;3              yes: clear RX_Int
+            MOV     &TERM_RXBUF,Y       ;3              yes: clear RX_Int
             CMP     #0Ah,Y              ;2                   received char = LF ? (end of downloading ?)
             JNZ     RXON                ;2                   no : RXON return = AKEYREAD1, to process first char of new line.
 ACCEPTNEXT  ADD     #2,RSP              ;1                   yes: remove AKEYREAD1 as XON return,
             MOV     #SLEEP,X            ;2                        and set XON return = SLEEP
-;            .word   153Ch               ;6                        PUSHM S,T,W,X before SLEEP (and so WAKE on any interrupts)
-            PUSHM  #4,S
+            PUSHM  #4,S                 ;6                        PUSHM S,T,W,X before SLEEP (and so WAKE on any interrupts)
 ; --------------------------------------;
 RXON                                    ;
 ; --------------------------------------;
     .IFDEF TERMINAL3WIRES               ;
-RXON_LOOP   BIT     #UCTXIFG,&TERMIFG   ;3  wait the sending end of XON, useless at high baudrates
+RXON_LOOP   BIT     #UCTXIFG,&TERM_IFG  ;3  wait the sending end of XON, useless at high baudrates
             JZ      RXON_LOOP           ;2
-            MOV     #17,&TERMTXBUF      ;4  move char XON into TX_buf
+            MOV     #17,&TERM_TXBUF     ;4  move char XON into TX_buf
     .ENDIF                              ;
     .IFDEF TERMINAL4WIRES               ;
             BIC.B   #RTS,&HANDSHAKOUT   ;4  set RTS low
@@ -49,9 +46,9 @@ RXON_LOOP   BIT     #UCTXIFG,&TERMIFG   ;3  wait the sending end of XON, useless
 RXOFF                                   ;
 ; --------------------------------------;
     .IFDEF TERMINAL3WIRES               ;
-RXOFF_LOOP  BIT     #UCTXIFG,&TERMIFG   ;3  wait the sending end of XOFF, useless at high baudrates
+RXOFF_LOOP  BIT     #UCTXIFG,&TERM_IFG  ;3  wait the sending end of XOFF, useless at high baudrates
             JZ      RXOFF_LOOP          ;2
-            MOV     #19,&TERMTXBUF      ;4 move XOFF char into TX_buf
+            MOV     #19,&TERM_TXBUF     ;4 move XOFF char into TX_buf
     .ENDIF                              ;
     .IFDEF TERMINAL4WIRES               ;
             BIS.B   #RTS,&HANDSHAKOUT   ;4 set RTS high
@@ -59,13 +56,12 @@ RXOFF_LOOP  BIT     #UCTXIFG,&TERMIFG   ;3  wait the sending end of XOFF, useles
             RET                         ;4 to ENDACCEPT
 ; --------------------------------------;
 
-; --------------------------------------;
-    ASMWORD "SLEEP"                     ; may be redirected
-SLEEP                                   ;
-    MOV #PARENSLEEP,PC                  ;3
-PARENSLEEP                              ;
-    BIS &LPM_MODE,SR                    ;3  enter in LPMx sleep mode with GIE=1
-; --------------------------------------;   default FAST FORTH mode (for its input terminal use) : LPM0.
+; ----------------------------------;
+    ASMWORD "SLEEP"                 ;   may be redirected
+SLEEP       MOV @PC+,PC             ;3  Code Field Address (CFA) of SLEEP
+PFASLEEP    .word   BODYSLEEP       ;   Parameter Field Address (PFA) of SLEEP, with default value
+BODYSLEEP   BIS &LPM_MODE,SR        ;3  enter in LPMx sleep mode with GIE=1
+; ----------------------------------;   default FAST FORTH mode (for its input terminal use) : LPM0.
 
 ;###############################################################################################################
 ;###############################################################################################################
@@ -104,7 +100,7 @@ TERMINAL_INT                            ; <--- TEMR RX interrupt vector, delayed
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
 ; starts the 2th stopwatch              ;
 ; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
-AKEYREAD    MOV.B   &TERMRXBUF,Y        ;3  read character into Y, UCRXIFG is cleared
+AKEYREAD    MOV.B   &TERM_RXBUF,Y       ;3  read character into Y, UCRXIFG is cleared
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
 ; stops the 3th stopwatch               ; 3th bottleneck result : 17~ + LPMx wake_up time ( + 5~ XON loop if F/Bds<230401 )
 ; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
@@ -133,7 +129,7 @@ ASTORETEST  CMP     W,TOS               ; 1 Bound is reached ?
             MOV.B   Y,0(TOS)            ; 3 no: store char @ Ptr, send echo then loopback
             ADD     #1,TOS              ; 1     increment Ptr
 ; --------------------------------------;
-WAITaKEY    BIT     #UCRXIFG,&TERMIFG   ; 3 new char in TERMRXBUF ?
+WAITaKEY    BIT     #UCRXIFG,&TERM_IFG  ; 3 new char in TERMRXBUF ?
             JNZ     AKEYREAD            ; 2 yes
             JZ      WAITaKEY            ; 2 no
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
@@ -142,15 +138,15 @@ WAITaKEY    BIT     #UCRXIFG,&TERMIFG   ; 3 new char in TERMRXBUF ?
 ; --------------------------------------;
 ENDACCEPT                               ; <--- XOFF return address
 ; --------------------------------------;
-            MOV     #LPM0+GIE,&LPM_MODE ; reset LPM_MODE to default mode LPM0 for next line of input stream
-            CMP     #0,&LINE            ; if LINE <> 0...
+            MOV #LPM0+GIE,&LPM_MODE     ; reset LPM_MODE to default mode LPM0 for next line of input stream
+            CMP #0,&LINE                ; if LINE <> 0...
             JZ ACCEPTEND                ;
             ADD #1,&LINE                ; ...increment LINE
 ACCEPTEND   SUB @PSP+,TOS               ; Org Ptr -- len'
             MOV @RSP+,IP                ; 2 and continue with INTERPRET with GIE=0.
                                         ; So FORTH machine is protected against any interrupt...
     .IFDEF TOTAL
-             POPM  #4,R7                 ;6              pop R4,R5,R6,R7
+             POPM  #4,R7                ;6              pop R4,R5,R6,R7
     .ENDIF
             mNEXT                       ; ...until next falling down to LPMx mode of (ACCEPT) part1,
 ; **************************************;    i.e. when the FORTH interpreter has no more to do.
@@ -163,17 +159,17 @@ ACCEPTEND   SUB @PSP+,TOS               ; Org Ptr -- len'
 ;https://forth-standard.org/standard/core/EMIT
 ;C EMIT     c --    output character to the output device ; deferred word
             FORTHWORD "EMIT"
-EMIT        MOV @PC+,PC                 ;3  15~
-            .word   PARENEMIT
-PARENEMIT   MOV     TOS,Y               ; 1
-            MOV     @PSP+,TOS           ; 2
-YEMIT1      BIT     #UCTXIFG,&TERMIFG   ; 3 wait the sending end of previous char, useless at high baudrates
-            JZ      YEMIT1              ; 2
-    .IFDEF TERMINAL5WIRES               ;
-YEMIT2      BIT.B   #CTS,&HANDSHAKIN    ;
-            JNZ     YEMIT2
+EMIT        MOV @PC+,PC             ;3  15~
+PFAEMIT     .word   BODYEMIT        ;  Parameter Field Address (PFA) of EMIT, with its default value
+BODYEMIT    MOV TOS,Y               ; 1
+            MOV @PSP+,TOS           ; 2
+YEMIT1      BIT #UCTXIFG,&TERM_IFG  ; 3 wait the sending end of previous char, useless at high baudrates
+            JZ YEMIT1               ; 2
+    .IFDEF TERMINAL5WIRES           ;
+YEMIT2      BIT.B #CTS,&HANDSHAKIN  ;
+            JNZ YEMIT2
     .ENDIF
-YEMIT       .word   4882h               ; hi7/4~ lo:12/4~ send/send_not  echo to terminal
-            .word   TERMTXBUF           ; 3 MOV Y,&TERMTXBUF
-            mNEXT                       ; 4
+YEMIT       .word   4882h           ; hi7/4~ lo:12/4~ send/send_not  echo to terminal
+            .word   TERM_TXBUF      ; 3 MOV Y,&TERMTXBUF
+            mNEXT                   ; 4
 

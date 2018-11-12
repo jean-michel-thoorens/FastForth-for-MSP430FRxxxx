@@ -19,8 +19,12 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 \.f=\.4th!      to change file type
-@define{@read{@mergepath{@inpath{};RemoveComments.pat;}}}
-!
+
+!========================
+! remove comments        
+!========================
+\\*\n=
+\s\\*\n=\n
 ! ======================================================================
 ! MSP430FR5994 Config
 ! ======================================================================

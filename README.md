@@ -11,20 +11,14 @@ This enables to make a fast data logger with a small footprint as a MSP430FR5738
 
 With all core options its size is under 9.5kB. 
 
-	Tested on MSP-EXP430{FR5969,FR5994,FR6989,FR4133,FR2355,FR2433} launchpads and CHIPSTICKFR2433,
+	Tested on MSP-EXP430FR5969,FR5994,FR6989,FR4133,FR2355,FR2433 launchpads and CHIPSTICKFR2433,
     at 0.5, 1, 2, 4, 8, 12, 16 MHz plus 20MHz and 24MHz for FR23xx,FR57xx devices.
 
-    For the moment, the IDE works under WINDOWS...
-	
-    Files launchpad_921600bds.txt are 16threads vocabularies 16MHz executables, with
+    Files launchpad_xMHz.txt are 16threads vocabularies executables, with
     "3 WIRES" (XON/XOFF flow control) and "4 WIRES" (Hardware flow control) 921600Bds terminal.
 
-    Launchpad_115200.txt files are same except 115200Bds for unlucky linux men without TERATERM. 
-    For the launchpad MSP-EXP430FR5994 with SD_CARD, full version is available. For others, you must 
-    recompile forthMSP430FR.asm with SD_CARD_LOADER and SD_CARD_READ_WRITE switches turned ON
-    (uncomment their line).
-    
-    if you use a cable with a PL2303HXD, terminal baudrate can be boosted on the fly to 5Mbds! 
+    if you use a cable with a PL2303HXD, terminal baudrate can be boosted on the fly to 5Mbds
+    for Windows and up to 4Mbds for linux.
     Try it by downloading MSP430-FORTH\CHNGBAUD.f. 
 
     Once the Fast Forth code is loaded in the target FRAM memory, you can add it assembly code or 
@@ -52,48 +46,63 @@ With all core options its size is under 9.5kB.
 What is new ?
 -------------
 
-    FastForth V206: just 6kb for 16MHz + 5Mbds terminal + macro assembler + conditional compiler!
-                 -       - 
+    FastForth V207. -50 bytes.
 
-        The terminal baudrate can be changed on the fly. Download MSP430-FORTH\CHNGBAUD.f to do.
+    Unlocking I/O's is transfered from RESET to WARM.
+    Thus, by redirecting WARM, you can add I/O's configuration of your application before unlock them.
+
+        two options to do this:
+    
+            Light option: your START application routine is inserted in WARM and continues with the default WARM. 
+            See START routine in the \MSP430_FORTH\IR_RC5.f file as application example.
+
+            Complete option: 
+            START application routine replaces WARM and continues with ABORT (without WARM message).
+            In this case, you can also change the Reset events handling but you will need to unlock I/O's 
+            and configure TERMINAL I/O's in your START routine. 
+            Search "activate I/O" in \MSP430_FORTH\RC5toLCD.f file application to see how to do.
+     
+    Bugs corrected in target.asm, target.pat and device.inc files.
+
+    FastForth V206
+
+    The terminal baudrate can be changed on the fly. Download MSP430-FORTH\CHNGBAUD.f to test.
 
         forthMSP430FR.asm: 
 
-                the DTC model chosen for Fast forth is 2. The others become experimental.
+             Bugs corrected: ALSO and :NONAME (option).
 
-                Bugs corrected: ALSO and :NONAME (option).
+             The structure of primary DEFERred words as KEY,EMIT,CR,WARM... is modified,
+                              -------
+             the address of their default execute part, without name, can be found with:
+             ' <name> >BODY
 
-                The structure of primary DEFERred words as KEY,EMIT,CR,WARM... is modified,
-                                 -------
-                the address of their default execute part, without name, can be found with:
-                ' <name> >BODY
+                 example, after this entry: ' DROP IS KEY
+                 KEY (or ' KEY EXECUTE) runs DROP i.e. the redirection made by IS,
+                 ' KEY >BODY EXECUTE runs KEY, the default action at the BODY address.
 
-                    example, after this entry: ' DROP IS KEY
-                    KEY (or ' KEY EXECUTE) runs DROP i.e. the redirection made by IS,
-                    ' KEY >BODY EXECUTE runs KEY, the default action at the BODY address.
+                 and: ' KEY >BODY IS KEY
+                 restore the default action of this primary DEFERred word.
+                                                    -------
 
-                    and: ' KEY >BODY IS KEY
-                    restore the default action of this primary DEFERred word.
-                                                       -------
+                 WARNING! you cannot do that with words created by DEFER !
+                 DEFER creates only secondary DEFERred words, without BODY !
+                                    ---------
 
-                    WARNING! you cannot do that with words created by DEFER !
-                    DEFER creates only secondary DEFERred words, without BODY !
-                                       ---------
+                 to build a primary DEFERred FORTH word, 
+                            -------
+                 you must create a DEFERred word followed by a
+                 :NONAME definition, ended by ; IS <name>
 
-                    to build a primary DEFERred FORTH word, 
-                               -------
-                    you must create a DEFERred word followed by
-                    a :NONAME definition, ended by ; IS <name>:
+                     DEFER truc
 
-                        DEFER truc
+                     :NONAME         \ does nothing (for the example)
+                         DUP
+                         DROP
+                     ; IS truc
 
-                        :NONAME         \ does nothing (for the example)
-                            DUP
-                            DROP
-                        ; IS truc
-
-                    The advantage of creating primary DEFERred words is to set their
-                    default state, enabling to reinitialize them easily.
+                 The advantage of creating primary DEFERred words is to set their
+                 default state, enabling to reinitialize them easily.
 
         forthMSP430FR_ASM.asm:
 
@@ -114,8 +123,7 @@ What is new ?
                             MOV @IP+,PC \ mandatory before ENDCODE
                         ENDCODE IS machin
 
-                        you can obviously mix LOW/HIGH levels in CODENNM
-                        and :NONAME areas...
+                    you can obviously mix LOW/HIGH levels in CODENNM and :NONAME areas...
 
 
     FastForth V205
@@ -551,6 +559,9 @@ Three bat files are done in \MSP430-FORTH that enable you to do all you want.
 drag and drop your source file on to.
 you can also open any source file with scite editor, and do all you want via its Tools menu.
 
+If you have any downloading error, first verify in "LAST.4th" that all lines are 
+correctly ended with CR+LF.
+
 
 SD_Card Load, Read, Write and Delete 
 =============================================
@@ -643,6 +654,8 @@ to download a source file (.f or .4th) onto SD_CARD target, use CopySourceFileTo
 or use scite.
 Double click on one of this bat files to see how to do.
 
+If you have any downloading error, first verify in "LAST.4th" that all lines are 
+correctly ended with CR+LF.
 
 I2C DRIVERS
 ===========

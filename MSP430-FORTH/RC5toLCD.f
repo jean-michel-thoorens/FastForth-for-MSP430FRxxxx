@@ -4,8 +4,8 @@
 \
 \ FastForth Compiling options used :
 \ DTC=2, FREQUENCY=8/16/24MHz, THREADS=16, 
-\ nnn bauds, 3WIRES, 4WIRES,
-\ ASSEMBLER, CONDCOMP, NONAME, UTILITY.
+\ 921600 bauds, 3WIRES, 4WIRES,
+\ ASSEMBLER, CONDCOMP, LOWERCASE, NONAME, UTILITY.
 
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
@@ -71,15 +71,15 @@
 \
 \ layout : I/O are defined in the launchpad.pat file (don't work with ChipStick_FR2433)
 \
-\  GND  <-------+---0V0---------->  1 LCD_Vss
-\  VCC  >------ | --3V6-----+---->  2 LCD_Vdd
+\  GND  <-------o---0V0---------->  1 LCD_Vss
+\  VCC  >-------|---3V6-----o---->  2 LCD_Vdd
 \               |           |
 \              ___    470n ---
 \               ^          ---
 \              / \ 1N4148   |
 \              ---          |
 \          100n |    2k2    |
-\ LCD_TIM_.2 >---||--+--^/\/\/v--+---->  3 LCD_Vo (= 0V6 without modulation)
+\ TB0.2 >---||--o--^/\/\/v--o---->  3 LCD_Vo (= 0V6 without modulation)
 \       ------------------------->  4 LCD_RW
 \       ------------------------->  5 LCD_RW
 \       ------------------------->  6 LCD_EN
@@ -124,32 +124,16 @@ ENDCODE
 ;
 [THEN]
 
-\ CODE 20_US                      \ n --      n * 20 us
-\ BEGIN                           \ 3 cycles loop + 6~  
-\ \    MOV     #5,W                \ 3 MCLK = 1 MHz
-\ \    MOV     #23,W               \ 3 MCLK = 4 MHz
-\ \    MOV     #51,W               \ 3 MCLK = 8 MHz
-\     MOV     #104,W              \ 3 MCLK = 16 MHz
-\ \    MOV     #158,W              \ 3 MCLK = 24 MHz
-\     BEGIN                       \ 3 cycles loop ==> 3 * W / F us = 100 us - 1 @ 8 MHz
-\         SUB #1,W                \ 1
-\     0= UNTIL                    \ 2
-\     SUB     #1,TOS              \ 1
-\ 0= UNTIL                        \ 2
-\     MOV     @PSP+,TOS           \ 2
-\     MOV     @IP+,PC             \ 4
-\ ENDCODE
-
-CODE 20_US                  \ n --      n * 20 us
-BEGIN                       \ here we presume that LCD_TIM_IFG = 1...
+CODE 20_US                      \ n --      n * 20 us
+BEGIN                           \ here we presume that LCD_TIM_IFG = 1...
     BEGIN
-        BIT #1,&LCD_TIM_CTL      \ 3
-    0<> UNTIL               \ 2         loop until LCD_TIM_IFG set
-    BIC #1,&LCD_TIM_CTL          \ 3         clear LCD_TIM_IFG
-    SUB #1,TOS              \ 1
-U< UNTIL                    \ 2 ...so add a dummy loop with U< instead of 0=
-MOV @PSP+,TOS               \ 2
-MOV @IP+,PC                 \ 4
+        BIT #1,&LCD_TIM_CTL     \ 3
+    0<> UNTIL                   \ 2         loop until LCD_TIM_IFG set
+    BIC #1,&LCD_TIM_CTL         \ 3         clear LCD_TIM_IFG
+    SUB #1,TOS                  \ 1
+U< UNTIL                        \ 2 ...so add a dummy loop with U< instead of 0=
+MOV @PSP+,TOS                   \ 2
+MOV @IP+,PC                     \ 4
 ENDCODE
 
 CODE TOP_LCD                    \ LCD Sample
@@ -288,29 +272,20 @@ ASM RC5_INT                     \   wake up on Px.RC5 change interrupt
 \ RC5_FirstStartBitHalfCycle:   \
 \ ******************************\                division in RC5_TIM_CTL (SMCLK/1|SMCLK/1|SMCLK/2|SMCLK/4|SMCLK/8)
 \ FREQ_KHZ @ 8000 = [IF]        \ 8 MHz ?
-\     MOV #0,&RC5_TIM_EX0       \ predivide by 1 in RC5_TIM_EX0 register ( 125kHz|  1MHz |  2MHZ |  4MHZ |  8MHZ ), reset value
+\     MOV #0,&RC5_TIM_EX0       \ predivide by 1 in RC5_TIM_EX0 register, reset value
 \ [THEN]
 FREQ_KHZ @ 16000 = [IF]         \ 16 MHz ?
-    MOV #1,&RC5_TIM_EX0         \ predivide by 2 in RC5_TIM_EX0 register ( 250kHZ|  2MHz |  4MHZ |  8MHZ | 16MHZ )
+    MOV #1,&RC5_TIM_EX0         \ predivide by 2 in RC5_TIM_EX0 register
 [THEN]
 FREQ_KHZ @ 24000 = [IF]         \ 24 MHz ?
-    MOV #2,&RC5_TIM_EX0         \ predivide by 3 in RC5_TIM_EX0 register ( 375kHz|  3MHz |  6MHZ | 12MHZ | 24MHZ )
+    MOV #2,&RC5_TIM_EX0         \ predivide by 3 in RC5_TIM_EX0 register
 [THEN]
-\ MOV #3,&RC5_TIM_EX0           \ predivide by 4 in RC5_TIM_EX0 register ( 500kHZ|  4MHz |  8MHZ | 16MHZ )
-\ MOV #4,&RC5_TIM_EX0           \ predivide by 6 in RC5_TIM_EX0 register ( 625kHz|  5MHz | 10MHZ | 20MHZ )
-\ MOV #5,&RC5_TIM_EX0           \ predivide by 6 in RC5_TIM_EX0 register ( 750kHz|  6MHz | 12MHZ | 24MHZ )
-\ MOV #6,&RC5_TIM_EX0           \ predivide by 7 in RC5_TIM_EX0 register ( 875kHz|  7MHz | 14MHZ | 28MHZ )
-\ MOV #7,&RC5_TIM_EX0           \ predivide by 8 in RC5_TIM_EX0 register (  1MHz |  8MHz | 16MHZ | 32MHZ )
 MOV #1778,X                     \ RC5_Period * 1us
-\ MOV #222,X                    \ RC5_Period * 8us (SMCLK/1 and first column above)
 MOV #14,W                       \ count of loop
 BEGIN                           \
 \ ******************************\
 \ RC5_HalfCycle                 \ <--- loop back ---+ with readjusted RC5_Period
 \ ******************************\                   |
-\ MOV #%1000100100,&RC5_TIM_CTL \ (re)start timer_A | SMCLK/1 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
-\ MOV #%1002100100,&RC5_TIM_CTL \ (re)start timer_A | SMCLK/2 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
-\ MOV #%1010100100,&RC5_TIM_CTL \ (re)start timer_A | SMCLK/4 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
 MOV #%1011100100,&RC5_TIM_CTL   \ (re)start timer_A | SMCLK/8 time interval,free running,clear RC5_TIM__IFG and RC5_TIM_R
 \ RC5_Compute_3/4_Period:       \                   |
     RRUM    #1,X                \ X=1/2 cycle       |
@@ -376,9 +351,9 @@ MOV #$10,&BASE                  \ set hex base
 MOV TOS,0(PSP)                  \ save TOS
 MOV X,TOS                       \
 LO2HI                           \ switch from assembler to FORTH
-    ['] LCD_CLEAR IS CR         \ redirects CR
-    ['] LCD_WrC  IS EMIT        \ redirects EMIT
-    CR ." $" 2 U.R              \ print IR_RC5 code
+    ['] LCD_CLEAR IS CR         \ redirects CR to LCD
+    ['] LCD_WrC  IS EMIT        \ redirects EMIT to LCD
+    CR ." $" 2 U.R              \ print IR_RC5 code to LCD
     ['] CR >BODY IS CR          \ restore CR
     ['] EMIT >BODY IS EMIT      \ restore EMIT
 HI2LO                           \ switch from FORTH to assembler
@@ -406,7 +381,26 @@ CODENNM                         \
 JMP BACKGROUND                  \
 ENDCODE DROP                    \
 
-CODE START                      \
+
+
+\ ------------------------------\
+CODE STOP                       \ stops multitasking, must to be used before downloading app
+\ ------------------------------\
+\ restore default action of primary DEFERred word SLEEP (assembly version)
+    MOV #SLEEP,X                \ the ASM word SLEEP is only visible in mode assembler. 
+    ADD #4,X                    \ X = BODY of SLEEP, X-2 = PFA of SLEEP
+    MOV X,-2(X)                 \ restore the default background
+COLON
+\ restore default action of primary DEFERred word WARM (FORTH version)
+['] WARM >BODY IS WARM          \ remove START from FORTH init process
+ECHO                            \
+." RC5toLCD is removed." CR     \ display message      
+."    type START to restart"    \
+COLD                            \ performs reset     
+;
+
+\ ------------------------------\
+CODE START                      \ this routine completes the init of system, i.e. FORTH + this app.
 \ ------------------------------\
 \ LCD_TIM_CTL =  %0000 0010 1001 0100\$3C0
 \                    - -             \CNTL Counter lentgh \ 00 = 16 bits
@@ -434,26 +428,16 @@ CODE START                      \
 \ -------------------------------\
 \ LCD_TIM_EX0                    \ 
 \ ------------------------------\
-\ set LCD_TIM_ to make 50kHz PWM \ for LCD_Vo, works without interrupt
+\ set LCD_TIM_ to make 50kHz PWM \ for LCD_Vo; works without interrupt
 \ ------------------------------\
-\    MOV #%1000010100,&LCD_TIM_CTL \ SMCLK/1, up mode, clear timer, no int
-\    MOV #0,&LCD_TIM_EX0        \ predivide by 1 in LCD_TIM_EX0 register (1 MHZ)
-\ ------------------------------\
-\    MOV #%1001010100,&LCD_TIM_CTL \ SMCLK/2, up mode, clear timer, no int
-\    MOV #1,&LCD_TIM_EX0        \ predivide by 2 in LCD_TIM_EX0 register (2 MHZ)
-\ ------------------------------\
-\    MOV #%1010010100,&LCD_TIM_CTL \ SMCLK/4, up mode, clear timer, no int
-\    MOV #1,&LCD_TIM_EX0        \ predivide by 2 in LCD_TIM_EX0 register (4 MHZ)
-\ ------------------------------\
-\    MOV #%1011010100,&LCD_TIM_CTL \ SMCLK/8, up mode, clear timer, no int
+MOV #%1011010100,&LCD_TIM_CTL   \ SMCLK/8, up mode, clear timer, no int
 \    MOV #0,&LCD_TIM_EX0        \ predivide by 1 in LCD_TIM_EX0 register (8 MHZ)
-\ ------------------------------\
-    MOV #%1011010100,&LCD_TIM_CTL \ SMCLK/8, up mode, clear timer, no int
+FREQ_KHZ @ 16000 = [IF]         \ if 16 MHz
     MOV #1,&LCD_TIM_EX0         \ predivide by 2 in LCD_TIM_EX0 register (16 MHZ)
-\ ------------------------------\
-\    MOV #%1011010100,&LCD_TIM_CTL \ SMCLK/8, up mode, clear timer, no int
-\    MOV #2,&LCD_TIM_EX0        \ predivide by 3 in LCD_TIM_EX0 register (24 MHZ)
-\ ------------------------------\
+[THEN]
+FREQ_KHZ @ 24000 = [IF]         \ if 24 MHz
+    MOV #2,&LCD_TIM_EX0         \ predivide by 3 in LCD_TIM_EX0 register (24 MHZ)
+[THEN]
     MOV #19,&LCD_TIM_CCR0       \ 19+1=20*1us=20us
 \ ------------------------------\
 \ set LCD_TIM_.2 to generate PWM for LCD_Vo
@@ -493,8 +477,7 @@ CODE START                      \
 \                        ---    \ TAIDEX    pre divisor
 \ ------------------------------\
 \          %0000 0000 0000 0101 \ TAxCCR0
-    MOV ##1638,&WDT_TIM_CCR0    \ init WDT for LFXT: 32768/20=1638 ==> 50ms
-\    MOV ##400,&WDT_TIM_CCR0      \ init WDT for VLO: 8000/20=400 ==> 50ms
+    MOV ##1638,&WDT_TIM_CCR0    \ else init WDT_TIM_ for LFXT: 32768/20=1638 ==> 50ms
 \ ------------------------------\
 \          %0000 0000 0001 0000 \ TAxCCTL0
 \                   -           \ CAP capture/compare mode = compare
@@ -509,16 +492,32 @@ CODE START                      \
 \    MOV #LPM4,&LPM_MODE         \ with MSP430FR59xx
 \    MOV #LPM2,&LPM_MODE         \ with MSP430FR57xx, terminal input don't work for LPMx > 2
 \                               \ with MSP430FR2xxx, terminal input don't work for LPMx > 0 ; LPM0 is the default value
-
 \ ------------------------------\
 \ redirects to background task  \
 \ ------------------------------\
     MOV #SLEEP,X                \
     MOV #BACKGROUND,2(X)        \
+\ ------------------------------\ usefull only when any RESET event occurs
+\ activate I/O                  \ because when we type START, it is already done by WARM
+\ ------------------------------\ before its redirection by executing START !
+BIC #1,&PM5CTL0                 \ activate all previous I/O settings; if not activated, nothing works !
+BIS.B #TERM_BUS,&TERM_SEL       \ Configure pins TXD & RXD for TERM_UART use; if not configured, no TERMINAL !
 \ ------------------------------\
-
-LO2HI                           \ no need to push IP because (WARM) resets the Return Stack ! 
-
+\ RESET events handling         \ search "SYSRSTIV" in your MSP430FRxxxx datasheet
+\ ------------------------------\
+MOV &SAVE_SYSRSTIV,Y            \ Y = SYSRSTIV register memory
+\ CMP #2,Y                        \ Power_ON event
+\ 0= ?JMP STOP                    \ uncomment if you want to loose application in this case...
+CMP #4,Y                        \
+0= ?JMP STOP                    \ hardware RESET performs STOP. Should be mandatory...
+\ CMP #6,Y                        \
+\ 0= ?JMP STOP                    \ COLD event performs STOP... uncomment if it's that you want.
+\ CMP #$0A,Y                      \
+\ 0= ?JMP STOP                    \ fault event (violation memory protected areas) performs STOP
+\ CMP #$16,Y                      \
+\ U>= ?JMP STOP                   \ all other fault events + Deep Reset perform STOP
+\ ------------------------------\
+COLON                           \
 \ ------------------------------\
 \ Init LCD 2x20                 \
 \ ------------------------------\
@@ -539,24 +538,16 @@ LO2HI                           \ no need to push IP because (WARM) resets the R
     LCD_Clear                   \ 10- "LCD_Clear"
     ['] LCD_HOME IS CR          \ ' CR redirected to LCD_HOME
     ['] LCD_WRC  IS EMIT        \ ' EMIT redirected to LCD_WrC
-    CR ." I love you"   
+    CR ." I love you"                          \ display on LCD
     ['] CR >BODY IS CR          \
     ['] EMIT >BODY IS EMIT      \
-    ." RC5toLCD is running. Type STOP to quit"
-    LIT RECURSE IS WARM         \ replace WARM by this START routine
-    ABORT                       \ and continue with the next word after WARM...
-;                               \ ...until interpreter falls in sleep mode within ACCEPT.
-
-CODE STOP                   \ stops multitasking, must to be used before downloading app
-\ restore default action of primary DEFERred word SLEEP, assembly version
-    MOV #SLEEP,X            \ the ASM word SLEEP is only visible in mode assembler. 
-    ADD #4,X                \ X = BODY of SLEEP
-    MOV X,-2(X)             \ restore the default background
-COLON
-\ restore default action of primary DEFERred word WARM, FORTH version
-    ['] WARM >BODY IS WARM  \ remove START app from FORTH init process
-    COLD                    \ because we want to reset CPU and interrupt vectors
-;
+    ." RC5toLCD is running. Type STOP to quit" \ display on FastForth Terminal
+\ ------------------------------\
+\ START replaces WARM           \
+\ ------------------------------\
+    LIT RECURSE IS WARM         \ START replaces WARM...
+    ABORT                       \ ...and continue with ABORT
+;                               \
 
 ECHO
             ; downloading RC5toLCD.4th is done
@@ -564,13 +555,16 @@ RST_HERE    ; this app is protected against <reset>
 
 [THEN]      \ ASM
 
-
 : BS 8 EMIT ;   \ 8 EMIT = BackSpace EMIT
 : ESC #27 EMIT ;
+
+\ to see this end of compilation message you must turn ON LOWERCASE add-on before compiling FastForth
+\ else escape sequences doesn't work.
+
 : specs         \ to see Fast Forth specifications
 PWR_STATE       \ remove specs definition when running, and before bytes free processing
 6 0 DO BS LOOP  \ to reach start of line
-ESC ." [7m"     \ set reverse video
+ESC ." [7m"     \ escape sequence to set reverse video
 ." FastForth "
 INI_THREAD @ U. BS ." Threads " \ vocabularies threads
 ." DeviceID=$"
@@ -579,11 +573,11 @@ FREQ_KHZ @ 0 1000 UM/MOD U. BS
 ?DUP
 IF   ." ," U. BS                \ if remainder
 THEN ." MHz "                   \ MCLK
-FRAM_FULL HERE - U. ." bytes free"
-ESC ." [0m"                     \ clear reverse video
+SIGNATURES HERE - U. ." bytes free"
+ESC ." [0m"     \ escape sequence to clear reverse video
 ;
 
 specs   \ here FastForth type a (volatile) message with some informations
 
 
-START
+\ START

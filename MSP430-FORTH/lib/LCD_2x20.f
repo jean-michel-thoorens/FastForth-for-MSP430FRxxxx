@@ -308,15 +308,13 @@ CODE START                      \
     ['] (CR) IS CR          \ ' (CR) is CR
     ['] (EMIT) IS EMIT      \ ' (EMIT) is EMIT
     ."    xxxx_to_LCD is running. Type STOP to quit"
-    LIT recurse is WARM     \ insert this starting routine between COLD and WARM...
-\    NOECHO                      \ uncomment to run this app without terminal connexion
-    (WARM) ;                \ ...and continue with WARM
-    \
+    LIT RECURSE IS WARM         \ insert this starting routine between COLD and WARM...
+    ['] WARM >BODY EXECUTE      \ ...and continue with WARM (very, very usefull after COLD or RESET !:-)
+ ;
 
-: STOP                  \ stops multitasking, must to be used before downloading app
-    ['] (WARM) IS WARM  \ remove START app from FORTH init process
-    ECHO COLD           \ reset CPU, interrupt vectors, and start FORTH
+: STOP                          \ stops multitasking, must to be used before downloading app
+    ['] WARM >BODY  IS WARM     \ remove START app from FORTH init process
+    ECHO COLD                   \ reset CPU, interrupt vectors, and start FORTH
 ;
-    \
 
 PWR_HERE               \ set here the power_on dictionnary 
