@@ -129,16 +129,11 @@ HI2LO       .word   HERE,CELLPLUS,COMMA
 HI2LONEXT   .word   ALSO,ASSEMBLER
             .word   EXIT
 
-;             FORTHWORDIMM "SEMIC"   ; same as HI2LO, plus restore IP; counterpart of COLON
-;            mDOCOL
-;            .word   HI2LO
-;            .word   LIT,413Dh,COMMA ; compile MOV @RSP+,IP
-;            .word   EXIT
-
            FORTHWORD "CODE"     ; a CODE word must be finished with ENDCODE
 ASMCODE     CALL #HEADER        ;
-            SUB #4,&DDP         ;
-ASMCODE1    mDOCOL
+ASMCODE1    SUB #4,W            ; W = CFA
+            MOV W,&DDP          ; CFA --> DDP
+            mDOCOL
             .word   SAVE_PSP
             .word   BRAN,HI2LONEXT
 
@@ -200,20 +195,12 @@ COLON2      MOV #-1,&STATE      ; enter in compile state
             JMP COLON1
     .ENDCASE
 
-            .IFDEF NONAME
-
+    .IFDEF NONAME
             FORTHWORD "CODENNM"  ; CODENoNaMe is the assembly counterpart of :NONAME
 CODENNM     mDOCOL
             .word COLONNONAME,LEFTBRACKET
-            FORTHtoASM
-            MOV @RSP+,IP
-            SUB #4,W            ; to remove DEFER snippet
-            MOV W,&DDP
-            JMP ASMCODE1
-
-            .ENDIF ; NONAME
-
-
+            .word ASMCODE1,EXIT
+    .ENDIF
 
 ;;Z SKIP      char -- addr               ; skip all occurring character 'char' in input stream
 ;            FORTHWORD "SKIP"            ; used by assembler to parse input stream
@@ -241,7 +228,7 @@ SKIPEND:    MOV     W,TOS               ; -- addr
 ; Search ARG of "xxxx(REG),"            ; <== PARAM130
 ; Search ARG of ",&xxxx"                ; <== PARAM111 <== PARAM20
 ; Search ARG of ",xxxx(REG)"            ; <== PARAM210
-SearchARG   PUSHM #2,S                ;                   PUSHM S,T
+SearchARG   PUSHM #2,S                  ;                   PUSHM S,T
             ASMtoFORTH                  ; -- separator      search word first
             .word   WORDD,FIND          ; -- c-addr
             .word   QZBRAN,SearchARGW   ; -- c-addr         if found
@@ -906,19 +893,19 @@ BACKWSET            ; --
             asmword "BW1"
             mdodoes
             .word BACKWARDDOES
-            .word ASMBW1
+            .word ASMBW1    ; in RAM
 
 ; backward label 2
             asmword "BW2"
             mdodoes
             .word BACKWARDDOES
-            .word ASMBW2
+            .word ASMBW2    ; in RAM
 
 ; backward label 3
             asmword "BW3"
             mdodoes
             .word BACKWARDDOES
-            .word ASMBW3
+            .word ASMBW3    ; in RAM
 
 FORWARDDOES
     FORTHtoASM
@@ -942,19 +929,19 @@ FORWSET             ; OPCODE PFA --
             asmword "FW1"
             mdodoes
             .word FORWARDDOES
-            .word ASMFW1
+            .word ASMFW1    ; in RAM
 
 ; forward label 2
             asmword "FW2"
             mdodoes
             .word FORWARDDOES
-            .word ASMFW2
+            .word ASMFW2    ; in RAM
 
 ; forward label 3
             asmword "FW3"
             mdodoes
             .word FORWARDDOES
-            .word ASMFW3
+            .word ASMFW3    ; in RAM
 
 
 ; invert FORTH conditionnal branch      FORTH_JMP_OPCODE -- LABEL_JMP_OPCODE

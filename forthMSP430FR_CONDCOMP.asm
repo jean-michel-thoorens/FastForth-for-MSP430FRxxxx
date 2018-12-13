@@ -13,18 +13,18 @@
 ;   has a lesser numeric value than the corresponding character in the string specified by c-addr2 u2 and one (1) otherwise.
         FORTHWORD "COMPARE"
 COMPARE
-        MOV TOS,S       ;1 u2 = S
-        MOV @PSP+,Y     ;2 addr2 = Y
-        MOV @PSP+,T     ;2 u1 = T     
-        MOV @PSP+,X     ;2 addr1 = X
-COMPAR1 MOV T,TOS       ;1 TOS=u1
-        ADD S,TOS       ;1 TOS=u1+u2
+        MOV TOS,S       ;1 S = u2
+        MOV @PSP+,Y     ;2 Y = addr2
+        MOV @PSP+,T     ;2 T = u1     
+        MOV @PSP+,X     ;2 X = addr1
+COMPAR1 MOV T,TOS       ;1
+        ADD S,TOS       ;1 TOS = u1+u2
         JZ  COMPEQUAL   ;2 u1=u2=0: end of all successfull comparisons
         SUB #1,T        ;1
-        JN COMPLESS     ;2 u1<u2
+        JN COMPLESS     ;2 u1<u2 if u1 < 0
         SUB #1,S        ;1
-        JN COMPGREATER  ;2 u1>u2
-        ADD #1,X        ;1
+        JN COMPGREATER  ;2 u1>u2 if u2 < 0
+        ADD #1,X        ;1 
         CMP.B @Y+,-1(X) ;4 char1-char2
         JZ COMPAR1      ;2 char1=char2  17~ loop
         JHS COMPGREATER ;2 char1>char2
@@ -41,7 +41,69 @@ COMPEQUAL
         FORTHWORDIMM "[THEN]"   ; do nothing
         mNEXT
 
-;[ELSE]
+;;[ELSE]
+;;https://forth-standard.org/standard/tools/BracketELSE
+;;Compilation:
+;;Perform the execution semantics given below.
+;;Execution:
+;;( "<spaces>name ..." -- )
+;;Skipping leading spaces, parse and discard space-delimited words from the parse area, 
+;;including nested occurrences of [IF] ... [THEN] and [IF] ... [ELSE] ... [THEN], 
+;;until the word [THEN] has been parsed and discarded. 
+;;If the parse area becomes exhausted, it is refilled as with REFILL. 
+;        FORTHWORDIMM  "[ELSE]"
+;BRACKETELSE
+;        mDOCOL
+;        .word   lit,1                   ;   1
+;BRACKETELSE1                            ;   BEGIN
+;BRACKETELSE2                            ;       BEGIN
+;        .word   FBLANK,WORDD,COUNT      ;           BL WORD COUNT
+;        .word   DUP                     ;           DUP
+;        .word   QBRAN,BRACKETELSE10     ;       WHILE
+;        .word   OVER,OVER               ;           2DUP 
+;        .word   XSQUOTE                 ;           S" [IF]"
+;        .byte   4,"[IF]"                ; 
+;        .word   COMPARE                 ;           COMPARE
+;        .word   QZBRAN,BRACKETELSE3     ;           0= IF
+;        .word   TWODROP,ONEPLUS         ;               2DROP 1+
+;        .word   BRAN,BRACKETELSE8       ;           (ENDIF)
+;BRACKETELSE3                            ;           ELSE
+;        .word   OVER,OVER               ;               2DUP
+;        .word   XSQUOTE                 ;               S" [ELSE]"
+;        .byte   6,"[ELSE]"              ; 
+;        .word   COMPARE                 ;               COMPARE
+;        .word   QZBRAN,BRACKETELSE5     ;               0= IF
+;        .word   TWODROP,ONEMINUS        ;                   2DROP 1-
+;        .word   DUP,QBRAN,BRACKETELSE4  ;                  DUP IF
+;        .word   ONEPLUS                 ;                       1+
+;BRACKETELSE4                            ;                   THEN
+;        .word   BRAN,BRACKETELSE7       ;               (ENDIF)
+;BRACKETELSE5                            ;               ELSE
+;        .word   XSQUOTE                 ;                   S" [THEN]"
+;        .byte   6,"[THEN]"              ; 
+;        .word   COMPARE                 ;                   COMPARE
+;        .word   QZBRAN,BRACKETELSE6     ;                   0= IF
+;        .word   ONEMINUS                ;                       1-
+;BRACKETELSE6                            ;                   THEN
+;BRACKETELSE7                            ;               THEN
+;BRACKETELSE8                            ;           THEN
+;        .word   QDUP                    ;           ?DUP
+;        .word   QZBRAN,BRACKETELSE9     ;           0= IF
+;        .word   EXIT                    ;               EXIT
+;BRACKETELSE9                            ;           THEN
+;        .word   BRAN,BRACKETELSE2       ;       REPEAT
+;BRACKETELSE10                           ;
+;        .word   TWODROP                 ;       2DROP
+;        .word   XSQUOTE                 ;
+;        .byte   5,13,10,"ko "           ;
+;        .word   TYPE                    ;       CR+LF ." ko "     to show false branch of conditionnal compilation
+;        .word   REFILL                  ;       REFILL
+;        .word   SETIB                   ;               SET Input Buffer pointers SOURCE_LEN, SOURCE_ORG and clear >IN
+;        .word   BRAN,BRACKETELSE1       ;   AGAIN  65 words
+
+;
+;[ELSE]      a few (smaller and faster) definition
+;https://forth-standard.org/standard/tools/BracketELSE
 ;Compilation:
 ;Perform the execution semantics given below.
 ;Execution:
@@ -50,56 +112,46 @@ COMPEQUAL
 ;including nested occurrences of [IF] ... [THEN] and [IF] ... [ELSE] ... [THEN], 
 ;until the word [THEN] has been parsed and discarded. 
 ;If the parse area becomes exhausted, it is refilled as with REFILL. 
-        FORTHWORDIMM  "[ELSE]"
+        FORTHWORDIMM  "[ELSE]"          ; or [IF] isnogood...
 BRACKETELSE
         mDOCOL
-        .word   lit,1                   ;   1
-BRACKETELSE1                            ;   BEGIN
-BRACKETELSE2                            ;       BEGIN
-        .word   FBLANK,WORDD,COUNT      ;           BL WORD COUNT 
-        .word   DUP,QBRAN,BRACKETELSE10 ;       DUP WHILE
-        .word   OVER,OVER               ;           2DUP 
-        .word   XSQUOTE                 ;           S" [IF]"
-        .byte   4,"[IF]"                ; 
-        .word   COMPARE                 ;           COMPARE
-        .word   QZBRAN,BRACKETELSE3     ;           0= IF
-        .word   TWODROP,ONEPLUS         ;               2DROP 1+
-        .word   BRAN,BRACKETELSE8       ;           (ENDIF)
-BRACKETELSE3                            ;           ELSE
-        .word   OVER,OVER               ;               OVER OVER
-        .word   XSQUOTE                 ;               S" [ELSE]"
-        .byte   6,"[ELSE]"              ; 
-        .word   COMPARE                 ;               COMPARE
-        .word   QZBRAN,BRACKETELSE5     ;               0= IF
-        .word   TWODROP,ONEMINUS        ;                   2DROP 1-
-;        .word   DUP,QBRAN,BRACKETELSE4  ;                  DUP IF
-        .word   DUP,QBRAN,BRACKETELSE7  ;
-        .word   ONEPLUS                 ;                       1+
-BRACKETELSE4                            ;                   THEN
-        .word   BRAN,BRACKETELSE7       ;               (ENDIF)
-BRACKETELSE5                            ;               ELSE
-        .word   XSQUOTE                 ;                   S" [THEN]"
-        .byte   6,"[THEN]"              ; 
-        .word   COMPARE                 ;                   COMPARE
-        .word   QZBRAN,BRACKETELSE6     ;                   0= IF
-        .word   ONEMINUS                ;                       1-
-BRACKETELSE6                            ;                   THEN
-BRACKETELSE7                            ;               THEN
-BRACKETELSE8                            ;           THEN
-        .word   QDUP                    ;           ?DUP
-;        .word   QZBRAN,BRACKETELSE9     ;           0= IF
-        .word   QZBRAN,BRACKETELSE2     ;
-        .word   EXIT                    ;               EXIT
-;BRACKETELSE9                            ;           THEN
-;        .word   BRAN,BRACKETELSE2       ;       REPEAT
-BRACKETELSE10                           ;
-        .word   TWODROP                 ;       2DROP
+        .word   lit,0                   
+BRACKETELSE0
+        .word   ONEPLUS                 ; 
+BRACKETELSE1                            ;
+        .word   FBLANK,WORDD,COUNT      ;
+        .word   DUP,QBRAN,BRACKETELSE5  ; if end of line refill buffer then loop back
+        .word   OVER,OVER               ; 2DUP
+        .word   XSQUOTE                 ;
+        .byte   6,"[THEN]"              ;
+        .word   COMPARE                 ;
+        .word   QZBRAN,BRACKETELSE2     ; if bad comparaison, jump for next comparaison
+        .word   TWODROP,ONEMINUS        ; 2DROP, decrement count
+        .word   QDUP,QZBRAN,BRACKETELSE1; loop back if count <> 0
+        .word   EXIT                    ; else exit
+BRACKETELSE2                            ;
+        .word   OVER,OVER               ; 2DUP
+        .word   XSQUOTE                 ;
+        .byte   6,"[ELSE]"              ;
+        .word   COMPARE                 ;
+        .word   QZBRAN,BRACKETELSE3     ; if bad comparaison, jump for next comparaison
+        .word   TWODROP,ONEMINUS        ; 2DROP, decrement count
+        .word   QDUP,QZBRAN,BRACKETELSE0; if count <> 0 restore old count with loop back increment
+        .word   EXIT                    ; else exit
+BRACKETELSE3                            ;
+        .word   XSQUOTE                 ;
+        .byte   4,"[IF]"                ;
+        .word   COMPARE                 ;
+        .word   QZBRAN,BRACKETELSE1     ; if bad comparaison, loop back
+        .word   BRAN,BRACKETELSE0       ; else increment loop back
+BRACKETELSE5                            ;
+        .word   TWODROP                 ;
         .word   XSQUOTE                 ;
         .byte   5,13,10,"ko "           ;
-        .word   TYPE                    ;       CR+LF ." ko "     to show false branch of conditionnal compilation
-        .word   REFILL                  ;       REFILL
-        .word   SETIB                   ;               SET Input Buffer pointers SOURCE_LEN, SOURCE_ORG and clear >IN
-        .word   BRAN,BRACKETELSE1       ;   AGAIN
+        .word   TYPE                    ; CR+LF ." ko "     to show false branch of conditionnal compilation
+        .word   REFILL                  ; REFILL Input Buffer
+        .word   SETIB                   ; SET Input Buffer pointers SOURCE_LEN, SOURCE_ORG and clear >IN
+        .word   BRAN,BRACKETELSE1       ; then loop back   60 words
 
 
 ;[IF]
@@ -121,10 +173,6 @@ BRACKETIF
         JZ BRACKETELSE
         mNEXT
 
-;        FORTHWORDIMM "[IFNOT]" ; flag -- 
-;        XOR #-1,TOS
-;        JMP BRACKETIF
-
 ;[DEFINED]
 ;https://forth-standard.org/standard/tools/BracketDEFINED
 ;Compilation:
@@ -136,7 +184,6 @@ BRACKETIF
 ;otherwise return a false flag. [DEFINED] is an immediate word.
 
         FORTHWORDIMM  "[DEFINED]"
-BRACKETDEFINED
         mDOCOL
         .word   FBLANK,WORDD,FIND,NIP,EXIT
 
@@ -150,7 +197,7 @@ BRACKETDEFINED
 ;otherwise return a true flag.
         FORTHWORDIMM  "[UNDEFINED]"
         mDOCOL
-        .word   BRACKETDEFINED,ZEROEQUAL,EXIT
+        .word   FBLANK,WORDD,FIND,NIP,ZEROEQUAL,EXIT
 
 ;; CORE EXT  MARKER
 ;;https://forth-standard.org/standard/core/MARKER

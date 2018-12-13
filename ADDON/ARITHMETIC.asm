@@ -98,12 +98,10 @@ d1u2SMSLASHREM                  ;   -- d1 u2
             ADD #1,2(PSP)       ;4           d1lo+1
             ADDC #0,0(PSP)      ;4           d1hi+C
 ud1u2SMSLASHREM                 ;   -- ud1 u2
-;           .word 151Ch          ;4          PUSHM S,T (1+1 push,S=0Ch)
-            PUSHM  #2,S
+            PUSHM  #2,S          ;4         PUSHM S,T
             CALL #MUSMOD
             MOV @PSP+,TOS
-;           .word 171Bh          ;4          POPM T,S (1+1 pop,T=0Bh)
-            POPM  #2,S
+            POPM  #2,S          ;4          POPM T,S
             CMP #0,T            ;1  -- ur uq  T=rem_sign>=0?
             JGE SMSLASHREMnruq  ;2           yes
             XOR #-1,0(PSP)      ;3

@@ -11,7 +11,7 @@ This enables to make a fast data logger with a small footprint as a MSP430FR5738
 
 With all core options its size is under 9.5kB. 
 
-	Tested on MSP-EXP430FR5969,FR5994,FR6989,FR4133,FR2355,FR2433 launchpads and CHIPSTICKFR2433,
+	Tested on MSP-EXP430{FR5969,FR5994,FR6989,FR4133,FR2355,FR2433} launchpads and CHIPSTICKFR2433,
     at 0.5, 1, 2, 4, 8, 12, 16 MHz plus 20MHz and 24MHz for FR23xx,FR57xx devices.
 
     Files launchpad_xMHz.txt are 16threads vocabularies executables, with
@@ -46,6 +46,12 @@ With all core options its size is under 9.5kB.
 What is new ?
 -------------
 
+    FastForth V208. -2 bytes.
+
+    Corrected LITERAL (double LITERAL part).
+    Added \MSP430-FORTH\CORDIC.f for its aficionados.
+
+
     FastForth V207. -50 bytes.
 
     Unlocking I/O's is transfered from RESET to WARM.
@@ -78,7 +84,7 @@ What is new ?
              ' <name> >BODY
 
                  example, after this entry: ' DROP IS KEY
-                 KEY (or ' KEY EXECUTE) runs DROP i.e. the redirection made by IS,
+                 KEY (or ' KEY EXECUTE) runs DROP i.e. runs the redirection made by IS,
                  ' KEY >BODY EXECUTE runs KEY, the default action at the BODY address.
 
                  and: ' KEY >BODY IS KEY
@@ -1019,10 +1025,13 @@ with the compiled result :
 As we see, IP is saved only once, it's logical.                      
 
 
-ASSEMBLY WITHOUT LABEL ?
+ASSEMBLER WITHOUT LABELS ? YES !
 ---
 
-Yes ! the assembly syntax borrows FORTH's one for jumps :
+To compare AS macro assembler and FastForth embedded assembler,
+compare files /ADDON/fixpoint.asm and /MSP430-FORTH/FIXPOINT.f
+
+The syntax of FastForth assembler borrows FORTH's one :
 
     CODE TEST_IF_THEN
         CMP #1,R8           \ set Z,N,V, flags
@@ -1030,6 +1039,7 @@ Yes ! the assembly syntax borrows FORTH's one for jumps :
             ADD R8,R9       \ true part of comparaison
         THEN                    
         ...                 \ the next
+        ...
         MOV @IP+,PC         \ don't forget...
     ENDCODE                 \ don't forget...
 
@@ -1138,7 +1148,8 @@ conditionnal backward jump :
             MOV @IP+,PC
         ENDCODE
 
-FAST FORTH have one pass assembler, not able to make forward jump.
+
+But FAST FORTH have one pass assembler, not able to make forward jump.
 
 I have added possibility of several "non canonical" jumps, up to 3 backward and up to 3 forward imbricated jumps to label :
 
@@ -1177,9 +1188,8 @@ SYMBOLIC ASSEMBLER ? YES !
 
 I have discovered a little semantic preprocessor "GEMA", just like that FAST FORTH have its symbolic assembler !
 
-    \config\gema\MSP430FRxxxx_FastForth.pat contains system variables for all devices
     \config\gema\DEVICE.pat contains memory map and vectors for a specified DEVICE
-    \MSP430-FORTH\LAUNCHPAD.pat is the I/O config file for specific LAUNCHPAD or application
+    \config\gema\LAUNCHPAD.pat is the I/O config file for specific LAUNCHPAD (or application)
 
 gema translates also FORTH registers in ASM registers (R0 to R15)
 
@@ -1188,8 +1198,6 @@ with scite editor open a file.f, then select in the menu "tools" the items "prep
 
 furnished examples : see \MSP430-FORTH\
 Enjoy !
-
-Try SD\_TEST.f to build a SD\_Card test.
 
 
 COMPILE FAST FORTH FOR YOUR MODULE
@@ -1225,7 +1233,7 @@ Then, for the needs of syntactic preprocessor:
 
 1- create a \config\gema\device.pat file if not exist, to do a mix from your device.inc file and another analog device.pat.
 
-2- create your MSP430-FORTH\target.pat file from target.asm file.
+2- create your \config\gema\target.pat file from target.asm file.
 
 Best practice, I suggest you that all digital pins you define (input or output) in your projects have their idle state high, with external pull up resistor
 that is the reset state of FastForth...
@@ -1245,10 +1253,10 @@ PROJECT.f :
     ; MSP430FR5969 MSP_EXP430FR5969 8MHZ 921600bds PROJECT
     ; ----------------------------------------------------
 
-[DEFINED] {PROJECT} [IF] {PROJECT} [THEN] \ remove {PROJECT} if exist (memory managment)
-    \
-MARKER {PROJECT}
-    \
+    [DEFINED] {PROJECT} [IF] {PROJECT} [THEN] \ remove {PROJECT} if exist (memory managment)
+   
+    MARKER {PROJECT}
+    
 
 here you append your already tested routines :
 
@@ -1282,10 +1290,12 @@ here you append your already tested routines :
 then finish with this 2 "magic" words plus one optional : START, STOP and optional BACKGROUND
 
     ASM BACKGROUND          \ (optional)
+    BW1
         ...                 \ insert here your background task
         ...
         ...
-    MOV #(SLEEP),PC         \ Must be the last statement of BACKGROUND
+    BIS &LPM_MODE,SR        \
+    JMP BW1
     ENDASM                  \
 
 
@@ -1310,18 +1320,18 @@ then finish with this 2 "magic" words plus one optional : START, STOP and option
 
     CODE STOP               \ to properly stop your app
         MOV #SLEEP,X        \ restore the default background (optional)
-        MOV #(SLEEP),2(X)   \ (words SLEEP and (SLEEP) can only be used in assembler mode)
-                            \ (thus "['] (SLEEP) IS SLEEP" don't works.)
+        ADD #4,X            \ (word SLEEP can only be used in assembler, not in FORTH)
+        MOV X,-2(X)
     COLON
-        ['] (WARM) IS WARM  \ remove START from FORTH init process 
+        ['] WARM >BODY
+        IS WARM             \ remove START from FORTH init process 
         ECHO                \ to always retrieve FORTH input terminal
         COLD                \ reset CPU, interrupt vectors and restart FORTH.
     ;
 
-[THEN]  \ end of conditionnaly compilation
 
-                ; compiling is done
-    RST_HERE    ; thus allowing to restart your app with <reset> or COLD
+    RST_HERE
+
     START       ; let's go!
 
 end of file
@@ -1343,11 +1353,7 @@ TEST.f :
     \ MSP-EXP430FR5969_8MHZ_TEST.f
     \ ----------------------------------
 
-[DEFINED] {TEST} [IF] {TEST} [THEN] \ remove {TEST} if exist (memory management)
-    \
-MARKER {TEST}
-    \
-
+    RST_STATE   \ memory managment
 
     here you write your routine to test
     
@@ -1361,8 +1367,7 @@ MARKER {TEST}
     PWR_HERE    \ test.f content is protected against POWER OFF, but volatile with <reset>
 
 
-
-Each time you download this test file, the word RST\_STATE returns the <RESET\> dictionary set (i.e. PROJECT). The word PWR\_HERE protects the test against POWER OFF. without the word PWR\_HERE, the test is lost when power down.
+Each time you download this TEST file, the word RST\_STATE clears memory content beyond PROJECT. 
 
 let's go
 --
@@ -1387,7 +1392,7 @@ REGISTERS correspondence (the preprocessor gema.exe allow you to use FASTFORTH o
                              
         R0          PC      PC          Program Counter
         R1          SP      RSP         Return Stack Pointer
-        R2          SR/CG1  SR          Status Register/Constant Generator 1
+        R2          SR/CG1              Status Register/Constant Generator 1
         R3          CG2                 Constant Generator 2
         R4          R4      rDODOES     contents address of xdodoes   
         R5          R5      rDOCON      contents address of xdocon    

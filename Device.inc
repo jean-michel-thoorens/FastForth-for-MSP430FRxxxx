@@ -8,15 +8,13 @@ HALFDUPLEX
     .ENDIF
 
 
-
+; define if QUIT is DEFERed
     .IFDEF SD_CARD_LOADER 
     .IFDEF BOOTLOADER
     .IFDEF CONDCOMP
-BOOTLOAD
+DEFER_QUIT
     .ELSE 
-        .WARNING "SD Boot Loader requires conditional compilation addon"
-CONDCOMP
-BOOTLOAD
+        .ERROR "SD Boot Loader requires conditional compilation addon"
     .ENDIF
     .ENDIF
     .ENDIF
