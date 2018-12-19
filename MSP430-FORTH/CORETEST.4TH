@@ -1123,10 +1123,8 @@ T{ s1 "abcdee" COMPARE ->  1 }T
 : s11 S" 0abc" ; 
 : s12 S" 0aBc" ;
 
-[DEFINED] CAPS_ON [IF]  \ you must set ON compilation switch "LOWERCASE" to pass these tests
 T{ s11 s12 COMPARE ->  1 }T 
 T{ s12 s11 COMPARE -> -1 }T
-[THEN]      \ CAPS_ON
 
 [THEN]      \ COMPARE
 

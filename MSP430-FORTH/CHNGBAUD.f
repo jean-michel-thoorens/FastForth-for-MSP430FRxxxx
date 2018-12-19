@@ -32,7 +32,7 @@ ECHO CR
 ."    your choice: "
 KEY
 
-48 - ?DUP 0=                \ select 5MBds ?
+48 - ?DUP 0=                \ select 6MBds ?
 IF  ." 6 MBds"              \ add this to the current line
     R@ 4000 =               \ 4MHz ?
     IF  R@ BAD_SPEED        \ abort

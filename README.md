@@ -1,159 +1,167 @@
-Fast Forth For MSP430FRxxxx TI's chips
-======================================
+Fast Forth For MSP430FRxxxxTI's chips, from 16k FRAM 
+==================================================
 
 
-FAST FORTH is a fast and well made embedded interpreter/assembler/compiler, very interesting due to it size of 6 kbytes. 
-If your purpose is programming a MSP430FRxxxx in assembler, FAST FORTH is the Swiss army knife you absolutely need! 
+Fast Forth is a fast and well-made embedded interpreter/assembler/compiler, very interesting because of its size of 6 KB. 
+This includes the FORTH language, a symbolic assembler without labels, conditional compilation, a 16-input search engine which 
+speeds up the Forth interpreter by a factor of 4 and a connection to the serial terminal (TERATERM.exe), with 3 wires software flow control (XON/XOFF)
+or 4 wires hardware control flow, up to 6 Mbds.  
+If your goal is to program a MSP430FRxxxx in assembler, FAST FORTH is the Swiss Army knife you absolutely need!
 
-For only 3 kbytes in addition, you have the primitives to access the sd\_card FAT16 and FAT32: read, write, del + load source files + direct copy from PC to SD\_Card.
-It works with all SD CARD memories from 64MB to 64GB. Read or write a byte is done in less than a microsecond @ 16MHz.
-This enables to make a fast data logger with a small footprint as a MSP430FR5738 QFN24. To compare with a LPC800 ARM entry-level...
+For only 3 kbytes in addition, you have the primitives to access the sd\_card FAT16 and FAT32: read, write, del, download source files and to copy them from PC to the SD\_Card.
+It works with all SD CARD memories from 64MB to 64GB. The cycle of reading/writing byte is below 1 us @ 16 MHz.
+This enables to make a fast data logger with a small footprint as a MSP430FR5738 QFN24.
 
-With all core options its size is under 9.5kB. 
+With all kernel options its size is under 9.25kB. 
 
-	Tested on MSP-EXP430{FR5969,FR5994,FR6989,FR4133,FR2355,FR2433} launchpads and CHIPSTICKFR2433,
-    at 0.5, 1, 2, 4, 8, 12, 16 MHz plus 20MHz and 24MHz for FR23xx,FR57xx devices.
+    Tested on all MSP-EXP430FRxxxx TI launchpads (5739,5969,5994,6989,4133,2355,2433) and CHIPSTICKFR2433,
+    at 0.5, 1, 2, 4, 8, 12, 16 MHz plus 20MHz and 24MHz with FR23xx,FR57xx devices.
 
-    Files launchpad_xMHz.txt are 16threads vocabularies executables, with
-    "3 WIRES" (XON/XOFF flow control) and "4 WIRES" (Hardware flow control) 921600Bds terminal.
+    The files launchpad_xMHz.txt are the executables ready to use with 
+    a UART to USB cable and the serial terminal TERATERM.exe at 921600Bds.
 
-    if you use a cable with a PL2303HXD, terminal baudrate can be boosted on the fly to 5Mbds
-    for Windows and up to 4Mbds for linux.
-    Try it by downloading MSP430-FORTH\CHNGBAUD.f. 
+    By using a PL2303HXD cable (purple), you can modify terminal baudrate on the fly up to 6 Mbds.
+    To try, after well configuring your local copy of the FastForth depository (see FastForth.pdf), 
+    drag and drop \MSP430-FORTH\CHNGBAUD.f onto \MSP430-FORTH\SendSourceFileToTarget.bat.
 
-    Once the Fast Forth code is loaded in the target FRAM memory, you can add it assembly code or 
-    FORTH code, or both, by downloading your source files that embedded Fast Forth interprets and
-    compiles. To do, you only need teraterm.exe as input terminal and an USBtoUART bridge 
-    to connect your target.
-    
-    Beforehand, the preprocessor GEMA, by means of a target.pat file, will have translated your 
-    source file.f in a targeted source file.4th ready to download.
+    Thus, once the Fast Forth kernel is loaded in the target FRAM memory, you can add assembly code or 
+    FORTH code, or both, by downloading your source files that the embedded FastForth interprets and
+    compiles.    
+    Beforehand, the preprocessor GEMA, by means of a \config\gema\target.pat file, will have translated
+    the common source file.f in a targeted source file.4th. This allows the assembler to use
+    symbolic addresses for all peripheral registers without having to declare them in Forth.
     A set of .bat files is furnished to do this automatically. See it all in the \MSP430-FORTH folder.
 
     The download, interpretation and compilation of a source file.4th is done at a throughput
-    of 40/80/120 kbytes/sec with a 8/16/24 MHz clock. 
-    Considering a ratio 5/1, that of the compiled code is 8/16/24 kbytes/sec.
+    up to 40/80/120 kbytes/sec with a 8/16/24 MHz clock. 
+    Considering a ratio 4/1, that of the compiled code is 10/20/30 kbytes/sec.
 
-    After downloading of complementary words in ANS_COMP.f, FastForth executes CORETEST.4th without errors
-    which ensures its compatibility with the FORTH CORE ANS94 standard.
+    After downloading of complementary words in \MSP430-FORTH\ANS_COMP.f, FastForth executes CORETEST.4th
+    without errors which ensures its compatibility with the FORTH CORE ANS94 standard.
 
-    Notice that FAST FORTH interprets lines up to 80 chars, only SPACE as delimiter, only CR+LF as EOL,
-    and BACKSPACE. And that memory access is limited to 64 kbytes. 
+    Notice that FAST FORTH interprets lines up to 84 chars, only SPACE as delimiter, only CR+LF as
+    End Of Line, and BACKSPACE. 
+    And that memory access is limited to 64 kbytes. 
     You can always create FORTH words to access data beyond this limit...
 
-    Finally, using the SCITE editor as IDE, you can do everything from its "tools" menu.
+    Finally, using the SCITE editor as IDE, all is ready to do everything from its "tools" menu.
 
 What is new ?
 -------------
 
-    FastForth V208. -2 bytes.
+V208
 
+    -38 bytes.
+    Added switch DOUBLE_INPUT as kernel compilation ADDON.
+    Added \MSP430-FORTH\CORDIC.f for aficionados.
     Corrected LITERAL (double LITERAL part).
-    Added \MSP430-FORTH\CORDIC.f for its aficionados.
+    Modified ?ABORT, S".
+    Removed switch LOWERCASE from kernel compilation ADDON.
 
+V207 
 
-    FastForth V207. -50 bytes.
-
+    -50 bytes.
     Unlocking I/O's is transfered from RESET to WARM.
     Thus, by redirecting WARM, you can add I/O's configuration of your application before unlock them.
 
         two options to do this:
     
-            Light option: your START application routine is inserted in WARM and continues with the default WARM. 
-            See START routine in the \MSP430_FORTH\IR_RC5.f file as application example.
+            Light option: 
+            your START routine is inserted in WARM and continues with the default WARM. 
+            Search "START" in the \MSP430_FORTH\IR_RC5.f file as application example.
 
             Complete option: 
-            START application routine replaces WARM and continues with ABORT (without WARM message).
+            START routine replaces WARM and continues with ABORT (without WARM message).
             In this case, you can also change the Reset events handling but you will need to unlock I/O's 
             and configure TERMINAL I/O's in your START routine. 
-            Search "activate I/O" in \MSP430_FORTH\RC5toLCD.f file application to see how to do.
+            Search "activate I/O" in \MSP430_FORTH\RC5toLCD.f file to see how to do.
      
     Bugs corrected in target.asm, target.pat and device.inc files.
 
-    FastForth V206
+V206
 
     The terminal baudrate can be changed on the fly. Download MSP430-FORTH\CHNGBAUD.f to test.
 
-        forthMSP430FR.asm: 
+    forthMSP430FR.asm: 
 
-             Bugs corrected: ALSO and :NONAME (option).
+         Bugs corrected: ALSO and :NONAME (option).
 
-             The structure of primary DEFERred words as KEY,EMIT,CR,WARM... is modified,
-                              -------
-             the address of their default execute part, without name, can be found with:
-             ' <name> >BODY
+         The structure of primary DEFERred words as KEY,EMIT,CR,WARM... is modified,
+                          -------
+         the address of their default execute part, without name, can be found with:
+         ' <name> >BODY
 
-                 example, after this entry: ' DROP IS KEY
-                 KEY (or ' KEY EXECUTE) runs DROP i.e. runs the redirection made by IS,
-                 ' KEY >BODY EXECUTE runs KEY, the default action at the BODY address.
+             example, after this entry: ' DROP IS KEY
+             KEY (or ' KEY EXECUTE) runs DROP i.e. runs the redirection made by IS,
+             ' KEY >BODY EXECUTE runs KEY, the default action at the BODY address.
 
-                 and: ' KEY >BODY IS KEY
-                 restore the default action of this primary DEFERred word.
-                                                    -------
+             and: ' KEY >BODY IS KEY
+             restore the default action of this primary DEFERred word.
+                                                -------
 
-                 WARNING! you cannot do that with words created by DEFER !
-                 DEFER creates only secondary DEFERred words, without BODY !
-                                    ---------
+        WARNING! you cannot do that with words created by DEFER !
+        DEFER creates only secondary DEFERred words, without BODY !
+                            ---------
 
-                 to build a primary DEFERred FORTH word, 
-                            -------
-                 you must create a DEFERred word followed by a
-                 :NONAME definition, ended by ; IS <name>
+        to build a primary DEFERred FORTH word, 
+                    -------
+        you must create a DEFERred word followed by a
+        :NONAME definition, ended by ; IS <name>
 
-                     DEFER truc
+             DEFER truc
 
-                     :NONAME         \ does nothing (for the example)
-                         DUP
-                         DROP
-                     ; IS truc
+             :NONAME         \ does nothing (for the example)
+                 DUP
+                 DROP
+             ; IS truc
 
-                 The advantage of creating primary DEFERred words is to set their
-                 default state, enabling to reinitialize them easily.
+        The advantage of creating primary DEFERred words is to set their
+        default state, enabling to reinitialize them easily.
 
-        forthMSP430FR_ASM.asm:
+    forthMSP430FR_ASM.asm:
 
-                All assembly code is revamped.
+        All assembly code is revamped.
 
-                POPM and PUSHM instructions now follow the TI syntax :-(
+        POPM and PUSHM instructions now follow the TI syntax :-(
 
-                Added CODENNM as assembly counterpart of :NONAME (option)
+        Added CODENNM as assembly counterpart of :NONAME (option)
 
-                    to build the primary DEFERred assembly word "machin" :
-                                 -------
+        to build the primary DEFERred assembly word "machin" :
+                     -------
 
-                        DEFER machin
+            DEFER machin
 
-                        CODENNM
-                            NOP2        \ assembly instruction
-                            NOP3        \ assembly instruction
-                            MOV @IP+,PC \ mandatory before ENDCODE
-                        ENDCODE IS machin
+            CODENNM
+                NOP2        \ assembly instruction
+                NOP3        \ assembly instruction
+                MOV @IP+,PC \ mandatory before ENDCODE
+            ENDCODE IS machin
 
-                    you can obviously mix LOW/HIGH levels in CODENNM and :NONAME areas...
+        you can obviously mix LOW/HIGH levels in CODENNM and :NONAME areas...
 
+V205
 
-    FastForth V205
-        Added MSP-EXP430FR2355 launchpad
-        Added word :NONAME (option).
-        FastForth terminal via Bluetooth v2.1 + EDR (Microchip RN42) works fine in full duplex mode,
-        up to 460800bds, 4 WIRES (GND,RX,TX,RTS); but with, as wireless effect, a bad troughput of 6kb/s
-        instead of 30kb/s with a bridge UART2USB.
-        Added 4Mbds,5Mbds terminal @16MHZ, for use with UART2USB PL2303HXD.
-        Words AND, OR, XOR are moved as complement in ANS_COMP.f file.
-        Simplified preprocessor files in \config\gema\ folder: only two for one target:
-            one for the device, other for the target (launchpad or user application/module).
-            and similarly with the assembly files: Device.inc and Target.asm, for compiling FastForth.
-        Corrected startup time in target.asm files.
-        Modified Clock config in MSP_EXP430FR2433.asm and MSP_EXP430FR4133.ASM, allowing clock modulation.
+    Added MSP-EXP430FR2355 launchpad
+    Added word :NONAME (option).
+    FastForth terminal via Bluetooth v2.1 + EDR (Microchip RN42) works fine in full duplex mode,
+    up to 460800bds, 4 WIRES (GND,RX,TX,RTS); but with, as wireless effect, a bad troughput of 6kb/s
+    instead of 30kb/s with a bridge UART2USB.
+    Added 4Mbds,5Mbds terminal @16MHZ, for use with UART2USB PL2303HXD.
+    Words AND, OR, XOR are moved as complement in ANS_COMP.f file.
+    Simplified preprocessor files in \config\gema\ folder: only two for one target:
+        one for the device, other for the target (launchpad or user application/module).
+        and similarly with the assembly files: Device.inc and Target.asm, for compiling FastForth.
+    Corrected startup time in target.asm files.
+    Modified Clock config in MSP_EXP430FR2433.asm and MSP_EXP430FR4133.ASM, allowing clock modulation.
 
+V202
 
-    FastForth V202
-        added the line number in case of error occurring when download a file.f|file.4th
-        in the new HALFDUPLEX mode (scite command CTRL+2) or in default NOECHO mode (scite cmd CTRL+0).
-        However, in case of download a file.f (with preprocessing), this line number refers
-        to the contents of the file named LAST.4th.
-    
-    FastForth V201
+    added the line number in case of error occurring when download a source file (*f,*.4th)
+    in HALFDUPLEX mode (scite command CTRL+2) or in default NOECHO mode (scite cmd CTRL+0).
+    However, in case of download a file.f (with preprocessing), this line number refers
+    to the contents of the file named LAST.4th.
+
+V201
 
     modified OPEN file primitive in forthMSP430FR_SD_LOAD.asm; modified forthMSP430FR_SD_INIT.asm
     reordered files preprocessor in only one folder.
@@ -176,14 +184,12 @@ What is new ?
     Note that with MSP430FR57xx family, SDIB uses PAD, due to lack of RAM.
     
     With the BOOTLOADER option, QUIT becomes a DEFERed word to easily enable/disable bootloader:
-    ' BOOT IS QUIT     enables bootloader.
-    ' (QUIT) IS QUIT   disables bootloader.
-
-    Same logic as QUIT, ACCEPT is a DEFERed word only with SD_CARD_LOADER option. 
+    ' BOOT IS QUIT enables bootloader.
+    ' QUIT >BODY IS QUIT disables bootloader.
 
     Added QUIETBOOT option to enable BOOT without displaying; use with care...
-    
-    V162.
+
+V162
 
     Added a set of words to enable conditional interpretation/compilation : MARKER [DEFINED] [UNDEFINED] 
     [IF] [ELSE] [THEN]. A MARKER word (defined as {word} to well see it) allows you to wipe some program 
@@ -195,8 +201,7 @@ What is new ?
 
     Added a bootloader option which loads BOOT.4TH from SD_Card memory.
 
-
-	V161.
+V161
 
     SD_Card driver works also with software multiplier (with MSP430FR4133)
     added SLEEP and (SLEEP) words enabling user access to background task, 
@@ -437,7 +442,7 @@ If you are under WINDOWS :
 	ask windows to open .asm, .inc, lst, .mac, .4th, .f, .pat files with scite.exe
 	
 
-If you are linux or OS X men, try virtualbox...
+If you are linux or OS X men, see FastForth.pdf.
 
 
 Build the program file
@@ -1250,7 +1255,7 @@ First you create two files : project.f and test.f
 PROJECT.f :
 
     ; ----------------------------------------------------
-    ; MSP430FR5969 MSP_EXP430FR5969 8MHZ 921600bds PROJECT
+    ; MSP430FR5969 MSP_EXP430FR5969 8MHZ 921600bds PROJECT.f
     ; ----------------------------------------------------
 
     [DEFINED] {PROJECT} [IF] {PROJECT} [THEN] \ remove {PROJECT} if exist (memory managment)
@@ -1266,13 +1271,13 @@ here you append your already tested routines :
     ENCODE
 
     ASM TWO     \ assembler ASM words are not FORTH executable and can only be used in assembler mode
-        ...     \ used to define interrupt routines, or subroutines as here.
-    RET
+        ...     \ used to define interrupt routines, or subroutines called by CALL...
+    RET         \ and ended by RET or RETI.
     ENDASM
 
     CODE THREE
         ...
-    CALL #TWO   \ CALL only ASM words (finishing with RET(I))...
+    CALL #TWO   \ CALL only ASM words
         ...
     MOV @IP+,PC \ NEXT
     ENCODE
@@ -1281,7 +1286,7 @@ here you append your already tested routines :
         ...
         ...
     BIC #WDTIFG,&SFRIFG1    \ reset WDT_INT flag
-    BIC #$F8,0(RSP)         \ set CPU ON and GIE OFF in retiSR
+    BIC #$F8,0(RSP)         \ set CPU ON and GIE OFF in saved SR
     RETI                    \   
     ENDASM
 
@@ -1295,7 +1300,7 @@ then finish with this 2 "magic" words plus one optional : START, STOP and option
         ...
         ...
     BIS &LPM_MODE,SR        \
-    JMP BW1
+    GOTO BW1
     ENDASM                  \
 
 
@@ -1306,6 +1311,8 @@ then finish with this 2 "magic" words plus one optional : START, STOP and option
         ...                 \ init assembly part
     MOV #WDT_INT,&VEC_WDT   \ init WDT vector interrupt
         ...
+    BIC #RC5,&P1REN         \ init I/O
+        ...
 
     MOV #SLEEP,X            \ redirect default background task to yours (optional)
     MOV #BACKGROUND,2(X)    \
@@ -1313,14 +1320,15 @@ then finish with this 2 "magic" words plus one optional : START, STOP and option
     COLON
         ...                 \ init FORTH part
     
-        LIT RECURSE IS WARM \ replace (WARM) as part of FORTH init by START in the FORTH init process
-        ABORT               \ then end the FORTH init process.
-    ;
+        LIT RECURSE IS WARM \ replace WARM by START
+        ['] WARM >BODY      \ and end START with default WARM
+        EXECUTE             \ that unlock I/O, start FORTH process
+    ;                       \ then fall down to sleep state, waiting any interrupt...
 
 
     CODE STOP               \ to properly stop your app
         MOV #SLEEP,X        \ restore the default background (optional)
-        ADD #4,X            \ (word SLEEP can only be used in assembler, not in FORTH)
+        ADD #4,X            \ (word SLEEP can only be seen in assembler mode, not in FORTH)
         MOV X,-2(X)
     COLON
         ['] WARM >BODY
@@ -1340,8 +1348,8 @@ end of file
 Each time you download this project file, the word {PROJECT} removes all subsequent definitions,
 and the word RST_HERE protects the PROJECT against <RESET\>. 
 
-The word START allows to include your app init into FORTH's one.
-The word STOP unlink your app.
+The word START allows you to include your app init into FORTH's one.
+The word STOP unlink your app from FORTH init process.
 
 Look at the file RC5toLCD.f to retrieve this structure.
 

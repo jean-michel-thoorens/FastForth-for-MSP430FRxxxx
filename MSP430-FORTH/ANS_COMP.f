@@ -46,7 +46,7 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
-[UNDEFINED] OR[IF]
+[UNDEFINED] OR [IF]
 \ https://forth-standard.org/standard/core/OR
 \ C OR     x1 x2 -- x3           logical OR
 CODE OR
@@ -55,6 +55,7 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
+[UNDEFINED] XOR [IF]
 \ https://forth-standard.org/standard/core/XOR
 \ C XOR    x1 x2 -- x3           logical XOR
 CODE XOR
@@ -469,26 +470,15 @@ ENDCODE
 $29 WORD DROP
 ; IMMEDIATE
 
-[DEFINED] CAPS_ON [IF]
-
 \ https://forth-standard.org/standard/core/Dotp
 \ .(        --          type comment immediatly.
-: .(
-CAPS_OFF
+CODE .(         \ "
+MOV #0,&CAPS    \ CAPS OFF
+COLON
 $29 WORD
 COUNT TYPE
-CAPS_ON
+BL CAPS !       \ CAPS ON
 ; IMMEDIATE
-
-[ELSE]
-\ https://forth-standard.org/standard/core/Dotp
-\ .(        --          type comment immediatly.
-: .(
-$29 WORD
-COUNT TYPE
-; IMMEDIATE
-
-[THEN]
 
 \ https://forth-standard.org/standard/core/SOURCE
 \ SOURCE    -- adr u    of current input buffer

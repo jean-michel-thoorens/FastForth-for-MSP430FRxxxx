@@ -9,20 +9,6 @@
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR2433  MSP_EXP430FR2355    CHIPSTICK_FR2433
 \
-\ CORDIC USES
-\   OPERATION   |   MODE    |   INITIALIZE x y z    |   DIRECTION   |     RESULT        | post operation
-\ --------------|-----------|-----------------------|---------------|-------------------|
-\ sine, cosine  | Rotation  | x=1, y=0,  z=angle    | Reduce z to 0 | cos=x*Gi,sin=y*Gi | mutiply by 1/Gi
-\ --------------|-----------|-----------------------|---------------|-------------------|
-\ Polar to Rect | Rotation  | x=magnit, y=0, Z=angle| Reduce z to 0 |  X=x*Gi, Y=y*Gi   | mutiply by 1/Gi
-\ --------------|-----------|-----------------------|---------------|-------------------|
-\ Rotation      | Rotation  | x=X, y=Y, z=angle     | Reduce z to 0 | X'=x*Gi,Y'=y*Gi   | <=== not implemented
-\ --------------|-----------|-----------------------|---------------|-------------------|
-\ Rect to Polar |  Vector   | x=X, y=Y, z=0         | Reduce y to 0 | hyp=x*Gi, angle=z | mutiply hyp by 1/Gi
-\ --------------|-----------|-----------------------|---------------|-------------------|
-\ Gi = CORDIC gain for i iterations; Gi < 1
-\
-
 [DEFINED] {CORDIC} [IF] {CORDIC} [THEN] \ remove {CORDIC}
 
 MARKER {CORDIC}
@@ -97,6 +83,20 @@ LO2HI
 
 [THEN] \ end of [UNDEFINED] {FIXPOINT}
 
+\ CORDIC USES
+\   OPERATION   |   MODE    |   INITIALIZE x y z    |   DIRECTION   |     RESULT        | post operation
+\ --------------|-----------|-----------------------|---------------|-------------------|
+\ sine, cosine  | Rotation  | x=1, y=0,  z=angle    | Reduce z to 0 | cos=x*Gi,sin=y*Gi | mutiply by 1/Gi
+\ --------------|-----------|-----------------------|---------------|-------------------|
+\ Polar to Rect | Rotation  | x=magnit, y=0, Z=angle| Reduce z to 0 |  X=x*Gi, Y=y*Gi   | mutiply by 1/Gi
+\ --------------|-----------|-----------------------|---------------|-------------------|
+\ Rotation      | Rotation  | x=X, y=Y, z=angle     | Reduce z to 0 | X'=x*Gi,Y'=y*Gi   | <=== not implemented
+\ --------------|-----------|-----------------------|---------------|-------------------|
+\ Rect to Polar |  Vector   | x=X, y=Y, z=0         | Reduce y to 0 | hyp=x*Gi, angle=z | mutiply hyp by 1/Gi
+\ --------------|-----------|-----------------------|---------------|-------------------|
+\ Gi = CORDIC gain for i iterations; Gi < 1
+\
+
 CREATE T_ARCTAN \ ArcTan table
 11520 ,         \ 256 * 45
 6801 ,          \ 256 * 26.565
@@ -107,7 +107,7 @@ CREATE T_ARCTAN \ ArcTan table
 229 ,           \ 256 * 0.895
 115 ,           \ 256 * 0.448
 57 ,            \ 256 * 0.224
-28 ,            \ 256 * 0.112
+29 ,            \ 256 * 0.112
 14 ,            \ 256 * 0.056
 7 ,             \ 256 * 0.028
 4 ,             \ 256 * 0.014
@@ -118,7 +118,7 @@ CREATE T_SCALE  \ 1/Gi table
 46340 ,         \ = 65536 * cos(45)
 41448 ,         \ = 65536 * cos(45) * cos(26.565)
 40211 ,         \ = 65536 * cos(45) * cos(26.565) * cos(14.036)
-39900 ,         \ = 65536 * cos(45) * cos(26.565) * cos(14.036) .... 
+39900 ,         \ = 65536 * cos(45) * cos(26.565) * cos(14.036) * ... 
 39822 ,
 39803 ,
 39798 ,
@@ -136,16 +136,16 @@ CODE POL2REC   \ u f -- X Y
 \ input ; u = module {1000...16384}, f = angle (15Q16 number) in degrees {1,0...89,0}
 \ output ; X Y 
 \ TOS = fhi, 0(PSP) = flo, 2(PSP) = u
+PUSH IP             \ save IP before use
 MOV @PSP+,Y         \ Y = flo
 SWPB Y
 AND #$00FF,Y
 SWPB TOS
 AND #$FF00,TOS
 BIS Y,TOS           \ -- module angle*256
-PUSH IP             \ save IP before use
-\ ==================
-\ CORDIC engine
-\ ==================
+\ =====================
+\ CORDIC 16 bits engine
+\ =====================
 MOV #-1,IP          \ IP = i-1
 MOV @PSP,X          \ X = Xi
 MOV #0,Y            \ Y = Yi
@@ -172,7 +172,7 @@ MOV #0,Y            \ Y = Yi
         SUB S,Y     \ Yi+1 = Yi - ( Xi >> i)
         ADD T_ARCTAN(W),TOS
     THEN
-    CMP #0,TOS
+    CMP #0,TOS      \ if angle*256 = 0 quit loop
     0<> WHILE       \ search "Extended control-flow patterns" in https://forth-standard.org/standard/rationale
         CMP #14,IP
  0= UNTIL
@@ -194,9 +194,11 @@ ENDCODE                 \ -- cos sin
 
 \
 10000 89,0 POL2REC . .  ; sin, cos --> 
+10000 75,0 POL2REC . .  ; sin, cos --> 
 10000 60,0 POL2REC . .  ; sin, cos --> 
 10000 45,0 POL2REC . .  ; sin, cos --> 
 10000 30,0 POL2REC . .  ; sin, cos --> 
+10000 15,0 POL2REC . .  ; sin, cos --> 
 10000 1,0 POL2REC . .   ; sin, cos --> 
 \ module phase -- X Y
 16384 30,0 POL2REC SWAP . . ; x, y --> 
@@ -284,8 +286,8 @@ MOV #0,TOS          \ init z=0
         ADD S,Y     \ Yi+1 = Yi + ( Xi >> i)
         SUB T_ARCTAN(W),TOS
     THEN
-    CMP #0,Y
-    0<> WHILE       \ else goto THEN below
+    CMP #0,Y        \ if Y = 0 quit loop
+    0<> WHILE       \ if Y = 0 goto THEN
     CMP #14,IP
  0= UNTIL
     THEN
@@ -340,6 +342,7 @@ RST_HERE
 10000 45,0 POL2REC REC2POL   ROT . F. 
 10000 30,0 POL2REC REC2POL   ROT . F. 
 10000 26,565 POL2REC REC2POL ROT . F. 
+10000 15,0 POL2REC REC2POL   ROT . F. 
 10000 14,036 POL2REC REC2POL ROT . F. 
 10000 7,125 POL2REC REC2POL  ROT . F. 
 10000 1,0 POL2REC REC2POL    ROT . F. 
@@ -356,6 +359,7 @@ LOOP
 10000 45,0  2000CORDIC  ROT . F.
 10000 30,0  2000CORDIC  ROT . F.
 10000 26,565 2000CORDIC ROT . F.
+10000 15,0 2000CORDIC   ROT . F.
 10000 14,036 2000CORDIC ROT . F.
 10000 7,125 2000CORDIC  ROT . F.
 10000 1,0 2000CORDIC    ROT . F.

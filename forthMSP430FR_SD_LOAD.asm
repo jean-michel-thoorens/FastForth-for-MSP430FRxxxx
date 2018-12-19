@@ -481,9 +481,6 @@ Open_File                           ; --
 OPEN_COMP                           ;
     mDOCOL                          ; if compile state
     .word   lit,lit,COMMA,COMMA     ; compile open_type as literal
-    .IFDEF LOWERCASE                ;
-    .word   CAPS_ON                 ;
-    .ENDIF                          ;
     .word   SQUOTE                  ; compile string_exec + string
     .word   lit,ParenOpen,COMMA     ; compile (OPEN)
     .word   EXIT                    ;

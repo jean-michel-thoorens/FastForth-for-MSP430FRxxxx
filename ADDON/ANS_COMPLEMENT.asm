@@ -165,20 +165,12 @@ PARENT       mDOCOL
 ;https://forth-standard.org/standard/core/Dotp
 ; .(                \  --     dotparen ; type comment immediatly.
             FORTHWORDIMM ".\40"        ; immediate
-DOTPAREN    mDOCOL
-
-    .IFDEF LOWERCASE
-            .word   CAPS_OFF
-            .word   lit,')',WORDD
-            .word   CAPS_ON
-            .word   COUNT,TYPE
-            .word   EXIT
-    .ELSE
-
+DOTPAREN    MOV #0,&CAPS
+            mDOCOL
             .word   lit,')',WORDD
             .word   COUNT,TYPE
+            .word   FBLANK,LIT,CAPS,STORE
             .word   EXIT
-    .ENDIF ; LOWERCASE
 
 ;https://forth-standard.org/standard/core/SOURCE
 ;C SOURCE   -- adr u    current input buffer

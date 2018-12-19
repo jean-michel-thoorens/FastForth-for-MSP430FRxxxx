@@ -5,11 +5,12 @@
 \ FastForth Compiling options used :
 \ DTC=2, FREQUENCY=8/16/24MHz, THREADS=16, 
 \ 921600 bauds, 3WIRES, 4WIRES,
-\ ASSEMBLER, CONDCOMP, LOWERCASE, NONAME, UTILITY.
+\ ASSEMBLER, CONDCOMP, LOWERCASE, (UTILITY).
 
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR2355
+\ MY_MSP430FR5738_1 MY_MSP430FR5738     MY_MSP430FR5948     MY_MSP430FR5948_1   
 \
 \ Copyright (C) <2016>  <J.M. THOORENS>
 \
@@ -167,22 +168,22 @@ COLON                           \ high level word starts here
     TOP_LCD 2 20_US 
 ;
 
-CODE LCD_WrC                    \ char --         Write Char
+CODE LCD_WRC                    \ char --         Write Char
     BIS.B #LCD_RS,&LCD_CMD_OUT  \ lcd_rs=1
     JMP LCD_W 
 ENDCODE
 
-CODE LCD_WrF                    \ func --         Write Fonction
+CODE LCD_WRF                    \ func --         Write Fonction
     BIC.B #LCD_RS,&LCD_CMD_OUT  \ lcd_rs=0
     JMP LCD_W 
 ENDCODE
 
-: LCD_Clear 
-    $01 LCD_WrF 100 20_us      \  $01 LCD_WrF 80 20_us ==> bad init !
+: LCD_CLEAR 
+    $01 LCD_WRF 100 20_us      \  $01 LCD_WrF 80 20_us ==> bad init !
 ;
 
-: LCD_Home 
-    $02 LCD_WrF 100 20_us 
+: LCD_HOME 
+    $02 LCD_WRF 100 20_us 
 ;
 
 [UNDEFINED] OR [IF]
@@ -196,17 +197,17 @@ ENDCODE
 
 [THEN]
 
-: LCD_Entry_set     $04 OR LCD_WrF ;
+: LCD_ENTRY_SET     $04 OR LCD_WrF ;
 
-: LCD_DSP_Ctrl      $08 OR LCD_WrF ;
+: LCD_DSP_CTRL      $08 OR LCD_WrF ;
 
-: LCD_DSP_Shift     $10 OR LCD_WrF ;
+: LCD_DSP_SHIFT     $10 OR LCD_WrF ;
 
-: LCD_Fn_Set        $20 OR LCD_WrF ;
+: LCD_FN_SET        $20 OR LCD_WrF ;
 
-: LCD_CGRAM_Set     $40 OR LCD_WrF ;
+: LCD_CGRAM_SET     $40 OR LCD_WrF ;
 
-: LCD_Goto          $80 OR LCD_WrF ;
+: LCD_GOTO          $80 OR LCD_WrF ;
 
 CODE LCD_R                      \ -- byte       read byte from LCD
     BIC.B #LCD_DB,&LCD_DB_DIR   \ LCD_Data as intput
@@ -221,12 +222,12 @@ HI2LO                           \ switch from FORTH to assembler
     MOV @IP+,PC                 \
 ENDCODE
 
-CODE LCD_RdS                    \ -- status       Read Status
+CODE LCD_RDS                    \ -- status       Read Status
     BIC.B #LCD_RS,&LCD_CMD_OUT  \ lcd_rs=0
     JMP LCD_R
 ENDCODE
 
-CODE LCD_RdC                    \ -- char         Read Char
+CODE LCD_RDC                    \ -- char         Read Char
     BIS.B #LCD_RS,&LCD_CMD_OUT  \ lcd_rs=1
     JMP LCD_R
 ENDCODE
@@ -352,7 +353,7 @@ MOV TOS,0(PSP)                  \ save TOS
 MOV X,TOS                       \
 LO2HI                           \ switch from assembler to FORTH
     ['] LCD_CLEAR IS CR         \ redirects CR to LCD
-    ['] LCD_WrC  IS EMIT        \ redirects EMIT to LCD
+    ['] LCD_WRC  IS EMIT        \ redirects EMIT to LCD
     CR ." $" 2 U.R              \ print IR_RC5 code to LCD
     ['] CR >BODY IS CR          \ restore CR
     ['] EMIT >BODY IS EMIT      \ restore EMIT
@@ -367,19 +368,18 @@ ENDASM
 \ ------------------------------\
 ASM BACKGROUND                  \
 \ ------------------------------\
-\ ...                           \ insert here your background task
-\ ...                           \
-\ ...                           \
-BIS #LPM_MODE,SR                \
-ENDASM                          \
+BEGIN
+\     ...                         \ insert here your background task
+\     ...                         \
+\     ...                         \
+    BIS &LPM_MODE,SR            \
 \ ******************************\
 \ here start all interrupts     \
 \ ******************************\
 \ here return all interrupts    \
 \ ******************************\
-CODENNM                         \
-JMP BACKGROUND                  \
-ENDCODE DROP                    \
+AGAIN                           \
+ENDASM                          \
 
 
 
@@ -396,7 +396,7 @@ COLON
 ECHO                            \
 ." RC5toLCD is removed." CR     \ display message      
 ."    type START to restart"    \
-COLD                            \ performs reset     
+COLD                            \ performs reset to reset all interrupt vectors.    
 ;
 
 \ ------------------------------\
@@ -497,11 +497,11 @@ FREQ_KHZ @ 24000 = [IF]         \ if 24 MHz
 \ ------------------------------\
     MOV #SLEEP,X                \
     MOV #BACKGROUND,2(X)        \
-\ ------------------------------\ usefull only when any RESET event occurs
-\ activate I/O                  \ because when we type START, it is already done by WARM
-\ ------------------------------\ before its redirection by executing START !
-BIC #1,&PM5CTL0                 \ activate all previous I/O settings; if not activated, nothing works !
-BIS.B #TERM_BUS,&TERM_SEL       \ Configure pins TXD & RXD for TERM_UART use; if not configured, no TERMINAL !
+\ ------------------------------\
+\ activate I/O                  \
+\ ------------------------------\
+BIC #1,&PM5CTL0                 \ activate all previous I/O settings; if not activated, nothing works after reset !
+BIS.B #TERM_BUS,&TERM_SEL       \ Configure pins TXD & RXD for TERM_UART use, otherwise no TERMINAL !
 \ ------------------------------\
 \ RESET events handling         \ search "SYSRSTIV" in your MSP430FRxxxx datasheet
 \ ------------------------------\
@@ -521,27 +521,27 @@ COLON                           \
 \ ------------------------------\
 \ Init LCD 2x20                 \
 \ ------------------------------\
-    $03E8 20_US                 \ 1-  wait 20 ms
-    $03 TOP_LCD                 \ 2- send DB5=DB4=1
-    $CD 20_US                   \ 3- wait 4,1 ms
-    $03 TOP_LCD                 \ 4- send again DB5=DB4=1
-    $5 20_US                    \ 5- wait 0,1 ms
-    $03 TOP_LCD                 \ 6- send again again DB5=DB4=1
-    $2 20_US                    \    wait 40 us = LCD cycle
-    $02 TOP_LCD                 \ 7- send DB5=1 DB4=0
-    $2 20_US                    \    wait 40 us = LCD cycle
-    $28 LCD_WRF                 \ 8- %001DNFxx "FonctionSet" D=8/4 DataBus width, Number of lines=2/1, Font bold/normal
-    $08 LCD_WRF                 \ 9- %1DCB   "DisplayControl" : Display off, Cursor off, Blink off. 
-    LCD_Clear                   \ 10- "LCD_Clear"
-    $06 LCD_WRF                 \ 11- %01xx   "LCD_EntrySet" : address and cursor shift after writing in RAM
-    $0C LCD_WRF                 \ 12- %1DCB "DisplayControl" : Display on, Cursor off, Blink off. 
-    LCD_Clear                   \ 10- "LCD_Clear"
+    #1000 20_US                 \ 1- wait 20 ms
+    %011 TOP_LCD                \ 2- send DB5=DB4=1
+    #205 20_US                  \ 3- wait 4,1 ms
+    %011 TOP_LCD                \ 4- send again DB5=DB4=1
+    #5 20_US                    \ 5- wait 0,1 ms
+    %011 TOP_LCD                \ 6- send again again DB5=DB4=1
+    #2 20_US                    \    wait 40 us = LCD cycle
+    %010 TOP_LCD                \ 7- send DB5=1 DB4=0
+    #2 20_US                    \    wait 40 us = LCD cycle
+    %00101000 LCD_WRF           \ 8- %001DNFxx "FonctionSet" D=8/4 DataBus width, Number of lines=2/1, Font bold/normal
+    %1000 LCD_WRF               \ 9- %1DCB   "DisplayControl" : Display off, Cursor off, Blink off. 
+    LCD_CLEAR                   \ 10- "LCD_Clear"
+    %0110 LCD_WRF               \ 11- %01xx   "LCD_EntrySet" : address and cursor shift after writing in RAM
+    %1100 LCD_WRF               \ 12- %1DCB "DisplayControl" : Display on, Cursor off, Blink off. 
+    LCD_CLEAR                   \ 10- "LCD_Clear"
     ['] LCD_HOME IS CR          \ ' CR redirected to LCD_HOME
     ['] LCD_WRC  IS EMIT        \ ' EMIT redirected to LCD_WrC
-    CR ." I love you"                          \ display on LCD
-    ['] CR >BODY IS CR          \
-    ['] EMIT >BODY IS EMIT      \
-    ." RC5toLCD is running. Type STOP to quit" \ display on FastForth Terminal
+    CR ." I love you"           \ display message on LCD
+    ['] CR >BODY IS CR          \ CR executes its default value
+    ['] EMIT >BODY IS EMIT      \ EMIT executes its defaulte value
+    ." RC5toLCD is running. Type STOP to quit" \ display message on FastForth Terminal
 \ ------------------------------\
 \ START replaces WARM           \
 \ ------------------------------\
@@ -562,7 +562,7 @@ RST_HERE    ; this app is protected against <reset>
 \ else escape sequences doesn't work.
 
 : specs         \ to see Fast Forth specifications
-PWR_STATE       \ remove specs definition when running, and before bytes free processing
+PWR_STATE       \ remove BS ESC specs definitions when running, before bytes free processing
 6 0 DO BS LOOP  \ to reach start of line
 ESC ." [7m"     \ escape sequence to set reverse video
 ." FastForth "
