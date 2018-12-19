@@ -21,6 +21,7 @@ With all kernel options its size is under 9.25kB.
     a UART to USB cable and the serial terminal TERATERM.exe at 921600Bds.
 
     By using a PL2303HXD cable (purple), you can modify terminal baudrate on the fly up to 6 Mbds.
+    WARNING! don't use it to supply your launchpad: red wire is 5V ==> MSP430FRxxx destroyed!
     To try, after well configuring your local copy of the FastForth depository (see FastForth.pdf), 
     drag and drop \MSP430-FORTH\CHNGBAUD.f onto \MSP430-FORTH\SendSourceFileToTarget.bat.
 
@@ -28,7 +29,7 @@ With all kernel options its size is under 9.25kB.
     FORTH code, or both, by downloading your source files that the embedded FastForth interprets and
     compiles.    
     Beforehand, the preprocessor GEMA, by means of a \config\gema\target.pat file, will have translated
-    the common source file.f in a targeted source file.4th. This allows the assembler to use
+    the generic source file.f in a targeted source file.4th. This allows the assembler to use
     symbolic addresses for all peripheral registers without having to declare them in Forth.
     A set of .bat files is furnished to do this automatically. See it all in the \MSP430-FORTH folder.
 
