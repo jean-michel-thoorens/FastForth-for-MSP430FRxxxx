@@ -84,7 +84,6 @@ LOOP_TEST   \ you should see 0 1 2 3 4 5 6 7 -->
 \ KEY test
 \ --------
 : KEY_TEST
-    ECHO
     ."  type a key : "
     KEY EMIT    \ wait for a KEY, then emit it
 ;

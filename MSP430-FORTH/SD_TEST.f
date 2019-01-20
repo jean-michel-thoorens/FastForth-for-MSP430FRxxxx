@@ -1,11 +1,15 @@
-\ TARGET SELECTION
-\ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
-\ MSP_EXP430FR4133  MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
-\
 
 ; -----------
 ; SD_TEST.f
 ; -----------
+\
+\ to see kernel options, download FastForthSpecs.f
+\ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP, SD_CARD_READ_WRITE
+\
+\ TARGET SELECTION
+\ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
+\ MSP_EXP430FR4133  MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
+\
 \
 \ how to test SD_CARD driver on your launchpad:
 \
@@ -67,11 +71,11 @@ PWR_STATE
 
 [DEFINED] {SD_TEST} [IF] {SD_TEST} [THEN]   \ remove {SD_TEST} 
 
-[DEFINED] ASM [DEFINED] TERM2SD" AND [IF]   \ requirements test
+[UNDEFINED] {SD_TEST} [IF]   \ requirements test
 
 MARKER {SD_TEST}
 
-[UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {ANS_COMP}
+[UNDEFINED] MAX [IF]   \ MAX and MIN are defined in {ANS_COMP}
     CODE MAX    \    n1 n2 -- n3       signed maximum
         CMP @PSP,TOS    \ n2-n1
         S< ?GOTO FW1    \ n2<n1
@@ -165,7 +169,7 @@ LO2HI
                                     DEL" YOURFILE.TXT"
                                     WRITE" YOURFILE.TXT"
                                     ['] SD_EMIT IS EMIT
-                                    PROGRAMSTART HERE OVER - DUMP
+                                    MAIN_ORG HERE OVER - DUMP
                                     ['] EMIT >BODY IS EMIT
                                     CLOSE
                                 ELSE 1 - ?DUP
@@ -173,7 +177,7 @@ LO2HI
                                         WRITE" YOURFILE.TXT"
                                         ['] SD_EMIT IS EMIT
                                         CR
-                                        PROGRAMSTART HERE OVER - DUMP
+                                        MAIN_ORG HERE OVER - DUMP
                                         ['] EMIT >BODY IS EMIT
                                         CLOSE
                                     ELSE 1 - ?DUP
@@ -200,4 +204,4 @@ PWR_HERE \ to don't forget, otherwise SD_TEST destroys itself by downloading fil
 
 [THEN]
 
-SD_TEST
+ECHO SD_TEST

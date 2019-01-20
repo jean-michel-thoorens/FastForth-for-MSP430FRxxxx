@@ -1,5 +1,5 @@
 ; -*- coding: utf-8 -*-
-; ResolveThreads.mac
+; ThingsInLast.inc
 
 ;-------------------------------------------------------------------------------
 ; IT'S FINISH : RESOLVE ASSEMBLY PTR
@@ -78,3 +78,5 @@ lastasmword31   .equ asmlink31
 
     .ENDIF
 
+    .org 0FFFEh
+    .word reset

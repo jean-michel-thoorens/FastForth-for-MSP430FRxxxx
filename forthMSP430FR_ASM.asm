@@ -234,7 +234,7 @@ SearchARG   PUSHM #2,S                  ;                   PUSHM S,T
             .word   QZBRAN,SearchARGW   ; -- c-addr         if found
             .word   QNUMBER             ;
             .word   QBRAN,NotFound      ; -- c-addr         ABORT
-            .word   SearchEnd           ; -- value          goto end if number found
+FsearchEnd  .word   SearchEnd           ; -- value          goto end if number found
 SearchARGW  FORTHtoASM                  ; -- xt             xt = CFA
             MOV     @TOS,X
 QDOVAR      CMP     #DOVAR,X
@@ -302,9 +302,9 @@ PARAM1      mDOCOL                          ; -- sep
             MOV     #0,S                    ; -- sep c-addr        reset ASMTYPE
             MOV     &DDP,T                  ; -- sep c-addr        HERE --> OPCODEADR (opcode is preset to its address !)
             ADD     #2,&DDP                 ; -- sep c-addr        cell allot for opcode
-            MOV     TOS,W                   ; -- sep c-addr        W=c-addr
+            MOV.B   @TOS,W                  ; -- sep c-addr        W=first char of instruction code
             MOV     @PSP+,TOS               ; -- sep               W=c-addr
-            CMP.B   #'#',0(W)               ; -- sep               W=c-addr
+            CMP.B   #'#',W                  ; -- sep               W=first char
             JNE     PARAM11
 
 ; "#" found : case of "#xxxx,"
@@ -365,7 +365,7 @@ PARAMENDOF  MOV @PSP+,TOS                   ; --
             mNEXT                           ; --
 ; ------------------------------------------
 
-PARAM11     CMP.B   #'&',0(W)               ; -- sep
+PARAM11     CMP.B   #'&',W                  ; -- sep
             JNE     PARAM12
 
 ; case of "&xxxx,"                          ; -- sep        search for "&xxxx,"
@@ -378,7 +378,7 @@ PARAM111    ADD     #1,&TOIN                ; -- sep        skip "&" prefix
             JMP     StoreArg                ; --            then ret
 ; ------------------------------------------
 
-PARAM12     CMP.B   #'@',0(W)               ; -- sep
+PARAM12     CMP.B   #'@',W                  ; -- sep
             JNE     PARAM13
 
 ; case of "@REG,"|"@REG+,"
@@ -882,7 +882,7 @@ BACKWARDDOES        ;
     MOV @PSP+,TOS   ; 
     MOV @Y,W        ;               W = [ASMBWx]
     CMP #0,W        ;               W = 0 ?
-    MOV #0,0(Y)     ;               preset [ASMBWx] = 0 for next use
+    MOV #0,0(Y)     ;               clear [ASMBWx] for next use
 BACKWUSE            ; -- OPCODE
     JNZ ASM_UNTIL1
 BACKWSET            ; --
@@ -914,7 +914,7 @@ FORWARDDOES
     MOV @TOS,TOS
     MOV @TOS,Y      ;               Y=[ASMFWx]
     CMP #0,Y        ;               ASMFWx = 0 ? (FWx is free?)
-    MOV #0,0(TOS)   ;               preset [ASMFWx] for next use
+    MOV #0,0(TOS)   ;               clear [ASMFWx] for next use
 FORWUSE             ; PFA -- @OPCODE
     JNZ ASM_THEN1   ;               no
 FORWSET             ; OPCODE PFA -- 
@@ -981,6 +981,5 @@ JUMP        mDOCOL
             mDOCOL
             .word   INVJMP,TICK,SWAP    ; 
             .word   ASM_UNTIL,EXIT
-
 
 

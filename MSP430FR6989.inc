@@ -46,7 +46,7 @@ RAM_LEN         .equ 00800h
 ; FRAM
 ; ----------------------------------------------
 MAIN_ORG        .equ 04400h      ; Code space start
-MAIN_LEN        .equ 24000h      ; 127 k FRAM
+MAIN_LEN        .equ 1FC00h      ; 127 k FRAM
 SIGNATURES      .equ 0FF80h      ; JTAG, BSL and IP Encapsulation signatures 1 and 2
 JTAG_SIG1       .equ 0FF80h      ; if 0, enable JTAG/SBW
 JTAG_SIG2       .equ 0FF82h      ; if JTAG_SIG1=0xAAAA, length of password string @ JTAG_PASSWORD
@@ -477,6 +477,15 @@ RES2      .equ MPY_SFR + 28h    ; 32x32-bit result 2 */
 RES3      .equ MPY_SFR + 2Ah    ; 32x32-bit result 3 */
 MPY32CTL0 .equ MPY_SFR + 2Ch    ; MPY32 control register 0
 
+
+MPUCTL0     .equ MPU_SFR + 00h  ; MPU control 0             
+MPUCTL1     .equ MPU_SFR + 02h  ; MPU control 1             
+MPUSEGB2    .equ MPU_SFR + 04h  ; MPU Segmentation Border 2 
+MPUSEGB1    .equ MPU_SFR + 06h  ; MPU Segmentation Border 1 
+MPUSAM      .equ MPU_SFR + 08h  ; MPU access management     
+MPUIPC0     .equ MPU_SFR + 0Ah  ; MPU IP control 0                      
+MPUIPSEGB2  .equ MPU_SFR + 0Ch  ; MPU IP Encapsulation Segment Border 2 
+MPUIPSEGB1  .equ MPU_SFR + 0Eh  ; MPU IP Encapsulation Segment Border 1 
 
 ; ----------------------------------------------------------------------
 ; eUSCI_A0

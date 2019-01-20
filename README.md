@@ -1,40 +1,52 @@
-Fast Forth For MSP430FRxxxxTI's chips, from 16k FRAM 
+FastForth for MSP430FRxxxxTI's chips, from 16k FRAM 
 ==================================================
 
+Tested on all MSP-EXP430FRxxxx TI launchpads (5739,5969,5994,6989,4133,2355,2433) and CHIPSTICKFR2433, at 0.5, 1, 2, 4, 8, 12, 16 MHz plus 20MHz and 24MHz with FR23xx,FR57xx devices.
 
-Fast Forth is a fast and well-made embedded interpreter/assembler/compiler, very interesting because of its size of 6 KB. 
-This includes the FORTH language, a symbolic assembler without labels, conditional compilation, a 16-input search engine which 
-speeds up the Forth interpreter by a factor of 4 and a connection to the serial terminal (TERATERM.exe), with 3 wires software flow control (XON/XOFF)
-or 4 wires hardware control flow, up to 6 Mbds.  
+Fast Forth is a fast and well-made embedded interpreter/assembler/compiler, very interesting because of its size of 6 KB.
+This includes the FORTH language, a symbolic assembler without labels, conditional compilation, a 16-input search engine which
+speeds up the Forth interpreter by a factor of 4 and a connection to the serial terminal (TERATERM.exe), with 3 wires software flow control (XON/XOFF) and/or 4 wires hardware control flow, up to 6 Mbds.
 If your goal is to program a MSP430FRxxxx in assembler, FAST FORTH is the Swiss Army knife you absolutely need!
 
-For only 3 kbytes in addition, you have the primitives to access the sd\_card FAT16 and FAT32: read, write, del, download source files and to copy them from PC to the SD\_Card.
-It works with all SD CARD memories from 64MB to 64GB. The cycle of reading/writing byte is below 1 us @ 16 MHz.
+For only 3 kbytes in addition, you have the primitives to access the SD\_CARD FAT16 and FAT32: read, write, del, download source files and to copy them from PC to the SD_Card.
+It works with all SD\_CARD memories from 64MB to 64GB. The cycle of read/write byte is below 1 us @ 16 MHz.
 This enables to make a fast data logger with a small footprint as a MSP430FR5738 QFN24.
 
-With all kernel options its size is under 9.25kB. 
-
-    Tested on all MSP-EXP430FRxxxx TI launchpads (5739,5969,5994,6989,4133,2355,2433) and CHIPSTICKFR2433,
-    at 0.5, 1, 2, 4, 8, 12, 16 MHz plus 20MHz and 24MHz with FR23xx,FR57xx devices.
+With all kernel options FastForth size is under 10kB.
 
     The files launchpad_xMHz.txt are the executables ready to use with 
-    a UART to USB cable and the serial terminal TERATERM.exe at 921600Bds.
+    a PL2303HXD cable and a serial terminal (TERATERM.exe) at 115200Bds with XON/XOFF,
+    or RTS hardware flow control
+    ------------------------------------------------------------------------------------------
+    WARNING! don't use it to supply your launchpad: red wire is 5V ==> MSP430FRxxxx destroyed!
+    ------------------------------------------------------------------------------------------
+    (you can modify this by opening the box and by welding red wire on 3.3V pad).
+    
+     TI Launchpad      PL2302HXD cable
+               RX <--- TX
+               TX ---> RX
+              GND <--> GND
+              RTS ---> CTS (not necessary if software XON/XOFF flow control
+                            see in your launchpad.asm to find RTS pin).
 
-    By using a PL2303HXD cable (purple), you can modify terminal baudrate on the fly up to 6 Mbds.
-    WARNING! don't use it to supply your launchpad: red wire is 5V ==> MSP430FRxxx destroyed!
-    To try, after well configuring your local copy of the FastForth depository (see FastForth.pdf), 
-    drag and drop \MSP430-FORTH\CHNGBAUD.f onto \MSP430-FORTH\SendSourceFileToTarget.bat.
-
-    Thus, once the Fast Forth kernel is loaded in the target FRAM memory, you can add assembly code or 
+    The interest of XON/XOFF flow control is to allow 3.75kV galvanic isolation of terminal input
+    with SOIC8 Si8622EC, or better yet, powered 5kV galvanic isolation with SOIC16 ISOW7821.
+    
+    If you want to change the terminal baudrate on the fly (230400 bds up to 6 Mbds),
+    download to your launchpad the file \MSP430-FORTH\CHNGBAUD.4th.
+    
+    To see all compilation options, download \MSP430-FORTH\FastForthSpecs.4th
+    
+    Once the Fast Forth kernel is loaded in the target FRAM memory, you add assembly code or 
     FORTH code, or both, by downloading your source files that the embedded FastForth interprets and
     compiles.    
     Beforehand, the preprocessor GEMA, by means of a \config\gema\target.pat file, will have translated
     the generic source file.f in a targeted source file.4th. This allows the assembler to use
-    symbolic addresses for all peripheral registers without having to declare them in Forth.
-    A set of .bat files is furnished to do this automatically. See it all in the \MSP430-FORTH folder.
+    symbolic addresses for all peripheral registers without having to declare them in the embedded FORTH.
+    A set of .bat files in \MSP430-FORTH folder is furnished to do this automatically.
 
-    The download, interpretation and compilation of a source file.4th is done at a throughput
-    up to 40/80/120 kbytes/sec with a 8/16/24 MHz clock. 
+    The download, interpretation and compilation of a source_file.4th (without comments) is done
+    at a throughput up to 40/80/120 kbytes/sec with a 8/16/24 MHz clock. 
     Considering a ratio 4/1, that of the compiled code is 10/20/30 kbytes/sec.
 
     After downloading of complementary words in \MSP430-FORTH\ANS_COMP.f, FastForth executes CORETEST.4th
@@ -42,8 +54,7 @@ With all kernel options its size is under 9.25kB.
 
     Notice that FAST FORTH interprets lines up to 84 chars, only SPACE as delimiter, only CR+LF as
     End Of Line, and BACKSPACE. 
-    And that memory access is limited to 64 kbytes. 
-    You can always create FORTH words to access data beyond this limit...
+    And that the high limit of program memory is $FF80. 
 
     Finally, using the SCITE editor as IDE, all is ready to do everything from its "tools" menu.
 
@@ -52,12 +63,12 @@ What is new ?
 
 V208
 
-    -38 bytes.
-    Added switch DOUBLE_INPUT as kernel compilation ADDON.
+    -52 bytes.
+    Added switch DOUBLE_INPUT as kernel compilation ADDON, removed switch LOWERCASE.
     Added \MSP430-FORTH\CORDIC.f for aficionados.
+    Added FastForthSpecs.4th which shows all specs of FastForth.
     Corrected LITERAL (double LITERAL part).
-    Modified ?ABORT, S".
-    Removed switch LOWERCASE from kernel compilation ADDON.
+    Modified ACCEPT COLD WARM ?ABORT, S".
 
 V207 
 
@@ -422,25 +433,25 @@ Minimal Software
 
 If you are under WINDOWS :
 
-	First, you download the TI's programmer from TI : http://www.ti.com/tool/MSP430-FLASHER.
-	And the MSP430Drivers : 
-	http://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSP430_FET_Drivers/latest/index_FDS.html
+    First, you download the TI's programmer from TI : http://www.ti.com/tool/MSP430-FLASHER.
+    And the MSP430Drivers : 
+    http://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSP430_FET_Drivers/latest/index_FDS.html
 
-	The next tool is TERATERM.EXE : http://logmett.com/index.php?/products/teraterm.html.
-	
-	As scite is my editor, this github repository is fully configured for scite users.
+    The next tool is TERATERM.EXE : http://logmett.com/index.php?/products/teraterm.html.
+    
+    As scite is my editor, this github repository is fully configured for scite users.
     download the single file executable called sc1 (not the full download! ) :
     http://www.scintilla.org/SciTEDownload.html, then save it as \prog\wscite\scite.exe.
 
-	download GEMA preprocessor : https://sourceforge.net/projects/gema/files/gema/gema-1.4-RC/
+    download GEMA preprocessor : https://sourceforge.net/projects/gema/files/gema/gema-1.4-RC/
 
-	The MacroAssembler AS :	http://john.ccac.rwth-aachen.de:8000/as/
+    The MacroAssembler AS :	http://john.ccac.rwth-aachen.de:8000/as/
 
-	and Srecord : http://srecord.sourceforge.net/download.html to convert HEX file to TI TXT files.
+    and Srecord : http://srecord.sourceforge.net/download.html to convert HEX file to TI TXT files.
 
-	copy last 3 items onto their respective \prog subfolder. 
+    copy last 3 items onto their respective \prog subfolder. 
 
-	ask windows to open .asm, .inc, lst, .mac, .4th, .f, .pat files with scite.exe
+    ask windows to open .asm, .inc, lst, .mac, .4th, .f, .pat files with scite.exe
 	
 
 If you are linux or OS X men, see FastForth.pdf.
@@ -452,18 +463,9 @@ Build the program file
 
 \forthMSP430FR.asm is the main file to compile FastForth. It calls :	
 
-	- mspregister.mac that defines the TI symbolic instructions,
-	- Target.inc that defines for each device the eUSCI used as Terminal
-	  and then selects the declarations file target.inc, 
-	- ForthThreads.mac in case of multithread vocabularies,
-	- optionally, forthMSP430FR_SD.asm file(s) for SD_Card,
-	- optionally, forthMSP430FR_ASM.asm for assembler,
-	- Target.asm that selects the target.asm,
-	- and then TERMINALBAUDRATE.asm.
-
 open forthMSP430FR.asm with scite editor
 
-uncomment the target as you want, i.e. MSP_EXP430fr5969
+uncomment the target as you want, i.e. MSP_EXP430FR5969
 
 choose frequency, baudrate, UART handshake.
 
@@ -482,8 +484,8 @@ then execute. the output will be MSP_EXP430FR5969.txt
 Load Txt file (TI format) to target
 -----------------------------------
 
-	drag your target.txt file and drop it on prog.bat
-
+    drag your target.txt file and drop it on prog.bat
+    
     or use scite internal command TOOLS: FET prog (CTRL+1).
 
 nota : programming the device use SBW2 interface, so UART0 is free for serial terminal use.
@@ -499,8 +501,8 @@ Connect the FAST FORTH target to a serial terminal
 you will need an USBtoUART cable with a PL2303TA or PL2303HXD device that allows both XON/XOFF 
 and hardware control flow :
 
-	http://www.google.com/search?q=PL2303TA
-	http://www.google.com/search?q=PL2303HXD
+    http://www.google.com/search?q=PL2303TA
+    http://www.google.com/search?q=PL2303HXD
     WARNING! XON/XOFF no longer works with new Prolific driver v3.8.12.0 (03/03/2017)...
              Waiting next update, get on web previous PL2303_Prolific_DriverInstaller_v1160.exe (or .zip)
 
@@ -662,7 +664,7 @@ Drive letters are always ignored.
 Downloading source file to SD_Card
 ------------------------------------------
 
-to download a source file (.f or .4th) onto SD_CARD target, use CopySourceFileToTarget\_SD\_Card.bat.
+to download a source file (.f or.4th) onto SD_CARD target, use CopySourceFileToTarget\_SD\_Card.bat.
 or use scite.
 Double click on one of this bat files to see how to do.
 
@@ -687,8 +689,6 @@ VOCABULARY, DEFINITIONS, ONLY, ALSO, PREVIOUS, CONTEXT, CURRENT, FORTH, ASSEMBLE
 In fact, it's the the assembler that requires the vocabularies management.
 
 Recognizing prefixed numbers %101011 (bin), $00FE (hex) and #220 (decimal).
-
-CAPS ON/OFF add on
 
 ECHO / NOECHO
 
@@ -719,10 +719,10 @@ Equivalent word : COLD + WIPE.
 Here is the FastForth init architecture :
 
 	case 0 : when you type WARM, FORTH interpreter is restarted, no program lost. 
-			 if ECHO is on, the WARM display is preceded by "0", else no display. 
+			 the WARM display is preceded by "#0". 
 
 	case 1 : Power ON ==> performs reset and the program beyond PWR_HERE is lost.
-			 if ECHO is on, the WARM display is preceded by the SYSRSTIV value "2", else no display.
+			 the WARM display is preceded by the SYSRSTIV value "#2".
 
 	case 1.1 : when you type PWR_STATE ==> the program beyond PWR_HERE is lost.
 
@@ -733,10 +733,10 @@ Here is the FastForth init architecture :
                a source file with at least PWR_HERE to protect it against any subsequent error.
 
 	case 2 : <reset>  ==> performs reset and the program beyond RST_HERE is lost.
-		 	 if ECHO is on, the WARM display is preceded by the SYSRSTIV value "4", else no display.
+		 	 the WARM display is preceded by the SYSRSTIV value "#4".
 	
 	case 2.1 : when you type COLD (software reset) ==> same effects.
-			   if ECHO is on, the WARM display is preceded by the SYSRSTIV value "6", else no display.
+			   the WARM display is preceded by the SYSRSTIV value "#6".
 
 	case 2.2 : when you type RST_STATE ==> the program beyond RST_HERE is lost.
 
@@ -753,11 +753,11 @@ Here is the FastForth init architecture :
 	case 4.2 : writing -1 in SAVE_SYSRSTIV before COLD = software DEEP_RST ===> same effects
 			   The WARM display is preceded by "-1".
 
-	case 5 : after FAST FORTH core compilation, the WARM displays SAVE_SYSRSTIV = 3. User may use this
+	case 5 : after FAST FORTH core compilation, the WARM displays SAVE_SYSRSTIV = 5. User may use this
              information before WARM occurs.
 
 
-If SD\_CARD extention and SD\_CARD memory with \BOOT.4TH included, the cases 1 to 4 start it 
+If SD\_CARD extention and SD\_CARD memory with \BOOT.4TH included, the cases 1 to 4 starts it 
 after displaying of WARM message. 
 
 
@@ -792,7 +792,7 @@ EMBEDDED ASSEMBLER
 ======
 
 With the preprocessor GEMA the embedded assembler allows access to all system variables. 
-See files \\config\\gema\\MSP430FRxxxx\_FastForth.pat. 
+See files \\config\\gema\\Target.pat. 
 You can also access to VARIABLE, CONSTANT or DOES type words.
 see \MSP430-FORTH\TESTASM.4th.
 
@@ -803,9 +803,9 @@ HOW TO MIX assembly and FORTH ?
 
 FAST FORTH knows two kinds of words :
 
-    low level assembly words starting with CODE <name> and end with ENDCODE.
+    low level assembly words starting with CODE <name> and ended with ENDCODE.
 
-    high level FORTH words beginning with : <name> and end with ;
+    high level FORTH words beginning with : <name> and ended with ;
 
 
 Examples
@@ -828,7 +828,7 @@ This faster (4 cycles) and shorter (one word) instruction replaces the famous pa
 instructions : CALL #LABEL ... RET (4+4 cycles, 2+1 words). The register IP is the Interpretative Pointer. 
 
 High level FORTH word starts with a boot code DOCOL that save the IP pointer, load it with the first address
-of a list of execution addresses, then perform a postincrement branch to this first address. 
+of a list of execution addresses, then performs a postincrement branch to this first address. 
 The list ends with the address of another piece of code EXIT (6 cycles) that restores IP before the instruction MOV @IP+,PC.
 
 
@@ -841,8 +841,7 @@ here, the compilation of low level word ADD :
 and the one of the high level word NOOP :
 
                     header          \ compiled by the word :
-    execution addr  PUSH IP         \ boot code compiled by the word :
-                    CALL rEXIT      \ boot code compiled by the word :
+    execution addr  CALL rDOCOL     \ boot code compiled by the word :
                     addr of DUP     \ execution addr of DUP
                     addr of DROP    \ execution addr of DROP
                     addr of EXIT    \ execution addr of EXIT compiled by the word ;
@@ -893,8 +892,7 @@ A little more complex, the case of mixing FORTH and assembly that is enabled by 
 If we see the code "MIX\_FORTH\_ASM" after compilation :
 
             header              \ compiled by :
-    exec@   PUSH IP             \ save IP compiled by :
-            CALL rEXIT          \ execute EXIT compiled by :
+    exec@   CALL rDOCOL         \ boot code compiled by the word :
             addr                \ execution addr of SWAP
             addr                \ execution addr of DUP
             next addr           \ addr of asm1, compiled by HI2LO
@@ -924,24 +922,10 @@ If we see this code "MIX\_ASM\_FORTH" after compilation :
             header              \ compiled by CODE
     exec@   asm1                \ assembly instruction 1
             asm2                \ assembly instruction 2
-            PUSH IP             \ save IP compiled by COLON
-            CALL rEXIT          \ execute EXIT compiled by COLON
+            CALL rDOCOL         \ compiled by COLON
             addr1               \ of word1
             addr2               \ of word2
-            addr of EXIT        \ the word ; compiles EXIT that restores IP then executes MOV @IP+,PC
-
-
-EXIT is used twice !
-
-the first time, at the start of FORTH word, after save IP:
-
-    EXIT    MOV @RSP+,IP    \ 2 pop into IP the PC pushed on return stack by CALL rEXIT
-            MOV @IP+,PC     \ 4 execute the routine at addr1 next "CALL rEXIT" 
-
-then at the end of FORTH word :
-
-    EXIT    MOV @RSP+,IP    \ 2 pop old IP from return stack
-            MOV @IP+,PC     \ 4 execute the routine pointed by the old IP
+            addr of EXIT        \ the word ; compiles address of EXIT that restores IP then executes MOV @IP+,PC
 
 
 A new step
@@ -962,8 +946,7 @@ A new step
 the compiled result    
 
             header              \ compiled by :
-    exec@   PUSH IP             \ save IP compiled by :
-            CALL rEXIT          \ move next PC from return stack into IP, compiled by :
+    exec@   CALL rDOCOL         \ boot code compiled by the word :
             addr1               \ of word1
             addr2               \ of word2
             ...
@@ -971,10 +954,23 @@ the compiled result
             MOV #0,IP           \ IP is free for use
             asm1                \ assembly instruction
             ...
-            CALL rEXIT          \ compiled by LO2HI (10 cycles switch)
+            CALL #EXIT          \ compiled by LO2HI (10 cycles switch)
             addr3               \ of word3
             addr4               \ of word4
             addr5               \ of EXIT
+
+EXIT is used twice !
+
+the first time, by LO2HI :
+
+    EXIT    MOV @RSP+,IP    \ 2 pop into IP the PC pushed on return stack by CALL #EXIT
+            MOV @IP+,PC     \ 4 execute the routine at addr3 
+
+then at the end of FORTH word (addr5):
+
+    EXIT    MOV @RSP+,IP    \ 2 pop old IP from return stack
+            MOV @IP+,PC     \ 4 execute the routine pointed by the old IP
+
 
 Still another step : 
 
@@ -1016,14 +1012,13 @@ with the compiled result :
             header              \ compiled by CODE
     exec@   asm
             asm
-            PUSH IP             \ compiled by COLON
-            CALL rEXIT          \ compiled by COLON
+            CALL rDOCOL         \ compiled by COLON
             addr
             addr
             next address        \ compiled by HI2LO
             asm
             asm
-            CALL rEXIT          \ compiled by LO2HI
+            CALL #EXIT          \ compiled by LO2HI
             addr
             addr
             EXIT addr           \ that restores IP from return stack and then executes MOV @IP+,PC
@@ -1094,7 +1089,7 @@ infinite loop :
         AGAIN               \ unconditionnal loop back to BEGIN 
     ENDCODE
 
-to quit this infinite loop, press <reset> 
+to quit this infinite loop, press reset. 
 
 
 We can nest several conditional branches :
@@ -1141,7 +1136,7 @@ unconditionnal backward jump :
         CODE UNCOND_BACKWARD
             asm
             asm
-            JMP TEST        \ jump backward to the predefined word TEST
+            JMP TEST_NESTED_BEGIN_AGAIN_IF  \ jump backward to a predefined word
         ENDCODE
 
 conditionnal backward jump :
@@ -1149,7 +1144,7 @@ conditionnal backward jump :
         CODE COND_BACKWARD
             asm
             CMP #0,R8
-            S< ?JMP TEST    \ jump backward to TEST if negative
+            S< ?JMP TEST_NESTED_BEGIN_AGAIN_IF    \ jump backward if negative
             asm
             MOV @IP+,PC
         ENDCODE
@@ -1209,37 +1204,33 @@ Enjoy !
 COMPILE FAST FORTH FOR YOUR MODULE
 --
 
-The principle is to create (or modify) first existing configuration files only to compile FAST FORTH.
-
 1- in forthMSP430FR.asm "TARGET configuration SWITCHES"  create a line for your target, example:
 
-    ;MY_MSP430FR5738_1 ; compile for my own MSP430FR5738 miniboard
+    ;MY_MSP430FR5738_1 ; compile for my own MSP430FR5738 miniboard V1
 
-2- in Target.inc add one item:
-
-        .IFDEF MY_MSP430FR5738_1
-        .warning "Code for MY_MSP430FR5738_1"
-    DEVICE = "MSP430FR5738" ; for target.inc file below, defines your device
-    UCA0_UART   ; for target.inc file below, defines uart used by FORTH input terminal 
-    LF_XTAL     ; for target.inc file below, defines if your module have a 32768 Hz xtal, to enable it.
-    UCB0_SD     ; for target.inc file below, defines UC used for SD Card driver if used
-        .include "MSP430FR5738.inc"  ; include device declarations
-        .ENDIF  ; MY_MSP430FR5738_1
-
-3- also include an new item in Target.asm:
-    .IFDEF MY_MSP430FR5738_1
-    .include "MY_MSP430FR5738_1.asm"
-    .ENDIF
-
-4- create your MSP430FR5738_1.asm (and MSP430FR5738.inc) from another target.asm and device.inc as model, 
+2- create your MSP430FR5738_1.asm and MSP430FR5738.inc from another target.asm and device.inc as pattern, 
 then customize declarations.
 
+3- in ThingsInFirst.inc add one "device.inc" item:
 
-Then, for the needs of syntactic preprocessor:
+        .IFDEF MY_MSP430FR5738_1
+    UCA0_UART   ; for device.inc file below, defines uart used by FORTH input terminal 
+    LF_XTAL     ; for device.inc file below, defines if your module have a 32768 Hz xtal, to enable it.
+    UCB0_SD     ; for device.inc file below, defines UC used for SD Card driver if used
+        .include "MSP430FR5738.inc"  ; include device declarations
+        .ENDIF
 
-1- create a \config\gema\device.pat file if not exist, to do a mix from your device.inc file and another analog device.pat.
+4- in TargetInit.asm add one "target.asm" item: 
+        .IFDEF MY_MSP430FR5738_1
+            .include MY_MSP430FR5738.asm
+        .ENDIF
 
-2- create your \config\gema\target.pat file from target.asm file.
+
+Then, for your source files:
+
+1- create a \config\gema\device.pat file if not exist, from device.inc and another device.pat as pattern.
+
+2- create your \config\gema\target.pat file from target.asm and another target.pat as pattern.
 
 Best practice, I suggest you that all digital pins you define (input or output) in your projects have their idle state high, with external pull up resistor
 that is the reset state of FastForth...
@@ -1347,7 +1338,7 @@ end of file
 
 
 Each time you download this project file, the word {PROJECT} removes all subsequent definitions,
-and the word RST_HERE protects the PROJECT against <RESET\>. 
+and the word RST_HERE protects the PROJECT against RESET. 
 
 The word START allows you to include your app init into FORTH's one.
 The word STOP unlink your app from FORTH init process.
@@ -1403,10 +1394,10 @@ REGISTERS correspondence (the preprocessor gema.exe allow you to use FASTFORTH o
         R1          SP      RSP         Return Stack Pointer
         R2          SR/CG1              Status Register/Constant Generator 1
         R3          CG2                 Constant Generator 2
-        R4          R4      rDODOES     contents address of xdodoes   
-        R5          R5      rDOCON      contents address of xdocon    
-        R6          R6      rDOVAR      contents address of RFROM           
-        R7          R7      rEXIT       contents address of EXIT            
+        R4          R4      R (rDODOES) contents address of xdodoes   
+        R5          R5      Q (rDOCON)  contents address of xdocon    
+        R6          R6      P (rDOVAR)  contents address of RFROM           
+        R7          R7      M (rDOCOL)  contents address of xDOCOL (DTC=1)            
         R8          R8      Y           scratch register
         R9          R9      X           scratch register
         R10         R10     W           scratch register
@@ -1418,8 +1409,10 @@ REGISTERS correspondence (the preprocessor gema.exe allow you to use FASTFORTH o
 
 REGISTERS use
 
-    The FASTFORTH registers rDOCOL, rDOVAR, rDOCON and rDODOES must be preserved, 
-    PUSHM #4,R7 before use and POPM #4,R7 after.
+    The FASTFORTH registers rDOCOL, rDOVAR, rDOCON and rDODOES must be preserved. 
+    If you use them, PUSHM #4,M before and POPM #4,M after.
+    and if you use them you must not at the same time call (or jump to) any FORTH words! 
+    
     don't use R3 and use R2 only with BIC, BIT, BIS instructions in register mode.
 
 
@@ -1427,59 +1420,59 @@ PARAMETERS STACK use
 
     The register TOS (Top Of Stack) is the first cell of the Parameters stack. 
     The register PSP (Parameters Stack Pointer) points the second cell.
-
+    
     to push one cell on the PSP stack :
-
+    
         SUB #2,PSP                  \ insert a empty 2th cell
         MOV TOS,0(PSP)              \ fill this 2th cell with first cell
         MOV <what you want>,TOS     \ MOV or MOV.B <what you want>,TOS ; i.e. update first cell
-
+    
     to pop one cell from the PSP stack :
-
+    
         MOV @PSP+,TOS               \ first cell TOS is lost and replaced by the 2th.
-
+    
     don't never pop a byte with instruction MOV.B @PSP+, because generates a stack misalignement...
 
 RETURN STACK use
 
     register RSP is the Return Stack Pointer (SP).
-
+    
     to push one cell on the RSP stack :
-
+    
         PUSH <what you want>        \
-
+    
     to pop one cell from the RSP stack :
-
+    
         MOV @RSP+,<where you want>   \
-
+    
     don't never pop a byte with instruction MOV.B @RSP+, ...
 
 
     to push multiple registers on the RSP stack :
-
+    
         PUSHM #n,Rx                 \  with 0 <= x-(n-1) < 16
-
+    
     to pop multiple registers from the RSP stack :
-
+    
         POPM #n,Rx                  \  with 0 <= x-(n-1) < 16
-
+    
     PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
     PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
-
+    
     example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
-
+    
     POPM  order :  PC,RSP, SR, R3, rDODOES,rDOCON,rDOVAR, rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
     POPM  order :  R0, R1, R2, R3,   R4   ,  R5  ,  R6  ,   R7 , R8, R9,R10,R11,R12,R13,R14,R15
-
+    
     example : POPM #6,IP   pulls Y,X,W,T,S,IP registers from return stack
-
+    
     error occurs if n is out of bounds
 
 
 CPUx instructions RRCM,RRAM,RLAM,RRUM
     
     example : RRUM #3,Y      \ Y (R8) register is Unsigned Right shifted by n=3
-
+    
     error occurs if 1 > n > 4
 
 

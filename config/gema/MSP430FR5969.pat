@@ -27,11 +27,13 @@ INFOA_ORG=\$1980!
 INFOA_LEN=\$0080!
 TLV_ORG=\$1A00!      ; Device Descriptor Info (Tag-Lenght-Value)
 TLV_LEN=\$0100!      ;
+DEVICEID=\$1A04!
 
 RAM_ORG=\$1C00!
 RAM_LEN=\$0800!
 
 MAIN_ORG=\$4400!        Code space start
+MAIN_LEN=\$FC00!        63k FRAM
 FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
 SIGNATURES=\$FF80!      JTAG/BSL signatures
 JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW; must be reset by wipe.
@@ -149,12 +151,12 @@ SAVE_SYSRSTIV=\$1808!   to enable SYSRSTIV read
 LPM_MODE=\$180A!        LPM0+GIE is the default mode
 INIDP=\$180C!           define RST_STATE, init by wipe
 INIVOC=\$180E!          define RST_STATE, init by wipe
-GPFLAGS=\$1810!
-
-RXON=\$1812!
-RXOFF=\$1814!
-ReadSectorWX=\$1816!    call with W = SectorLO  X = SectorHI
-WriteSectorWX=\$1818!   call with W = SectorLO  X = SectorHI
+VERSION=\$1810!
+KERNEL_ADDON=\$1812!
+RXON=\$1814!
+RXOFF=\$1816!
+ReadSectorWX=\$1818!    call with W = SectorLO  X = SectorHI
+WriteSectorWX=\$181A!   call with W = SectorLO  X = SectorHI
 
 ! ============================================
 ! FORTH RAM areas :
@@ -610,8 +612,9 @@ DMA2SZ=\$53A!       \ DMA channel 2 transfer size
 
 MPUCTL0=\$5A0!      \ MPU control 0             
 MPUCTL1=\$5A2!      \ MPU control 1             
-MPUSEG=\$5A4!       \ MPU Segmentation Register 
-MPUSAM=\$5A6!       \ MPU access management     
+MPUSEGB2=\$5A4!     \ MPU Segmentation Border2 
+MPUSEGB1=\$5A6!     \ MPU Segmentation Border1 
+MPUSAM=\$5A8!       \ MPU access management     
 MPUIPC0=\$5AA!      \ MPU IP control 0                      
 MPUIPSEGB2=\$5AC!   \ MPU IP Encapsulation Segment Border 2 
 MPUIPSEGB1=\$5AE!   \ MPU IP Encapsulation Segment Border 1 

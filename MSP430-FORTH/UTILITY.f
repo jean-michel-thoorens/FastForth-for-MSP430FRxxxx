@@ -3,11 +3,12 @@
 ; UTILITY.f
 ; ------------------------------------------------------------------------------
 \
+\ to see kernel options, download FastForthSpecs.f
+\ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP
+\
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133  MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
-\
-\ must be preprocessed with yourtarget.pat file because PSTACK,CONTEXT,INI_THREAD
 \
 \ REGISTERS USAGE
 \ R4 to R7 must be saved before use and restored after
@@ -28,7 +29,6 @@
 \ FORTH conditionnals:  unary{ 0= 0< 0> }, binary{ = < > U< }
 \
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
-\
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
 PWR_STATE
@@ -116,7 +116,6 @@ CONTEXT @                           \ -- VOC_BODY                   MOVE all thr
     PAD INI_THREAD @ DUP +          \ -- VOC_BODY PAD THREAD*2
     MOVE                            \
     BEGIN                           \ -- 
-\        0 DUP                       \ -- ptr=0 MAX=0                select the MAX of NFAs in all vocabulary threads
         0.                          \ -- ptr=0 MAX=0                
         INI_THREAD @ DUP + 0        \ -- ptr=0 MAX=0 THREADS*2 0
             DO                      \ -- ptr MAX            I =  PAD_ptr = thread*2
@@ -137,7 +136,7 @@ CONTEXT @                           \ -- VOC_BODY                   MOVE all thr
         COUNT $7F AND               \ -- MAX addr count (with suppr. of immediate bit)
         TYPE                        \ -- MAX
         C@ $0F AND                  \ -- count_of_chars
-        $10 SWAP - SPACES           \ --                    complete with spaces to 16 chars
+        $10 SWAP - SPACES           \ --                    complete with spaces modulo 16 chars
     REPEAT                          \ -- ptr
     DROP                            \ --
 ;
@@ -190,26 +189,10 @@ LO2HI
 ;
 [THEN]  \ of [UNDEFINED] DUMP
 
-[THEN]  \ of [UNDEFINED] {TOOLS}
-
 PWR_HERE
 ECHO
+[ELSE]
+ECHO
+; already exists
+[THEN]  \ of [UNDEFINED] {TOOLS}
 
-: BS 8 EMIT ;   \ 8 EMIT = BackSpace EMIT
-: ESC #27 EMIT ;
-: specs         \ to see Fast Forth specifications
-PWR_STATE       \ remove specs definition when running, and before bytes free processing
-6 0 DO BS LOOP  \ to reach start of line
-ESC ." [7m"     \ set reverse video
-." FastForth "
-INI_THREAD @ U. BS ." Threads "   \ vocabularies threads
-." DeviceID=$"
-$10 BASE ! $1A04 @ U. #10 BASE ! 
-FREQ_KHZ @ 0 1000 UM/MOD U. ?DUP
-IF      BS ." ," U.
-THEN    BS ." MHz "            \ MCLK
-FRAM_FULL HERE - U. ." bytes free"
-ESC ." [0m"                     \ reset reverse video
-;
-
-specs

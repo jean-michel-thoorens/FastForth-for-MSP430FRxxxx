@@ -45,7 +45,7 @@ TLV_LEN         .equ 00100h      ;
 ; RAM
 ; ----------------------------------------------
 RAM_ORG         .equ 01C00h
-RAM_LEN         .equ 00800h
+RAM_LEN         .equ 0FC00h
 ; ----------------------------------------------
 ; FRAM
 ; ----------------------------------------------
@@ -367,6 +367,16 @@ RES1      .equ MPY_SFR + 26h    ; 32x32-bit result 1 */
 RES2      .equ MPY_SFR + 28h    ; 32x32-bit result 2 */
 RES3      .equ MPY_SFR + 2Ah    ; 32x32-bit result 3 */
 MPY32CTL0 .equ MPY_SFR + 2Ch    ; MPY32 control register 0
+
+
+MPUCTL0     .equ MPU_SFR + 00h  ; MPU control 0             
+MPUCTL1     .equ MPU_SFR + 02h  ; MPU control 1             
+MPUSEGB2    .equ MPU_SFR + 04h  ; MPU Segmentation Border 2 
+MPUSEGB1    .equ MPU_SFR + 06h  ; MPU Segmentation Border 1 
+MPUSAM      .equ MPU_SFR + 08h  ; MPU access management     
+MPUIPC0     .equ MPU_SFR + 0Ah  ; MPU IP control 0                      
+MPUIPSEGB2  .equ MPU_SFR + 0Ch  ; MPU IP Encapsulation Segment Border 2 
+MPUIPSEGB1  .equ MPU_SFR + 0Eh  ; MPU IP Encapsulation Segment Border 1 
 
 
 UCSWRST         .equ 1  ; eUSCI Software Reset

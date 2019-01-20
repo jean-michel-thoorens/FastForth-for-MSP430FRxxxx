@@ -23,6 +23,7 @@ INFOA_ORG=\$1880!
 INFOA_LEN=\$0080!
 TLV_ORG=\$1A00!         Device Descriptor Info (Tag-Lenght-Value)
 TLV_LEN=\$0080!
+DEVICEID=\$1A04!
 RAM_ORG=\$1C00!
 RAM_LEN=\$0400!
 MAIN_ORG=\$C200!        Code space start
@@ -140,12 +141,12 @@ SAVE_SYSRSTIV=\$1808!   to enable SYSRSTIV read
 LPM_MODE=\$180A!        LPM0+GIE is the default mode
 INIDP=\$180C!           define RST_STATE, init by wipe
 INIVOC=\$180E!          define RST_STATE, init by wipe
-GPFLAGS=\$1810!
-
-RXON=\$1812!
-RXOFF=\$1814!
-ReadSectorWX=\$1816!    call with W = SectorLO  X = SectorHI
-WriteSectorWX=\$1818!   call with W = SectorLO  X = SectorHI
+VERSION=\$1810!
+KERNEL_ADDON=\$1812!
+RXON=\$1814!
+RXOFF=\$1816!
+ReadSectorWX=\$1818!    call with W = SectorLO  X = SectorHI
+WriteSectorWX=\$181A!   call with W = SectorLO  X = SectorHI
 
 ! ---------------------------------------
 ! FAT16 FileSystemInfos

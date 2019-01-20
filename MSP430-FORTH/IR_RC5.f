@@ -111,14 +111,14 @@ THEN                            \ TOS =  0  C6 C5 C4 C3 C2 C1 C0
 \ ******************************\
 \ RC5_CommandByteIsDone         \ -- BASE RC5_code
 \ ******************************\
-\ Only New_RC5_Command ADD_ON   \ use SR(9) bit as toggle bit
+\ Only New_RC5_Command ADD_ON   \ use SR(10) bit as toggle bit
 \ ******************************\
-RRUM    #4,IP                   \5 new toggle bit = IP(13) ==> IP(9)
+RRUM    #3,IP                   \5 new toggle bit = IP(13) ==> IP(10)
 XOR     SR,IP                   \ (new XOR old) Toggle bits
-BIT     #UF1,IP                 \ repeated RC5_command ?
+BIT     #UF10,IP                \ repeated RC5_command ?
 0= ?GOTO FW2                    \ yes, RETI without UF1 change
 \ ******************************\
-XOR #UF1,0(RSP)                 \ 5 toggle bit memory
+XOR #UF10,0(RSP)                \ 5 toggle bit memory
 FW2                             \   endof repeated RC5_command : RETI without UF1 change
 FW1                             \   endof truncated RC5 message
 BIC #$30,&TA0CTL                \   stop timer_A0
@@ -127,13 +127,45 @@ RETI                            \ 5 for system OFF / 1 sec. ==> 1mA * 5us = 5nC 
 ENDASM
     \ 
 
+\ \ =============================================================
+\ \ first definition of START with high level redirection of WARM
+\ \ vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+\ \ ------------------------------\
+\ CODE START                      \
+\ \ ------------------------------\
+\ \ init PORTX (P2:P1) (complement) default I/O are input with pullup resistors
+\     BIC.B   #RC5,&IR_IFG        \ P1IFG.2 clear int flag for TSOP32236     (after IES select)
+\     BIS.B   #RC5,&IR_IE         \ P1IE.2 enable interrupt for TSOP32236
+\ \ ------------------------------\
+\ \ define LPM mode for ACCEPT    \
+\ \ ------------------------------\
+\ \ MOV #LPM4,&LPM_MODE             \ with MSP430FR59xx
+\ \ MOV #LPM2,&LPM_MODE             \ with MSP430FR57xx, terminal input don't work for LPMx > 2
+\ \                                 \ with MSP430FR2xxx, terminal input don't work for LPMx > 0 ; LPM0 is the default value
+\ \ ------------------------------\
+\ \ init interrupt vectors        \
+\ \ ------------------------------\
+\     MOV #RC5_INT,&IR_Vec        \ init Px vector interrupt
+\ \ ------------------------------\
+\ \ START is included in WARM     \
+\ \ ------------------------------\
+\ LO2HI
+\    LIT RECURSE IS WARM          \ insert this starting routine between COLD and WARM...
+\    ['] WARM >BODY EXECUTE       \ ...and continue with WARM (that unlocks I/O).
+\ ;                               \
+\ \ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+\ \ end of first definition of START (high level)
+\ \ =============================================================
 
+\ =============================================================
+\ 2th definition of START with low level redirection of WARM
+\ vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 \ ------------------------------\
-CODE START                      \
+CODE SYS_INIT                   \
 \ ------------------------------\
 \ init PORTX (P2:P1) (complement) default I/O are input with pullup resistors
-    BIC.B   #RC5,&PIRIFG        \ P1IFG.2 clear int flag for TSOP32236     (after IES select)
-    BIS.B   #RC5,&PIRIE         \ P1IE.2 enable interrupt for TSOP32236
+    BIC.B   #RC5,&IR_IFG        \ P1IFG.2 clear int flag for TSOP32236     (after IES select)
+    BIS.B   #RC5,&IR_IE         \ P1IE.2 enable interrupt for TSOP32236
 \ ------------------------------\
 \ define LPM mode for ACCEPT    \
 \ ------------------------------\
@@ -143,62 +175,91 @@ CODE START                      \
 \ ------------------------------\
 \ init interrupt vectors        \
 \ ------------------------------\
-    MOV     #INT_RC5,&IR_Vec    \ init Px vector interrupt
+    MOV #RC5_INT,&IR_Vec        \ init Px vector interrupt
+\ \ ------------------------------\
+\ \ START is included in WARM     \ version with displaying WARM message
+\ \ ------------------------------\ ====================================
+\     MOV #WARM,X                 \
+\     ADD #4,X                    \ ['] WARM >BODY
+\     MOV X,PC                    \ executes default WARM, no return
 \ ------------------------------\
-    LO2HI
-\ ------------------------------\
-\ START is included in WARM     \
-\ ------------------------------\
-    LIT RECURSE IS WARM         \ insert this starting routine between COLD and WARM...
-    ['] WARM >BODY EXECUTE      \ ...and continue with WARM (that unlocks I/O).
- ;                              \
+\ START is included in WARM     \ version without displaying WARM message
+\ ------------------------------\ =======================================
+    MOV #ABORT",IP              \ IP = CFA of ABORT"
+    SUB #12,IP                  \ IP = CFA of ABORT, to replace default WARMTYPE address
+    MOV #WARM,X                 \ 
+    ADD #8,X                    \ to skip WARMTYPE address, replaced by ABORT above
+    MOV X,PC                    \ thus, executes default WARM without message, no return
+ENDCODE
 
 \ ------------------------------\
-: STOP                          \ stops multitasking, must to be used before downloading app
+CODE START                      \
 \ ------------------------------\
-    ['] WARM >BODY IS WARM      \ remove START app from FORTH init process
-    ECHO COLD                   \ reset CPU, interrupt vectors, and start FORTH
-;
+MOV #WARM,X                     \ 
+MOV #SYS_INIT,2(X)              \ WARM will execute SYS_INIT
+MOV X,PC                        \ EXECUTE WARM
+ENDCODE 
 
-\ HERE OVER - DUMP              \ general minidump, part 2
+\ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+\ end of 2th definition of START (low level)
+\ =============================================================
 
-PWR_HERE    \
 
+\ \ high level definition of STOP
+\ \ ------------------------------\
+\ : STOP                          \ stops multitasking, must to be used before downloading app
+\ \ ------------------------------\
+\     ['] WARM >BODY IS WARM      \ remove START app from FORTH init process
+\     COLD                        \ reset CPU, interrupt vectors, and start FORTH
+\ ;
 
+\ low level definition of STOP
+\ ------------------------------\
+CODE STOP                       \ stops multitasking, must to be used before downloading app
+\ ------------------------------\
+    MOV #WARM,X                 \ ['] WARM
+    ADD #4,X                    \ >BODY
+    MOV X,-2(X)                 \ IS WARM
+    MOV #COLD,PC                \ COLD  reset CPU, interrupt vectors, and start FORTH
+ENDCODE
+
+RST_HERE
+
+ECHO
 
 \ --------------------------------------------------\
 \ PHILIPS IR REMOTE RC5/RC6 protocol                \
 \ --------------------------------------------------\
 \ first half bit = no light, same as idle state
 \ second half bit : 32 IR-light pulses of 6,944us,light ON/off ratio = 1/3
-
+\
 \        |<------32 IR light pulses = second half of first start bit ------->|
 \        |_     _     _     _     _     _     _     _     _     _     _     _|
 \ ...____| |___| |___| |___| |___| |___| |...| |___| |___| |___| |___| |___| |____________________________________...
 \        |                                                                   |
 \ 
-
-
+\
+\
 \ at the output of IR receiver TSOPxxx during the first start bit :
-
+\
 \ ...idle state ->|<----- first half bit ------>|<- second half bit (IR light) ->|
 \ ..._____________|_____________________________|                                |_________...
 \                 |                             |                                |
 \                 |                             |                                |
 \                 |                             |________________________________|
-
+\
 \ 32 cycles of 27,777us (36kHz) = 888,888 us
 \ one bit = 888,888 x 2 = 1778 us.
-
-
-
+\
+\
+\
 \   14 bits of active message   = 24.889 ms
 \ + 50  bits of silent (idle)   = 88.888 ms
 \ = RC5 message                 = 113.792 ms
-
+\
 \
 \ RC5_message on IR LIGHT \ idle state = light off
-
+\
 \ 89ms>|<--------------------------------------------------24.889 ms-------------------------------------------------->|<88,
 \      |                                                                                                               |
 \      |       |       |       |       |       |       |       |       |       |       |       |       |       |       | 
@@ -211,10 +272,10 @@ PWR_HERE    \
 \          
 \
 \ notice that each cycle contains its bit value preceded by its complement
-
-
-
-
+\
+\
+\
+\
 \ the same RC5_message inverted at the output of IR receiver : idle state = 1
 \
 \       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
@@ -227,12 +288,12 @@ PWR_HERE    \
 \           I       R       R       R       R       R       R       R       R       R       R       R       R       R
 \
 \ notice that each cycle contains its bit value followed by its complement
-
-
-
-
+\
+\
+\
+\
 \ principe of the driver : 13 samples at 1/4 period and Resynchronise (R) on 1/2 period (two examples)
-
+\
 \       0,888 ms
 \       |<->|<--------------------------------routine time = 12 3/4 cycles = 22.644 ms--------------------------->|
 \       |       |       |       |       |       |       |       |       |       |       |       |       |       | |     |
@@ -247,7 +308,7 @@ PWR_HERE    \
 \ samples :       1       2       3       4       5       6       4       8       9       10      11      12      13|   |
 \                                                                                                                   |   | 
 \ good ! but we have too many RC5_Int...---------------->                                                           I   I
-
+\
 \       0,888 ms
 \       |<->|<--------------------------------routine time = 12 3/4 cycles = 22.644 ms--------------------------->|
 \       |       |       |       |       |       |       |       |       |       |       |       |       |       | |     |
@@ -263,12 +324,12 @@ PWR_HERE    \
 \                                                                                                                   |
 \ good ! but we have too many RC5_Int...------------------>                                                         I
 \
-
-
- 
-
+\
+\
+\ 
+\
 \ So, to avoid these RC5_Int after end : 13+1=14 samples, then the result is shifted one to wipe the 14th (two examples)
-
+\
 \       0,888 ms
 \       |<->|<--------------------------------routine time = 13 3/4 cycles = 24.447 ms----------------------------------->|
 \       |       |       |       |       |       |       |       |       |       |       |       |       |       |       | |
@@ -295,15 +356,15 @@ PWR_HERE    \
 \           I   i   R   i   R   i   R       R   i   R       R   i   R   i   R   i   R   i   R   i   R   i   R       R
 \                 |       |       |       |       |       |       |       |       |       |       |       |       |       |
 \ samples :       1       2       3       4       5       6       7       8       9       10      11      12      13      14
-
-
+\
+\
 \ I = first interruption at the first 1/2 cycle : clear and start timer
 \ i = useless RC5_Int (because aperiodic) at 4/4 cycle
 \ s = sample RC5_intput at (1/2+3/4) = 5/4 cycle = n+1/4 cycles and clear useless RC5_Int
 \ R = usefull (periodic) RC5_Int at 6/4 cycle = n+1/2 cycles : load new timer value, then clear it and restart it
 \ o = RC5_Int time out at 7/4 cycle = n+3/4 cycles, used to detect truncated RC5_message (samples<14)
-
+\
 \ see also : http://www.sbprojects.com/knowledge/ir/rc5.php
 \            http://laurent.deschamps.free.fr/ir/rc5/rc5.htm
 \ Code RC5 : http://en.wikipedia.org/wiki/RC-5
-
+\

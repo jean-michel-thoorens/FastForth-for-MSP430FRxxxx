@@ -349,6 +349,12 @@ RES3      .equ MPY_SFR + 2Ah    ; 32x32-bit result 3 */
 MPY32CTL0 .equ MPY_SFR + 2Ch    ; MPY32 control register 0
 
 
+MPUCTL0     .equ MPU_SFR + 00h  ; MPU control 0             
+MPUCTL1     .equ MPU_SFR + 02h  ; MPU control 1             
+MPUSEG      .equ MPU_SFR + 04h  ; MPU Segmentation Register 
+MPUSAM      .equ MPU_SFR + 06h  ; MPU access management     
+
+
 UCSWRST         .equ 1  ; eUSCI Software Reset
 UCTXIE          .equ 2  ; eUSCI Transmit Interrupt Enable
 UCRXIE          .equ 1  ; eUSCI Receive Interrupt Enable

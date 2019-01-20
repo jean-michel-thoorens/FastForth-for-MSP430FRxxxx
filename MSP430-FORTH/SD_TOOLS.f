@@ -1,7 +1,10 @@
 
 ; ---------------------------------------------------------------
-; SD_TOLLS.f : BASIC TOOLS for SD Card : DIR FAT SECTOR CLUSTER
+; SD_TOOLS.f : BASIC TOOLS for SD Card : DIR FAT SECTOR CLUSTER
 ; ---------------------------------------------------------------
+\
+\ to see kernel options, download FastForthSpecs.f
+\ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP, DOUBLE_INPUT, SD_CARD_LOADER
 \
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
@@ -26,7 +29,6 @@
 \ FORTH conditionnals:  unary{ 0= 0< 0> }, binary{ = < > U< }
 \
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
-\
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
 PWR_STATE
@@ -145,11 +147,15 @@ CODE DIR                            \ Display CurrentDir first sector
 ENDCODE
 \ ----------------------------------\
 
-[THEN]
-
 ECHO
             ; added : FAT to DUMP first sector of FAT1 and DIR for that of current DIRectory.
             ; added : SECTOR to DUMP a sector and CLUSTER for first sector of a cluster:
             ;         include a decimal point to force 32 bits number, example : .2 CLUSTER
 
 RST_HERE
+
+[ELSE]
+ECHO
+; already exists
+[THEN]
+

@@ -1,6 +1,7 @@
 ; MSP430fr2355.inc
 ; MSP430FR2355 minimal declarations for FastForth usage
 DEVICE = "MSP430FR2355"
+FR2_FAMILY
 
 ; ----------------------------------------------
 ; MSP430FR2355 MEMORY MAP

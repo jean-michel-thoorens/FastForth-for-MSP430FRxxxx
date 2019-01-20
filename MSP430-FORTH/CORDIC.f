@@ -1,14 +1,32 @@
+
+; ----------
 ; CORDIC.f
+; ----------
 \ see CORDICforDummies.pdf
 \
+\ to see kernel options, download FastForthSpecs.f
+\ FastForth kernel options: ASSEMBLER, CONDCOMP, FIXPOINT_INPUT.
 \
-\ FAST-FORTH V208.
-\ compile FAST-FORTH with at least these options: ASSEMBLER, CONDCOMP, FIXPOINT_INPUT, LOWERCASE.
-
 \ TARGET Current Selection (used by preprocessor GEMA to load the pattern: \config\gema\TARGET.pat)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR2433  MSP_EXP430FR2355    CHIPSTICK_FR2433
 \
+\ REGISTERS USAGE
+\ rDODOES to rEXIT must be saved before use and restored after
+\ scratch registers Y to S are free for use
+\ under interrupt, IP is free for use
+\
+\ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT, rDOVAR, rDOCON, rDODOES
+\ example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
+\
+\ POPM  order :  rDODOES, rDOCON, rDOVAR, rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
+\ example : POPM #6,IP   pulls Y,X,W,T,S,IP registers from return stack
+\
+\ FORTH conditionnals:  unary{ 0= 0< 0> }, binary{ = < > U< }
+\
+\ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
+\ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
+
 [DEFINED] {CORDIC} [IF] {CORDIC} [THEN] \ remove {CORDIC}
 
 MARKER {CORDIC}
@@ -192,21 +210,6 @@ MOV @RSP+,IP
 MOV @IP+,PC
 ENDCODE                 \ -- cos sin
 
-\
-10000 89,0 POL2REC . .  ; sin, cos --> 
-10000 75,0 POL2REC . .  ; sin, cos --> 
-10000 60,0 POL2REC . .  ; sin, cos --> 
-10000 45,0 POL2REC . .  ; sin, cos --> 
-10000 30,0 POL2REC . .  ; sin, cos --> 
-10000 15,0 POL2REC . .  ; sin, cos --> 
-10000 1,0 POL2REC . .   ; sin, cos --> 
-\ module phase -- X Y
-16384 30,0 POL2REC SWAP . . ; x, y --> 
-16384 45,0 POL2REC SWAP . . ; x, y --> 
-16384 60,0 POL2REC SWAP . . ; x, y --> 
-\
-
-
 
 \ REC2POL version with inputs scaling, to increase the accuracy of the angle:
 \ REC2POL   X Y -- u f
@@ -320,6 +323,29 @@ ENDCODE                 \
 
 RST_HERE
 
+: 2000CORDIC
+1000 0 DO
+    POL2REC REC2POL     \ 1000 loops
+LOOP 
+;
+
+ECHO
+
+\
+10000 89,0 POL2REC . .  ; sin, cos --> 
+10000 75,0 POL2REC . .  ; sin, cos --> 
+10000 60,0 POL2REC . .  ; sin, cos --> 
+10000 45,0 POL2REC . .  ; sin, cos --> 
+10000 30,0 POL2REC . .  ; sin, cos --> 
+10000 15,0 POL2REC . .  ; sin, cos --> 
+10000 1,0 POL2REC . .   ; sin, cos --> 
+\ module phase -- X Y
+16384 30,0 POL2REC SWAP . . ; x, y --> 
+16384 45,0 POL2REC SWAP . . ; x, y --> 
+16384 60,0 POL2REC SWAP . . ; x, y --> 
+\
+
+
 2  1  REC2POL F. .          ; phase module --> 
 2 -1  REC2POL F. .          ; phase module --> 
 20  10  REC2POL F. .        ; phase module --> 
@@ -346,12 +372,6 @@ RST_HERE
 10000 14,036 POL2REC REC2POL ROT . F. 
 10000 7,125 POL2REC REC2POL  ROT . F. 
 10000 1,0 POL2REC REC2POL    ROT . F. 
-
-: 2000CORDIC
-1000 0 DO
-    POL2REC REC2POL     \ 1000 loops
-LOOP 
-;
 
 10000 89,0  2000CORDIC  ROT . F.
 10000 75,0  2000CORDIC  ROT . F.

@@ -1,37 +1,14 @@
+
 ; -----------------------------------
 ; RC5toLCD.f
 ; -----------------------------------
 \
-\ FastForth Compiling options used :
-\ DTC=2, FREQUENCY=8/16/24MHz, THREADS=16, 
-\ 921600 bauds, 3WIRES, 4WIRES,
-\ ASSEMBLER, CONDCOMP, LOWERCASE, (UTILITY).
-
+\ to see kernel options, download FastForthSpecs.f
+\ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP, FREQUENCY = 8/16/24 MHz
+\
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR2355
-\ MY_MSP430FR5738_1 MY_MSP430FR5738     MY_MSP430FR5948     MY_MSP430FR5948_1   
-\
-\ Copyright (C) <2016>  <J.M. THOORENS>
-\
-\ This program is free software: you can redistribute it and/or modify
-\ it under the terms of the GNU General Public License as published by
-\ the Free Software Foundation, either version 3 of the License, or
-\ (at your option) any later version.
-\
-\ This program is distributed in the hope that it will be useful,
-\ but WITHOUT ANY WARRANTY\ without even the implied warranty of
-\ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-\ GNU General Public License for more details.
-\
-\ You should have received a copy of the GNU General Public License
-\ along with this program.  If not, see <http://www.gnu.org/licenses/>.
-\
-\
-\ ===========================================================================
-\ remember: for good downloading to target, all lines must be ended with CR+LF !
-\ ===========================================================================
-\
 \
 \ REGISTERS USAGE
 \ R4 to R7 must be saved before use and restored after
@@ -95,8 +72,6 @@
 \ rc5   <--- OUT IR_Receiver (1 TSOP32236)
 
 [DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]     \ remove application
-
-[DEFINED] ASM [IF]      \ security test
 
 MARKER {RC5TOLCD}
 
@@ -381,8 +356,6 @@ BEGIN
 AGAIN                           \
 ENDASM                          \
 
-
-
 \ ------------------------------\
 CODE STOP                       \ stops multitasking, must to be used before downloading app
 \ ------------------------------\
@@ -546,38 +519,12 @@ COLON                           \
 \ START replaces WARM           \
 \ ------------------------------\
     LIT RECURSE IS WARM         \ START replaces WARM...
-    ABORT                       \ ...and continue with ABORT
+\    ['] WARM >BODY EXECUTE      \ ...and end START with default WARM, no return.
+    ABORT                       \ ...and end START with ABORT, no return.
 ;                               \
 
 ECHO
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
-
-[THEN]      \ ASM
-
-: BS 8 EMIT ;   \ 8 EMIT = BackSpace EMIT
-: ESC #27 EMIT ;
-
-\ to see this end of compilation message you must turn ON LOWERCASE add-on before compiling FastForth
-\ else escape sequences doesn't work.
-
-: specs         \ to see Fast Forth specifications
-PWR_STATE       \ remove BS ESC specs definitions when running, before bytes free processing
-6 0 DO BS LOOP  \ to reach start of line
-ESC ." [7m"     \ escape sequence to set reverse video
-." FastForth "
-INI_THREAD @ U. BS ." Threads " \ vocabularies threads
-." DeviceID=$"
-$10 BASE ! $1A04 @ U. #10 BASE ! 
-FREQ_KHZ @ 0 1000 UM/MOD U. BS
-?DUP
-IF   ." ," U. BS                \ if remainder
-THEN ." MHz "                   \ MCLK
-SIGNATURES HERE - U. ." bytes free"
-ESC ." [0m"     \ escape sequence to clear reverse video
-;
-
-specs   \ here FastForth type a (volatile) message with some informations
-
 
 \ START

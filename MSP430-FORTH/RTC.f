@@ -2,12 +2,15 @@
 ; --------------------
 ; RTC.f
 ; --------------------
-
+\
 \ ==============================================================================
 \ routines RTC for MSP430fr5xxx and MSP430FR6xxx families only
 \ your target must have a LF_XTAL 32768Hz
-\ add a LF_XTAL line for your target in target.inc.
+\ if no present, add a LF_XTAL line for your target in ThingsInFirst.inc.
 \ ==============================================================================
+\
+\ to see kernel options, download FastForthSpecs.f
+\ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP
 \
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
@@ -32,7 +35,6 @@
 \ FORTH conditionnals:  unary{ 0= 0< 0> }, binary{ = < > U< }
 \
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
-\
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 \
 \ use :
@@ -47,8 +49,6 @@
 PWR_STATE
 
 [DEFINED] {RTC} [IF] {RTC} [THEN]     \ remove application
-
-[DEFINED] ASM [IF]      \ security test
 
 MARKER {RTC}
 
@@ -134,36 +134,32 @@ THEN
     ." it is " TIME? 
 ;
 
-[UNDEFINED] [DEFERRED] [IF]
+PWR_HERE
+
 \ create a word to test DEFERred words
 : [DEFERRED]    \ [DEFERRED] <name>         -- flag
     ' @ $4030 = \ CFA of <name> = MOV @PC+,PC ? 
 ; IMMEDIATE
-[THEN]
 
 CREATE ABUF 20 ALLOT
 
 : GET_TIME
-    ECHO
-    CR CR ."    DATE (DMY): "
-[DEFERRED] ACCEPT [IF]                      \ if ACCEPT is a dEFERred word
-    ABUF ABUF 20 ['] ACCEPT >BODY EXECUTE   \   execute default part of ACCEPT
-    EVALUATE CR 3 SPACES DATE!
-    CR CR ."    TIME (HMS): "
-    ABUF ABUF 20 ['] ACCEPT >BODY EXECUTE
-    EVALUATE CR 3 SPACES TIME!
-[ELSE]                                      \ else ACCEPT is not a DEFERred word
-    ABUF ABUF 20 ACCEPT 
-    EVALUATE CR 3 SPACES DATE!
-    CR CR ."    TIME (HMS): "
-    ABUF ABUF 20 ACCEPT 
-    EVALUATE CR 3 SPACES TIME!
-[THEN]
-    CR
+PWR_STATE   \ after PWR_HERE, all will be lost
+CR CR ."    DATE (DMY): "
+ABUF ABUF 20 
+     [DEFERRED] ACCEPT 
+     [IF] ['] ACCEPT >BODY EXECUTE   \   execute default part of ACCEPT
+     [ELSE] ACCEPT
+     [THEN]
+EVALUATE CR 3 SPACES DATE!
+CR CR ."    TIME (HMS): "
+ABUF ABUF 20 
+     [DEFERRED] ACCEPT 
+     [IF] ['] ACCEPT >BODY EXECUTE   \   execute default part of ACCEPT
+     [ELSE] ACCEPT
+     [THEN]
+EVALUATE CR 3 SPACES TIME!
+CR
 ;
 
-[THEN]  \ ASM
-
-PWR_HERE
-
-GET_TIME
+ECHO GET_TIME

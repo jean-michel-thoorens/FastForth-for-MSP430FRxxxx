@@ -6,6 +6,10 @@
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR2355
 \
+\ MY_MSP430FR5738   MY_MSP430FR5738_1 MY_MSP430FR5738_2   
+\ MY_MSP430FR5948   MY_MSP430FR5948_1   
+\
+\
 \ Copyright (C) <2016>  <J.M. THOORENS>
 \
 \ This program is free software: you can redistribute it and/or modify
@@ -89,8 +93,6 @@
 \ rc5   <--- OUT IR_Receiver (1 TSOP32236)
 
 [DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]     \ remove application
-
-[DEFINED] ASM [IF]      \ security test
 
 MARKER {RC5TOLCD}
 
@@ -53617,31 +53619,4 @@ ECHO
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
 
-[THEN]      \ ASM
-
-: BS 8 EMIT ;   \ 8 EMIT = BackSpace EMIT
-: ESC #27 EMIT ;
-
-\ to see this end of compilation message you must turn ON LOWERCASE add-on before compiling FastForth
-\ else escape sequences doesn't work.
-
-: specs         \ to see Fast Forth specifications
-PWR_STATE       \ remove specs definition when running, and before bytes free processing
-6 0 DO BS LOOP  \ to reach start of line
-ESC ." [7m"     \ escape sequence to set reverse video
-." FastForth "
-INI_THREAD @ U. BS ." Threads " \ vocabularies threads
-." DeviceID=$"
-$10 BASE ! $1A04 @ U. #10 BASE ! 
-FREQ_KHZ @ 0 1000 UM/MOD U. BS
-?DUP
-IF   ." ," U. BS                \ if remainder
-THEN ." MHz "                   \ MCLK
-SIGNATURES HERE - U. ." bytes free"
-ESC ." [0m"     \ escape sequence to clear reverse video
-;
-
-specs   \ here FastForth type a (volatile) message with some informations
-
-
-START
+\ START

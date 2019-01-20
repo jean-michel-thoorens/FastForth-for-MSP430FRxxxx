@@ -8,15 +8,12 @@ inputbox 'Send a File' 'Select File : ' param2
 
 strcompare param4 'NOECHO'
 if result = 0 then
-    send 'NOECHO'   ; set no echo from FastForth
-    setecho 1       ; add echo from Teraterm...
-    sendln          ; ...to send CR LF
+    sendln 'NOECHO' ; set no echo from FastForth
     setecho 0       ; suppr. echo from Teraterm
     showtt 0
 ;    clearscreen 1
     sendfile inputstr 0
     showtt 1
-    sendln 'ECHO'
     goto end
 endif
 
@@ -29,6 +26,7 @@ if result = 0 then
     sendfile inputstr 0
     setecho 1
     showtt 1
+    goto end
 endif
 
 ; default mode = ECHO

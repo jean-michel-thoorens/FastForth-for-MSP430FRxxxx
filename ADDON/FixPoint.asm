@@ -335,14 +335,14 @@ FSTAR1   mDOCOL
 
 ; https://forth-standard.org/standard/core/TwoFetch
 ; 2@    a-addr -- x1 x2    fetch 2 cells ; the lower address will appear on top of stack
-            FORTHWORD "2@"
-TWOFETCH    
+        FORTHWORD "2@"
+TWOFETCH
         SUB #2,PSP
         MOV 2(TOS),0(PSP)
         MOV @TOS,TOS
         MOV @IP+,PC
 
-
+    .IFNDEF ASM_EXT
 ; https://forth-standard.org/standard/double/TwoCONSTANT
 ; udlo/dlo/Flo udhi/dhi/Qhi --         create a double or a Q15.16 CONSTANT
         FORTHWORD "2CONSTANT"
@@ -352,4 +352,4 @@ TWOFETCH
         .word DOES
         .word TWOFETCH
         .word EXIT
-
+    .ENDIF

@@ -1,10 +1,15 @@
-\ TARGET SELECTION
-\ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
-\ MSP_EXP430FR2433  MSP_EXP430FR4133    MSP_EXP430FR2355    CHIPSTICK_FR2433
 
 ; -----------------------------------------------------
 ; FIXPOINT.f
 ; -----------------------------------------------------
+\
+\ to see kernel options, download FastForthSpecs.f
+\ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP, FIXPOINT_INPUT
+\
+\ TARGET SELECTION
+\ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
+\ MSP_EXP430FR2433  MSP_EXP430FR4133    MSP_EXP430FR2355    CHIPSTICK_FR2433
+\
 \ REGISTERS USAGE
 \ rDODOES to rEXIT must be saved before use and restored after
 \ scratch registers Y to S are free for use
@@ -23,15 +28,14 @@
 \ FORTH conditionnals:  unary{ 0= 0< 0> }, binary{ = < > U< }
 \
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
-\
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 \
-\
+
 PWR_STATE
 
 [DEFINED] {FIXPOINT} [IF] {FIXPOINT} [THEN]     \ remove {FIXPOINT} if outside core 
 
-[UNDEFINED] {FIXPOINT} [IF]   \ assembler required, don't replicate {FIXPOINT} inside core
+[UNDEFINED] {FIXPOINT} [IF]   \ don't replicate {FIXPOINT} inside core
 
 MARKER {FIXPOINT}
 
@@ -367,13 +371,18 @@ DOES> 2@    \ execution part    addr -- Qhi Qlo
 
 [THEN] \ of [UNDEFINED] 2CONSTANT
 
+RST_HERE
+ECHO
+[ELSE]
+ECHO
+; already exists
 [THEN] \ of [UNDEFINED] {FIXPOINT}
 
-PWR_HERE
 
 ; -----------------------
 ; (volatile) tests
 ; -----------------------
+
 
 3,14159 2CONSTANT PI
 PI -1,0 F* 2CONSTANT -PI

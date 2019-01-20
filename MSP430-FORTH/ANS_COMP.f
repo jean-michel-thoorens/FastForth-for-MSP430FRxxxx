@@ -3,6 +3,9 @@
 ; ANS_COMP.f    words complement to pass CORETEST.4th
 ; -----------------------------------------------------
 \
+\ to see kernel options, download FastForthSpecs.f
+\ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP
+\
 \ TARGET Current Selection 
 \ (used by preprocessor GEMA to load the pattern: \config\gema\TARGET.pat)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
@@ -22,7 +25,6 @@
 \ FORTH conditionnals:  unary{ 0= 0< 0> }, binary{ = < > U< }
 \
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
-\
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
 PWR_STATE
@@ -503,7 +505,9 @@ PAD_ORG CONSTANT PAD
 [THEN]
 
 RST_HERE
-
+ECHO
+[ELSE]
+ECHO
+; already exists
 [THEN]
 
-ECHO

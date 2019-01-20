@@ -1129,7 +1129,8 @@ T{ s12 s11 COMPARE -> -1 }T
 [THEN]      \ COMPARE
 
 $0A BASE !  \ happy end of core test
-
+    ECHO
 [ELSE]      \ if ANS_COMP is not present
+    ECHO 
     DOWNLOAD FIRST ANS_COMP!
 [THEN]

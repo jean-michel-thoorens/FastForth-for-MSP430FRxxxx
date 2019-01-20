@@ -134,7 +134,7 @@ WORDS5      .word   DROP
     .ENDCASE
 
 
-    .IFNDEF ANS_CORE_COMPLIANT
+    .IFNDEF ANS_CORE_COMPLEMENT
 
 ;https://forth-standard.org/standard/core/MAX
 ;C MAX    n1 n2 -- n3       signed maximum

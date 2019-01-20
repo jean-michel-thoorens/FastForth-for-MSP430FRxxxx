@@ -20,9 +20,9 @@ DUP             LIT             EXIT
 
 COLD            Software reset
 
-WARM            DEFERed word, performs a hot start
+WARM            DEFERed word, by default executes ABORT" <WARM_message>"
 
-WIPE            resets the program memory to its original state (Deep_RST has same effect).
+WIPE            resets the program memory to its original state (Deep_RST adds same effect to COLD).
 
 RST_HERE        defines the bound of the program memory protected against COLD or hardware reset.
 
@@ -151,7 +151,7 @@ MOV             RETI            LO2HI           COLON           ENDASM          
 ASM             CODE            HI2LO           (added in forth vocabulary)
 
 see: http://www.ece.utep.edu/courses/web3376/Notes_files/ee3376-isa.pdf
-     howto.md for symbolic alias of registers, symbolic jumps (IF ELSE THEN...),..
+     readme.md for symbolic alias of registers, symbolic jumps (IF ELSE THEN...),..
 
 ?GOTO           used after a conditionnal (0=,0<>,U>=,U<,0<,S<,S>=) to branch to a label FWx or BWx
 GOTO            used as unconditionnal branch to a label FWx or BWx
@@ -194,13 +194,6 @@ next assembler words are set in FORTH vocabulary:
 
 CODE <word>     creates a word written in assembler.
                 this defined <word> must be ended with ENDCODE unless COLON or LO2HI use.
-
-DFRCODE <word>  creates a DEFERed word with its default execute part ready to be written in assembler.
-                this defined <word> must be ended with ENDCODE unless COLON or LO2HI use.
-                if we write: DFRCODE truc
-                             COLON ;
-                we obtain same as: DEFER truc
-                                   :NONAME ; IS truc
 
 ASM <word>      creates a word written in assembler but not interpretable by FORTH (because ended by RET instr.).
                 this defined <word> must be ended with ENDASM. 
