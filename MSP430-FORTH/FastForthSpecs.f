@@ -96,8 +96,8 @@ ENDCASE SPACE
 FREQ_KHZ @ 0 1000 UM/MOD U. BS
 ?DUP
 IF   ." ," U. BS                \ if remainder
-THEN ." MHz "                   \ MCLK
-INI_THREAD @ U. BS ." -Entry Vocabularies "
+THEN ." MHz, "                  \ MCLK
+INI_THREAD @ U. BS ." -Entry Vocabularies, "
 - U. ." bytes, "                \ HERE - MAIN_ORG
 SIGNATURES HERE - U. ." bytes free"
 CR

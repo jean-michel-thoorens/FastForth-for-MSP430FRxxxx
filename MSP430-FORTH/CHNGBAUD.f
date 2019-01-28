@@ -15,7 +15,7 @@
     1 ABORT"  only for 4,8,16,24 MHz MCLK!"
 ;
 : BAD_SPEED
-FREQ_KHZ @ 0 1000 UM/MOD
+0 1000 UM/MOD
 SPACE 27 EMIT ." [7m"   \ set reverse video
 ." with MCLK = " .
 1 ABORT" MHz? don't dream! "
@@ -79,7 +79,7 @@ ELSE 1 - ?DUP 0=            \ select 5MBds ?
                 THEN
         ELSE 1 - ?DUP 0=            \ select 2457600 ?
             IF  ." 2457600 Bds"
-                R@ #4000 =           \ 4MHz ?
+                R@ #8000 <           \ < 8MHz ?
                 IF  R@ BAD_SPEED    \ abort
                 THEN
                 R@ #8000 =

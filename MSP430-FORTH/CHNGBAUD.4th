@@ -7,7 +7,7 @@
     1 ABORT"  only for 4,8,16,24 MHz MCLK!"
 ;
 : BAD_SPEED
-$1806 @ 0 1000 UM/MOD
+0 1000 UM/MOD
 SPACE 27 EMIT ." [7m"
 ." with MCLK = " .
 1 ABORT" MHz? don't dream! "
@@ -33,13 +33,7 @@ KEY
 
 #48 - ?DUP 0=
 IF  ." 6 MBds"
-    R@ #4000 =
-    IF  R@ BAD_SPEED
-    THEN
-    R@ #8000 =
-    IF  R@ BAD_SPEED
-    THEN
-    R@ #16000 =
+    R@ #24000 <
     IF  R@ BAD_SPEED
     THEN
     R@ #24000 <>
@@ -49,10 +43,7 @@ IF  ." 6 MBds"
     $0
 ELSE 1 - ?DUP 0=
     IF  ." 5 MBds"
-        R@ #4000 =
-        IF  R@ BAD_SPEED
-        THEN
-        R@ #8000 =
+        R@ #16000 <
         IF  R@ BAD_SPEED
         THEN
         R@ #16000 =
@@ -66,10 +57,7 @@ ELSE 1 - ?DUP 0=
         THEN
     ELSE 1 - ?DUP 0=
         IF  ." 4 MBds"
-            R@ #4000 =
-            IF  R@ BAD_SPEED
-            THEN
-            R@ #8000 =
+            R@ #16000 <
             IF  R@ BAD_SPEED
             THEN
             R@ #16000 =
@@ -83,7 +71,7 @@ ELSE 1 - ?DUP 0=
                 THEN
         ELSE 1 - ?DUP 0=
             IF  ." 2457600 Bds"
-                R@ #4000 =
+                R@ #8000 <
                 IF  R@ BAD_SPEED
                 THEN
                 R@ #8000 =

@@ -3,7 +3,8 @@
 ; FastForthSpecs.4th
 ; ------------------
 
-; display all FastForth compilation options
+; display all compilation options
+
 
 0 CONSTANT CASE IMMEDIATE
 
@@ -57,10 +58,12 @@ IF CR CR
 ESC ." [7m"
 ." OTHER ADD-ON:"
 ESC ." [0m"
-    [DEFINED] {ANS_COMP} [IF] CR ." ANS_COMPLEMENT" [THEN]
+    [DEFINED] {ANS_COMP} [IF] CR ." ANS_COMP" [THEN]
     [DEFINED] {TOOLS}    [IF] CR ." UTILITY" [THEN]
     [DEFINED] {FIXPOINT} [IF] CR ." FIXPOINT" [THEN]
     [DEFINED] {SD_TOOLS} [IF] CR ." SD_TOOLS" [THEN]
+    [DEFINED] {RTC}      [IF] CR ." RTC" [THEN]
+    [DEFINED] {CORDIC}   [IF] CR ." CORDIC" [THEN]
 THEN
 ;
 
@@ -89,8 +92,8 @@ ENDCASE SPACE
 $1806 @ 0 1000 UM/MOD U. BS
 ?DUP
 IF   ." ," U. BS
-THEN ." MHz "
-$1800 @ U. BS ." -Entry Vocabularies "
+THEN ." MHz, "
+$1800 @ U. BS ." -Entry Vocabularies, "
 - U. ." bytes, "
 $FF80 HERE - U. ." bytes free"
 CR

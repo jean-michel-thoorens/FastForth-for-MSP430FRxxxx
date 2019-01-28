@@ -44,12 +44,12 @@ VER .equ "V208" ; FORTH version
 ;-------------------------------------------------------------------------------
 ;MSP_EXP430FR5739   ; compile for MSP-EXP430FR5739 launchpad        ; 24 +  2   + 3876 bytes
 ;MSP_EXP430FR5969   ; compile for MSP-EXP430FR5969 launchpad        ; 24 +  2   + 3852 bytes
-MSP_EXP430FR5994   ;; compile for MSP-EXP430FR5994 launchpad        ; 24 +  2   + 3878 bytes
+;MSP_EXP430FR5994   ; compile for MSP-EXP430FR5994 launchpad        ; 24 +  2   + 3878 bytes
 ;MSP_EXP430FR6989   ; compile for MSP-EXP430FR6989 launchpad        ; 24 +  2   + 3888 bytes
 ;MSP_EXP430FR4133   ; compile for MSP-EXP430FR4133 launchpad        ; 24 +  2   + 3918 bytes
 ;MSP_EXP430FR2355   ; compile for MSP-EXP430FR2355 launchpad        ; 24 +  2   + 3854 bytes
 ;MSP_EXP430FR2433   ; compile for MSP-EXP430FR2433 launchpad        ; 24 +  2   + 3840 bytes
-;CHIPSTICK_FR2433   ; compile for the "CHIPSTICK" of M. Ken BOAK    ; 24 +  2   + 3840 bytes
+CHIPSTICK_FR2433   ;; compile for the "CHIPSTICK" of M. Ken BOAK    ; 24 +  2   + 3840 bytes
 
 ; choose DTC (Direct Threaded Code) model, if you don't know, choose 1
 DTC .equ 1  ; DTC model 1 : DOCOL = CALL rDOCOL           14 cycles 1 word      shortest DTC model
@@ -71,9 +71,9 @@ NONAME              ;; +   54 bytes : adds :NONAME CODENNM (CODENoNaMe)
 VOCABULARY_SET      ;; +  104 bytes : adds words: VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83)
 DOUBLE_INPUT        ;; +   46 bytes : adds the interpretation input for double numbers (dot numbers)
 FIXPOINT_INPUT      ;; +  112 bytes : adds the interpretation input for Q15.16 numbers, mandatory for FIXPOINT ADD-ON
-SD_CARD_LOADER      ;; + 1748 bytes : to LOAD source files from SD_card
-SD_CARD_READ_WRITE  ;; + 1192 bytes : to read, create, write and del files + copy text files from PC to SD_Card
-BOOTLOADER          ;; +   72 bytes : includes to <reset> the SD_CARD\BOOT.4TH file as bootloader.
+;SD_CARD_LOADER      ; + 1748 bytes : to LOAD source files from SD_card
+;SD_CARD_READ_WRITE  ; + 1192 bytes : to read, create, write and del files + copy text files from PC to SD_Card
+;BOOTLOADER          ; +   72 bytes : includes to <reset> the SD_CARD\BOOT.4TH file as bootloader.
 ;QUIETBOOT           ; +    2 bytes : to perform bootloader without displaying.
 ;TOTAL               ; +    4 bytes : to save also R4 to R7 registers during interrupts.
 
@@ -83,7 +83,7 @@ BOOTLOADER          ;; +   72 bytes : includes to <reset> the SD_CARD\BOOT.4TH f
 ;-------------------------------------------------------------------------------                        v
 ;FIXPOINT            ; +  422/528 bytes add HOLDS F+ F- F/ F* F#S F. S>F 2@ 2CONSTANT               FIXPOINT.f
 UTILITY             ;; +  434/524 bytes (1/16threads) : add .S .RS WORDS U.R DUMP ?                 UTILITY.f
-SD_TOOLS            ;; +  142 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, adds UTILITY     SD_TOOLS.f
+;SD_TOOLS            ; +  142 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, adds UTILITY     SD_TOOLS.f
 ;ANS_CORE_COMPLEMENT ; +  902 bytes : required to pass coretest.4th ; (includes items below)        ANS_COMP.f
 
 ;-------------------------------------------------------------------------------
@@ -1400,18 +1400,18 @@ YEMIT2                              ;
             BIT.B #CTS,&HANDSHAKIN  ; 3
             JNZ YEMIT2              ; 2
     .ENDIF                          ;
-YEMIT                               ; hi7/4~ lo:12/9~ send/send_not  echo to terminal
+YEMIT                               ; 7~/4~ send/send_not  echo to terminal
             .word   4882h           ; 4882h = MOV Y,&<next_adr>
             .word   TERM_TXBUF      ; 3
             mNEXT                   ; 4
-; ----------------------------------;
+; ----------------------------------; 25~
 AYEMIT_RET  FORTHtoASM              ; 0     YEMII NEXT address
             SUB #2,IP               ; 1 reset YEMIT NEXT address to AYEMIT_RET
 WAITaKEY    BIT #UCRXIFG,&TERM_IFG  ; 3 new char in TERMRXBUF ?
             JNZ AKEYREAD            ; 2 yes
             JZ WAITaKEY             ; 2 no
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
-; stops the 2th stopwatch           ; best case result: 26~/22~ (with/without echo) ==> 385/455 kBds/MHz
+; stops the 2th stopwatch           ; best case result: 31~/28~ (with/without echo) ==> 322/357 kBds/MHz
 ; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
 
 ; ----------------------------------;
@@ -2229,13 +2229,14 @@ QABUSBLOOPI NOP                     ; 1~        <---+   |
 ; ----------------------------------;
 QABORT_DISPLAY                      ; <== WARM jumps here
             mDOCOL                  ;
+            .word   lit,LINE,FETCH
             .word   ECHO            ;
             .word   XSQUOTE         ; -- c-addr u c-addr1 u1
             .byte   4,27,"[7m"      ;    type ESC[7m
             .word   TYPE            ; -- c-addr u       set reverse video
-ERRLINE     .word   lit,LINE,FETCH,QDUP;
+            .word   QDUP            ;       if LINE <> 0
             .word   QBRAN,ERRLINE_END;      if LINE = 0
-            .word   XSQUOTE         ;       displays the line where error occured
+ERRLINE     .word   XSQUOTE         ;       else displays the line where error occured
             .byte   5,"line:"       ;
             .word   TYPE            ;
             .word   ONEMINUS        ;

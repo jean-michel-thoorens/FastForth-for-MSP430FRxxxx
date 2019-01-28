@@ -1,5 +1,7 @@
 
-[DEFINED] {ANS_COMP} [IF]
+[UNDEFINED] {ANS_COMP} [IF]
+ANS_COMP_NOT_FOUND
+[THEN]
 
 ; ===============================================================
 ;
@@ -1073,11 +1075,10 @@ CREATE ABUF 80 CHARS ALLOT
 
 : ACCEPT-TEST
     CR ." PLEASE TYPE UP TO 80 CHARACTERS: "
-[DEFINED] LOAD" [IF] \ " \ JMT: because ACCEPT is deferred
-    ABUF 80 ['] ACCEPT >BODY EXECUTE \ JMT: execute default part of ACCEPT
-[ELSE]
-    ABUF 80 ACCEPT
-[THEN]
+ABUF 80 \ ACCEPT            \ JMT 
+['] ACCEPT DUP @ $4030 =    \ JMT: if CFA content = $4030 (MOV @PC+,PC), ACCEPT is deferred
+IF      >BODY               \ JMT: find default part of deferred ACCEPT
+THEN    EXECUTE             \ execute ACCEPT
     CR ." RECEIVED: " [CHAR] " EMIT
     ABUF SWAP TYPE [CHAR] " EMIT CR
 ;
@@ -1128,9 +1129,5 @@ T{ s12 s11 COMPARE -> -1 }T
 
 [THEN]      \ COMPARE
 
-$0A BASE !  \ happy end of core test
-    ECHO
-[ELSE]      \ if ANS_COMP is not present
-    ECHO 
-    DOWNLOAD FIRST ANS_COMP!
-[THEN]
+$0A BASE ! ECHO
+\ happy end of core test

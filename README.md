@@ -503,9 +503,6 @@ and hardware control flow :
 
     http://www.google.com/search?q=PL2303TA
     http://www.google.com/search?q=PL2303HXD
-    WARNING! XON/XOFF no longer works with new Prolific driver v3.8.12.0 (03/03/2017)...
-             Waiting next update, get on web previous PL2303_Prolific_DriverInstaller_v1160.exe (or .zip)
-
 
 or USBtoUART bridge, with a CP2102 device and 3.3V/5V that allows XON/XOFF control flow :
 
