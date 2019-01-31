@@ -505,9 +505,7 @@ PAD_ORG CONSTANT PAD
 [THEN]
 
 RST_HERE
-ECHO
-[ELSE]
-ECHO
-; already exists
+
 [THEN]
 
+ECHO

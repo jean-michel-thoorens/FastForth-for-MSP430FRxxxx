@@ -42,14 +42,15 @@ VER .equ "V208" ; FORTH version
 ;-------------------------------------------------------------------------------
 ; TARGETS kernel    ; sizes are for 8MHz, DTC=1, THREADS=1, 3WIRES (XON/XOFF)
 ;-------------------------------------------------------------------------------
-;MSP_EXP430FR5739   ; compile for MSP-EXP430FR5739 launchpad        ; 24 +  2   + 3876 bytes
-;MSP_EXP430FR5969   ; compile for MSP-EXP430FR5969 launchpad        ; 24 +  2   + 3852 bytes
-;MSP_EXP430FR5994   ; compile for MSP-EXP430FR5994 launchpad        ; 24 +  2   + 3878 bytes
-;MSP_EXP430FR6989   ; compile for MSP-EXP430FR6989 launchpad        ; 24 +  2   + 3888 bytes
-;MSP_EXP430FR4133   ; compile for MSP-EXP430FR4133 launchpad        ; 24 +  2   + 3918 bytes
-;MSP_EXP430FR2355   ; compile for MSP-EXP430FR2355 launchpad        ; 24 +  2   + 3854 bytes
-;MSP_EXP430FR2433   ; compile for MSP-EXP430FR2433 launchpad        ; 24 +  2   + 3840 bytes
-CHIPSTICK_FR2433   ;; compile for the "CHIPSTICK" of M. Ken BOAK    ; 24 +  2   + 3840 bytes
+;                                                                   ;INFO+VECTOR+ MAIN
+;MSP_EXP430FR5739   ; compile for MSP-EXP430FR5739 launchpad        ; 24 +  2   + 3870 bytes
+;MSP_EXP430FR5969   ; compile for MSP-EXP430FR5969 launchpad        ; 24 +  2   + 3846 bytes
+;MSP_EXP430FR5994   ; compile for MSP-EXP430FR5994 launchpad        ; 24 +  2   + 3872 bytes
+;MSP_EXP430FR6989   ; compile for MSP-EXP430FR6989 launchpad        ; 24 +  2   + 3882 bytes
+;MSP_EXP430FR4133   ; compile for MSP-EXP430FR4133 launchpad        ; 24 +  2   + 3912 bytes
+MSP_EXP430FR2355   ;; compile for MSP-EXP430FR2355 launchpad        ; 24 +  2   + 3848 bytes
+;MSP_EXP430FR2433   ; compile for MSP-EXP430FR2433 launchpad        ; 24 +  2   + 3834 bytes
+;CHIPSTICK_FR2433   ; compile for the "CHIPSTICK" of M. Ken BOAK    ; 24 +  2   + 3834 bytes
 
 ; choose DTC (Direct Threaded Code) model, if you don't know, choose 1
 DTC .equ 1  ; DTC model 1 : DOCOL = CALL rDOCOL           14 cycles 1 word      shortest DTC model
@@ -60,13 +61,13 @@ THREADS     .equ 16 ;  1,  2 ,  4 ,  8 ,  16,  32  search entries in dictionnary
                     ; +0, +42, +54, +70, +104, +168 bytes, usefull to speed up compilation;
                     ; choose 16
 
-FREQUENCY   .equ 16 ; fully tested at 0.25,0.5,1,2,4,8,16 MHz (+ 24 MHz for MSP430FR57xx,MSP430FR2355)
+FREQUENCY   .equ 1 ; fully tested at 0.25,0.5,1,2,4,8,16 MHz (+ 24 MHz for MSP430FR57xx,MSP430FR2355)
 
 ;-------------------------------------------------------------------------------
 ; KERNEL ADD-ON SWITCHES
 ;-------------------------------------------------------------------------------
 CONDCOMP            ;; +  320 bytes : adds conditionnal compilation : COMPARE [DEFINED] [UNDEFINED] [IF] [ELSE] [THEN] MARKER
-MSP430ASSEMBLER     ;; + 1828/2264 bytes : adds embedded assembler with TI syntax; without, you can do all but all much more slowly...
+MSP430ASSEMBLER     ;; + 1828 bytes : adds embedded assembler with TI syntax; without, you can do all but all much more slowly...
 NONAME              ;; +   54 bytes : adds :NONAME CODENNM (CODENoNaMe)
 VOCABULARY_SET      ;; +  104 bytes : adds words: VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83)
 DOUBLE_INPUT        ;; +   46 bytes : adds the interpretation input for double numbers (dot numbers)
@@ -548,12 +549,12 @@ RSP         .reg    R1      ; RSP = Return Stack Pointer (return stack)
 rDODOES     .reg    r4
 rDOCON      .reg    r5
 rDOVAR      .reg    r6
-rDOCOL      .reg    R7      ; COLD defines xdocol as R7 content
+rDOCOL      .reg    R7
 
-L           .reg    R7
-M           .reg    r6      ; ex. PUSHM L,N
-N           .reg    r5
-P           .reg    r4
+R           .reg    r4
+Q           .reg    r5
+P           .reg    r6
+M           .reg    R7
 
 ; Scratch registers
 Y           .reg    R8
@@ -567,6 +568,7 @@ IP          .reg    R13      ; interpretative pointer
 TOS         .reg    R14      ; first PSP cell
 PSP         .reg    R15      ; PSP = Parameters Stack Pointer (stack data)
 
+
 mNEXT       .MACRO          ; return for low level words (written in assembler)
             MOV @IP+,PC     ; 4 fetch code address into PC, IP=PFA
             .ENDM           ; 4 cycles,1word = ITC -2cycles -1 word
@@ -577,82 +579,28 @@ FORTHtoASM  .MACRO          ; compiled by HI2LO
             .word   $+2     ; 0 cycle
             .ENDM           ; 0 cycle, 1 word
 
-
-
-    .SWITCH DTC
-;-------------------------------------------------------------------------------
-    .CASE 1 ; DOCOL = CALL rDOCOL
-;-------------------------------------------------------------------------------
-
-xdocol      MOV @RSP+,W     ; 2
-            PUSH IP         ; 3     save old IP on return stack
-            MOV W,IP        ; 1     set new IP to PFA
-            MOV @IP+,PC     ; 4     = NEXT
-                            ; 10 cycles
-
-ASMtoFORTH  .MACRO          ; compiled by LO2HI
-            CALL #EXIT      ; 2 words, 10 cycles
-            .ENDM           ;
-
-mDOCOL      .MACRO          ; compiled by : and by colon
-            CALL rDOCOL     ; 1 word, 14 cycles (CALL included) = ITC+4
-            .ENDM           ;
-
-DOCOL1      .equ    1287h   ; 4 CALL R7
+mSEMI       .MACRO
+            MOV @RSP+,IP
+            MOV @IP+,PC
+            .ENDM
 
 ;-------------------------------------------------------------------------------
-    .CASE 2 ; DOCOL = PUSH IP + CALL rEXIT
+; mDODOES  leave on parameter stack the PFA of a CREATE definition and execute Master word
 ;-------------------------------------------------------------------------------
 
-rEXIT       .reg    R7      ; COLD defines EXIT as R7 content
+mDODOES     .MACRO          ; compiled  by DOES>
+            CALL rDODOES    ;    CALL xdodoes
+            .ENDM           ; 1 word, 19 cycles (ITC-2)
 
-ASMtoFORTH  .MACRO          ; compiled by LO2HI
-            CALL rEXIT      ; 1 word, 10 cycles
-            .ENDM           ;
+DODOES      .equ    1284h   ; 4 CALL rDODOES ; [rDODOES] is defind as xdodoes by COLD
 
-mDOCOL      .MACRO          ; compiled by : and by COLON
-            PUSH IP         ; 3
-            CALL rEXIT      ; 10
-            .ENDM           ; 2 words, 13 cycles = ITC+3
-
-DOCOL1      .equ    120Dh   ; 3 PUSH IP
-DOCOL2      .equ    1287h   ; 4 CALL rEXIT
-
-;-------------------------------------------------------------------------------
-    .CASE 3 ; inlined DOCOL
-;-------------------------------------------------------------------------------
-
-R           .reg    R7      ; Scratch register
-
-ASMtoFORTH  .MACRO          ; compiled by LO2HI
-            MOV PC,IP       ; 1
-            ADD #4,IP       ; 1
-            MOV @IP+,PC     ; 4 NEXT
-            .ENDM           ; 6 cycles, 3 words
-
-mDOCOL      .MACRO          ; compiled by : and by COLON
-            PUSH IP         ; 3
-            MOV PC,IP       ; 1
-            ADD #4,IP       ; 1
-            MOV @IP+,PC     ; 4 NEXT
-            .ENDM           ; 4 words, 9 cycles (ITC-1)
-
-DOCOL1      .equ    120Dh   ; 3 PUSH IP
-DOCOL2      .equ    400Dh   ; 1 MOV PC,IP
-DOCOL3      .equ    522Dh   ; 1 ADD #4,IP
-
-    .ENDCASE ; DTC
-
-;-------------------------------------------------------------------------------
-; mDOVAR leave on parameter stack the PFA of a VARIABLE definition
-;-------------------------------------------------------------------------------
-
-mDOVAR      .MACRO          ; compiled by VARIABLE
-            CALL rDOVAR     ; 1 word, 14 cycles (ITC+4)
-            .ENDM           ;
-
-DOVAR       .equ    1286h   ; CALL rDOVAR ; [rDOVAR] is defined as RFROM by COLD
-
+xdodoes   ; -- a-addr       ; 4 for CALL rDODOES
+            SUB #2,PSP      ; 1
+            MOV TOS,0(PSP)  ; 3 save TOS on parameters stack
+            MOV @RSP+,TOS   ; 2 TOS = CFA address of master word, i.e. address of its first cell after DOES>
+            PUSH IP         ; 3 save IP on return stack
+            MOV @TOS+,IP    ; 2 IP = CFA of Master word, TOS = BODY address of created word
+            MOV @IP+,PC     ; 4 Execute Master word
 
 ;-------------------------------------------------------------------------------
 ; mDOCON  leave on parameter stack the [PFA] of a CONSTANT definition
@@ -673,29 +621,84 @@ xdocon  ;   -- constant     ; 4 for CALL rDOCON
                             ; 16 = ITC (+4)
 
 ;-------------------------------------------------------------------------------
-; mDODOES  leave on parameter stack the PFA of a CREATE definition and execute Master word
+; mDOVAR leave on parameter stack the PFA of a VARIABLE definition
 ;-------------------------------------------------------------------------------
 
-mDODOES     .MACRO          ; compiled  by DOES>
-            CALL rDODOES    ;    CALL xdodoes
-            .ENDM           ; 1 word, 19 cycles (ITC-2)
+mDOVAR      .MACRO          ; compiled by VARIABLE
+            CALL rDOVAR     ; 1 word, 14 cycles (ITC+4)
+            .ENDM           ;
 
-DODOES      .equ    1284h   ; 4 CALL rDODOES ; [rDODOES] is defind as xdodoes by COLD
+DOVAR       .equ    1286h   ; CALL rDOVAR ; [rDOVAR] is defined as xdovar by COLD
 
-xdodoes   ; -- a-addr       ; 4 for CALL rDODOES
-            SUB #2,PSP      ; 1
-            MOV TOS,0(PSP)  ; 3 save TOS on parameters stack
-            MOV @RSP+,TOS   ; 2 TOS = CFA address of master word, i.e. address of its first cell after DOES>
-            PUSH IP         ; 3 save IP on return stack
-            MOV @TOS+,IP    ; 2 IP = CFA of Master word, TOS = BODY address of created word
-            MOV @IP+,PC     ; 4 Execute Master word
+;https://forth-standard.org/standard/core/Rfrom
+;C R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
+            FORTHWORD "R>"
+xdovar
+RFROM       SUB #2,PSP          ; 1
+            MOV TOS,0(PSP)      ; 3
+            MOV @RSP+,TOS       ; 2
+            mNEXT               ; 4
 
+
+    .SWITCH DTC
+;-------------------------------------------------------------------------------
+    .CASE 1 ; DOCOL = CALL rDOCOL
+;-------------------------------------------------------------------------------
+
+xdocol      MOV @RSP+,W     ; 2
+            PUSH IP         ; 3     save old IP on return stack
+            MOV W,IP        ; 1     set new IP to PFA
+            MOV @IP+,PC     ; 4     = NEXT
+                            ; 10 cycles
+
+ASMtoFORTH  .MACRO          ; compiled by LO2HI
+            CALL #EXIT      ; 10 cycles
+            .ENDM           ; 2 words, 10 cycles
+
+mDOCOL      .MACRO          ; compiled by : and by colon
+            CALL rDOCOL     ; 10 [rDOCOL] = xdocol
+            .ENDM           ; 1 word, 14 cycles (CALL included) = ITC+4
+
+DOCOL1      .equ    1287h   ; 4 CALL rDOCOL
 
 ;-------------------------------------------------------------------------------
-mSEMI       .MACRO
-            MOV @RSP+,IP
-            MOV @IP+,PC
-            .ENDM
+    .CASE 2 ; DOCOL = PUSH IP + CALL rEXIT
+;-------------------------------------------------------------------------------
+
+ASMtoFORTH  .MACRO          ; compiled by LO2HI
+            CALL rDOCOL     ; 10 [rDOCOL] = EXIT
+            .ENDM           ; 1 word, 10 cycles
+
+mDOCOL      .MACRO          ; compiled by : and by COLON
+            PUSH IP         ; 3
+            CALL rDOCOL     ; 10 [rDOCOL] = EXIT
+            .ENDM           ; 2 words, 13 cycles = ITC+3
+
+DOCOL1      .equ    120Dh   ; 3 PUSH IP
+DOCOL2      .equ    1287h   ; 4 CALL rDOCOL
+
+;-------------------------------------------------------------------------------
+    .CASE 3 ; inlined DOCOL
+;-------------------------------------------------------------------------------
+
+ASMtoFORTH  .MACRO          ; compiled by LO2HI
+            MOV PC,IP       ; 1
+            ADD #4,IP       ; 1
+            MOV @IP+,PC     ; 4 NEXT
+            .ENDM           ; 6 cycles, 3 words
+
+mDOCOL      .MACRO          ; compiled by : and by COLON
+            PUSH IP         ; 3
+            MOV PC,IP       ; 1
+            ADD #4,IP       ; 1
+            MOV @IP+,PC     ; 4 NEXT
+            .ENDM           ; 4 words, 9 cycles (ITC-1)
+
+DOCOL1      .equ    120Dh   ; 3 PUSH IP
+DOCOL2      .equ    400Dh   ; 1 MOV PC,IP
+DOCOL3      .equ    522Dh   ; 1 ADD #4,IP
+
+    .ENDCASE ; DTC
 
 ;-------------------------------------------------------------------------------
 ; INTERPRETER LOGIC
@@ -780,13 +783,14 @@ TOR         PUSH TOS
             MOV @PSP+,TOS
             mNEXT
 
-;https://forth-standard.org/standard/core/Rfrom
-;C R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
-            FORTHWORD "R>"
-RFROM       SUB #2,PSP          ; 1
-            MOV TOS,0(PSP)      ; 3
-            MOV @RSP+,TOS       ; 2
-            mNEXT               ; 4
+; moved to rDOVAR
+;;https://forth-standard.org/standard/core/Rfrom
+;;C R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
+;            FORTHWORD "R>"
+;RFROM       SUB #2,PSP          ; 1
+;            MOV TOS,0(PSP)      ; 3
+;            MOV @RSP+,TOS       ; 2
+;            mNEXT               ; 4
 
 ;https://forth-standard.org/standard/core/RFetch
 ;C R@    -- x     R: x -- x   fetch from rtn stk
@@ -1720,66 +1724,62 @@ TONUMEND    MOV S,0(PSP)            ;3 -- x x x adr2 count2
 ; 32 bits numbers (with decimal point) and fixed point signed numbers (with a comma) are recognized.
 ; prefixes # % $ and - are processed before calling >NUMBER
 ; not convertible chars '.' (double) and ',' (fixed point) are processed as >NUMBER exits
-;Z ?NUMBER  c-addr -- n -1      if convert ok ; flag Z=0
-;Z          c-addr -- c-addr 0  if convert ko ; flag Z=1
-QNUMBER     BIC #UF9,SR             ;2                          reset flag UF9, before use as decimal point flag
+;Z ?NUMBER  addr -- n|d -1  if convert ok ; flag Z=0, UF9=1 if double
+;Z          addr -- addr 0  if convert ko ; flag Z=1
+QNUMBER     BIC #UF9,SR             ;2                          reset flag UF9, before use as double number flag
             MOV &BASE,T             ;3                          T=BASE
             MOV #0,S                ;1                          S=sign of result
             PUSHM #3,IP             ;5                          R-- IP sign base
-            MOV #QNUMNEXT,IP        ;2                          set QNUMNEXT as return from >NUMBER
+            MOV #TONUMEXIT,IP       ;2                          set TONUMEXIT as return from >NUMBER
             MOV #0,X                ;1                          X=ud1lo
             MOV #0,Y                ;1                          Y=ud1hi
-            SUB #8,PSP              ;1 -- x x x x c-addr        save TOS and make room for >NUMBER
-            MOV TOS,6(PSP)          ;3 -- c-addr x x x c-addr
+            SUB #8,PSP              ;1 -- x x x x addr          save TOS and make room for >NUMBER
+            MOV TOS,6(PSP)          ;3 -- addr x x x addr
             MOV TOS,S               ;1                          S=addrr
-            MOV.B @S+,TOS           ;2 -- c-addr x x x count    TOS=count
-            MOV.B @S,W              ;2                          W=char
-            SUB.B #',',W            ;2
-            JHS QSIGN               ;2                          for current base, and for ',' or '.' process
-            SUB.B #1,W              ;1
-QBINARY     MOV #2,T                ;3                              preset base 2
-            ADD.B #8,W              ;1                          '%' + 8 = '-'   binary number ?
-            JZ PREFIXED             ;2
-QDECIMAL    ADD #8,T                ;4
-            ADD.B #2,W              ;1                          '#' + 2 = '%'   decimal number ?
-            JZ PREFIXED             ;2
-QHEXA       MOV #16,T               ;4
-            SUB.B #1,W              ;2                          '$' - 1 = '#'   hex number ?
-            JNZ TONUMLOOP           ;2 -- c-addr x x x count    other cases will cause >NUMBER error
-PREFIXED    ADD #1,S                ;1
-            SUB #1,TOS              ;1 -- c-addr x x x cnt-1    S=adr+1 TOS=count-1
-            MOV.B @S,W              ;2                          X=2th char, W=adr
-            SUB.B #',',W            ;2
-QSIGN       CMP.B #1,W              ;1
-            JNZ TONUMLOOP           ;2 -- c-addr x x x count    for positive number and for , or . process
-            MOV #-1,2(RSP)          ;3                          R-- IP sign base
+            MOV.B @S+,TOS           ;2 -- addr x x x cnt        TOS=count
+QNUMLDCHAR  MOV.B @S,W              ;2                          W=char
+            CMP.B #'-',W            ;2
+            JLO QBINARY             ;2                          jump if char < '-'
+            JNZ DDIGITQ             ;2 -- addr x x x cnt        jump if char > '-'
+            MOV #-1,2(RSP)          ;3 R-- IP sign base         set sign flag
             JMP TONUMPLUS           ;2
-; ----------------------------------;40
-QNUMNEXT    FORTHtoASM              ;  -- c-addr ud2lo-hi addr2 cnt2    R-- IP sign BASE    S=addr2
-        .IFDEF DOUBLE_INPUT
-            CMP #0,TOS              ;1                                  cnt2=0 : conversion is ok ?
-            JZ QNUMNEXT1            ;2                                  yes
+QBINARY     MOV #2,T                ;1                          preset base 2
+            SUB.B #'%',W            ;2                          binary number ?
+            JZ PREFIXED             ;2
+QDECIMAL    ADD #8,T                ;1
+            ADD.B #2,W              ;1                          decimal number ?
+            JZ PREFIXED             ;2
+QHEXA       MOV #16,T               ;1
+            SUB.B #1,W              ;1                          hex number ?
+            JNZ TONUMLOOP           ;2 -- addr x x x cnt        other cases will cause >NUMBER exit
+PREFIXED    ADD #1,S                ;1
+            SUB #1,TOS              ;1 -- addr x x x cnt-1      S=adr+1 TOS=count-1
+            JMP QNUMLDCHAR          ;2
+; ----------------------------------;
+TONUMEXIT   FORTHtoASM              ;  -- addr ud2lo-hi addr2 cnt2      R-- IP sign BASE    S=addr2
+; ----------------------------------;
+        .IFDEF DOUBLE_INPUT         ; plus 11 words 
+            JZ QNUMNEXT             ;2                                  if conversion is ok
             BIT #UF9,SR             ;2                                  already 1 ?
-            JNZ QNUMNEXT1           ;2                                  yes: abort
+            JNZ QNUMNEXT            ;2                                  yes, goto QNUMNEXT, exit then abort on conv. error
             BIS #UF9,SR             ;2                                  set double number flag
-            SUB #2,IP               ;1                                  reset QNUMNEXT as return from >NUMBER
-QQNUMDP     CMP.B #'.',0(S)         ;4                                  rejected char by >NUMBER = decimal point ?
+            SUB #2,IP               ;1                                  reset TONUMEXIT as return from >NUMBER
+            CMP.B #'.',0(S)         ;4                                  rejected char by >NUMBER = decimal point ?
             JZ  TONUMPLUS           ;2                                  yes: loop back to >NUMBER to terminate conversion
-        .ENDIF  ; DOUBLE_INPUT
-; ----------------------------------;52 
-        .IFDEF FIXPOINT_INPUT       ;
-            .IFNDEF DOUBLE_INPUT
-            CMP #0,TOS              ;1                                  cnt2=0 : conversion is ok ?
-            JZ QNUMNEXT1            ;2                                  yes
+        .ENDIF                      ;
+; ----------------------------------; 
+        .IFDEF FIXPOINT_INPUT       ; plus 40 words 
+            .IFNDEF DOUBLE_INPUT    ; plus 6 words
+            JZ QNUMNEXT             ;2                                  if conversion is ok
             BIT #UF9,SR             ;2                                  already 1 ?
-            JNZ QNUMNEXT1           ;2                                  yes: abort
+            JNZ QNUMNEXT            ;2                                  yes, goto QNUMNEXT, exit then abort on conv. error
             BIS #UF9,SR             ;2                                  set double number flag
             .ENDIF
-QQcomma     CMP.B #',',0(S)         ;5                                  rejected char by >NUMBER is a comma ?
-            JNZ QNUMNEXT1           ;2                                  no, goto QNUMNEXT1 (abort then)
-S15Q16      MOV TOS,W               ;1 -- c-addr ud2lo x x x            yes   W=cnt2
-            MOV #0,X                ;1 -- c-addr ud2lo x 0 x            init X = ud2lo' = 0
-S15Q16LOOP  MOV X,2(PSP)            ;3 -- c-addr ud2lo ud2lo' ud2lo' x  0(PSP) = ud2lo'
+            CMP.B #',',0(S)         ;4                                  rejected char by >NUMBER is a comma ?
+            JNZ QNUMNEXT            ;2                                  no, goto QNUMNEXT, exit then abort on conv. error
+S15Q16      MOV TOS,W               ;1 -- addr ud2lo x x x              yes   W=cnt2
+            MOV #0,X                ;1 -- addr ud2lo x 0 x              init X = ud2lo' = 0
+S15Q16LOOP  MOV X,2(PSP)            ;3 -- addr ud2lo ud2lo' ud2lo' x    0(PSP) = ud2lo'
             SUB.B #1,W              ;1                                  decrement cnt2
             MOV W,X                 ;1                                  X = cnt2-1
             ADD S,X                 ;1                                  X = end_of_string-1, first...
@@ -1791,30 +1791,30 @@ S15Q16LOOP  MOV X,2(PSP)            ;3 -- c-addr ud2lo ud2lo' ud2lo' x  0(PSP) =
             CMP.B #10,X             ;2                                  to skip all chars between "9" and "A"
             JLO S15Q16EOC           ;2                                  ens of conversion
 QS15Q16DIGI CMP T,X                 ;1                                  R-- IP sign BASE    is X a digit ?
-            JHS S15Q16EOC           ;2 -- c-addr ud2lo ud2lo' x ud2lo'  if no goto QNUMNEXT1 (abort then)
-            MOV X,0(PSP)            ;3 -- c-addr ud2lo ud2lo' digit x
-            MOV T,TOS               ;1 -- c-addr ud2lo ud2lo' digit     base R-- IP sign base
+            JHS S15Q16EOC           ;2 -- addr ud2lo ud2lo' x ud2lo'    if no goto QNUMNEXT (abort then)
+            MOV X,0(PSP)            ;3 -- addr ud2lo ud2lo' digit x
+            MOV T,TOS               ;1 -- addr ud2lo ud2lo' digit       base R-- IP sign base
             PUSHM #3,S              ;6                                  PUSH S,T,W: R-- IP sign base addr2 base cnt2
-            CALL #MUSMOD            ;4 -- c-addr ud2lo ur uqlo uqhi
+            CALL #MUSMOD            ;4 -- addr ud2lo ur uqlo uqhi
             POPM #3,S               ;6                                  restore W,T,S: R-- IP sign BASE
             JMP S15Q16LOOP          ;2                                  W=cnt
-S15Q16EOC   MOV 4(PSP),2(PSP)       ;5 -- c-addr ud2lo ud2hi uqlo x     ud2lo from >NUMBER part1 becomes here ud2hi part of Q15.16
-            MOV @PSP,4(PSP)         ;4 -- c-addr ud2lo ud2hi x x        uqlo becomes ud2lo part of Q15.16
-            MOV W,TOS               ;1 -- c-addr ud2lo ud2hi x cnt2
+S15Q16EOC   MOV 4(PSP),2(PSP)       ;5 -- addr ud2lo ud2hi uqlo x       ud2lo from >NUMBER part1 becomes here ud2hi part of Q15.16
+            MOV @PSP,4(PSP)         ;4 -- addr ud2lo ud2hi x x          uqlo becomes ud2lo part of Q15.16
+            MOV W,TOS               ;1 -- addr ud2lo ud2hi x cnt2
             CMP.B #0,TOS            ;1                                  TOS = 0 if end of conversion (happy end)
-        .ENDIF  ; FIXPOINT_INPUT
-; ----------------------------------;54
-QNUMNEXT1   POPM #3,IP              ;4 -- c-addr ud2lo-hi x cnt2        POPM T,S,IP  S = sign flag = {-1;0}
-            MOV S,TOS               ;1 -- c-addr ud2lo-hi x sign
+        .ENDIF                      ;
+; ----------------------------------;
+QNUMNEXT    POPM #3,IP              ;4 -- addr ud2lo-hi x cnt2          POPM T,S,IP  S = sign flag = {-1;0}
+            MOV S,TOS               ;1 -- addr ud2lo-hi x sign
             MOV T,&BASE             ;3
-            JZ QNUMOK               ;2 -- c-addr ud2lo-hi x sign        conversion OK
-QNUMKO      ADD #6,PSP              ;1 -- c-addr sign
-            AND #0,TOS              ;1 -- c-addr ff                     TOS=0 and Z=1 ==> conversion ko
+            JZ QNUMOK               ;2 -- addr ud2lo-hi x sign          conversion OK
+QNUMKO      ADD #6,PSP              ;1 -- addr sign
+            AND #0,TOS              ;1 -- addr ff                       TOS=0 and Z=1 ==> conversion ko
             mNEXT                   ;4
-; ----------------------------------;63
-QNUMOK      ADD #2,PSP              ;1 -- c-addr ud2lo-hi cnt2
+; ----------------------------------;
+QNUMOK      ADD #2,PSP              ;1 -- addr ud2lo-hi cnt2
             MOV 2(PSP),4(PSP)       ;  -- udlo udlo udhi sign
-            MOV @PSP+,0(PSP)        ;4 -- udlo udhi sign              note : PSP is incremented before write back !!!
+            MOV @PSP+,0(PSP)        ;4 -- udlo udhi sign                note : PSP is incremented before write back !!!
             XOR #-1,TOS             ;1 -- udlo udhi inv(sign)
             JNZ QDOUBLE             ;2                      if jump : TOS=-1 and Z=0 ==> conversion ok
 Q2NEGATE    XOR #-1,TOS             ;1 -- udlo udhi tf
@@ -1826,7 +1826,7 @@ QDOUBLE     BIT #UF9,SR             ;2                      decimal point added 
             JNZ QNUMEND             ;2                      leave double
             ADD #2,PSP              ;1                      leave number
 QNUMEND     mNEXT                   ;4                      TOS=-1 and Z=0 ==> conversion ok
-; ----------------------------------;85/125 words
+; ----------------------------------;  69 words
 
     .ELSE ; no hardware MPY
 
@@ -1892,8 +1892,8 @@ TONUMEND    MOV S,0(PSP)            ;3 -- ud2lo ud2hi adr2 count2
             mNEXT                   ;4 50/82 words/cycles, W = BASE
 
 ; convert a string to a signed number
-;Z ?NUMBER  c-addr -- n -1      if convert ok ; flag Z=0
-;Z          c-addr -- c-addr 0  if convert ko ; flag Z=1
+;Z ?NUMBER  addr -- n|d -1  if convert ok ; flag Z=0, UF9=1 if double
+;Z          addr -- addr 0  if convert ko ; flag Z=1
 ; FORTH 2012 prefixes $, %, # are recognised
 ; 32 bits numbers (with decimal point) are recognised
 ; with FIXPOINT_INPUT switched ON, fixed point signed numbers (with a comma) are recognised.
@@ -1903,60 +1903,55 @@ QNUMBER     BIC #UF9,SR             ;2          reset flag UF9 used here as deci
             MOV &BASE,T             ;3          T=BASE
             MOV #0,S                ;1
             PUSHM #3,IP             ;5          R-- IP sign base
-            MOV #QNUMNEXT,IP        ;2          define >NUMBER return
+            MOV #TONUMEXIT,IP       ;2          define >NUMBER return
             MOV T,W                 ;1          W=BASE
-            SUB #8,PSP              ;1 -- x x x x c-addr
-            MOV TOS,6(PSP)          ;3 -- c-addr x x x c-addr
+            SUB #8,PSP              ;1 -- x x x x addr
+            MOV TOS,6(PSP)          ;3 -- addr x x x addr
             MOV #0,4(PSP)           ;3
-            MOV #0,2(PSP)           ;3 -- c-addr ud=0 x c-addr
+            MOV #0,2(PSP)           ;3 -- addr ud=0 x addr
             MOV TOS,S               ;1
-            MOV.B @S+,T             ;2 -- c-addr ud=0 x x   S=adr, T=count
-            MOV.B @S,X              ;2                      X=char
-            SUB.B #',',X            ;2
-            JHS QSIGN               ;2                      for current base, and for ',' or '.' process
-            SUB.B #1,X              ;1
-QBINARY     MOV #2,W                ;1                      preset base 2
-            ADD.B #8,X              ;1                      '%' + 8 = '-'   binary number ?
-            JZ PREFIXED             ;2
-QDECIMAL    ADD #8,W                ;1
-            ADD.B #2,X              ;1                      '#' + 2 = '%'   decimal number ?
-            JZ PREFIXED             ;2
-QHEXA       MOV #16,W               ;1
-            SUB.B #1,X              ;2                      '$' - 1 = '#'   hex number ?
-            JNZ TONUMLOOP           ;2 -- c-addr ud=0 x x   other cases will cause error
-PREFIXED    ADD #1,S                ;1
-            SUB #1,T                ;1 -- c-addr ud=0 x x   S=adr+1 T=count-1
-            MOV.B @S,X              ;2                      X=2th char, W=adr
-            SUB.B #',',X            ;2
-QSIGN       CMP.B #1,X              ;1                      char= '-' ?
-            JNZ TONUMLOOP           ;2                      no (positive number or ',' or '.' )
+            MOV.B @S+,T             ;2 -- addr ud=0 x x     S=adr, T=count
+QNUMLDCHAR  MOV.B @S,X              ;2                      X=char
+            CMP.B #'-',X            ;2
+            JLO QBINARY             ;2                      if char < '-'
+            JNZ DDIGITQ             ;2                      if char > '-'
             MOV #-1,2(RSP)          ;3                      R-- IP sign base
             JMP TONUMPLUS           ;2
-; ----------------------------------;45
-QNUMNEXT    FORTHtoASM              ;  -- c-addr ud2lo-hi addr2 cnt2    R-- IP sign BASE    S=addr2,T=cnt2
+QBINARY     MOV #2,W                ;1                      preset base 2
+            SUB.B #'%',X            ;2                      binary number ?
+            JZ PREFIXED             ;2
+QDECIMAL    ADD #8,W                ;1
+            ADD.B #2,X              ;1                      decimal number ?
+            JZ PREFIXED             ;2
+QHEXA       MOV #16,W               ;1
+            SUB.B #1,X              ;2                      hex number ?
+            JNZ TONUMLOOP           ;2 -- addr ud=0 x x     other cases will cause >NUMBER exit
+PREFIXED    ADD #1,S                ;1
+            SUB #1,T                ;1 -- addr ud=0 x x     S=adr+1 T=count-1
+            JMP QNUMLDCHAR          ;
+; ----------------------------------;42
+TONUMEXIT   FORTHtoASM              ;  -- addr ud2lo-hi addr2 cnt2      R-- IP sign BASE    S=addr2,T=cnt2
         .IFDEF DOUBLE_INPUT
-            CMP #0,TOS              ;1                                  cnt2=0 ? conversion is ok ?
-            JZ QNUMNEXT1            ;2                                  yes (neither comma nor point in string)
+            JZ QNUMNEXT             ;2                                  if conversion is ok
             BIT #UF9,SR             ;2                                  already flagged? (to discard repeated points or repeated commas)
-            JNZ QNUMNEXT1           ;2                                  abort
+            JNZ QNUMNEXT            ;2                                  yes, exit then abort on conv. error
             BIS #UF9,SR             ;2                                  set double number flag
-            SUB #2,IP               ;1                                  yes set >NUMBER return address
-QNUMDP      CMP.B #'.',0(S)         ;4                                  rejected char by >NUMBER is a decimal point ?
+            SUB #2,IP               ;1                                  reset TONUMEXIT as >NUMBER return address
+            CMP.B #'.',0(S)         ;4                                  rejected char by >NUMBER is a decimal point ?
             JZ TONUMPLUS            ;2                                  to terminate conversion
-        .ENDIF  ; DOUBLE_INPUT
+        .ENDIF
 ; ----------------------------------;52 
         .IFDEF FIXPOINT_INPUT       ;
             .IFNDEF DOUBLE_INPUT
-            CMP #0,TOS              ;1                                  cnt2=0 : conversion is ok ?
-            JZ QNUMNEXT1            ;2                                  yes
+            JZ QNUMNEXT             ;2                                  if conversion is ok
             BIT #UF9,SR             ;2                                  already 1 ?
-            JNZ QNUMNEXT1           ;2                                  yes: end of conversion
+            JNZ QNUMNEXT            ;2                                  yes, exit then abort on conv. error
             BIS #UF9,SR             ;2                                  set double number flag
             .ENDIF
-QS15Q16     CMP.B #',',0(S)         ;5                                  rejected char by >NUMBER is a comma ?
-            JNZ QNUMNEXT1           ;2                                  no
-S15Q16      MOV #0,X                ;1 -- c-addr ud2lo x 0 x            init ud2lo' = 0
-S15Q16LOOP  MOV X,2(PSP)            ;3 -- c-addr ud2lo ud2lo' ud2lo' x  X = 0(PSP) = ud2lo'
+            CMP.B #',',0(S)         ;5                                  rejected char by >NUMBER is a comma ?
+            JNZ QNUMNEXT            ;2                                  no, exit then abort on conv. error
+S15Q16      MOV #0,X                ;1 -- addr ud2lo x 0 x              init ud2lo' = 0
+S15Q16LOOP  MOV X,2(PSP)            ;3 -- addr ud2lo ud2lo' ud2lo' x    X = 0(PSP) = ud2lo'
             SUB.B #1,T              ;1                                  decrement cnt2
             MOV T,X                 ;1                                  X = cnt2-1
             ADD S,X                 ;1                                  X = end_of_string-1, first...
@@ -1968,28 +1963,28 @@ S15Q16LOOP  MOV X,2(PSP)            ;3 -- c-addr ud2lo ud2lo' ud2lo' x  X = 0(PS
             CMP.B #10,X             ;2
             JLO S15Q16EOC           ;2
 QS15Q16DIGI CMP W,X                 ;1                                  R-- IP sign BASE, W=BASE,    is X a digit ?
-            JHS S15Q16EOC           ;2 -- c-addr ud2lo ud2lo' x ud2lo'  if no
-            MOV X,0(PSP)            ;3 -- c-addr ud2lo ud2lo' digit x
-            MOV W,TOS               ;1 -- c-addr ud2lo ud2lo' digit base    R-- IP sign base
-            PUSHM #3,S              ;5                                      PUSH S,T,W: R-- IP sign base addr2 cnt2 base
-            CALL #MUSMOD            ;4 -- c-addr ud2lo ur uqlo uqhi
+            JHS S15Q16EOC           ;2 -- addr ud2lo ud2lo' x ud2lo'    if no
+            MOV X,0(PSP)            ;3 -- addr ud2lo ud2lo' digit x
+            MOV W,TOS               ;1 -- addr ud2lo ud2lo' digit base  R-- IP sign base
+            PUSHM #3,S              ;5                                  PUSH S,T,W: R-- IP sign base addr2 cnt2 base
+            CALL #MUSMOD            ;4 -- addr ud2lo ur uqlo uqhi
             POPM #3,S               ;5                                  restore W,T,S: R-- IP sign BASE
             JMP S15Q16LOOP          ;2                                  W=cnt
-S15Q16EOC   MOV 4(PSP),2(PSP)       ;5 -- c-addr ud2lo ud2lo uqlo x     ud2lo from >NUMBER part1 becomes here ud2hi=S15 part2
-            MOV @PSP,4(PSP)         ;4 -- c-addr ud2lo ud2hi x x        uqlo becomes ud2lo
-            MOV T,TOS               ;1 -- c-addr ud2lo ud2hi x cnt2
+S15Q16EOC   MOV 4(PSP),2(PSP)       ;5 -- addr ud2lo ud2lo uqlo x       ud2lo from >NUMBER part1 becomes here ud2hi=S15 part2
+            MOV @PSP,4(PSP)         ;4 -- addr ud2lo ud2hi x x          uqlo becomes ud2lo
+            MOV T,TOS               ;1 -- addr ud2lo ud2hi x cnt2
             CMP.B #0,TOS            ;1                                  TOS = 0 if end of conversion char = ',' (happy end)
         .ENDIF
 ; ----------------------------------;97
-QNUMNEXT1   POPM #3,IP              ;4 -- c-addr ud2lo-hi x cnt2        POPM T,S,IP   S = sign flag = {-1;0}
-            MOV S,TOS               ;1 -- c-addr ud2lo-hi x sign
+QNUMNEXT    POPM #3,IP              ;4 -- addr ud2lo-hi x cnt2          POPM T,S,IP   S = sign flag = {-1;0}
+            MOV S,TOS               ;1 -- addr ud2lo-hi x sign
             MOV T,&BASE             ;3
-            JZ QNUMOK               ;2 -- c-addr ud2lo-hi x sign        conversion OK
-QNUMKO      ADD #6,PSP              ;1 -- c-addr sign
-            AND #0,TOS              ;1 -- c-addr ff                     TOS=0 and Z=1 ==> conversion ko
+            JZ QNUMOK               ;2 -- addr ud2lo-hi x sign          conversion OK
+QNUMKO      ADD #6,PSP              ;1 -- addr sign
+            AND #0,TOS              ;1 -- addr ff                       TOS=0 and Z=1 ==> conversion ko
             mNEXT                   ;4
 ; ----------------------------------;
-QNUMOK      ADD #2,PSP              ;1 -- c-addr ud2lo-hi sign
+QNUMOK      ADD #2,PSP              ;1 -- addr ud2lo-hi sign
             MOV 2(PSP),4(PSP)       ;  -- udlo udlo udhi sign
             MOV @PSP+,0(PSP)        ;4 -- udlo udhi sign                note : PSP is incremented before write back !!!
             XOR #-1,TOS             ;1 -- udlo udhi inv(sign)
@@ -2925,9 +2920,9 @@ RST_INIT
     .CASE 1
         MOV #xdocol,rDOCOL
     .CASE 2
-        MOV #EXIT,rEXIT
+        MOV #EXIT,rDOCOL
     .ENDCASE
-        MOV #RFROM,rDOVAR
+        MOV #xdovar,rDOVAR       
         MOV #xdocon,rDOCON
         MOV #xdodoes,rDODOES
     .IFDEF MSP430ASSEMBLER          ; reset all 6 branch labels

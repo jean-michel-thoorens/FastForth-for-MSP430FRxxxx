@@ -63,12 +63,13 @@ What is new ?
 
 V208
 
-    -52 bytes.
+    -58 bytes.
+    Simplified directory structure of project.
     Added switch DOUBLE_INPUT as kernel compilation ADDON, removed switch LOWERCASE.
     Added \MSP430-FORTH\CORDIC.f for aficionados.
     Added FastForthSpecs.4th which shows all specs of FastForth.
     Corrected LITERAL (double LITERAL part).
-    Modified ACCEPT COLD WARM ?ABORT, S".
+    Modified ACCEPT COLD WARM ?ABORT, S", QNUMBER.
 
 V207 
 
@@ -421,7 +422,8 @@ remember its shared name i.e. : //myPC/users/my/FastForth.
 in file explorer then right clic on root to connect a network drive, copy shared name in drive name 
 and choose a free drive letter a:, b: ...
 
-Thus all relative paths will be linked to this drive, except the three \MSP430-FORTH\files.bat links.
+Thus all relative paths will be linked to this drive, except the three \MSP430-FORTH\files.bat 
+and \binaries\prog.bat links.
 For all of them right clic select, select properties then check drive letter in target.
 
 WARNING! if you erase a file directly in this drive or in one of its subfolders, no trash, the file is lost!
@@ -437,11 +439,11 @@ If you are under WINDOWS :
     And the MSP430Drivers : 
     http://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSP430_FET_Drivers/latest/index_FDS.html
 
-    The next tool is TERATERM.EXE : http://logmett.com/index.php?/products/teraterm.html.
+    The next tool is TERATERM.EXE : https://osdn.net/projects/ttssh2/releases/
     
     As scite is my editor, this github repository is fully configured for scite users.
     download the single file executable called sc1 (not the full download! ) :
-    http://www.scintilla.org/SciTEDownload.html, then save it as \prog\wscite\scite.exe.
+    http://www.scintilla.org/SciTEDownload.html, then save it as \prog\scite.exe.
 
     download GEMA preprocessor : https://sourceforge.net/projects/gema/files/gema/gema-1.4-RC/
 
@@ -449,7 +451,7 @@ If you are under WINDOWS :
 
     and Srecord : http://srecord.sourceforge.net/download.html to convert HEX file to TI TXT files.
 
-    copy last 3 items onto their respective \prog subfolder. 
+    copy last 3 items onto \prog subfolder. 
 
     ask windows to open .asm, .inc, lst, .mac, .4th, .f, .pat files with scite.exe
 	
@@ -477,14 +479,14 @@ assemble (CTRL+0). A window asks you for 4 parameters:
 
 set target as first param, i.e. MSP_EXP430FR5969,
 
-then execute. the output will be MSP_EXP430FR5969.txt
+then execute. the output will be \binaries\MSP_EXP430FR5969.txt
 
 
 
 Load Txt file (TI format) to target
 -----------------------------------
 
-    drag your target.txt file and drop it on prog.bat
+    in \binaries folder, drag your target.txt file and drop it on prog.bat
     
     or use scite internal command TOOLS: FET prog (CTRL+1).
 
@@ -789,9 +791,8 @@ EMBEDDED ASSEMBLER
 ======
 
 With the preprocessor GEMA the embedded assembler allows access to all system variables. 
-See files \\config\\gema\\Target.pat. 
-You can also access to VARIABLE, CONSTANT or DOES type words.
-see \MSP430-FORTH\TESTASM.4th.
+See files \\inc\\Target.pat. 
+You can also access to VARIABLE, CONSTANT or DOES type words. See \\MSP430-FORTH\\TESTASM.4th.
 
 
 
@@ -1027,7 +1028,7 @@ ASSEMBLER WITHOUT LABELS ? YES !
 ---
 
 To compare AS macro assembler and FastForth embedded assembler,
-compare files /ADDON/fixpoint.asm and /MSP430-FORTH/FIXPOINT.f
+compare files \ADDON\FIXPOINT.asm and \MSP430-FORTH\FIXPOINT.f
 
 The syntax of FastForth assembler borrows FORTH's one :
 
@@ -1186,48 +1187,45 @@ SYMBOLIC ASSEMBLER ? YES !
 
 I have discovered a little semantic preprocessor "GEMA", just like that FAST FORTH have its symbolic assembler !
 
-    \config\gema\DEVICE.pat contains memory map and vectors for a specified DEVICE
-    \config\gema\LAUNCHPAD.pat is the I/O config file for specific LAUNCHPAD (or application)
+    \inc\DEVICE.pat contains memory map and vectors for a specified DEVICE
+    \inc\LAUNCHPAD.pat is the I/O config file for specific LAUNCHPAD (or application)
 
 gema translates also FORTH registers in ASM registers (R0 to R15)
 
-If you have created a network drive from your local gitlab directory, it's easy :
-with scite editor open a file.f, then select in the menu "tools" the items "preprocess..." 
-
-furnished examples : see \MSP430-FORTH\
-Enjoy !
+With the three bat files in \MSP-430 folder all is done automatically.
 
 
 COMPILE FAST FORTH FOR YOUR MODULE
 --
 
-1- in forthMSP430FR.asm "TARGET configuration SWITCHES"  create a line for your target, example:
+1- in forthMSP430FR.asm "TARGET configuration"  create a line for your target, example:
 
     ;MY_MSP430FR5738_1 ; compile for my own MSP430FR5738 miniboard V1
 
-2- create your MSP430FR5738_1.asm and MSP430FR5738.inc from another target.asm and device.inc as pattern, 
-then customize declarations.
+2- create your \inc\MSP430FR5738_1.asm and \inc\MSP430FR5738.inc from another target.asm and device.inc as pattern, 
+Notice that you must define here only the necessary for FAST-FORTH compilation.
 
-3- in ThingsInFirst.inc add one "device.inc" item:
+3- in \inc\ThingsInFirst.inc add one "device.inc" item:
 
         .IFDEF MY_MSP430FR5738_1
-    UCA0_UART   ; for device.inc file below, defines uart used by FORTH input terminal 
-    LF_XTAL     ; for device.inc file below, defines if your module have a 32768 Hz xtal, to enable it.
-    UCB0_SD     ; for device.inc file below, defines UC used for SD Card driver if used
+    UCA0_UART   ; defines uart used by FORTH input terminal 
+    LF_XTAL     ; defines if your module have a 32768 Hz xtal, to enable it.
+    UCB0_SD     ; defines UC used for SD Card driver if used
         .include "MSP430FR5738.inc"  ; include device declarations
         .ENDIF
 
-4- in TargetInit.asm add one "target.asm" item: 
+4- in \inc\TargetInit.asm add one "target.asm" item: 
+
         .IFDEF MY_MSP430FR5738_1
-            .include MY_MSP430FR5738.asm
+            .include MY_MSP430FR5738_1.asm
         .ENDIF
 
 
-Then, for your source files:
+Then, for the preprocessor which you will use when downloading source files:
 
-1- create a \config\gema\device.pat file if not exist, from device.inc and another device.pat as pattern.
+1- create your \inc\device.pat file if not exist, from your \inc\device.inc and another \inc\device.pat as pattern.
 
-2- create your \config\gema\target.pat file from target.asm and another target.pat as pattern.
+2- create your \inc\target.pat file from your \inc\target.asm and another \inc\target.pat as pattern.
 
 Best practice, I suggest you that all digital pins you define (input or output) in your projects have their idle state high, with external pull up resistor
 that is the reset state of FastForth...
@@ -1394,7 +1392,7 @@ REGISTERS correspondence (the preprocessor gema.exe allow you to use FASTFORTH o
         R4          R4      R (rDODOES) contents address of xdodoes   
         R5          R5      Q (rDOCON)  contents address of xdocon    
         R6          R6      P (rDOVAR)  contents address of RFROM           
-        R7          R7      M (rDOCOL)  contents address of xDOCOL (DTC=1)            
+        R7          R7      M (rDOCOL)  contents address of xDOCOL (DTC=1|2)            
         R8          R8      Y           scratch register
         R9          R9      X           scratch register
         R10         R10     W           scratch register
@@ -1407,8 +1405,12 @@ REGISTERS correspondence (the preprocessor gema.exe allow you to use FASTFORTH o
 REGISTERS use
 
     The FASTFORTH registers rDOCOL, rDOVAR, rDOCON and rDODOES must be preserved. 
-    If you use them, PUSHM #4,M before and POPM #4,M after.
-    and if you use them you must not at the same time call (or jump to) any FORTH words! 
+    If you use them you can either PUSHM #4,M before and POPM #4,M after,
+    or by restoring after use their FastForth default values:
+    xdocol, xdovar, xdocon, xdodoes. See device.pat.
+    
+    But if you use this registers you must not at the same time use any FORTH words
+    created by them! 
     
     don't use R3 and use R2 only with BIC, BIT, BIS instructions in register mode.
 

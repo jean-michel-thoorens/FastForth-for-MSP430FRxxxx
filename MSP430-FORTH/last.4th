@@ -21,6 +21,7 @@ SPACE 27 EMIT ." [7m"
 : CHNGBAUD
 PWR_STATE 
 $1806 @ >R
+ECHO
 ." target MCLK = " R@ MCLK. ." MHz" CR
 ."    choose your baudrate:" CR
 ."    0 --> 6 MBds" CR
@@ -178,7 +179,7 @@ THEN
 $1804 !
 $1802 !
 R> DROP
-CR ."    Change baudrate in Teraterm, save its setup then reset target."
+CR ."    Change baudrate in Teraterm, save its setup then reboot."
 ;
 ECHO
 CHNGBAUD 

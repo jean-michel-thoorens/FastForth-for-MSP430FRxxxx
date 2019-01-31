@@ -1,5 +1,0 @@
-asl -i $FF/projets/msp430 -L  $1 -o $2.p
-p2hex $2.p -r 0000h-FFFFh
-srec_cat $2.hex -intel -output $2.txt -ti-text
-rm $2.p
-rm $2.hex

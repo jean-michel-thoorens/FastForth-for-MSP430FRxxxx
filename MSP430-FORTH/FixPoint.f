@@ -372,12 +372,9 @@ DOES> 2@    \ execution part    addr -- Qhi Qlo
 [THEN] \ of [UNDEFINED] 2CONSTANT
 
 RST_HERE
-ECHO
-[ELSE]
-ECHO
-; already exists
 [THEN] \ of [UNDEFINED] {FIXPOINT}
 
+ECHO
 
 ; -----------------------
 ; (volatile) tests

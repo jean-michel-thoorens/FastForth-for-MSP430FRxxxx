@@ -190,9 +190,7 @@ LO2HI
 [THEN]  \ of [UNDEFINED] DUMP
 
 PWR_HERE
-ECHO
-[ELSE]
-ECHO
-; already exists
+
 [THEN]  \ of [UNDEFINED] {TOOLS}
 
+ECHO

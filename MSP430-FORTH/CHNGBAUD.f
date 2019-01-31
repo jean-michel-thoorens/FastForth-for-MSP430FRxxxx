@@ -12,13 +12,16 @@
 \
 
 : BAD_MHz
-    1 ABORT"  only for 4,8,16,24 MHz MCLK!"
+    1 ABORT"  only for 1,4,8,16,24 MHz MCLK!"
 ;
+
+: MCLK.
+0 1000 UM/MOD .
+;
+
 : BAD_SPEED
-0 1000 UM/MOD
 SPACE 27 EMIT ." [7m"   \ set reverse video
-." with MCLK = " .
-1 ABORT" MHz? don't dream! "
+." with MCLK = " MCLK. 1 ABORT" MHz? don't dream! "
 ;
 
 : <> = 0= ;
@@ -26,7 +29,7 @@ SPACE 27 EMIT ." [7m"   \ set reverse video
 : CHNGBAUD                  \ only for 8, 16, 24 MHz
 PWR_STATE                   \ to remove this created word (garbage collector)
 FREQ_KHZ @ >R               \ r-- target MCLCK frequency in MHz
-ECHO CR
+." target MCLK = " R@ MCLK. ." MHz" CR
 ."    choose your baudrate:" CR
 ."    0 --> 6 MBds" CR
 ."    1 --> 5 MBds" CR
@@ -97,7 +100,10 @@ ELSE 1 - ?DUP 0=            \ select 5MBds ?
                 THEN
             ELSE 1 - ?DUP 0=                \ select 921600 ?
                 IF  ." 921600 Bds"
-                    R@ #4000 =               \ 4MHz ?
+                    R@ #4000 <
+                    IF  R@ BAD_SPEED        \ abort 
+                    THEN
+                    R@ #4000 =              \ 4MHz ?
                     IF  4                   \ TERM_BRW
                         $4900               \ TERM_MCTLW
                     ELSE
@@ -117,41 +123,54 @@ ELSE 1 - ?DUP 0=            \ select 5MBds ?
                     THEN
                 ELSE 1 - ?DUP 0=                \ select 230400 ?
                     IF  ." 230400 Bds"
-                        R@ #4000  =
-                        IF  17                  \ TERM_BRW
-                            $4A00               \ TERM_MCTLW
+                        R@ #1000 <
+                        IF  R@ BAD_SPEED        \ abort 
+                        THEN
+                        R@ #1000 =
+                        IF  4
+                            $4900
                         ELSE
-                            R@ #8000  =
-                            IF  2               \ TERM_BRW
-                                $BB21           \ TERM_MCTLW
-                            ELSE R@ #16000 =
-                                IF  4           \ TERM_BRW
-                                    $5551       \ TERM_MCTLW
-                                ELSE R@ #24000 <>
-                                    IF  BAD_MHz
+                            R@ #4000  =
+                            IF  17                  \ TERM_BRW
+                                $4A00               \ TERM_MCTLW
+                            ELSE
+                                R@ #8000  =
+                                IF  2               \ TERM_BRW
+                                    $BB21           \ TERM_MCTLW
+                                ELSE R@ #16000 =
+                                    IF  4           \ TERM_BRW
+                                        $5551       \ TERM_MCTLW
+                                    ELSE R@ #24000 <>
+                                        IF  BAD_MHz
+                                        THEN
+                                        6           \ TERM_BRW
+                                        $0001       \ TERM_MCTLW
                                     THEN
-                                    6           \ TERM_BRW
-                                    $0001       \ TERM_MCTLW
                                 THEN
                             THEN
                         THEN
                     ELSE 1 - ?DUP 0=                \ select 115200 ?
                         IF  ." 115200 Bds"
-                            R@ #4000  =
-                            IF  2                   \ TERM_BRW
-                                $BB21               \ TERM_MCTLW
+                            R@ #1000  =
+                            IF  8
+                                $D600
                             ELSE
-                                R@ #8000  =
-                                IF  4               \ TERM_BRW
-                                    $5551           \ TERM_MCTLW
-                                ELSE R@ #16000 =
-                                    IF  8           \ TERM_BRW
-                                        $F7A1       \ TERM_MCTLW
-                                    ELSE R@ #24000 <>
-                                        IF  BAD_MHz
+                                R@ #4000  =
+                                IF  2                   \ TERM_BRW
+                                    $BB21               \ TERM_MCTLW
+                                ELSE
+                                    R@ #8000  =
+                                    IF  4               \ TERM_BRW
+                                        $5551           \ TERM_MCTLW
+                                    ELSE R@ #16000 =
+                                        IF  8           \ TERM_BRW
+                                            $F7A1       \ TERM_MCTLW
+                                        ELSE R@ #24000 <>
+                                            IF  BAD_MHz
+                                            THEN
+                                            $0D         \ TERM_BRW
+                                            $4901       \ TERM_MCTLW
                                         THEN
-                                        $0D         \ TERM_BRW
-                                        $4901       \ TERM_MCTLW
                                     THEN
                                 THEN
                             THEN
@@ -167,7 +186,7 @@ THEN
 TERMMCTLW_RST !             \ set UCAxMCTLW value in FRAM
 TERMBRW_RST !               \ set UCAxBRW value in FRAM
 R> DROP                     \ clear stacks
-CR ."    Change baudrate in Teraterm, save its setup then reboot."
+CR ."    Change baudrate in Teraterm, save its setup then reset target."
 ;
-
+ECHO
 CHNGBAUD 

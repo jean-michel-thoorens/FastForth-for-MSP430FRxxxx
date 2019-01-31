@@ -1,0 +1,5 @@
+asl -i $FF/inc -L  $1 -o $2.p
+p2hex $FF/binaries/$2.p -r 0000h-FFFFh
+srec_cat $FF/binaries/$2.hex -intel -output $FF/binaries/$2.txt -ti-text
+rm $FF/binaries/$2.p
+rm $FF/binaries/$2.hex
