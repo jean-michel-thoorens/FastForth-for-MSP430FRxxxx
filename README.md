@@ -61,6 +61,12 @@ With all kernel options FastForth size is under 10kB.
 What is new ?
 -------------
 
+V209
+
+    -26 bytes.
+    V3 prerelease
+    added experimental extended_assembler (MSP430FR5969,MSP430FR5994,MSP430FR6989)
+
 V208
 
     -58 bytes.

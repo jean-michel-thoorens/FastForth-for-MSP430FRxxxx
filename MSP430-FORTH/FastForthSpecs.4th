@@ -3,8 +3,7 @@
 ; FastForthSpecs.4th
 ; ------------------
 
-; display all compilation options
-
+; display all FastForth compilation options
 
 0 CONSTANT CASE IMMEDIATE
 
@@ -50,7 +49,7 @@ $1812 @
     DUP + DUP 0< IF CR ." DOUBLE_INPUT" THEN
     DUP + DUP 0< IF CR ." VOCABULARY_SET" THEN
     DUP + DUP 0< IF CR ." NONAME" THEN
-    DUP + DUP 0< IF CR ." ASM_EXTENDED_MEM" THEN
+    DUP + DUP 0< IF CR ." EXTENDED_ASSEMBLER" THEN
     DUP + DUP 0< IF CR ." ASSEMBLER" THEN
     DUP + DUP 0< IF CR ." CONDCOMP" THEN
     0<
@@ -58,12 +57,10 @@ IF CR CR
 ESC ." [7m"
 ." OTHER ADD-ON:"
 ESC ." [0m"
-    [DEFINED] {ANS_COMP} [IF] CR ." ANS_COMP" [THEN]
+    [DEFINED] {ANS_COMP} [IF] CR ." ANS_COMPLEMENT" [THEN]
     [DEFINED] {TOOLS}    [IF] CR ." UTILITY" [THEN]
     [DEFINED] {FIXPOINT} [IF] CR ." FIXPOINT" [THEN]
     [DEFINED] {SD_TOOLS} [IF] CR ." SD_TOOLS" [THEN]
-    [DEFINED] {RTC}      [IF] CR ." RTC" [THEN]
-    [DEFINED] {CORDIC}   [IF] CR ." CORDIC" [THEN]
 THEN
 ;
 

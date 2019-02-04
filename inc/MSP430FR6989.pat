@@ -149,6 +149,7 @@ BIT15=\$8000!
 ! symbolic codes :
 ! ============================================
 RET=MOV \@R1+,R0!   \ MOV @RSP+,PC
+RETA=MOVA \@R1+,R0!   \ MOV @RSP+,PC
 NOP=MOV \#0,R3!     \                one word one cycle
 NOP2=\$3C00 ,!      \ compile JMP 0  one word two cycles
 NOP3=MOV R0,R0!     \ MOV PC,PC      one word three cycles

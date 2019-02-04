@@ -731,68 +731,52 @@ UCB1_SD
 ;     .ENDIF
 ;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-
 ; ---------------------------
-; compute FORTHADDON value
+; compute value of FORTHADDON
 ; ---------------------------
 FADDON .set 0
     .IFDEF CONDCOMP
 FADDON .SET FADDON | 01h
     .ENDIF
-
     .IFDEF MSP430ASSEMBLER
 FADDON .SET FADDON | 02h
     .ENDIF
-
-    .IFDEF MEM_EXT
+    .IFDEF EXTENDED_ASM
 FADDON .SET FADDON | 04h
     .ENDIF
-
     .IFDEF NONAME
 FADDON .SET FADDON | 08h
     .ENDIF
-
     .IFDEF VOCABULARY_SET
 FADDON .SET FADDON | 10h
     .ENDIF
-
     .IFDEF DOUBLE_INPUT
 FADDON .SET FADDON | 20h
     .ENDIF
-
     .IFDEF FIXPOINT_INPUT
 FADDON .SET FADDON | 40h
     .ENDIF
-
     .IFDEF SD_CARD_LOADER
 FADDON .SET FADDON | 80h
     .ENDIF
-
     .IFDEF SD_CARD_READ_WRITE
 FADDON .SET FADDON | 100h
     .ENDIF
-
     .IFDEF BOOTLOADER
 FADDON .SET FADDON | 200h
     .ENDIF
-
     .IFDEF QUIETBOOT
 FADDON .SET FADDON | 400h
     .ENDIF
-
     .IFDEF TOTAL
 FADDON .SET FADDON | 800h
     .ENDIF
-
     .IFDEF TERMINAL3WIRES
 FADDON .SET FADDON | 1000h
     .ENDIF
-
     .IFDEF TERMINAL4WIRES
 FADDON .SET FADDON | 2000h
     .ENDIF
-
     .IFDEF TERMINAL5WIRES
 FADDON .SET FADDON | 4000h
     .ENDIF
@@ -801,19 +785,7 @@ FADDON .SET FADDON | 4000h
 ; COMPUTE SWITCHES
 ; --------------------------
 
-    .IFDEF DOUBLE_INPUT
-DOUBLE_LITERAL              ; to compile double numbers
-    .ENDIF
-
-    .IFDEF FIXPOINT
-        .IFNDEF FIXPOINT_INPUT
-FIXPOINT_INPUT              ; to interpret fixpoint numbers
-        .ENDIF
-        .IFNDEF DOUBLE_LITERAL
-DOUBLE_LITERAL              ; to compile double numbers
-        .ENDIF
-    .ENDIF
-
+; define if QUIT is DEFERed
     .IFDEF SD_CARD_LOADER 
         .IFNDEF DOUBLE_INPUT
 DOUBLE_INPUT
@@ -825,7 +797,43 @@ DEFER_ACCEPT
             .IFNDEF CONDCOMP
 CONDCOMP                    ; mandatory for Bootstrap
             .ENDIF
+            .IFNDEF DEFER_QUIT
 DEFER_QUIT
+            .ENDIF
+        .ENDIF
+    .ENDIF
+
+    .IFDEF EXTENDED_ASM
+        .IFNDEF DOUBLE_INPUT ; for indirect extended indexed modes of MOVA ADDA CMPA SUBA instructions
+DOUBLE_INPUT
+        .ENDIF
+        .IFNDEF DEFER_ACCEPT ; to write EXTD_LOAD"
+DEFER_ACCEPT
+        .ENDIF
+    .ENDIF
+
+    .IFDEF FIXPOINT
+        .IFNDEF FIXPOINT_INPUT
+FIXPOINT_INPUT              ; to interpret fixpoint numbers
+        .ENDIF
+    .ENDIF
+
+    .IFDEF FIXPOINT_INPUT
+    .IFNDEF DOUBLE_NUMBERS
+DOUBLE_NUMBERS              ; to process double numbers
+    .ENDIF
+    .ENDIF
+
+    .IFDEF DOUBLE_INPUT
+    .IFNDEF DOUBLE_NUMBERS
+DOUBLE_NUMBERS              ; to process double numbers
+    .ENDIF
+    .ENDIF
+
+; define if Terminal half duplex
+    .IFDEF UARTtoI2C
+        .IFNDEF HALFDUPLEX
+HALFDUPLEX
         .ENDIF
     .ENDIF
 
