@@ -224,7 +224,7 @@ TestPartitionID                     ;
 ; ----------------------------------;
     MOV     #1,&FATtype             ; preset FAT16
 FAT16_CHS_LBA_Test                  ;
-    SUB.B   #6,W                    ; ID=06h Partition FAT16 using CHS & LBA ?
+    SUB.B   #6,W                    ; ID=06h Partition FAT16 > 32MB using CHS & LBA ?
     JZ      Read_MBR_FirstSector    ; W = 0
 FAT16_LBA_Test                      ;
     SUB.B   #8,W                    ; ID=0Eh Partition FAT16 using LBA ?
@@ -236,6 +236,8 @@ FAT32_LBA_Test                      ;
     JZ      Read_MBR_FirstSector    ; W = 0
 FAT32_CHS_LBA_Test                  ;
     ADD.B   #1,W                    ; ID=0Bh Partition FAT32 using CHS & LBA ?
+    JZ      Read_MBR_FirstSector    ; W = 0
+    ADD.B   #4,W                    ; ID=07h assigned to FAT 32 by MiniTools Partition Wizard....
     JZ      Read_MBR_FirstSector    ; W = 0
     ADD     #0200Bh,W               ;
     MOV     W,S                     ;

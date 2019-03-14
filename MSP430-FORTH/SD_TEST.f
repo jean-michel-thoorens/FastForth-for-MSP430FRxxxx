@@ -61,7 +61,7 @@
 \
 \   copy TESTASM.4TH        to \MISC\TESTASM.4TH    (add path \MISC in the window opened by TERATERM)
 \   copy TSTWORDS.4TH       to \TSTWORDS.4TH
-\   copy CORETEST_xMPY.4TH  to \CORETEST.4TH        (x=S for FR4133, else x=H; suppr _xMPY in the window opened by TERATERM)
+\   copy CORETEST.4TH       to \CORETEST.4TH
 \   copy SD_TOOLS.f         to \SD_TOOLS.4TH
 \   copy SD_TEST.f          to \SD_TEST.4TH
 \   copy PROG100k.f         to \PROG100k.4TH
@@ -69,11 +69,18 @@
 
 PWR_STATE
 
-[DEFINED] {SD_TEST} [IF] {SD_TEST} [THEN]   \ remove {SD_TEST} 
-
-[UNDEFINED] {SD_TEST} [IF]   \ requirements test
+[UNDEFINED] {SD_TEST} [IF]   \
 
 MARKER {SD_TEST}
+
+[UNDEFINED] AND [IF]
+\ https://forth-standard.org/standard/core/AND
+\ C AND    x1 x2 -- x3           logical AND
+CODE AND
+AND @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
 
 [UNDEFINED] MAX [IF]   \ MAX and MIN are defined in {ANS_COMP}
     CODE MAX    \    n1 n2 -- n3       signed maximum
@@ -107,7 +114,7 @@ MOV #$10,&BASE              \ HEX base
 ADD @PSP,TOS                \ -- ORG END
 LO2HI
   SWAP OVER OVER            \ -- END ORG END ORG 
-  U. 1 - U.                 \ -- END ORG        display org end-1  
+  U.  U.                 \ -- END ORG        display org end 
   $FFF0 AND                 \ -- END ORG_modulo_16
   DO  CR                    \ generate line
     I 7 U.R SPACE           \ generate address
@@ -122,71 +129,72 @@ LO2HI
 [THEN]
 
 : SD_TEST
-\ BEGIN
-    ECHO CR
-    ."    0 Set date and time" CR
-    ."    1 Load {UTILITY} words" CR
-    ."    2 Load {SD_TOOLS} words" CR
-    ."    3 Load {ANS_COMP} words" CR
-    ."    4 Load ANS core tests" CR
-    ."    5 Load a 100k program " CR
-    ."    6 Read only this source file" CR
-    ."    7 Write a dump of FORTH to YOURFILE.TXT" CR
-    ."    8 append a dump of FORTH to YOURFILE.TXT" CR
-    ."    9 Load TST_WORDS" CR
-    ."    your choice : "
-    KEY CR
-    48 - ?DUP
+PWR_HERE    \ remove all volatile programs from MAIN memory
+ECHO CR
+." 0 Set date and time" CR
+." 1 Load {TOOLS} words" CR
+." 2 Load {SD_TOOLS} words" CR
+." 3 Load {ANS_COMP} words" CR
+." 4 Load ANS core tests" CR
+." 5 Load a 100k program " CR
+." 6 Read only this source file" CR
+." 7 append a dump of FORTH to YOURFILE.TXT" CR
+." 8 delete YOURFILE.TXT" CR
+." 9 Load TST_WORDS" CR
+." your choice : "
+KEY
+48 - ?DUP
+0= IF
+    ." LOAD RTC.4TH" CR
+    LOAD" RTC.4TH"
+ELSE 1 - ?DUP
     0= IF
-        LOAD" RTC.4TH"
+        ." LOAD UTILITY.4TH" CR
+        LOAD" UTILITY.4TH"
     ELSE 1 - ?DUP
         0= IF
-            LOAD" UTILITY.4TH"
+            ." LOAD SD_TOOLS.4TH" CR
+            LOAD" SD_TOOLS.4TH"
         ELSE 1 - ?DUP
             0= IF
-                LOAD" SD_TOOLS.4TH"
+                ." LOAD ANS_COMP.4TH" CR
+                LOAD" ANS_COMP.4TH"
             ELSE 1 - ?DUP
                 0= IF
-                    LOAD" ANS_COMP.4TH"
+                    ." LOAD CORETEST.4TH" CR
+                    LOAD" CORETEST.4TH"
+                    PWR_STATE
                 ELSE 1 - ?DUP
                     0= IF
-                        LOAD" CORETEST.4TH"
-                        PWR_STATE   \ remove words
+                        ." LOAD PROG100K.4TH" CR
+                        NOECHO
+                        LOAD" PROG100K.4TH"
                     ELSE 1 - ?DUP
                         0= IF
-                            NOECHO
-                            LOAD" PROG100K.4TH"
-                            PWR_STATE   \ remove words
-                            ECHO
+                            ." READ PROG100K.4TH" CR
+                            READ" PROG100K.4TH"
+                            BEGIN
+                                READ    \ sequentially read 512 bytes
+                            UNTIL       \ prog10k.4TH is closed
                         ELSE 1 - ?DUP
                             0= IF
-                                READ" PROG100K.4TH"
-                                BEGIN
-                                    READ    \ sequentially read 512 bytes
-                                UNTIL       \ prog10k.4TH is closed
+                                ." WRITE YOURFILE.TXT" CR
+                                WRITE" YOURFILE.TXT"
+                                ['] SD_EMIT IS EMIT
+                                MAIN_ORG HERE OVER - DUMP
+                                ['] EMIT >BODY IS EMIT
+                                CLOSE
                             ELSE 1 - ?DUP
                                 0= IF
+                                    ." DEL YOURFILE.TXT" CR
                                     DEL" YOURFILE.TXT"
-                                    WRITE" YOURFILE.TXT"
-                                    ['] SD_EMIT IS EMIT
-                                    MAIN_ORG HERE OVER - DUMP
-                                    ['] EMIT >BODY IS EMIT
-                                    CLOSE
                                 ELSE 1 - ?DUP
                                     0= IF
-                                        WRITE" YOURFILE.TXT"
-                                        ['] SD_EMIT IS EMIT
-                                        CR
-                                        MAIN_ORG HERE OVER - DUMP
-                                        ['] EMIT >BODY IS EMIT
-                                        CLOSE
-                                    ELSE 1 - ?DUP
-                                        0= IF
-                                            LOAD" TSTWORDS.4TH"
-                                        ELSE
-                                            DROP EXIT
-                                        THEN                                        
-                                    THEN
+                                        ." LOAD TSTWORDS.4TH" CR
+                                        LOAD" TSTWORDS.4TH"
+                                    ELSE
+                                        ." abort" CR EXIT
+                                    THEN                                        
                                 THEN
                             THEN
                         THEN
@@ -195,13 +203,11 @@ LO2HI
             THEN
         THEN
     THEN
-    ECHO ."    it's done"
-
-\ AGAIN          \ LOAD" don't work with loop tests.......
+THEN
 ;
 
-PWR_HERE \ to don't forget, otherwise SD_TEST destroys itself by downloading files comprising "PWR_HERE" command...
+RST_HERE
 
 [THEN]
 
-ECHO SD_TEST
+SD_TEST

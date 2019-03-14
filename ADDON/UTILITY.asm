@@ -45,7 +45,7 @@ DOTS1       MOV     TOS,-4(PSP) ; -- S0  ( tos S0 SP )
             .word   lit,08h,EMIT        ; backspace
             .word   lit,'>',EMIT,SPACE
             .word   OVER,OVER,GREATER
-            .word   QZBRAN,STKDISPL1
+            .word   QTBRAN,STKDISPL1
             .word   DROP,DROP,EXIT
 STKDISPL1   .word   xdo
 STKDISPL2   .word   II,FETCH,UDOT
@@ -77,7 +77,7 @@ WORDS       mDOCOL
             .word   LIT,CONTEXT,FETCH   ; -- VOC_BODY
 WORDS1      .word   FETCH               ; -- NFA
             .word   QDUP                ; -- 0 | -- NFA NFA 
-            .word   QBRAN,WORDS2        ; -- NFA
+            .word   QFBRAN,WORDS2        ; -- NFA
             .word   DUP,DUP,COUNT       ; -- NFA NFA addr count 
             .word   lit,07Fh,ANDD,TYPE  ; -- NFA NFA 
             .word   CFETCH,lit,0Fh,ANDD
@@ -103,7 +103,6 @@ PAD         mDOCON
             FORTHWORD "WORDS"
 WORDS       mDOCOL
             .word   CR
-            .word   lit,3,SPACES
             .word   LIT,CONTEXT,FETCH
             .word   PAD,LIT,THREADS,DUP,PLUS
             .word   MOVE
@@ -114,12 +113,12 @@ WORDS2      .word   LIT,0,DUP
             .word   xdo                     ;   DO
 WORDS3      .word   DUP
             .word   II,PAD,PLUS,FETCH       ;   old MAX NFA U< NFA ?
-            .word   ULESS,QBRAN,WORDS4      ;   no
+            .word   ULESS,QFBRAN,WORDS4      ;   no
             .word   DROP,DROP,II            ;   yes, replace old MAX of NFA by new MAX of NFA 
             .word   DUP,PAD,PLUS,FETCH      ;
 WORDS4      .word   LIT,2,xploop,WORDS3     ;   2 +LOOP
             .word   QDUP                    ;   MAX of NFA = 0 ?
-            .word   QBRAN,WORDS5            ; WHILE
+            .word   QFBRAN,WORDS5            ; WHILE
             .word   DUP,LIT,2,MINUS,FETCH   ;   replace NFA MAX by its [LFA]
             .word   ROT,PAD,PLUS,STORE   
             .word   DUP,COUNT               ;   display NFA MAX in 10 chars format

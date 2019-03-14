@@ -333,6 +333,8 @@ FSTAR1   mDOCOL
         MOV #0,0(PSP)
         MOV @IP+,PC
 
+
+        .IFNDEF TWOFETCH
 ; https://forth-standard.org/standard/core/TwoFetch
 ; 2@    a-addr -- x1 x2    fetch 2 cells ; the lower address will appear on top of stack
         FORTHWORD "2@"
@@ -341,11 +343,13 @@ TWOFETCH
         MOV 2(TOS),0(PSP)
         MOV @TOS,TOS
         MOV @IP+,PC
+        .ENDIF
 
-    .IFNDEF ASM_EXT
+    .IFNDEF TWOCONSTANT
 ; https://forth-standard.org/standard/double/TwoCONSTANT
 ; udlo/dlo/Flo udhi/dhi/Qhi --         create a double or a Q15.16 CONSTANT
         FORTHWORD "2CONSTANT"
+TWOCONSTANT
         mDOCOL
         .word CREATE
         .word COMMA,COMMA       ; compile udhi/dhi/Qhi then udlo/dlo/Qlo

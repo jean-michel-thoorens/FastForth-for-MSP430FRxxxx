@@ -19,7 +19,7 @@
 
 
 ; ----------------------------------------------------------------------
-;forthMSP430FR_asm.asm
+;forthMSP430FR_EXTD_ASM.asm
 ; ----------------------------------------------------------------------
 
 ; ----------------------------------------------------------------------
@@ -43,166 +43,6 @@
 
 ; example : POPM #6,IP   pop Y,X,W,T,S,IP registers from return stack
 
-; ----------------------------------------------------------------------
-; DTCforthMSP430FR5xxx ASSEMBLER : STRUCTURE
-; ----------------------------------------------------------------------
-
-;X  ASSEMBLER       --              ; set ASSEMBLER the first context vocabulary
-    .IFDEF VOCABULARY_SET
-            FORTHWORD "ASSEMBLER"
-    .ENDIF ; VOCABULARY_SET
-ASSEMBLER       mDODOES             ; leave BODYASSEMBLER on the stack and run VOCDOES
-                .word   VOCDOES
-BODYASSEMBLER   .word   lastasmword ; here is the structure created by VOCABULARY
-    .SWITCH THREADS
-    .CASE   2
-                .word   lastasmword1
-    .CASE   4
-                .word   lastasmword1
-                .word   lastasmword2
-                .word   lastasmword3
-    .CASE   8
-                .word   lastasmword1
-                .word   lastasmword2
-                .word   lastasmword3
-                .word   lastasmword4
-                .word   lastasmword5
-                .word   lastasmword6
-                .word   lastasmword7
-    .CASE   16
-                .word   lastasmword1
-                .word   lastasmword2
-                .word   lastasmword3
-                .word   lastasmword4
-                .word   lastasmword5
-                .word   lastasmword6
-                .word   lastasmword7
-                .word   lastasmword8
-                .word   lastasmword9
-                .word   lastasmword10
-                .word   lastasmword11
-                .word   lastasmword12
-                .word   lastasmword13
-                .word   lastasmword14
-                .word   lastasmword15
-    .CASE   32
-                .word   lastasmword1
-                .word   lastasmword2
-                .word   lastasmword3
-                .word   lastasmword4
-                .word   lastasmword5
-                .word   lastasmword6
-                .word   lastasmword7
-                .word   lastasmword8
-                .word   lastasmword9
-                .word   lastasmword10
-                .word   lastasmword11
-                .word   lastasmword12
-                .word   lastasmword13
-                .word   lastasmword14
-                .word   lastasmword15
-                .word   lastasmword16
-                .word   lastasmword17
-                .word   lastasmword18
-                .word   lastasmword19
-                .word   lastasmword20
-                .word   lastasmword21
-                .word   lastasmword22
-                .word   lastasmword23
-                .word   lastasmword24
-                .word   lastasmword25
-                .word   lastasmword26
-                .word   lastasmword27
-                .word   lastasmword28
-                .word   lastasmword29
-                .word   lastasmword30
-                .word   lastasmword31
-    .ELSECASE
-    .ENDCASE
-                .word   voclink
-voclink         .set    $-2
-
-             FORTHWORDIMM "HI2LO"   ; immediate, switch to low level, add ASSEMBLER context, set interpretation state
-            mDOCOL
-HI2LO       .word   HERE,CELLPLUS,COMMA
-            .word   LEFTBRACKET
-HI2LONEXT   .word   ALSO,ASSEMBLER
-            FORTHtoASM
-            MOV #0,&RPT_WORD
-            mSEMI
-
-           FORTHWORD "CODE"     ; a CODE word must be finished with ENDCODE
-ASMCODE     CALL #HEADER        ;
-ASMCODE1    SUB #4,W            ; W = CFA
-            MOV W,&DDP          ; CFA --> DDP
-            mDOCOL
-            .word   SAVE_PSP
-            .word   BRAN,HI2LONEXT
-
-
-            asmword "ENDCODE"   ; restore previous context and test PSP balancing
-ENDCODE     mDOCOL
-            .word   PREVIOUS,QREVEAL
-            .word   EXIT
-
-            FORTHWORD "ASM"     ; used to define an assembler word which is not executable by FORTH interpreter
-                                ; i.e. typically an assembler word called by CALL and ended by RET
-                                ; ASM words are only usable in another ASSEMBLER words
-                                ; an ASM word must be finished with ENDASM
-            MOV     &CURRENT,&SAV_CURRENT
-            MOV     #BODYASSEMBLER,&CURRENT
-            JMP     ASMCODE
-
-            asmword "ENDASM"    ; end of an ASM word
-            MOV     &SAV_CURRENT,&CURRENT
-            JMP     ENDCODE
-
-
-            asmword "COLON"     ; compile DOCOL, remove ASSEMBLER from CONTEXT, switch to compilation state
-            MOV &DDP,W
-
-    .SWITCH DTC
-    .CASE 1
-            MOV #DOCOL1,0(W)    ; compile CALL xDOCOL
-            ADD #2,&DDP
-
-    .CASE 2
-            MOV #DOCOL1,0(W)    ; compile PUSH IP
-COLON1      MOV #DOCOL2,2(W)    ; compile CALL rEXIT
-            ADD #4,&DDP
-
-    .CASE 3 ; inlined DOCOL
-            MOV #DOCOL1,0(W)    ; compile PUSH IP
-COLON1      MOV #DOCOL2,2(W)    ; compile MOV PC,IP
-            MOV #DOCOL3,4(W)    ; compile ADD #4,IP
-            MOV #NEXT,6(W)      ; compile MOV @IP+,PC
-            ADD #8,&DDP         ;
-    .ENDCASE ; DTC
-
-COLON2      MOV #-1,&STATE      ; enter in compile state
-            MOV #PREVIOUS,PC    ; restore previous state of CONTEXT
-
-
-            asmword "LO2HI"     ; same as COLON but without saving IP
-    .SWITCH DTC
-    .CASE 1                     ; compile 2 words
-            MOV &DDP,W
-            MOV #12B0h,0(W)     ; compile CALL #EXIT, 2 words  4+6=10~
-            MOV #EXIT,2(W)
-            ADD #4,&DDP
-            JMP COLON2
-    .ELSECASE                   ; CASE 2 : compile 1 word, CASE 3 : compile 3 words
-            SUB #2,&DDP         ; to skip PUSH IP
-            MOV &DDP,W
-            JMP COLON1
-    .ENDCASE
-
-    .IFDEF NONAME
-            FORTHWORD "CODENNM"  ; CODENoNaMe is the assembly counterpart of :NONAME
-CODENNM     mDOCOL
-            .word COLONNONAME,LEFTBRACKET
-            .word ASMCODE1,EXIT
-    .ENDIF
 
 ;;Z SKIP      char -- addr               ; skip all occurring character 'char' in input stream
 ;            FORTHWORD "SKIP"            ; used by assembler to parse input stream
@@ -224,7 +64,8 @@ SKIPEND:    MOV     W,TOS               ; -- addr
 ; https://forth-standard.org/standard/double/TwoCONSTANT
 ; udlo/dlo/Flo udhi/dhi/Qhi --         create a double or a Q15.16 CONSTANT
         FORTHWORD "2CONSTANT"
-TWOCNTE mDOCOL
+TWOCONSTANT 
+        mDOCOL
         .word CREATE
         .word COMMA,COMMA       ; compile udhi/dhi/Qhi then udlo/dlo/Qlo
         .word DOES
@@ -256,9 +97,9 @@ SearchARG                               ; separator -- n|d or abort" not found"
             PUSHM #2,S                  ;                   PUSHM S,T
             ASMtoFORTH                  ; -- separator      search word first
             .word   WORDD,FIND          ; -- addr
-            .word   QZBRAN,SearchARGW   ; -- addr           if found
+            .word   QTBRAN,SearchARGW   ; -- addr           if word found
             .word   QNUMBER             ;
-            .word   QBRAN,NotFound      ; -- addr           ABORT if not found
+            .word   QFBRAN,NotFound      ; -- addr           ABORT if not found
 FSearchEnd  .word   SearchEnd           ; -- value          goto SearchEnd if number found
 SearchARGW  FORTHtoASM                  ; -- xt             xt = CFA
             MOV     @TOS,X              ;
@@ -282,7 +123,7 @@ DOESDOUBLE  CALL    #PFA2CTE+2          ; -- Lo Hi          2@
 SearchEnd   POPM    #2,S                ;                   POPM T,S
             RET                         ;
 
-; Arg_Double_to_single conversion needed only for OPCODE type V|VI
+; Arg_Double_to_single conversion needed only for OPCODE type V|VI, 2th pass.
 ARGD2S      BIT #UF9,SR         ; -- Lo Hi
             JZ ARGD2SEND
             MOV @PSP+,TOS       ; -- Lo         skip hi
@@ -317,7 +158,7 @@ SearchREG                       ; sep -- Rn
             ADD #1,&TOIN        ;               skip "R"
             ASMtoFORTH          ;               search xx of Rxx
             .word WORDD,QNUMBER ;
-            .word QBRAN,NOTaREG ; -- xxxx       if Not a Number
+            .word QFBRAN,NOTaREG ; -- xxxx       if Not a Number
             FORTHtoASM          ; -- Rn         number is found
             ADD #2,RSP          ;               remove >IN
             CMP #16,TOS         ; -- Rn       
@@ -717,7 +558,7 @@ TYPE3DOES                                   ; -- BODYDOES
             PUSHM   #2,S                    ;               PUSHM S,T
             ASMtoFORTH
             .word   WORDD,QNUMBER
-            .word   QBRAN,NotFound          ;                       ABORT
+            .word   QFBRAN,NotFound          ;                       ABORT
             FORTHtoASM
             POPM  #2,S                      ;               POPM T,S
             ASMtoFORTH
@@ -1131,7 +972,7 @@ MOVA23  BIS #070h,S             ;               set ,xxxx(REG) opcode
 
 
 ; --------------------------------------------------------------------------------
-; DTCforthMSP430FR5xxx ASSEMBLER, OPCODES IV : Adda|Cmpa|Mova|Suba (without extended word)
+; DTCforthMSP430FR5xxx ASSEMBLER, OPCODES IV 2 operands: Adda|Cmpa|Mova|Suba (without extended word)
 ; --------------------------------------------------------------------------------
 ; absolute and immediate instructions must be written as $x.xxxx  (DOUBLE numbers)
 ; indexed instructions must be written as $.xxxx(REG) (DOUBLE numbers)
@@ -1163,7 +1004,7 @@ TYPE4DOES   .word   lit,','     ; -- BODYDOES ","        char separator for PARA
 
 
 ; --------------------------------------------------------------------------------
-; DTCforthMSP430FR5xxx ASSEMBLER: CALLA (without extended word)
+; DTCforthMSP430FR5xxx ASSEMBLER:  OPCODE TYPE III bis: CALLA (without extended word)
 ; --------------------------------------------------------------------------------
 ; absolute and immediate instructions must be written as $x.xxxx  (DOUBLE numbers)
 ; indexed instructions must be written as $.xxxx(REG) (DOUBLE numbers)
@@ -1176,7 +1017,7 @@ TYPE4DOES   .word   lit,','     ; -- BODYDOES ","        char separator for PARA
         MOV &DDP,T          ;           T = DDP
         ADD #2,&DDP         ;           make room for opcode
         MOV.B @TOS,TOS      ; -- char   First char of opcode
-CALLA0  MOV #134h,S         ;           134h<<4 = opcode for CALLA Rn
+CALLA0  MOV #134h,S         ;           134h<<4 = 1340h = opcode for CALLA Rn
         CMP.B #'R',TOS   
         JNZ CALLA1
 CALLA01 MOV.B #' ',TOS      ;        
@@ -1351,15 +1192,15 @@ TYPE5DOES                                   ; -- BODYDOES
             mDODOES
             .word   TYPE5DOES,40h,4040h
                              
-            asmword "ADDX"              ; ADDX Rx,Rx may be repeated by prefix RPT #n|Rn
+            asmword "ADDX"
             mDODOES          
             .word   TYPE5DOES,40h,5000h
                              
-            asmword "ADDX.A"            ; ADDX.A Rx,Rx may be repeated by prefix RPT #n|Rn
+            asmword "ADDX.A"
             mDODOES          
             .word   TYPE5DOES,0,5040h
                              
-            asmword "ADDX.B"            ; ADDX.B Rx,Rx may be repeated by prefix RPT #n|Rn
+            asmword "ADDX.B"
             mDODOES          
             .word   TYPE5DOES,40h,5040h
                              
@@ -1570,7 +1411,7 @@ TYPE6DOES                                   ; -- BODYDOES
 ; DTCforthMSP430FR5xxx ASSEMBLER, RPT instruction before REG|REG,REG eXtended instructions
 ; ----------------------------------------------------------------------
 
-        asmword "RPT"       ; RPT #n | RPT [Rn]   0< repeat n times < 17 | repeat [Rn] times
+        asmword "RPT"       ; RPT #n | RPT [Rn]     repeat n | [Rn] times modulo 16
         mdocol
         .word FBLANK,SKIP
         FORTHtoASM          ; -- addr
@@ -1583,7 +1424,6 @@ TYPE6DOES                                   ; -- BODYDOES
         BIS #80h,TOS        ; -- $008R  R=Rn
         JMP RPT2
 RPT1    CALL #SearchARG     ; -- $xxxx
-        SUB #1,TOS          ; --        RPT n-1
         AND #0Fh,TOS        ; -- $000x
 RPT2    MOV TOS,&RPT_WORD
         MOV @PSP+,TOS

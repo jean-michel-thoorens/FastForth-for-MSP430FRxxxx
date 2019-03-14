@@ -209,18 +209,18 @@ SD_CSDIR    .equ P4DIR
             MOV #-1,&PBOUT
 
     .IFDEF TERMINAL4WIRES
+        .IFDEF TERMINAL5WIRES
+; CTS input must be wired to the RTS output of UART2USB bridge 
+; configure CTS as input low (true) to avoid lock when CTS is not wired
+CTS         .equ  2             ; P4.1
+            BIC.B #CTS,&P4OUT   ; CTS input pulled down
+        .ENDIF  ; TERMINAL5WIRES
 ; RTS output is wired to the CTS input of UART2USB bridge 
 ; configure RTS as output high to disable RX TERM during start FORTH
 HANDSHAKOUT .equ    P4OUT
 HANDSHAKIN  .equ    P4IN
 RTS         .equ    4           ; P4.2
             BIS.B #RTS,&P4DIR   ; RTS as output high
-        .IFDEF TERMINAL5WIRES
-; CTS input must be wired to the RTS output of UART2USB bridge 
-; configure CTS as input low (true) to avoid lock when CTS is not wired
-CTS         .equ  8             ; P4.3
-            BIC.B #CTS,&P4OUT   ; CTS input pulled down
-        .ENDIF  ; TERMINAL5WIRES
     .ENDIF  ; TERMINAL4WIRES
 
 ; ----------------------------------------------------------------------

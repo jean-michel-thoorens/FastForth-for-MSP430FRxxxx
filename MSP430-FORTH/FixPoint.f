@@ -16,12 +16,12 @@
 \ under interrupt, IP is free for use
 \ 
 \ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
-\ PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
+\ PUSHM order : PSP,TOS,IP,S,T,W, X, Y,  rDOCOL  ,  rDOVAR  ,  rDOCON  ,   rDODOES   , R3, SR, RSP, PC
 \
 \ example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
 \
 \ POPM  order :  PC,RSP, SR, R3, rDODOES,rDOCON,rDOVAR,rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
-\ POPM  order :  R0, R1, R2, R3,   R4   ,  R5  ,  R6  ,  R7 , R8, R9,R10,R11,R12,R13,R14,R15
+\ POPM  order :  PC, RSP, SR, R3,   rDODOES   ,  rDOCON  ,  rDOVAR  ,  rDOCOL , Y, X,W,T,S,IP,TOS,PSP
 \
 \ example : POPM #6,IP   pop Y,X,W,T,S,IP registers from return stack
 \
@@ -33,9 +33,7 @@
 
 PWR_STATE
 
-[DEFINED] {FIXPOINT} [IF] {FIXPOINT} [THEN]     \ remove {FIXPOINT} if outside core 
-
-[UNDEFINED] {FIXPOINT} [IF]   \ don't replicate {FIXPOINT} inside core
+[UNDEFINED] {FIXPOINT} [IF]   \ don't replicate {FIXPOINT}
 
 MARKER {FIXPOINT}
 
@@ -73,69 +71,69 @@ ENDCODE
 
 $1A04 C@ $EF > [IF] ; test tag value MSP430FR413x subfamily without hardware_MPY 
 
-CODE F/                     \ Q15.16 / Q15.16 --> Q15.16 result
-        PUSHM #4,R7    
-        MOV @PSP+,R6        \ DVRlo
-        MOV @PSP+,X         \ DVDhi --> REMlo
-        MOV #0,W            \ REMhi = 0
-        MOV @PSP,Y          \ DVDlo --> DVDhi
-        MOV #0,T            \ DVDlo = 0
-        MOV X,S             \
-        XOR TOS,S           \ DVDhi XOR DVRhi --> S keep sign of result
-        AND #-1,X           \ DVD < 0 ? 
-S< IF   XOR #-1,Y           \ INV(DVDlo)
-        XOR #-1,X           \ INV(DVDhi)
-        ADD #1,Y            \ INV(DVDlo)+1
-        ADDC #0,X           \ INV(DVDhi)+C
-THEN    AND #-1,TOS         \ DVR < 0 ?
-S< IF   XOR #-1,R6          \ INV(DVRlo)
-        XOR #-1,TOS         \ INV(DVRhi)
-        ADD #1,R6           \ INV(DVRlo)+1
-        ADDC #0,TOS         \ INV(DVRhi)+C
+CODE F/                         \ Q15.16 / Q15.16 --> Q15.16 result
+            PUSHM #4,rDOCOL    
+            MOV @PSP+,rDOVAR    \ DVRlo
+            MOV @PSP+,X         \ DVDhi --> REMlo
+            MOV #0,W            \ REMhi = 0
+            MOV @PSP,Y          \ DVDlo --> DVDhi
+            MOV #0,T            \ DVDlo = 0
+            MOV X,S             \
+            XOR TOS,S           \ DVDhi XOR DVRhi --> S keep sign of result
+            AND #-1,X           \ DVD < 0 ? 
+S< IF       XOR #-1,Y           \ INV(DVDlo)
+            XOR #-1,X           \ INV(DVDhi)
+            ADD #1,Y            \ INV(DVDlo)+1
+            ADDC #0,X           \ INV(DVDhi)+C
+THEN        AND #-1,TOS         \ DVR < 0 ?
+S< IF       XOR #-1,rDOVAR      \ INV(DVRlo)
+            XOR #-1,TOS         \ INV(DVRhi)
+            ADD #1,rDOVAR       \ INV(DVRlo)+1
+            ADDC #0,TOS         \ INV(DVRhi)+C
 THEN
 \ don't uncomment lines below !
 \ ------------------------------------------------------------------------
 \           UD/MOD    DVDlo DVDhi DVRlo DVRhi -- REMlo REMhi QUOTlo QUOThi
 \ ------------------------------------------------------------------------
-\           MOV 4(PSP),T    \ DVDlo
-\           MOV 2(PSP),Y    \ DVDhi
-\           MOV #0,X        \ REMlo = 0
-\           MOV #0,W        \ REMhi = 0
-            MOV #32,R5      \  init loop count
-BW1         CMP TOS,W       \ 1 REMhi = DVRhi ?
-    0= IF   CMP R6,X        \ 1 REMlo U< DVRlo ?
+\           MOV 4(PSP),T        \ DVDlo
+\           MOV 2(PSP),Y        \ DVDhi
+\           MOV #0,X            \ REMlo = 0
+\           MOV #0,W            \ REMhi = 0
+            MOV #32,rDOCON      \  init loop count
+BW1         CMP TOS,W           \ 1 REMhi = DVRhi ?
+    0= IF   CMP rDOVAR,X        \ 1 REMlo U< DVRlo ?
     THEN
-    U>= IF  SUB R6,X        \ 1 no:  REMlo - DVRlo  (carry is set)
-            SUBC TOS,W      \ 1      REMhi - DVRhi
+    U>= IF  SUB rDOVAR,X        \ 1 no:  REMlo - DVRlo  (carry is set)
+            SUBC TOS,W          \ 1      REMhi - DVRhi
     THEN
-BW2         ADDC R7,R7      \ 1 RLC quotLO
-            ADDC R4,R4      \ 1 RLC quotHI
-            SUB #1,R5       \ 1 Decrement loop counter
-            0< ?GOTO FW1    \ 2 out of loop if count<0    
-            ADD T,T         \ 1 RLA DVDlo
-            ADDC Y,Y        \ 1 RLC DVDhi
-            ADDC X,X        \ 1 RLC REMlo
-            ADDC W,W        \ 1 RLC REMhi
-            U< ?GOTO BW1    \ 2 15~ loop 
-            SUB R6,X        \ 1 REMlo - DVRlo
-            SUBC TOS,W      \ 1 REMhi - DVRhi
-            BIS #1,SR       \ 1
-            GOTO BW2        \ 2 16~ loop
+BW2         ADDC rDOCOL,rDOCOL  \ 1 RLC quotLO
+            ADDC rDODOES,rDODOES    \ 1 RLC quotHI
+            SUB #1,rDOCON       \ 1 Decrement loop counter
+            0< ?GOTO FW1        \ 2 out of loop if count<0    
+            ADD T,T             \ 1 RLA DVDlo
+            ADDC Y,Y            \ 1 RLC DVDhi
+            ADDC X,X            \ 1 RLC REMlo
+            ADDC W,W            \ 1 RLC REMhi
+            U< ?GOTO BW1        \ 2 15~ loop 
+            SUB rDOVAR,X        \ 1 REMlo - DVRlo
+            SUBC TOS,W          \ 1 REMhi - DVRhi
+            BIS #1,SR           \ 1
+            GOTO BW2            \ 2 16~ loop
 FW1
-\           MOV X,4(PSP)    \ REMlo    
-\           MOV W,2(PSP)    \ REMhi
-\           ADD #4,PSP      \ skip REMlo REMhi
-            MOV R7,0(PSP)   \ QUOTlo
-            MOV R4,TOS      \ QUOThi
-            POPM #4,R7      \ restore R4 to R7
-\           MOV @IP+,PC     \ end of UD/MOD
+\           MOV X,4(PSP)        \ REMlo    
+\           MOV W,2(PSP)        \ REMhi
+\           ADD #4,PSP          \ skip REMlo REMhi
+            MOV rDOCOL,0(PSP)   \ QUOTlo
+            MOV rDODOES,TOS     \ QUOThi
+            POPM #4,rDOCOL      \ restore rDODOES to rDOCOL
+\           MOV @IP+,PC         \ end of UD/MOD
 \ ------------------------------------------------------------------------
-BW1     AND #-1,S           \ clear V, set N; QUOT < 0 ?
-S< IF   XOR #-1,0(PSP)      \ INV(QUOTlo)
-        XOR #-1,TOS         \ INV(QUOThi)
-        ADD #1,0(PSP)       \ INV(QUOTlo)+1
-        ADDC #0,TOS         \ INV(QUOThi)+C
-THEN    MOV @IP+,PC
+BW1         AND #-1,S           \ clear V, set N; QUOT < 0 ?
+S< IF       XOR #-1,0(PSP)      \ INV(QUOTlo)
+            XOR #-1,TOS         \ INV(QUOThi)
+            ADD #1,0(PSP)       \ INV(QUOTlo)+1
+            ADDC #0,TOS         \ INV(QUOThi)+C
+THEN        MOV @IP+,PC
 ENDCODE
 
 \ F#S    Qlo Qhi u -- Qhi 0   convert fractional part Qlo of Q15.16 fixed point number
@@ -170,56 +168,56 @@ ENDCODE
 \ unsigned multiply 32*32 = 64
 \ don't use S reg (keep sign)
 CODE UDM*
-            PUSH IP         \ 3
-            PUSHM #4,R7     \ 6 save R7 ~ R4 regs
-            MOV 4(PSP),IP   \ 3 MDlo
-            MOV 2(PSP),T    \ 3 MDhi
-            MOV @PSP,W      \ 2 MRlo
-            MOV #0,R4       \ 1 MDLO=0
-            MOV #0,R5       \ 1 MDHI=0
-            MOV #0,4(PSP)   \ 3 RESlo=0
-            MOV #0,2(PSP)   \ 3 REShi=0
-            MOV #0,R6       \ 1 RESLO=0
-            MOV #0,R7       \ 1 RESHI=0
-            MOV #1,X        \ 1 BIT TEST REGlo
-            MOV #0,Y        \ 1 BIT TEST2 REGhi
+            PUSH IP             \ 3
+            PUSHM #4,rDOCOL     \ 6 save rDOCOL ~ rDODOES regs
+            MOV 4(PSP),IP       \ 3 MDlo
+            MOV 2(PSP),T        \ 3 MDhi
+            MOV @PSP,W          \ 2 MRlo
+            MOV #0,rDODOES      \ 1 MDLO=0
+            MOV #0,rDOCON       \ 1 MDHI=0
+            MOV #0,4(PSP)       \ 3 RESlo=0
+            MOV #0,2(PSP)       \ 3 REShi=0
+            MOV #0,rDOVAR       \ 1 RESLO=0
+            MOV #0,rDOCOL       \ 1 RESHI=0
+            MOV #1,X            \ 1 BIT TEST REGlo
+            MOV #0,Y            \ 1 BIT TEST2 REGhi
 BEGIN       CMP #0,X    
-    0<> IF  BIT X,W         \ 2+1 TEST ACTUAL BIT MRlo
-    ELSE    BIT Y,TOS       \ 2+1 TEST ACTUAL BIT MRhi
+    0<> IF  BIT X,W             \ 2+1 TEST ACTUAL BIT MRlo
+    ELSE    BIT Y,TOS           \ 2+1 TEST ACTUAL BIT MRhi
     THEN
-    0<> IF  ADD IP,4(PSP)   \ 2+3 IF 1: ADD MDlo TO RESlo
-            ADDC T,2(PSP)   \ 3      ADDC MDhi TO REShi
-            ADDC R4,R6      \ 1      ADDC MDLO TO RESLO        
-            ADDC R5,R7      \ 1      ADDC MDHI TO RESHI
-    THEN    ADD IP,IP       \ 1 (RLA LSBs) MDlo *2
-            ADDC T,T        \ 1 (RLC MSBs) MDhi *2
-            ADDC R4,R4      \ 1 (RLA LSBs) MDLO *2
-            ADDC R5,R5      \ 1 (RLC MSBs) MDHI *2
-            ADD X,X         \ 1 (RLA) NEXT BIT TO TEST
-            ADDC Y,Y        \ 1 (RLA) NEXT BIT TO TEST
-U>= UNTIL   MOV R6,0(PSP)   \ 2+2 IF BIT IN CARRY: FINISHED    32 * 16~ (average loop)
-            MOV R7,TOS      \ 1 high result in TOS
-            POPM #4,R7      \ 6 restore R4 to R7
-            MOV @RSP+,IP    \ 2
+    0<> IF  ADD IP,4(PSP)       \ 2+3 IF 1: ADD MDlo TO RESlo
+            ADDC T,2(PSP)       \ 3      ADDC MDhi TO REShi
+            ADDC rDODOES,rDOVAR \ 1      ADDC MDLO TO RESLO        
+            ADDC rDOCON,rDOCOL  \ 1      ADDC MDHI TO RESHI
+    THEN    ADD IP,IP           \ 1 (RLA LSBs) MDlo *2
+            ADDC T,T            \ 1 (RLC MSBs) MDhi *2
+            ADDC rDODOES,rDODOES    \ 1 (RLA LSBs) MDLO *2
+            ADDC rDOCON,rDOCON  \ 1 (RLC MSBs) MDHI *2
+            ADD X,X             \ 1 (RLA) NEXT BIT TO TEST
+            ADDC Y,Y            \ 1 (RLA) NEXT BIT TO TEST
+U>= UNTIL   MOV rDOVAR,0(PSP)   \ 2+2 IF BIT IN CARRY: FINISHED    32 * 16~ (average loop)
+            MOV rDOCOL,TOS      \ 1 high result in TOS
+            POPM #4,rDOCOL      \ 6 restore rDODOES to rDOCOL
+            MOV @RSP+,IP        \ 2
             MOV @IP+,PC
 ENDCODE
 
-CODE F*                 \ s15.16 * s15.16 --> s15.16 result
-    MOV 2(PSP),S        \
-    XOR TOS,S           \ 1s15 XOR 2s15 --> S keep sign of result
-    BIT #$8000,2(PSP)   \ MD < 0 ? 
+CODE F*                     \ s15.16 * s15.16 --> s15.16 result
+        MOV 2(PSP),S        \
+        XOR TOS,S           \ 1s15 XOR 2s15 --> S keep sign of result
+        BIT #$8000,2(PSP)   \ MD < 0 ? 
 0<> IF  XOR #-1,2(PSP)
         XOR #-1,4(PSP)
         ADD #1,4(PSP)
         ADDC #0,2(PSP)
 THEN
-    COLON
-    DABS UDM*           \ -- RES0 RES1 RES2 RES3
-    HI2LO
-    MOV @RSP+,IP
-    MOV @PSP+,TOS       \ -- RES0 RES1 RES2
-    MOV @PSP+,0(PSP)    \ -- RES1 RES2
-    GOTO BW1            \ goto end of F/ to process sign of result
+        COLON
+        DABS UDM*           \ -- RES0 RES1 RES2 RES3
+        HI2LO
+        MOV @RSP+,IP
+        MOV @PSP+,TOS       \ -- RES0 RES1 RES2
+        MOV @PSP+,0(PSP)    \ -- RES1 RES2
+        GOTO BW1            \ goto end of F/ to process sign of result
 ENDCODE
 
 [ELSE] \ hardware multiplier
@@ -229,55 +227,62 @@ CODE F/                     \ Q15.16 / Q15.16 --> Q15.16 result
 \ 0(PSP) = DVRlo
 \ 2(PSP) = DVDhi
 \ 4(PSP) = DVDlo
-        PUSHM #4,R7         \ 6 PUSHM R7 to R4
-        MOV @PSP+,R6        \ 2 DVRlo
-        MOV @PSP+,X         \ 2 DVDhi --> REMlo
-        MOV #0,W            \ 1 REMhi = 0
-        MOV @PSP,Y          \ 2 DVDlo --> DVDhi
-        MOV #0,T            \ 1 DVDlo = 0
-        MOV X,S             \ 1
-        XOR TOS,S           \ 1 DVDhi XOR DVRhi --> S keep sign of result
-        AND #-1,X           \ 1 DVD < 0 ? 
-S< IF   XOR #-1,Y           \ 1 INV(DVDlo)
-        XOR #-1,X           \ 1 INV(DVDhi)
-        ADD #1,Y            \ 1 INV(DVDlo)+1
-        ADDC #0,X           \ 1 INV(DVDhi)+C
-THEN    AND #-1,TOS         \ 1 DVR < 0 ?
-S< IF   XOR #-1,R6          \ 1 INV(DVRlo)
-        XOR #-1,TOS         \ 1 INV(DVRhi)
-        ADD #1,R6           \ 1 INV(DVRlo)+1
-        ADDC #0,TOS         \ 1 INV(DVRhi)+C
-THEN    MOV #32,R5          \ 2 init loop count
-BW1     CMP TOS,W           \ 1 REMhi = DVRhi ?
-    0= IF                   \ 2
-        CMP R6,X            \ 1 REMlo U< DVRlo ?
+            PUSHM #4,rDOCOL     \ 6 PUSHM rDOCOL to rDODOES
+            MOV @PSP+,rDOVAR    \ 2 DVRlo
+            MOV @PSP+,X         \ 2 DVDhi --> REMlo
+            MOV #0,W            \ 1 REMhi = 0
+            MOV @PSP,Y          \ 2 DVDlo --> DVDhi
+            MOV #0,T            \ 1 DVDlo = 0
+            MOV X,S             \ 1
+            XOR TOS,S           \ 1 DVDhi XOR DVRhi --> S keep sign of result
+            AND #-1,X           \ 1 DVD < 0 ? 
+S< IF       XOR #-1,Y           \ 1 INV(DVDlo)
+            XOR #-1,X           \ 1 INV(DVDhi)
+            ADD #1,Y            \ 1 INV(DVDlo)+1
+            ADDC #0,X           \ 1 INV(DVDhi)+C
+THEN        AND #-1,TOS         \ 1 DVR < 0 ?
+S< IF       XOR #-1,rDOVAR      \ 1 INV(DVRlo)
+            XOR #-1,TOS         \ 1 INV(DVRhi)
+            ADD #1,rDOVAR       \ 1 INV(DVRlo)+1
+            ADDC #0,TOS         \ 1 INV(DVRhi)+C
+THEN    
+\ don't uncomment lines below !
+\ ------------------------------------------------------------------------
+\           UD/MOD    DVDlo DVDhi DVRlo DVRhi -- REMlo REMhi QUOTlo QUOThi
+\ ------------------------------------------------------------------------
+\           MOV 4(PSP),T        \ DVDlo
+\           MOV 2(PSP),Y        \ DVDhi
+\           MOV #0,X            \ REMlo = 0
+\           MOV #0,W            \ REMhi = 0
+            MOV #32,rDOCON      \ 2 init loop count
+BW1         CMP TOS,W           \ 1 REMhi = DVRhi ?
+    0= IF   CMP rDOVAR,X        \ 1 REMlo U< DVRlo ?
     THEN
-    U>= IF                  \ 2  
-        SUB R6,X            \ 1 no:  REMlo - DVRlo  (carry is set)
-        SUBC TOS,W          \ 1      REMhi - DVRhi
+    U>= IF  SUB rDOVAR,X        \ 1 no:  REMlo - DVRlo  (carry is set)
+            SUBC TOS,W          \ 1      REMhi - DVRhi
     THEN
-BW2     ADDC R7,R7          \ 1 RLC quotLO
-        ADDC R4,R4          \ 1 RLC quotHI
-        SUB #1,R5           \ 1 Decrement loop counter
-        0< ?GOTO FW1        \ 2 out of loop if count<0    
-        ADD T,T             \ 1 RLA DVDlo
-        ADDC Y,Y            \ 1 RLC DVDhi
-        ADDC X,X            \ 1 RLC REMlo
-        ADDC W,W            \ 1 RLC REMhi
-        U< ?GOTO BW1        \ 2 19~ loop 
-        SUB R6,X            \ 1 REMlo - DVRlo
-        SUBC TOS,W          \ 1 REMhi - DVRhi
-        BIS #1,SR           \ 1
-        GOTO BW2            \ 2 16~ loop
-FW1     AND #-1,S           \ 1 clear V, set N; QUOT < 0 ?
-S< IF   XOR #-1,R7          \ 1 INV(QUOTlo)
-        XOR #-1,R4          \ 1 INV(QUOThi)
-        ADD #1,R7           \ 1 INV(QUOTlo)+1
-        ADDC #0,R4          \ 1 INV(QUOThi)+C
-THEN    MOV R7,0(PSP)       \ 3 QUOTlo
-        MOV R4,TOS          \ 1 QUOThi
-        POPM #4,R7          \ 6 restore R4 to R7
-        MOV @IP+,PC         \ 4
+BW2         ADDC rDOCOL,rDOCOL  \ 1 RLC quotLO
+            ADDC rDODOES,rDODOES    \ 1 RLC quotHI
+            SUB #1,rDOCON       \ 1 Decrement loop counter
+            0< ?GOTO FW1        \ 2 out of loop if count<0    
+            ADD T,T             \ 1 RLA DVDlo
+            ADDC Y,Y            \ 1 RLC DVDhi
+            ADDC X,X            \ 1 RLC REMlo
+            ADDC W,W            \ 1 RLC REMhi
+            U< ?GOTO BW1        \ 2 19~ loop 
+            SUB rDOVAR,X        \ 1 REMlo - DVRlo
+            SUBC TOS,W          \ 1 REMhi - DVRhi
+            BIS #1,SR           \ 1
+            GOTO BW2            \ 2 16~ loop
+FW1         AND #-1,S           \ 1 clear V, set N; QUOT < 0 ?
+S< IF       XOR #-1,rDOCOL      \ 1 INV(QUOTlo)
+            XOR #-1,rDODOES     \ 1 INV(QUOThi)
+            ADD #1,rDOCOL       \ 1 INV(QUOTlo)+1
+            ADDC #0,rDODOES     \ 1 INV(QUOThi)+C
+THEN        MOV rDOCOL,0(PSP)   \ 3 QUOTlo
+            MOV rDODOES,TOS     \ 1 QUOThi
+            POPM #4,rDOCOL      \ 6 restore rDODOES to rDOCOL
+            MOV @IP+,PC         \ 4
 ENDCODE
 
 \ F#S    Qlo Qhi u -- Qhi 0   convert fractionnal part of Q15.16 fixed point number
@@ -372,6 +377,7 @@ DOES> 2@    \ execution part    addr -- Qhi Qlo
 [THEN] \ of [UNDEFINED] 2CONSTANT
 
 RST_HERE
+
 [THEN] \ of [UNDEFINED] {FIXPOINT}
 
 ECHO

@@ -59,12 +59,12 @@ COMPEQUAL
 ;BRACKETELSE2                            ;       BEGIN
 ;        .word   FBLANK,WORDD,COUNT      ;           BL WORD COUNT
 ;        .word   DUP                     ;           DUP
-;        .word   QBRAN,BRACKETELSE10     ;       WHILE
+;        .word   QFBRAN,BRACKETELSE10     ;       WHILE
 ;        .word   OVER,OVER               ;           2DUP 
 ;        .word   XSQUOTE                 ;           S" [IF]"
 ;        .byte   4,"[IF]"                ; 
 ;        .word   COMPARE                 ;           COMPARE
-;        .word   QZBRAN,BRACKETELSE3     ;           0= IF
+;        .word   QTBRAN,BRACKETELSE3     ;           0= IF
 ;        .word   TWODROP,ONEPLUS         ;               2DROP 1+
 ;        .word   BRAN,BRACKETELSE8       ;           (ENDIF)
 ;BRACKETELSE3                            ;           ELSE
@@ -72,9 +72,9 @@ COMPEQUAL
 ;        .word   XSQUOTE                 ;               S" [ELSE]"
 ;        .byte   6,"[ELSE]"              ; 
 ;        .word   COMPARE                 ;               COMPARE
-;        .word   QZBRAN,BRACKETELSE5     ;               0= IF
+;        .word   QTBRAN,BRACKETELSE5     ;               0= IF
 ;        .word   TWODROP,ONEMINUS        ;                   2DROP 1-
-;        .word   DUP,QBRAN,BRACKETELSE4  ;                  DUP IF
+;        .word   DUP,QFBRAN,BRACKETELSE4  ;                  DUP IF
 ;        .word   ONEPLUS                 ;                       1+
 ;BRACKETELSE4                            ;                   THEN
 ;        .word   BRAN,BRACKETELSE7       ;               (ENDIF)
@@ -82,13 +82,13 @@ COMPEQUAL
 ;        .word   XSQUOTE                 ;                   S" [THEN]"
 ;        .byte   6,"[THEN]"              ; 
 ;        .word   COMPARE                 ;                   COMPARE
-;        .word   QZBRAN,BRACKETELSE6     ;                   0= IF
+;        .word   QTBRAN,BRACKETELSE6     ;                   0= IF
 ;        .word   ONEMINUS                ;                       1-
 ;BRACKETELSE6                            ;                   THEN
 ;BRACKETELSE7                            ;               THEN
 ;BRACKETELSE8                            ;           THEN
 ;        .word   QDUP                    ;           ?DUP
-;        .word   QZBRAN,BRACKETELSE9     ;           0= IF
+;        .word   QTBRAN,BRACKETELSE9     ;           0= IF
 ;        .word   EXIT                    ;               EXIT
 ;BRACKETELSE9                            ;           THEN
 ;        .word   BRAN,BRACKETELSE2       ;       REPEAT
@@ -120,29 +120,29 @@ BRACKETELSE0
         .word   ONEPLUS                 ; 
 BRACKETELSE1                            ;
         .word   FBLANK,WORDD,COUNT      ;
-        .word   DUP,QBRAN,BRACKETELSE5  ; if end of line refill buffer then loop back
+        .word   DUP,QFBRAN,BRACKETELSE5  ; if end of line refill buffer then loop back
         .word   OVER,OVER               ; 2DUP
         .word   XSQUOTE                 ;
         .byte   6,"[THEN]"              ;
         .word   COMPARE                 ;
-        .word   QZBRAN,BRACKETELSE2     ; if bad comparaison, jump for next comparaison
+        .word   QTBRAN,BRACKETELSE2     ; if bad comparaison, jump for next comparaison
         .word   TWODROP,ONEMINUS        ; 2DROP, decrement count
-        .word   QDUP,QZBRAN,BRACKETELSE1; loop back if count <> 0
+        .word   QDUP,QTBRAN,BRACKETELSE1; loop back if count <> 0
         .word   EXIT                    ; else exit
 BRACKETELSE2                            ;
         .word   OVER,OVER               ; 2DUP
         .word   XSQUOTE                 ;
         .byte   6,"[ELSE]"              ;
         .word   COMPARE                 ;
-        .word   QZBRAN,BRACKETELSE3     ; if bad comparaison, jump for next comparaison
+        .word   QTBRAN,BRACKETELSE3     ; if bad comparaison, jump for next comparaison
         .word   TWODROP,ONEMINUS        ; 2DROP, decrement count
-        .word   QDUP,QZBRAN,BRACKETELSE0; if count <> 0 restore old count with loop back increment
+        .word   QDUP,QTBRAN,BRACKETELSE0; if count <> 0 restore old count with loop back increment
         .word   EXIT                    ; else exit
 BRACKETELSE3                            ;
         .word   XSQUOTE                 ;
         .byte   4,"[IF]"                ;
         .word   COMPARE                 ;
-        .word   QZBRAN,BRACKETELSE1     ; if bad comparaison, loop back
+        .word   QTBRAN,BRACKETELSE1     ; if bad comparaison, loop back
         .word   BRAN,BRACKETELSE0       ; else increment loop back
 BRACKETELSE5                            ;
         .word   TWODROP                 ;
@@ -226,6 +226,4 @@ MARKER_DOES FORTHtoASM                  ; execution part
             SUB     #2,Y                ;1 Y = LFA
             MOV     Y,2(W)              ;3 [BODY+2] = LFA = DP to be restored
             ADD     #4,&DDP             ;3
-
-
-                                        ; the next in forthMSP430FR.asm is GOOD_CSP
+            MOV     #GOOD_CSP,PC

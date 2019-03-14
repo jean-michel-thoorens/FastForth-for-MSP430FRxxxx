@@ -1,6 +1,6 @@
 
 ; -----------------------------------------------------------------------
-; File Name TestASM.f
+; TEST_ASM.f
 ; -----------------------------------------------------------------------
 \
 \ TARGET SELECTION
@@ -21,8 +21,6 @@
 \ ASSEMBLER conditionnal usage before ?JMP ?GOTO    : S< S>= U< U>= 0= 0<> 0< 
 \
 \ FORTH conditionnal    : 0= 0< = < > U<
-
-ECHO
 
 \ -----------------------------------------------------------------------
 \ test CPUx instructions PUSHM, POPM, RLAM, RRAM, RRCM, RRUM
@@ -287,7 +285,8 @@ CODENNM                 ; leaves its execution address (CFA) on stack
     SUB #2,PSP
     MOV TOS,0(PSP)
     MOV @IP+,PC
-ENDCODE IS TRUC         ; TRUC becomes a primary DEFERred word
+ENDCODE 
+DUP . IS TRUC         ; TRUC becomes a primary DEFERred word
                         ; with its default action (DUP) located at its BODY addresse.
     \
 TRUC .                  ; display TOS value -->

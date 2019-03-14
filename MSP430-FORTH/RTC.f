@@ -48,7 +48,7 @@
 
 PWR_STATE
 
-[DEFINED] {RTC} [IF] {RTC} [THEN]     \ remove application
+[UNDEFINED] {RTC} [IF]
 
 MARKER {RTC}
 

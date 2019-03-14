@@ -6,9 +6,6 @@
 ; ----------------------------------;
 ; (ACCEPT) part I: prepare TERMINAL_INT ;
 ; ----------------------------------;
-    .IFDEF TOTAL
-            PUSHM #4,R7             ;6              push R7,R6,R5,R4
-    .ENDIF                          ;
             MOV #ENDACCEPT,S        ;2              S = ACCEPT XOFF return
             MOV #AKEYREAD1,T        ;2              T = default XON return
             PUSHM #3,IP             ;5              PUSHM IP,S,T, as IP ret, XOFF ret, XON ret
@@ -162,9 +159,6 @@ ENDACCEPT                           ; <--- XOFF return address
 ACCEPTEND   SUB @PSP+,TOS           ; Org Ptr -- len'
             MOV @RSP+,IP            ; 2 and continue with INTERPRET with GIE=0.
                                     ; So FORTH machine is protected against any interrupt...
-    .IFDEF TOTAL
-             POPM #4,R7             ;6              pop R4,R5,R6,R7
-    .ENDIF
             mNEXT                   ; ...until next falling down to LPMx mode of (ACCEPT) part1,
 ; **********************************;    i.e. when the FORTH interpreter has no more to do.
 

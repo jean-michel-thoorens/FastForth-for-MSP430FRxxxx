@@ -33,9 +33,7 @@
 
 PWR_STATE
 
-[DEFINED] {TOOLS} [IF] {TOOLS} [THEN]     \ remove {UTILITY} if outside core 
-
-[UNDEFINED] {TOOLS} [IF]  \ don't replicate {UTILITY} if inside core
+[UNDEFINED] {TOOLS} [IF]
 
 MARKER {TOOLS} 
 
@@ -50,7 +48,7 @@ ENDCODE
 
 [UNDEFINED] .S [IF]    \
 \ https://forth-standard.org/standard/tools/DotS
-\ .S            --            display <depth> of param Stack and stack contents if not empty
+\ .S            --            display <depth> of param Stack and stack contents in hedadecimal if not empty
 CODE .S
     MOV     TOS,-2(PSP) \ -- TOS ( tos x x )
     MOV     PSP,TOS
@@ -70,10 +68,13 @@ COLON
     OVER OVER >         \ 
     0= IF 
         DROP DROP EXIT
-    THEN
+    THEN                \ display content of stack in hexadecimal
+    BASE @ >R
+    $10 BASE !
     DO 
         I @ U.
     2 +LOOP
+    R> BASE !
 ;
 [THEN]
 
@@ -86,8 +87,6 @@ CODE .RS
     GOTO    BW1
 ENDCODE
 [THEN]
-
-[UNDEFINED] WORDS [IF]
 
 [UNDEFINED] AND [IF]
 
@@ -108,37 +107,39 @@ PAD_ORG CONSTANT PAD
 
 [THEN]
 
+
+[UNDEFINED] WORDS [IF]
 \ https://forth-standard.org/standard/tools/WORDS
 \ list all words of vocabulary first in CONTEXT.
-: WORDS                             \ --            
-CR ."    "                          \
-CONTEXT @                           \ -- VOC_BODY                   MOVE all threads of VOC_BODY in PAD
-    PAD INI_THREAD @ DUP +          \ -- VOC_BODY PAD THREAD*2
-    MOVE                            \
-    BEGIN                           \ -- 
-        0.                          \ -- ptr=0 MAX=0                
-        INI_THREAD @ DUP + 0        \ -- ptr=0 MAX=0 THREADS*2 0
-            DO                      \ -- ptr MAX            I =  PAD_ptr = thread*2
-            DUP I PAD + @           \ -- ptr MAX MAX NFAx
-                U< IF               \ -- ptr MAX            if MAX U< NFAx
-                    DROP DROP       \ --                    drop ptr and MAX
-                    I DUP PAD + @   \ -- new_ptr new_MAX
-                THEN                \ 
-            2 +LOOP                 \ -- ptr MAX
-        ?DUP                        \ -- ptr MAX MAX | -- ptr 0  
-    WHILE                           \ -- ptr MAX                    replace it by its LFA
-        DUP                         \ -- ptr MAX MAX
-        2 - @                       \ -- ptr MAX [LFA]
-        ROT                         \ -- MAX [LFA] ptr
-        PAD +                       \ -- MAX [LFA] thread
-        !                           \ -- MAX                [LFA]=new_NFA --> PAD+ptr   type it in 16 chars format
-        DUP                         \ -- MAX MAX
-        COUNT $7F AND               \ -- MAX addr count (with suppr. of immediate bit)
-        TYPE                        \ -- MAX
-        C@ $0F AND                  \ -- count_of_chars
-        $10 SWAP - SPACES           \ --                    complete with spaces modulo 16 chars
-    REPEAT                          \ -- ptr
-    DROP                            \ --
+: WORDS                         \ --            
+CR 
+CONTEXT @ PAD                   \ -- VOC_BODY PAD                  MOVE all threads of VOC_BODY in PAD
+INI_THREAD @ DUP +              \ -- VOC_BODY PAD THREAD*2
+MOVE                            \
+BEGIN                           \ -- 
+    0.                          \ -- ptr=0 MAX=0                
+    INI_THREAD @ DUP + 0        \ -- ptr=0 MAX=0 THREADS*2 0
+        DO                      \ -- ptr MAX            I =  PAD_ptr = thread*2
+        DUP I PAD + @           \ -- ptr MAX MAX NFAx
+            U< IF               \ -- ptr MAX            if MAX U< NFAx
+                DROP DROP       \ --                    drop ptr and MAX
+                I DUP PAD + @   \ -- new_ptr new_MAX
+            THEN                \ 
+        2 +LOOP                 \ -- ptr MAX
+    ?DUP                        \ -- ptr MAX MAX | -- ptr 0  
+WHILE                           \ -- ptr MAX                    replace it by its LFA
+    DUP                         \ -- ptr MAX MAX
+    2 - @                       \ -- ptr MAX [LFA]
+    ROT                         \ -- MAX [LFA] ptr
+    PAD +                       \ -- MAX [LFA] thread
+    !                           \ -- MAX                [LFA]=new_NFA --> PAD+ptr   type it in 16 chars format
+    DUP                         \ -- MAX MAX
+    COUNT $7F AND               \ -- MAX addr count (with suppr. of immediate bit)
+    TYPE                        \ -- MAX
+    C@ $0F AND                  \ -- count_of_chars
+    $10 SWAP - SPACES           \ --                    complete with spaces modulo 16 chars
+REPEAT                          \ -- ptr
+DROP                            \ --
 ;
 [THEN]
 
@@ -149,7 +150,6 @@ CONTEXT @                           \ -- VOC_BODY                   MOVE all thr
     BW1 ADD #2,PSP
         MOV @IP+,PC
     ENDCODE
-    \
 
     CODE MIN    \    n1 n2 -- n3       signed minimum
         CMP @PSP,TOS    \ n2-n1
@@ -189,7 +189,7 @@ LO2HI
 ;
 [THEN]  \ of [UNDEFINED] DUMP
 
-PWR_HERE
+RST_HERE
 
 [THEN]  \ of [UNDEFINED] {TOOLS}
 

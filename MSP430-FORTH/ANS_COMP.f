@@ -29,12 +29,6 @@
 
 PWR_STATE
 
-[DEFINED] {ANS_COMP} [IF] {ANS_COMP} [THEN] \ remove {ANS_COMP} if outside protected core  
-
-[UNDEFINED] ASM [IF]
-ECHO ASM ; assembler is required! <-- 
-[THEN]
-
 [UNDEFINED] {ANS_COMP} [IF]
 
 MARKER {ANS_COMP}

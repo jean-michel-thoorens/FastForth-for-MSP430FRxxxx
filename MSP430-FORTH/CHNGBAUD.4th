@@ -3,6 +3,8 @@
 ; CHNGBAUD.4th
 ; ------------
 
+PWR_HERE
+
 : BAD_MHz
     1 ABORT"  only for 1,4,8,16,24 MHz MCLK!"
 ;
@@ -19,7 +21,7 @@ SPACE 27 EMIT ." [7m"
 : <> = 0= ;
 
 : CHNGBAUD
-PWR_STATE 
+PWR_STATE
 $1806 @ >R
 ." target MCLK = " R@ MCLK. ." MHz" CR
 ."    choose your baudrate:" CR
@@ -28,8 +30,9 @@ $1806 @ >R
 ."    2 --> 4 MBds" CR
 ."    3 --> 2457600 Bds" CR
 ."    4 --> 921600 Bds" CR
-."    5 --> 230400 Bds" CR
-."    6 --> 115200 Bds" CR
+."    5 --> 460800 Bds" CR
+."    6 --> 230400 Bds" CR
+."    7 --> 115200 Bds" CR
 ."    other --> abort" CR
 ."    your choice: "
 KEY
@@ -114,60 +117,84 @@ ELSE 1 - ?DUP 0=
                         THEN
                     THEN
                 ELSE 1 - ?DUP 0=
-                    IF  ." 230400 Bds"
-                        R@ #1000 <
+                    IF  ." 460800 Bds"
+                        R@ #4000 <
                         IF  R@ BAD_SPEED
                         THEN
-                        R@ #1000 =
-                        IF  4
-                            $4900
+                        R@ #4000  =
+                        IF  8
+                            $D600
                         ELSE
-                            R@ #4000  =
+                            R@ #8000  =
                             IF  17
                                 $4A00
-                            ELSE
-                                R@ #8000  =
+                            ELSE R@ #16000 =
                                 IF  2
                                     $BB21
-                                ELSE R@ #16000 =
-                                    IF  4
-                                        $5551
-                                    ELSE R@ #24000 <>
-                                        IF  BAD_MHz
-                                        THEN
-                                        6
-                                        $0001
+                                ELSE R@ #24000 <>
+                                    IF  BAD_MHz
                                     THEN
+                                    6
+                                    $0001
                                 THEN
                             THEN
                         THEN
                     ELSE 1 - ?DUP 0=
-                        IF  ." 115200 Bds"
-                            R@ #1000  =
-                            IF  8
-                                $D600
+                        IF  ." 230400 Bds"
+                            R@ #1000 <
+                            IF  R@ BAD_SPEED
+                            THEN
+                            R@ #1000 =
+                            IF  4
+                                $4900
                             ELSE
                                 R@ #4000  =
-                                IF  2
-                                    $BB21
+                                IF  17
+                                    $4A00
                                 ELSE
                                     R@ #8000  =
-                                    IF  4
-                                        $5551
+                                    IF  2
+                                        $BB21
                                     ELSE R@ #16000 =
-                                        IF  8
-                                            $F7A1
+                                        IF  4
+                                            $5551
                                         ELSE R@ #24000 <>
                                             IF  BAD_MHz
                                             THEN
-                                            $0D
-                                            $4901
+                                            3
+                                            $0241
                                         THEN
                                     THEN
                                 THEN
                             THEN
-                        ELSE
-                            ." abort" CR ABORT
+                        ELSE 1 - ?DUP 0=
+                            IF  ." 115200 Bds"
+                                R@ #1000  =
+                                IF  8
+                                    $D600
+                                ELSE
+                                    R@ #4000  =
+                                    IF  2
+                                        $BB21
+                                    ELSE
+                                        R@ #8000  =
+                                        IF  4
+                                            $5551
+                                        ELSE R@ #16000 =
+                                            IF  8
+                                                $F7A1
+                                            ELSE R@ #24000 <>
+                                                IF  BAD_MHz
+                                                THEN
+                                                $0D
+                                                $4901
+                                            THEN
+                                        THEN
+                                    THEN
+                                THEN
+                            ELSE
+                                ." abort" CR ABORT
+                            THEN
                         THEN
                     THEN
                 THEN

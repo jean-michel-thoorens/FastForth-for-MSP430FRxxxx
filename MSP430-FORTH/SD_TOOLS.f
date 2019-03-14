@@ -33,8 +33,6 @@
 
 PWR_STATE
 
-[DEFINED] {SD_TOOLS} [IF] {SD_TOOLS} [THEN]     \ remove {SD_TOOLS} if outside core 
-
 [UNDEFINED] {SD_TOOLS} [IF] \ 
 
 MARKER {SD_TOOLS}
@@ -76,10 +74,16 @@ ENDCODE
 [THEN]
 
 [UNDEFINED] DUMP [IF]       \ defined in {UTILITY}
-: DUMP                      \ adr n  --   dump memory
-  BASE @ >R $10 BASE !
-  SWAP $FFF0 AND SWAP
-  OVER + SWAP
+\ https://forth-standard.org/standard/tools/DUMP
+CODE DUMP                   \ adr n  --   dump memory
+PUSH IP
+PUSH &BASE                  \ save current base
+MOV #$10,&BASE              \ HEX base
+ADD @PSP,TOS                \ -- ORG END
+LO2HI
+  SWAP OVER OVER            \ -- END ORG END ORG 
+  U. U.                     \ -- END ORG        display org end 
+  $FFF0 AND                 \ -- END ORG_modulo_16
   DO  CR                    \ generate line
     I 7 U.R SPACE           \ generate address
       I $10 + I             \ display 16 bytes
@@ -88,7 +92,7 @@ ENDCODE
       I $10 + I             \ display 16 chars
       DO I C@ $7E MIN BL MAX EMIT LOOP
   $10 +LOOP
-  R> BASE !
+  R> BASE !                 \ restore current base
 ;
 [THEN]
 

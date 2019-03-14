@@ -215,7 +215,7 @@ CURRENT=\$21DA!         CURRENT dictionnary ptr
 !BASE=\$21DC!           numeric base, must be defined before first reset !
 LINE=\$21DE!            line in interpretation, activated with NOECHO, desactivated with ECHO
 ! ---------------------------------------
-!21E0! 14 RAM bytes free conditionnaly
+!21E0! 16 RAM bytes free conditionnaly
 ! ---------------------------------------
 !SAV_CURRENT=\$21E0!    preserve CURRENT when create assembler words
 !ASMBW1=\$21E2          assembler backward reference 1
@@ -224,8 +224,9 @@ LINE=\$21DE!            line in interpretation, activated with NOECHO, desactiva
 !ASMFW1=\$21E8          assembler forward reference 1
 !ASMFW2=\$21EA          assembler forward reference 2
 !ASMFW3=\$21EC          assembler forward reference 3
+!RPT_WORD=\$21EE!    
 ! ---------------------------------------
-!21EE! 14 RAM bytes free
+!21EE! 12RAM bytes free
 ! ---------------------------------------
 
 ! ---------------------------------------
@@ -318,25 +319,23 @@ HDLH_CurClust=16!   Current ClusterHi (T as 3Th byte)
 HDLL_CurSize=18!    written size / not yet read size (Long)
 HDLH_CurSize=20!    written size / not yet read size (Long)
 HDLW_BUFofst=22!    BUFFER offset ; used by LOAD" and by WRITE"
+HDLW_PrevLEN=24!    previous LEN
+HDLW_PrevORG=26!    previous ORG
 
 
 !OpenedFirstFile     ; "openedFile" structure 
 HandleMax=8!
-HandleLenght=24!
+HandleLenght=28!
 FirstHandle=\$2438!
-HandleEnd=\$24F8!
-
-!Stack of return IP for LOADed files, preincrement stack structure
-LOADPTR=\$24F8!
-LOAD_STACK=\$24FA!
-LOAD_STACK_END=\$2530!
+HandleEnd=\$2518!
 
 !SD_card Input Buffer
-SDIB_I2CADR=\$2530!
-SDIB_I2CCNT=\$2532!
-SDIB_ORG=\$2534!
+SDIB_I2CADR=\$2518!
+SDIB_I2CCNT=\$251A!
+SDIB_ORG=\$251C!
 
-SD_END_DATA=\$2588!
+SD_END=\$2570!
+SD_LEN=\$16E!
 
 
 ! ============================================

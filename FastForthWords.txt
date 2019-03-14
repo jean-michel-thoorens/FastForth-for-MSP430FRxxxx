@@ -204,32 +204,57 @@ HI2LO           used to switch compilation from high level (FORTH) to low level 
 
 ASSEMBLER WORDS set:
 
-RRUM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=218
-RLAM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=208
-RRAM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=211
-RRCM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=214
-POPM            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=204
-PUSHM           http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=205
+ADD     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=135
+ADDC    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=136
+AND     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=137
+BIC     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=138
+BIS     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=139
+BIT     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=140
+CALL    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=142
+CMP     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=147
+DADD    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=149
+MOV     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=165
+PUSH    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=168
+RETI    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=170
+RRA     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=173
+RRC     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=174
+SUB     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=179
+SUBC    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=180
+SWPB    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=181
+SXT     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=182
+XOR     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=184
 
-CALL            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=142
-PUSH.B  PUSH    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=168
-SXT             http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=182
-RRA.B   RRA     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=173
-SWPB            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=181
-RRC.B   RRC     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=174
-AND.B   AND     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=137
-XOR.B   XOR     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=184
-BIS.B   BIS     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=139
-BIC.B   BIC     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=138
-BIT.B   BIT     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=140
-DADD.B  DADD    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=149
-CMP.B   CMP     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=147
-SUB.B   SUB     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=179
-SUBC.B  SUBC    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=180
-ADDC.B  ADDC    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=136
-ADD.B   ADD     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=135
-MOV.B   MOV     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=165
-RETI            http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=170
+RRUM    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=218
+RLAM    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=208
+RRAM    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=211
+RRCM    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=214
+POPM    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=204
+PUSHM   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=205
+
+ADDX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=187
+ADDCX   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=188
+ANDX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=189
+BICX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=190
+BISX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=191
+BITX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=192
+CMPX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=194
+DADDX   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=196
+MOVX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=202
+PUSHX   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=207
+RRAX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=212
+RRCX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=216
+RRUX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=219
+SUBX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=221
+SUBCX   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=222
+SWPBX   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=223
+SXTX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=225
+XORX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=227
+
+ADDA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=229
+CALLA   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=232
+CMPA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=235
+MOVA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=238
+SUBA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=241
 
 
 CONDCOMP ADD-ON
@@ -270,7 +295,7 @@ SD_CARD_LOADER ADD-ON
 ---------------------
 LOAD"           CIB
 
-LOAD"           LOAD" SD_TEST.4TH" loads and compile source file SD_TEST.4TH.
+LOAD"           LOAD" SD_TEST.4TH" loads source file SD_TEST.4TH from SD_Card and compile it.
 CIB             Currrent Input Buffer, TIB by default.
 
 ACCEPT becomes a DEFERed word

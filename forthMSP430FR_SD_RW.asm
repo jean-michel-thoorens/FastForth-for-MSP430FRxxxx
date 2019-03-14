@@ -54,6 +54,7 @@ READ
     MOV     TOS,0(PSP)              ;
     MOV     &CurrentHdl,TOS         ;
     CALL    #Read_File              ;SWX
+READ_END
     SUB     &CurrentHdl,TOS         ; -- fl     if fl <>0 (if Z=0) handle is closed
     mNEXT                           ;
 ; ----------------------------------;
@@ -492,7 +493,7 @@ SD_EmitNext                         ;
 ; WRITE" (APPEND part) primitive as part of OpenPathName
 ; input from open:  S = OpenError, W = open_type, SectorHL = DIRsectorHL,
 ;                   Buffer = [DIRsector], ClusterHL = FirstClusterHL
-;       from open(GetFreeHandle): Y = DIRentry, T = CurrentHdl, BufferPtr=HDLW_BufOfst=0
+;       from open(GetFreeHandle): Y = DIRentry, T = CurrentHdl
 ; output: nothing else abort on error
 ; error 2  : DiskFull       
 ; ======================================================================
@@ -511,8 +512,6 @@ OPEN_WRITE_APPEND                   ;
     SWPB    X                       ;X = CurSizeHIlo:0 
     ADD     Y,X                     ;X = CurSizeHIlo:CurSizeLOhi
     MOV.B   HDLH_CurSize+1(T),Y     ;Y:X = CurSize / 256
-;    RRA     Y                       ;Y = Sectors number_High
-;    RRC     X                       ;X = Sectors number_Low
 ; ----------------------------------;
 ; 2.2 Compute Clusters Count        ;
 ; ----------------------------------;
@@ -520,7 +519,6 @@ OPEN_WRITE_APPEND                   ;
 DIVSECPERSPC                        ;
     MOV #0,W                        ;1 W = 0:REMlo = 0
     MOV #8,S                        ;1 S = CNT
-;    RRA T                           ;1 0>0:SPClo>C   preshift one right DIVISOR
 DIVSECPERSPC1                       ;
     RRA Y                           ;1 0>0:SEC_HI>C
     RRC X                           ;1 C>SEC_LO>C
@@ -531,7 +529,6 @@ DIVSECPERSPC1                       ;
 DIVSECPERSPC2                       ;
     RRA W                           ;1 0>0:REMlo>C
     SUB #1,S                        ;1 CNT-1
-;   JNZ DIVSECPERSPC2               ;2 4~ loopback     Wlo = OFFSET, X = CLU_LO, Y = CLU_HI
     JGE DIVSECPERSPC2               ;2 4~ loopback     Wlo = OFFSET, X = CLU_LO, Y = CLU_HI
 ; ----------------------------------;
     MOV &CurrentHDL,T               ;3  reload Handle ptr  
@@ -564,7 +561,7 @@ DIVSECPERSPC2                       ;
 ; If next DIRentry in same sector is free, DIRentry is freed, else hidden.
 ; input from open:  S = OpenError, W = open_type, SectorHL = DIRsectorHL,
 ;                   Buffer = [DIRsector], ClusterHL = FirstClusterHL
-;       from open(GetFreeHandle): Y = DIRentry, T = CurrentHdl, BufferPtr=HDLW_BufOfst=0
+;       from open(GetFreeHandle): Y = DIRentry, T = CurrentHdl
 ; output: nothing (no message if open error)
 ; ======================================================================
 
@@ -578,7 +575,7 @@ OPEN_DEL                            ;
 ; 1- open file                      ; done
 ; ----------------------------------;
     CMP     #0,S                    ; open file happy end ?
-    JNE     OPND_END                ; no: don't send message
+    JNE     DEL_END                ; no: don't send message
 ; ----------------------------------;
 ; 2- Delete DIR entry               ; "delete" entry with 00h if next entry in same DIRsector is free, else "hide" entry with 05Eh
 ; ----------------------------------;
@@ -649,26 +646,26 @@ EndOfFileClusters                   ;
 ; ----------------------------------;
     CALL    #CloseHandleT           ;
 ; ----------------------------------;
-OPND_End                            ;
+DEL_END                             ;
+    mNEXT                           ;4
 ; ----------------------------------;
-    mNEXT
 
 
 
 ; first TERATERM sends the command TERM2SD" file.ext" to FastForth which returns XOFF at the end of the line.
-; then when XON is sent below, TERATERM sends "file.ext" by slices of 512 bytes,
-; until it sends char ETX that closes the file on SD_CARD.
+; then when XON is sent below, TERATERM sends "file.ext" up to XOFF sent by TERM2SD" (slices of 512 bytes),
+; then TERATERM sends char ETX that closes the file on SD_CARD.
 
 
     FORTHWORD "TERM2SD\34"
     mDOCOL
-    .word   DELDQ                   ;                   DEL filepath if already exist
+    .word   DELDQ                   ;                   DEL file if already exist
     .word   lit,2                   ; -- open_type
     .word   HERE,COUNT              ; -- open_type addr cnt
     .word   PARENOPEN               ;                   reopen same filepath but as write
     FORTHtoASM                      ;
     MOV     @RSP+,IP                ;
-    BIC     #UCRXIFG,&TERM_IFG      ;   clean up RX buffer  
+    BIC     #UCRXIFG,&TERM_IFG      ;   clean up UCRX buffer  
 ; ----------------------------------;
 T2S_GetSliceLoop                    ;   tranfert by slices of 512 bytes terminal input to file on SD_CARD via SD_BUF 
 ; ----------------------------------;
@@ -703,7 +700,7 @@ T2S_END                             ;
     CALL    #RXOFF                  ;4  use no registers
     MOV     Y,&BufferPtr            ;3
     CALL    #CloseHandleT           ;4
-    MOV     @RSP+,IP                ;2
+TERM2SD_END                         ;
     mNEXT                           ;4
 ; ----------------------------------;
 

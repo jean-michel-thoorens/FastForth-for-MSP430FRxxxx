@@ -152,7 +152,7 @@ readSectorW                         ; read a logical sector < 65536
 ; ==================================;
     MOV     #0,X                    ;
 ; ==================================;
-readSectorWX                        ; read a logical sector
+readSectorWX                        ; SWX read a logical sector
 ; ==================================;
     BIS     #1,S                    ; preset sd_read error
     MOV.B   #51h,&SD_CMD_FRM+5      ; CMD17 = READ_SINGLE_BLOCK
@@ -163,13 +163,13 @@ WaitFEhResponse                     ; wait SD_Card response FEh
 ; ----------------------------------;
     CALL #SPI_GET                   ;
     ADD.B   #2,W                    ;1 FEh expected value
-    JZ  ReadSectorfirst             ; 2
-    JNZ WaitFEhResponse             ;
+    JZ  ReadSectorFirstByte         ; 2
+    JNZ WaitFEhResponse             ;2
 ; ----------------------------------;
 ReadSectorLoop                      ; get 512+1 bytes, write 512 bytes in SD_BUF
 ; ----------------------------------;
     MOV.B   &SD_RXBUF,SD_BUF-1(X)   ; 5
-ReadSectorfirst                     ; 
+ReadSectorFirstByte                 ; 
     MOV.B   #-1,&SD_TXBUF           ; 3 put FF
     NOP                             ; 1 NOPx adjusted to avoid read SD_error
     ADD     #1,X                    ; 1
@@ -260,6 +260,7 @@ SD_CARD_ERROR                       ; <=== SD_INIT errors 4,8,$10
 SD_CARD_ID_ERROR                    ; <=== SD_INIT error $20 from forthMSP430FR_SD_LowLvl.asm
     BIS.B #SD_CS,&SD_CSOUT          ; SD_CS = high
     mDOCOL                          ;
+    .word ECHO
     .word   XSQUOTE                 ;
     .byte   11,"< SD Error!"        ;
 ; ----------------------------------;

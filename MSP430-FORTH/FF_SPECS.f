@@ -12,6 +12,12 @@
 \ drag and drop this file onto SendSourceFileToTarget.bat
 \ then select your TARGET when asked.
 \
+
+[DEFINED] {ANS_COMP} [IF] {ANS_COMP}    [THEN] \ remove this option if downloaded
+[DEFINED] {TOOLS}    [IF] {TOOLS}       [THEN] \ remove this option if downloaded
+[DEFINED] {FIXPOINT} [IF] {FIXPOINT}    [THEN] \ remove this option if downloaded
+[DEFINED] {SD_TOOLS} [IF] {SD_TOOLS}    [THEN] \ remove this option if downloaded
+
 0 CONSTANT CASE IMMEDIATE \ -- #of-1 
 
 : OF \ #of-1 -- orgOF #of 
@@ -41,14 +47,14 @@ LOOP
 
 : ADDONS
 ESC ." [7m"     \ escape sequence to set reverse video
-." KERNEL ADD-ON:"
+." KERNEL OPTIONS:"
 ESC ." [0m"     \ escape sequence to clear reverse video
-KERNEL_ADDON @
-    DUP + DUP 0< IF CR ." TERMINAL5WIRES" THEN
+KERNEL_ADDON @                                  \ see ThingsInFirst.inc
+    DUP + DUP 0< IF CR ." TERMINAL5WIRES" THEN  \ shift left then carry test: (JNC/JLO) IF ... THEN
     DUP + DUP 0< IF CR ." TERMINAL4WIRES" THEN
     DUP + DUP 0< IF CR ." TERMINAL3WIRES" THEN
-    DUP + DUP 0< IF CR ." TOTAL" THEN
-    DUP + DUP 0< IF CR ." QUIETBOOT" THEN
+    DUP + DUP 0< IF CR ." HALFDUPLEX_TERMINAL"  THEN
+    DUP + DUP 0< IF CR ." PROMPT" THEN
     DUP + DUP 0< IF CR ." BOOTLOADER" THEN
     DUP + DUP 0< IF CR ." SD_CARD_READ_WRITE" THEN
     DUP + DUP 0< IF CR ." SD_CARD_LOADER" THEN
@@ -56,14 +62,15 @@ KERNEL_ADDON @
     DUP + DUP 0< IF CR ." DOUBLE_INPUT" THEN
     DUP + DUP 0< IF CR ." VOCABULARY_SET" THEN
     DUP + DUP 0< IF CR ." NONAME" THEN
-    DUP + DUP 0< IF CR ." EXTENDED_ASSEMBLER" THEN
+    DUP + DUP 0< IF CR ." ASM_EXTENDED" THEN
     DUP + DUP 0< IF CR ." ASSEMBLER" THEN
     DUP + DUP 0< IF CR ." CONDCOMP" THEN
-    0< \ true if CONDCOMP add-on
-IF CR CR 
-ESC ." [7m"     \ escape sequence to set reverse video
-." OTHER ADD-ON:"
-ESC ." [0m"     \ escape sequence to clear reverse video
+
+0< IF                   \ true if CONDCOMP add-on
+    CR ESC ." [7m"      \ escape sequence to set reverse video
+    ." OTHER OPTIONS:"
+    ESC ." [0m"     \ escape sequence to clear reverse video
+
     [DEFINED] {ANS_COMP} [IF] CR ." ANS_COMPLEMENT" [THEN]
     [DEFINED] {TOOLS}    [IF] CR ." UTILITY" [THEN]
     [DEFINED] {FIXPOINT} [IF] CR ." FIXPOINT" [THEN]
@@ -72,38 +79,47 @@ THEN
 ;
 
 : specs         \ to see Fast Forth specifications
-PWR_STATE       \ before free bytes computing, remove all words defined after RST_HERE
+PWR_STATE       \ before free bytes computing, remove all words defined after PWR_HERE
+HERE            \ to compute bytes
+ECHO
+
 ESC ." [1J"     \ erase up
 ESC ." [H"      \ cursor home
 ESC ." [7m"     \ escape sequence to set reverse video
-CR ." FastForth V" 
-VERSION @ U.
-." for MSP430FR"
-HERE            \ to compute bytes
-DEVICEID @      \ kept in TLV area
+
+DEVICEID @      \ value kept in TLV area
+
+CR ." FastForth V" VERSION @ U. ." for MSP430FR"
 CASE
-$830C OF ." 2355" $8000 ENDOF \ $8000 = org MAIN
-$8240 OF ." 2433" $C400 ENDOF
-$81F0 OF ." 4133" $C400 ENDOF
-$8103 OF ." 5739" $C200 ENDOF
-$8102 OF ." 5738" $C200 ENDOF
-$8169 OF ." 5969" $4400 ENDOF
-$8160 OF ." 5948" $4400 ENDOF
-$82A1 OF ." 5994" $4000 ENDOF
-$81A8 OF ." 6989" $4400 ENDOF
-ABORT" xxxx <-- unrecognized device!"
+\ device ID   of MSP430FRxxxx    MAIN org
+    $830C     OF      ." 2355"   $8000   ENDOF
+    $8240     OF      ." 2433"   $C400   ENDOF
+    $81F0     OF      ." 4133"   $C400   ENDOF
+    $8103     OF      ." 5739"   $C200   ENDOF
+    $8102     OF      ." 5738"   $C200   ENDOF
+    $8169     OF      ." 5969"   $4400   ENDOF
+    $8160     OF      ." 5948"   $4400   ENDOF
+    $82A1     OF      ." 5994"   $4000   ENDOF
+    $81A8     OF      ." 6989"   $4400   ENDOF
+\ add here your device  "xxxx" with device ID and MAIN org
+
+    ABORT" xxxx <-- unrecognized device!"
 ENDCASE SPACE
+
 FREQ_KHZ @ 0 1000 UM/MOD U. BS
 ?DUP
 IF   ." ," U. BS                \ if remainder
 THEN ." MHz, "                  \ MCLK
+
 INI_THREAD @ U. BS ." -Entry Vocabularies, "
+
 - U. ." bytes, "                \ HERE - MAIN_ORG
-SIGNATURES HERE - U. ." bytes free"
-CR
+
+SIGNATURES HERE - U. ." bytes free" CR
+
 ESC ." [0m"     \ escape sequence to clear reverse video
+
 CR ADDONS CR
 ;
 
-ECHO
 specs \ here FastForth type a (volatile) message with some informations

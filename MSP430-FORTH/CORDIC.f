@@ -27,7 +27,9 @@
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
-[DEFINED] {CORDIC} [IF] {CORDIC} [THEN] \ remove {CORDIC}
+PWR_STATE
+
+[UNDEFINED] {CORDIC} [IF]
 
 MARKER {CORDIC}
 
@@ -323,6 +325,8 @@ ENDCODE                 \
 
 RST_HERE
 
+[THEN] 
+
 : 2000CORDIC
 1000 0 DO
     POL2REC REC2POL     \ 1000 loops
@@ -383,3 +387,5 @@ ECHO
 10000 14,036 2000CORDIC ROT . F.
 10000 7,125 2000CORDIC  ROT . F.
 10000 1,0 2000CORDIC    ROT . F.
+
+

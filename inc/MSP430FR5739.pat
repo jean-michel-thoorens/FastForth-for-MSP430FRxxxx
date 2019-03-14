@@ -252,18 +252,24 @@ HDLH_CurClust=16!   Current ClusterHi (T as 3Th byte)
 HDLL_CurSize=18!    written size / not yet read size (Long)
 HDLH_CurSize=20!    written size / not yet read size (Long)
 HDLW_BUFofst=22!    BUFFER offset ; used by LOAD" and by WRITE"
+HDLW_PrevLEN=24!    previous LEN
+HDLW_PrevORG=26!    previous ORG
 
 
 !OpenedFirstFile     ; "openedFile" structure 
-FirstHandle=\$1862!
 HandleMax=5!
-HandleLenght=24!
-HandleEnd=\$18DA!
+HandleLenght=28!
+FirstHandle=\$1862!
+HandleEnd=\$18EE!
 
-!Stack of return IP for LOADed files, preincrement stack structure
-LOADPTR=\$18DA!
-LOAD_STACK=\$18DC!
-LOAD_STACK_END=\$1900!
+SD_END=\$18EE!
+SD_LEN=\$C2!
+
+!SD_card Input Buffer = PAD
+SDIB_I2CADR=\$1CE0!
+SDIB_I2CCNT=\$1CE2!
+SDIB_ORG=\$1CE4!
+
 
 ! ============================================
 ! FORTH RAM areas :
@@ -320,17 +326,18 @@ CURRENT=\$1DDA!         CURRENT dictionnary ptr
 !BASE=\$1DDC!           numeric base, must be defined before first reset !
 LINE=\$1DDE!            line in interpretation, activated with NOECHO, desactivated with ECHO
 ! ---------------------------------------
-!1DE0! 14 RAM bytes free conditionnaly
+!1DE0! 16 RAM bytes free conditionnaly
 ! ---------------------------------------
-!SAV_CURRENT=\$21E0!    preserve CURRENT when create assembler words
-!ASMBW1=\$1DE2          assembler backward reference 1
-!ASMBW2=\$1DE4          assembler backward reference 2
-!ASMBW3=\$1DE6          assembler backward reference 3
-!ASMFW1=\$1DE8          assembler forward reference 1
-!ASMFW2=\$1DEA          assembler forward reference 2
-!ASMFW3=\$1DEC          assembler forward reference 3
+!SAV_CURRENT=\$1DE0! \ preserve CURRENT when create assembler words
+!ASMBW1=\$1DE2!      \ assembler backward reference 1
+!ASMBW2=\$1DE4!      \ assembler backward reference 2
+!ASMBW3=\$1DE6!      \ assembler backward reference 3
+!ASMFW1=\$1DE8!      \ assembler forward reference 1
+!ASMFW2=\$1DEA!      \ assembler forward reference 2
+!ASMFW3=\$1DEC!      \ assembler forward reference 3
+!RPT_WORD=\$1DEE!    \ 
 ! ---------------------------------------
-!1DEE! 14 RAM bytes free
+!1DF0! 12 RAM bytes free
 ! ---------------------------------------
 
 ! ---------------------------------------
