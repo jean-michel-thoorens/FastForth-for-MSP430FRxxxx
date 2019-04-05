@@ -1,19 +1,18 @@
 \ -----------------------------
 \ MSP-EXP430FR5969_TSTWORDS.4th
 \ -----------------------------
-ECHO
 
-PWR_HERE
+PWR_STATE
 
 \ -----------------------------------------------------------------------
 \ test some assembler words and show how to mix FORTH/ASSEMBLER routines
 \ -----------------------------------------------------------------------
 LOAD" \misc\TestASM.4th"
 
-ECHO
 \ -------------------------------------
 \ here we returned in the TestWords.4th
 \ -------------------------------------
+ECHO
 \ ----------
 \ LOOP tests
 \ ----------

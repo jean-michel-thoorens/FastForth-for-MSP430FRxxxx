@@ -31,14 +31,15 @@ exit
 
 
 :preprocess
-::%~d1\prog\gema.exe -nobackup -line -t '\n=\r\n;\r\n=\r\n' -f %~d1\inc\%~n2.pat %1 %~dp1last.4th
-::%~d1\prog\gema.exe -nobackup -line -t '-\r\n=\r\n' -f %~d1\inc\%~n2.pat %1 %~dp1last.4th
-%~d1\prog\gema.exe -nobackup -line -t -f %~d1\inc\%~n2.pat %1 %~dp1last.4th
+::%~d1\prog\gema.exe -nobackup -line -t '\n=\r\n;\r\n=\r\n' -f %~d1\inc\%~n2.pat %1 %~dp1last.4TH
+::%~d1\prog\gema.exe -nobackup -line -t '-\r\n=\r\n' -f %~d1\inc\%~n2.pat %1 %~dp1last.4TH
+%~d1\prog\gema.exe -nobackup -line -t -f %~d1\inc\%~n2.pat %1 %~dp1last.4TH
+@XCOPY /D /Y  "%~dp1last.4TH" "%~dp1\%~n2\%~n1.4TH*" > NUL
 exit
 
 :: %~dpn1.f is the symbolic source file
 :: %~d1\inc\%~n2.pat is the pattern file for preprocessor gema.exe
-:: %~dpn1.4th is the output source file (ready to send to the target)
+:: %~dpn1.4TH is the output source file (ready to send to the target)
 :: %~d1 is the drive of arg %1
 :: %~n2 is your selected template by SelectTarget.bat or your scite $(1)
 

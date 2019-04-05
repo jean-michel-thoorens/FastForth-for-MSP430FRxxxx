@@ -143,7 +143,7 @@ PARAM1      mDOCOL                          ; -- sep
             .word   FBLANK,SKIP             ; -- sep c-addr
             FORTHtoASM                      ; -- sep c-addr
             MOV     #0,S                    ; -- sep c-addr        reset ASMTYPE
-            MOV     &DDP,T                  ; -- sep c-addr        HERE --> OPCODEADR (opcode is preset to its address !)
+            MOV     &DDP,T                  ; -- sep c-addr        T=OPCODEADR (opcode is preset to its address !)
             ADD     #2,&DDP                 ; -- sep c-addr        cell allot for opcode
             MOV.B   @TOS,W                  ; -- sep c-addr        W=first char of instruction code
             MOV     @PSP+,TOS               ; -- sep               W=c-addr
@@ -193,13 +193,14 @@ PARAM10M1   CMP #-1,TOS                     ; -- xxxx       = -1 ?
 ; case of all others "#xxxx,"               ; -- xxxx
 PARAM1000   MOV #0030h,S                    ; -- xxxx       add immediate code type : @PC+,
 
+; case of all others "#xxxx,"               ; -- xxxx
 ; case of "&xxxx,"                          ; <== PARAM110
 ; case of ",&xxxx"                          ; <== PARAM20
-StoreArg    MOV &DDP,X                      ; -- xxxx
+StoreArg    MOV &DDP,X                      ; -- xxxx       don't use T=OPCODEADR
             ADD #2,&DDP                     ;               cell allot for arg
 
 StoreTOS                                    ; <== TYPE1DOES
-   MOV TOS,0(X)                             ;               compile arg
+            MOV TOS,0(X)                    ;               compile arg
 ; endcase of all "&xxxx"                    ;
 ; endcase of all "#xxxx"                    ; <== PARAM101,102,104,108,10M1
 ; endcase of all "REG"|"@REG"|"@REG+"       ; <== PARAM124
@@ -252,13 +253,10 @@ PARAM123    SWPB    TOS                     ; 000R -- 0R00  swap bytes because i
 ; case of "xxxx(REG),"                      ; -- 0R00                   (src REG typeI or dst REG typeII)
 ; case of "@REG,"                           ; -- 0R00                   (src REG typeI)
 ; case of "REG,"                            ; -- 0R00                   (src REG typeI or dst REG typeII)
-
-
-
 ; case of ",REG"                            ; -- 000R   <== PARAM21     (dst REG typeI)
 ; case of ",xxxx(REG)"                      ; -- 000R   <== PARAM210    (dst REG typeI)
 PARAM124    ADD     TOS,S                   ; -- 0R00|000R
-            JMP     PARAMENDOF
+            JMP     PARAMENDOF              ;
 ; ------------------------------------------
 
 ; case of "REG,"|"xxxx(REG),"               ;               first, searg REG of "REG,"
@@ -273,6 +271,11 @@ PARAM130    ADD     #0010h,S         ;               AS=0b01 for indexing addres
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER : INTERPRET 2th OPERAND
 ; ----------------------------------------------------------------------
+
+INITPARAM2                                  ; for OPCODES TYPE III
+            MOV     #0,S                    ;                       init ASMTYPE=0
+            MOV     &DDP,T                  ;                       T=OPCODEADR
+            ADD     #2,&DDP                 ;                       make room for opcode
 
 ; PARAM2     --                             ; parse input buffer until BL and compute this 2th operand
 PARAM2      mDOCOL                          ;
@@ -334,7 +337,7 @@ TYPE1DOES                                   ; -- PFADOES
             FORTHtoASM                      ; -- PFADOES
 MAKEOPCODE  MOV     @TOS,TOS                ; -- opcode             part of instruction
             BIS     S,TOS                   ; -- opcode             opcode is complete
-            MOV     T,X                     ; -- opcode             X= OPCODEADR to compile opcode
+            MOV     T,X                     ; -- opcode             X=T= OPCODEADR to compile opcode
             JMP     StoreTOS                ;                       then EXIT
 
             asmword "MOV"
@@ -530,19 +533,12 @@ BOUNDERROR                                  ; <== REG number error
 TYPE3DOES                                   ; -- PFADOES
             .word   FBLANK,SKIP             ;                       skip spaces if any
             FORTHtoASM                      ; -- PFADOES c-addr
-            MOV     #0,S                    ;                       init ASMTYPE=0
-            MOV     &DDP,T                  ;                       init OPCODEADR=DP
-            ADD     #2,&DDP                 ;                       make room for opcode
             ADD     #1,&TOIN                ;                       skip "#"
             MOV     #',',TOS                ; -- PFADOES ","
-            PUSHM   #2,S                    ;               PUSHM S,T
             ASMtoFORTH
             .word   WORDD,QNUMBER
-            .word   QFBRAN,NotFound          ;                       ABORT
-            FORTHtoASM
-            POPM  #2,S                      ;               POPM T,S
-            ASMtoFORTH
-            .word   PARAM2                  ; -- PFADOES 0x000N     S=ASMTYPE = 0x000R
+            .word   QFBRAN,NotFound         ;                       ABORT
+            .word   INITPARAM2              ; -- PFADOES 0x000N     S=ASMTYPE = 0x000R
             FORTHtoASM
             MOV     TOS,W                   ; -- PFADOES n          W = n
             MOV     @PSP+,TOS               ; -- PFADOES

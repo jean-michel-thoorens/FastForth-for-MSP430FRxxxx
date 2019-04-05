@@ -288,31 +288,31 @@ CODENNM                 ; leaves its execution address (CFA) on stack
 ENDCODE 
 DUP . IS TRUC         ; TRUC becomes a primary DEFERred word
                         ; with its default action (DUP) located at its BODY addresse.
-    \
+
 TRUC .                  ; display TOS value -->
-    \
+
 
 ' TRUC >BODY IS TRUC    ; TRUC is reinitialzed with its default action
-    \
+
 
 TRUC .                  ; display TOS value --> 
-    \
-' DROP IS TRUC          ; TRUC is redirected to DROP
-    \
-TRUC                   ; The generated error displays stack empty! in reverse video, removes the TRUC definition and restarts the interpretation after the end of the file. And as you see, FastForth is able to display long lines, interesting, doesn't it? --> 
-   
-bla
-bla
-bla
 
-
-
-
-
-
-
-bla
-...
+\ ' DROP IS TRUC          ; TRUC is redirected to DROP
+\ 
+\ TRUC                   ; The generated error displays stack empty! in reverse video, removes the TRUC definition and restarts the interpretation after the end of the file. And as you see, FastForth is able to display long lines, interesting, doesn't it? --> 
+\    
+\ bla
+\ bla
+\ bla
+\ 
+\ 
+\ 
+\ 
+\ 
+\ 
+\ 
+\ bla
+\ ...
 
 
 

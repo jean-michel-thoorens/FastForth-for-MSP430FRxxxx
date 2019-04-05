@@ -33,7 +33,11 @@
 
 PWR_STATE
 
-[UNDEFINED] {SD_TOOLS} [IF] \ 
+: DEFINED! ECHO 1 ABORT" already loaded!" ;
+
+[DEFINED] {SD_TOOLS} [IF] DEFINED!
+
+[ELSE]
 
 MARKER {SD_TOOLS}
 
@@ -151,15 +155,12 @@ CODE DIR                            \ Display CurrentDir first sector
 ENDCODE
 \ ----------------------------------\
 
-ECHO
-            ; added : FAT to DUMP first sector of FAT1 and DIR for that of current DIRectory.
-            ; added : SECTOR to DUMP a sector and CLUSTER for first sector of a cluster:
-            ;         include a decimal point to force 32 bits number, example : .2 CLUSTER
 
 RST_HERE
 
-[ELSE]
-ECHO
-; already exists
 [THEN]
+ECHO
+; added : FAT to DUMP first sector of FAT1 and DIR for that of current DIRectory.
+; added : SECTOR to DUMP a sector and CLUSTER for first sector of a cluster:
+;         include a decimal point to force 32 bits number, example : .2 CLUSTER
 

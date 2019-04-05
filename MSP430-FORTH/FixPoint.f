@@ -33,10 +33,17 @@
 
 PWR_STATE
 
-[UNDEFINED] {FIXPOINT} [IF]   \ don't replicate {FIXPOINT}
+: DEFINED! ECHO 1 ABORT" already loaded!" ;
+
+[DEFINED] {FIXPOINT} [IF] DEFINED!
+
+[ELSE]
 
 MARKER {FIXPOINT}
 
+
+
+[UNDEFINED] HOLDS [IF]
 \ https://forth-standard.org/standard/core/HOLDS
 \ Adds the string represented by addr u to the pictured numeric output string
 \ compilation use: <# S" string" HOLDS #>
@@ -55,6 +62,7 @@ REPEAT      MOV Y,&HP       \ 3
             MOV @PSP+,TOS   \ 2
             MOV @IP+,PC     \ 4  15 words
 ENDCODE
+[THEN]
 
 CODE F+                     \ add Q15.16 numbers
     ADD @PSP+,2(PSP)        \ -- sumlo  d1hi d2hi
@@ -136,6 +144,7 @@ S< IF       XOR #-1,0(PSP)      \ INV(QUOTlo)
 THEN        MOV @IP+,PC
 ENDCODE
 
+[UNDEFINED] F#S [IF]
 \ F#S    Qlo Qhi u -- Qhi 0   convert fractional part Qlo of Q15.16 fixed point number
 \                             with u digits
 CODE F#S 
@@ -164,6 +173,7 @@ U>= UNTIL
             MOV #HOLDS_ORG,0(PSP)   \ -- Qhi 0 addr len
             JMP HOLDS
 ENDCODE
+[THEN]
 
 \ unsigned multiply 32*32 = 64
 \ don't use S reg (keep sign)
@@ -285,6 +295,7 @@ THEN        MOV rDOCOL,0(PSP)   \ 3 QUOTlo
             MOV @IP+,PC         \ 4
 ENDCODE
 
+[UNDEFINED] F#S [IF]
 \ F#S    Qlo Qhi u -- Qhi 0   convert fractionnal part of Q15.16 fixed point number
 \                             with u digits
 CODE F#S
@@ -309,6 +320,7 @@ BEGIN       MOV @PSP,&MPY           \                   Load 1st operand
             MOV #HOLDS_ORG,0(PSP)   \ -- Qhi 0 addr len
             JMP HOLDS
 ENDCODE
+[THEN]
 
 CODE F*                 \ signed s15.16 multiplication --> s15.16 result
     MOV 4(PSP),&MPYS32L \ 5 Load 1st operand
@@ -325,6 +337,7 @@ ENDCODE
 
 [THEN]  \ hardware multiplier
 
+[UNDEFINED] F. [IF]
 CODE F.             \ display a Q15.16 number with 4/5/16 digits after comma
 MOV TOS,S           \ S = sign
 MOV #4,T            \ T = 4     preset 4 digits for base 16 and by default
@@ -353,6 +366,7 @@ CODE S>F         \ convert a signed number to a Q15.16 (signed) number
     MOV #0,0(PSP)
     MOV @IP+,PC
 ENDCODE
+[THEN]
 
 [UNDEFINED] 2@ [IF]
 
@@ -367,13 +381,11 @@ ENDCODE
 [THEN] \ of [UNDEFINED] 2@
 
 [UNDEFINED] 2CONSTANT [IF]
-
 \ https://forth-standard.org/standard/double/TwoCONSTANT
 : 2CONSTANT \  udlo/dlo/Qlo udhi/dhi/Qhi --         to create double or Q15.16 CONSTANT
 CREATE , ,  \ compile Qhi then Qlo
 DOES> 2@    \ execution part    addr -- Qhi Qlo
 ;
-
 [THEN] \ of [UNDEFINED] 2CONSTANT
 
 RST_HERE

@@ -1,6 +1,6 @@
 
 ; -----------------------------------
-; RC5toLCD.f
+; RC5TOLCD.f
 ; -----------------------------------
 \
 \ to see kernel options, download FastForthSpecs.f

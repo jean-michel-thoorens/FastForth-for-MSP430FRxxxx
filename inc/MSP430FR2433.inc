@@ -325,7 +325,7 @@ I2CTERM_IFG         .equ eUSCI_B0_SFR + 2Ch    ; USCI_B0 Interrupt Flags Registe
 I2CTERMVEC          .equ 0FFE0h      ; interrupt vector for eUSCI_B0
     .ENDIF ;UCB0_TERM
 
-    .IFDEF UCB0_I2CM ; used by UART2MIIC.asm 
+    .IFDEF UCB0_I2CM ; used by UART2MICC.asm 
 TERM2IIC_CTLW0       .equ eUSCI_B0_SFR + 00h    ; USCI_B0 Control Word Register 0
 TERM2IIC_CTLW1       .equ eUSCI_B0_SFR + 02h    ; USCI_B0 Control Word Register 1
 TERM2IIC_BRW         .equ eUSCI_B0_SFR + 06h    ; USCI_B0 Baud Word Rate 0

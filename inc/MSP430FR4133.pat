@@ -188,7 +188,7 @@ TIB_I2CCNT=\$213A!  \ count of bytes
 TIB_ORG=\$213C!     \ Terminal input buffer, 84 bytes, grow up
 
 HOLDS_ORG=\$2190!   \ a good address for HOLDS
-BASE_HOLD=\$21B2!   \ BASE HOLD area, grow down
+HOLD_BASE=\$21B2!   \ BASE HOLD area, grow down
 
 ! ----------------------
 ! NOT SAVED VARIABLES
@@ -204,7 +204,7 @@ LAST_PSP=\$21BC!
 !STATE=\$21BE!           Interpreter state
 
 SOURCE_LEN=\$21C0!      len of input stream
-SOURCE_ADR=\$21C2!      adr of input stream
+SOURCE_ORG=\$21C2!      adr of input stream
 TOIN=\$21C4!            >IN
 DP=\$21C6!              dictionary ptr
 

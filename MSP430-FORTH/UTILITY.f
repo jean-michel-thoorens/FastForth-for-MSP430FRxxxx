@@ -33,7 +33,11 @@
 
 PWR_STATE
 
-[UNDEFINED] {TOOLS} [IF]
+: DEFINED! ECHO 1 ABORT" already loaded!" ;
+
+[DEFINED] {TOOLS} [IF] DEFINED!
+
+[ELSE]
 
 MARKER {TOOLS} 
 
@@ -115,9 +119,9 @@ PAD_ORG CONSTANT PAD
 CR 
 CONTEXT @ PAD                   \ -- VOC_BODY PAD                  MOVE all threads of VOC_BODY in PAD
 INI_THREAD @ DUP +              \ -- VOC_BODY PAD THREAD*2
-MOVE                            \
+MOVE                            \ -- vocabumary entries are copied in PAD
 BEGIN                           \ -- 
-    0.                          \ -- ptr=0 MAX=0                
+    0 DUP                       \ -- ptr=0 MAX=0                
     INI_THREAD @ DUP + 0        \ -- ptr=0 MAX=0 THREADS*2 0
         DO                      \ -- ptr MAX            I =  PAD_ptr = thread*2
         DUP I PAD + @           \ -- ptr MAX MAX NFAx
@@ -126,21 +130,21 @@ BEGIN                           \ --
                 I DUP PAD + @   \ -- new_ptr new_MAX
             THEN                \ 
         2 +LOOP                 \ -- ptr MAX
-    ?DUP                        \ -- ptr MAX MAX | -- ptr 0  
+    ?DUP                        \ -- ptr MAX MAX | -- ptr 0 (all threads in PAD = 0)
 WHILE                           \ -- ptr MAX                    replace it by its LFA
     DUP                         \ -- ptr MAX MAX
     2 - @                       \ -- ptr MAX [LFA]
     ROT                         \ -- MAX [LFA] ptr
     PAD +                       \ -- MAX [LFA] thread
-    !                           \ -- MAX                [LFA]=new_NFA --> PAD+ptr   type it in 16 chars format
+    !                           \ -- MAX                [LFA]=new_NFA updates PAD+ptr
     DUP                         \ -- MAX MAX
     COUNT $7F AND               \ -- MAX addr count (with suppr. of immediate bit)
     TYPE                        \ -- MAX
     C@ $0F AND                  \ -- count_of_chars
     $10 SWAP - SPACES           \ --                    complete with spaces modulo 16 chars
-REPEAT                          \ -- ptr
-DROP                            \ --
-;
+REPEAT                          \ --
+DROP                            \ ptr --
+;                               \ all threads in PAD are filled with 0
 [THEN]
 
 [UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {ANS_COMP}
@@ -178,8 +182,11 @@ LO2HI
   U. U.                     \ -- END ORG        display org end 
   $FFF0 AND                 \ -- END ORG_modulo_16
   DO  CR                    \ generate line
-    I 7 U.R SPACE           \ generate address
-      I $10 + I             \ display 16 bytes
+    I 4 U.R SPACE           \ generate address
+      I 8 + I               \ display first 8 bytes
+      DO I C@ 3 U.R LOOP
+      SPACE
+      I $10 + I 8 +         \ display last 8 bytes
       DO I C@ 3 U.R LOOP  
       SPACE SPACE
       I $10 + I             \ display 16 chars
@@ -187,10 +194,9 @@ LO2HI
   $10 +LOOP
   R> BASE !                 \ restore current base
 ;
-[THEN]  \ of [UNDEFINED] DUMP
+[THEN]  \ endof [UNDEFINED] DUMP
 
 RST_HERE
 
-[THEN]  \ of [UNDEFINED] {TOOLS}
-
+[THEN]  \ endof [UNDEFINED] {TOOLS}
 ECHO

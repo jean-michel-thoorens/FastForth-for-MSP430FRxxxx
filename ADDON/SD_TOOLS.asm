@@ -120,28 +120,6 @@ Clust_ClustProcess
     JMP     SECTOR                  ;
 ; ----------------------------------;
 
-;; dump FAT1 sector of last entry
-;; ----------------------------------;
-;            FORTHWORD "FAT"      ; Display FATsector
-;; ----------------------------------;
-;    MOV     &OrgFAT1,Y              ;
-;FAT1_Next                           ;
-;    SUB     #4,PSP                  ;
-;    MOV     TOS,2(PSP)              ; save TOS
-;    MOV     Y,0(PSP)                ;
-;    MOV     #0,TOS                  ; FATsectorHI = 0
-;    JMP     SECTOR                  ;
-;; ----------------------------------;
-;
-;; dump FAT1 sector of last entry
-;; ----------------------------------;
-;            FORTHWORD "FAT2"        ; Display FATsector
-;; ----------------------------------;
-;    MOV     &OrgFAT2,Y              ;
-;    JMP     FAT1_Next               ;
-;; ----------------------------------;
-
-
 
 ; dump DIR sector of opened file or first sector of current DIR by default
 ; ----------------------------------;

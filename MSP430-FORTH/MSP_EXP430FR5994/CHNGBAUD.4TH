@@ -3,36 +3,47 @@
 ; CHNGBAUD.4th
 ; ------------
 
-: BAD_MHz
-    1 ABORT"  only for 1,4,8,16,24 MHz MCLK!"
-;
+PWR_STATE
 
 : MCLK.
 0 1000 UM/MOD .
 ;
 
+: ESC #27 EMIT ;
+
+: BAD_MHz
+    1 ABORT"  only for 1,4,8,16,24 MHz MCLK!"
+;
+
 : BAD_SPEED
-SPACE 27 EMIT ." [7m"
-." with MCLK = " MCLK. 1 ABORT" MHz? don't dream! "
+SPACE ESC ." [7m"
+." with MCLK = " MCLK. 1 ABORT" MHz? don't dream!"
 ;
 
 : <> = 0= ;
 
 : CHNGBAUD
 PWR_STATE
+
+42
+0 DO CR LOOP
+
+ESC ." [1J"
+ESC ." [H"
+
 $1806 @ >R
 ." target MCLK = " R@ MCLK. ." MHz" CR
-."    choose your baudrate:" CR
-."    0 --> 6 MBds" CR
-."    1 --> 5 MBds" CR
-."    2 --> 4 MBds" CR
-."    3 --> 2457600 Bds" CR
-."    4 --> 921600 Bds" CR
-."    5 --> 460800 Bds" CR
-."    6 --> 230400 Bds" CR
-."    7 --> 115200 Bds" CR
-."    other --> abort" CR
-."    your choice: "
+." choose your baudrate:" CR
+." 0 --> 6 MBds" CR
+." 1 --> 5 MBds" CR
+." 2 --> 4 MBds" CR
+." 3 --> 2457600 Bds" CR
+." 4 --> 921600 Bds" CR
+." 5 --> 460800 Bds" CR
+." 6 --> 230400 Bds" CR
+." 7 --> 115200 Bds" CR
+." other --> abort" CR
+." your choice: "
 KEY
 
 #48 - ?DUP 0=
@@ -203,7 +214,8 @@ THEN
 $1804 !
 $1802 !
 R> DROP
-CR ."    Change baudrate in Teraterm, save its setup then reset target."
+CR ESC ." [7m"
+." Change baudrate in Teraterm, save its setup then reset target."
 ;
-ECHO
-CHNGBAUD 
+
+ECHO CHNGBAUD 

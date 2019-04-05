@@ -63,13 +63,11 @@ u1n2MSTAR   CMP     #0,TOS          ; n2 <= -1 ?
             JGE     u1u2MSTAR       ; no
             XOR     #-1,TOS         ; y: n2 --> u2 
             ADD     #1,TOS          ;
-u1u2MSTAR   ;.word   151Dh           ;           PUSHM IP,S (1+1 push,IP=0Dh)
-            PUSHM   #2,IP
+u1u2MSTAR   PUSHM   #2,IP           ;           PUSHM IP,S
             ASMtoFORTH
             .word UMSTAR            ; UMSTAR use S,T,W,X,Y
             FORTHtoASM
-;            .word   171Ch           ;           POPM S,IP (1+1 pop,S=0Ch)
-            POPM  #2,IP
+            POPM    #2,IP           ;           POPM S,IP
             CMP     #0,S            ; result > -1 ?
             JGE     MSTARend        ; yes
             XOR     #-1,0(PSP)      ; no : ud --> d
@@ -420,7 +418,7 @@ DOTPAREN    MOV #0,&CAPS
             SUB     #4,PSP
             MOV     TOS,2(PSP)
             MOV     &SOURCE_LEN,TOS
-            MOV     &SOURCE_ADR,0(PSP)
+            MOV     &SOURCE_ORG,0(PSP)
             mNEXT
 
 ;https://forth-standard.org/standard/core/toIN

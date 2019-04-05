@@ -276,14 +276,14 @@ InitHandle                          ;
 ; ----------------------------------;
 ReplaceInputBuffer                  ;
 ; ----------------------------------;
-    MOV     #SDIB_ORG,&FCIB+2       ; set SD Input Buffer as Current Input Buffer before return to QUIT
-    MOV     #SD_ACCEPT,&ACCEPT+2    ; redirect ACCEPT to SD_ACCEPT before return to QUIT
+    MOV     #SDIB_ORG,&PFACIB       ; set SD Input Buffer as Current Input Buffer before return to QUIT
+    MOV     #SD_ACCEPT,&PFAACCEPT   ; redirect ACCEPT to SD_ACCEPT before return to QUIT
 ; ----------------------------------;
 SaveBufferContext                   ; (see CloseHandleT) 
 ; ----------------------------------;
     MOV &SOURCE_LEN,HDLW_PrevLEN(T) ; = CPL
     SUB     &TOIN,HDLW_PrevLEN(T)   ; PREVLEN = CPL - >IN
-    MOV &SOURCE_ADR,HDLW_PrevORG(T) ; = CIB
+    MOV &SOURCE_ORG,HDLW_PrevORG(T) ; = CIB
     ADD     &TOIN,HDLW_PrevORG(T)   ; PrevORG = CIB + >IN
     JMP SetBufLenAndLoadCurSector   ; then RET
 ; ----------------------------------;
@@ -327,7 +327,7 @@ TestClosedToken                     ;
 ; ----------------------------------;
     CMP.B   #0,HDLB_Token(T)        ;
 ; ----------------------------------;
-CaseOfAnyReadWriteDelFileIsClosed   ;
+CaseOfAnyReadWriteDelFileIsClosed   ; token >= 0
 ; ----------------------------------;
     JGE CloseHandleHere             ; then RET
 ; ----------------------------------;
@@ -352,8 +352,8 @@ CheckFirstLoadedFileIsClosed        ;
 ; ----------------------------------;
 RestoreDefaultACCEPT                ;               if no more handle, first loaded file is closed...
 ; ----------------------------------;
-    MOV #TIB_ORG,&FCIB+2            ;               restore TIB as Current Input Buffer for next line (next QUIT)
-    MOV #BODYACCEPT,&ACCEPT+2       ;               restore default ACCEPT for next line (next QUIT)
+    MOV #TIB_ORG,&PFACIB            ;               restore TIB as Current Input Buffer for next line (next QUIT)
+    MOV #BODYACCEPT,&PFAACCEPT      ;               restore default ACCEPT for next line (next QUIT)
     MOV #ECHO,PC                    ; -- org len    if return to Terminal ACCEPT
 ; ----------------------------------;
 

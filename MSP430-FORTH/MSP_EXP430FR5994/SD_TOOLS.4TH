@@ -5,7 +5,11 @@
 
 PWR_STATE
 
-[UNDEFINED] {SD_TOOLS} [IF]
+: DEFINED! ECHO 1 ABORT" already loaded!" ;
+
+[DEFINED] {SD_TOOLS} [IF] DEFINED!
+
+[ELSE]
 
 MARKER {SD_TOOLS}
 
@@ -44,10 +48,15 @@ ENDCODE
 [THEN]
 
 [UNDEFINED] DUMP [IF]
-: DUMP
-  BASE @ >R $10 BASE !
-  SWAP $FFF0 AND SWAP
-  OVER + SWAP
+CODE DUMP
+PUSH R13
+PUSH &BASE
+MOV #$10,&BASE
+ADD @R15,R14
+LO2HI
+  SWAP OVER OVER
+  U. U.
+  $FFF0 AND
   DO  CR
     I 7 U.R SPACE
       I $10 + I
@@ -101,13 +110,12 @@ CODE DIR
     JMP     CLUSTER
 ENDCODE
 
-ECHO
-            ; added : FAT to DUMP first sector of FAT1 and DIR for that of current DIRectory.
-            ; added : SECTOR to DUMP a sector and CLUSTER for first sector of a cluster:
-            ;         include a decimal point to force 32 bits number, example : .2 CLUSTER
-
-[THEN]
 
 RST_HERE
 
+[THEN]
+ECHO
+; added : FAT to DUMP first sector of FAT1 and DIR for that of current DIRectory.
+; added : SECTOR to DUMP a sector and CLUSTER for first sector of a cluster:
+;         include a decimal point to force 32 bits number, example : .2 CLUSTER
 

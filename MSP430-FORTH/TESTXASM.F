@@ -1,6 +1,6 @@
 
 ; -----------------------------------------------------------------------
-; EXT_ASM.f
+; TESTXASM.f
 ; -----------------------------------------------------------------------
 \
 \ TARGET SELECTION
@@ -22,11 +22,8 @@
 \ FORTH conditionnal    : 0= 0< = < > U<
 
 ECHO
-[UNDEFINED] {ASMEXT_TEST} [IF]
 
-MARKER {ASMEXT_TEST}
-
-PWR_HERE
+PWR_STATE
 
 ; --------------------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER, OPCODES IV : Adda|Cmpa|Mova|Suba (without extended word)
@@ -877,6 +874,3 @@ ENDCODE
 
 SUBX_T ; you should see 2 -->
 
-PWR_STATE
-
-{ASMEXT_TEST}

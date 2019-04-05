@@ -11,38 +11,47 @@
 \ MSP_EXP430FR4133  MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
 \
 
-PWR_HERE
-
-: BAD_MHz
-    1 ABORT"  only for 1,4,8,16,24 MHz MCLK!"
-;
+PWR_STATE
 
 : MCLK.
 0 1000 UM/MOD .
 ;
 
+: ESC #27 EMIT ;
+
+: BAD_MHz
+    1 ABORT"  only for 1,4,8,16,24 MHz MCLK!"
+;
+
 : BAD_SPEED
-SPACE 27 EMIT ." [7m"   \ set reverse video
-." with MCLK = " MCLK. 1 ABORT" MHz? don't dream! "
+SPACE ESC ." [7m"   \ set reverse video
+." with MCLK = " MCLK. 1 ABORT" MHz? don't dream!"
 ;
 
 : <> = 0= ;
 
 : CHNGBAUD                  \ only for 8, 16, 24 MHz
 PWR_STATE                   \ to remove this created word (garbage collector)
+
+42              \ number of terminal lines   
+0 DO CR LOOP    \ don't erase any line of source
+
+ESC ." [1J"     \ erase up (42 empty lines)
+ESC ." [H"      \ cursor home
+
 FREQ_KHZ @ >R               \ r-- target MCLCK frequency in MHz
 ." target MCLK = " R@ MCLK. ." MHz" CR
-."    choose your baudrate:" CR
-."    0 --> 6 MBds" CR
-."    1 --> 5 MBds" CR
-."    2 --> 4 MBds" CR      \ linux driver max speed
-."    3 --> 2457600 Bds" CR
-."    4 --> 921600 Bds" CR
-."    5 --> 460800 Bds" CR
-."    6 --> 230400 Bds" CR
-."    7 --> 115200 Bds" CR
-."    other --> abort" CR
-."    your choice: "
+." choose your baudrate:" CR
+." 0 --> 6 MBds" CR
+." 1 --> 5 MBds" CR
+." 2 --> 4 MBds" CR      \ linux driver max speed
+." 3 --> 2457600 Bds" CR
+." 4 --> 921600 Bds" CR
+." 5 --> 460800 Bds" CR
+." 6 --> 230400 Bds" CR
+." 7 --> 115200 Bds" CR
+." other --> abort" CR
+." your choice: "
 KEY
 
 #48 - ?DUP 0=               \ select 6MBds ?
@@ -213,7 +222,8 @@ THEN
 TERMMCTLW_RST !             \ set UCAxMCTLW value in FRAM
 TERMBRW_RST !               \ set UCAxBRW value in FRAM
 R> DROP                     \ clear stacks
-CR ."    Change baudrate in Teraterm, save its setup then reset target."
+CR ESC ." [7m"              \ escape sequence to set reverse video
+." Change baudrate in Teraterm, save its setup then reset target."
 ;
-ECHO
-CHNGBAUD 
+
+ECHO CHNGBAUD 

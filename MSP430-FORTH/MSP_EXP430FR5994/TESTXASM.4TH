@@ -1,14 +1,11 @@
 
 ; -----------------------------------------------------------------------
-; File Name Test_Extd_ASM.4th
+; TESTXASM.4th
 ; -----------------------------------------------------------------------
 
 ECHO
-[DEFINED] {ASMEXT_TEST} [IF] {ASMEXT_TEST} [THEN]
 
-MARKER {ASMEXT_TEST}
-
-PWR_HERE
+PWR_STATE
 
 ; --------------------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER, OPCODES IV : Adda|Cmpa|Mova|Suba (without extended word)
@@ -858,6 +855,4 @@ ENDCODE
 
 SUBX_T ; you should see 2 -->
 
-PWR_STATE
 
-{ASMEXT_TEST}

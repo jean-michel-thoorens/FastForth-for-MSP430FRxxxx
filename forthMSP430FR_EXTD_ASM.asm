@@ -285,10 +285,16 @@ PARAM122    CMP     &SOURCE_LEN,&TOIN       ;               test OPCODE II param
             JZ      PARAM123                ;               i.e. >IN = SOURCE_LEN : don't skip char CR !
             ADD     #1,&TOIN                ; -- 000R       skip "," ready for the second operand search
 
+; case of "@REG+,"
+; case of "xxxx(REG),"
 ; case of "@REG,"                           ; -- 000R       <== PARAM120
 ; case of "REG,"                            ; -- 000R       <== PARAM13
 PARAM123    SWPB    TOS                     ; -- 0R00       swap bytes because it's not a dst REG typeI (not a 2 ops inst.)
 
+; case of "@REG+,"                          ; -- 0R00                   (src REG typeI)
+; case of "xxxx(REG),"                      ; -- 0R00                   (src REG typeI or dst REG typeII)
+; case of "@REG,"                           ; -- 0R00                   (src REG typeI)
+; case of "REG,"                            ; -- 0R00                   (src REG typeI or dst REG typeII)
 ; case of ",REG"                            ; -- 000R       <== PARAM21     (dst REG typeI)
 ; case of ",xxxx(REG)"                      ; -- 000R       <== PARAM210    (dst REG typeI)
 PARAM124    ADD     TOS,S                   ; -- 0R00|000R
@@ -307,6 +313,11 @@ PARAM130    ADD     #0010h,S                ;               AS=0b01 for indexing
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER : INTERPRET 2th OPERAND
 ; ----------------------------------------------------------------------
+
+INITPARAM2                                  ; for OPCODES TYPE III
+            MOV     #0,S                    ;                       init ASMTYPE=0
+            MOV     &DDP,T                  ;                       T=OPCODEADR
+            ADD     #2,&DDP                 ;                       make room for opcode
 
 ; PARAM2 is used for OPCODES type I (double operand) instructions
 ; PARAM2 is used for OPCODES type V (double operand) extended instructions
@@ -548,21 +559,14 @@ BOUNDERROR                                  ; <== REG number error
 ; ----------------------------------------------------------------
 
 TYPE3DOES                                   ; -- BODYDOES
-            .word   FBLANK,SKIP             ; -- BODYDOES addr      skip spaces if any
-            FORTHtoASM                      ;
-            MOV     #0,S                    ;                       init ASMTYPE=0
-            MOV     &DDP,T                  ;                       init OPCODEADR=DP
-            ADD     #2,&DDP                 ;                       make room for opcode
+            .word   FBLANK,SKIP             ;                       skip spaces if any
+            FORTHtoASM                      ; -- PFADOES c-addr
             ADD     #1,&TOIN                ;                       skip "#"
-            MOV     #',',TOS                ; -- BODYDOES ","
-            PUSHM   #2,S                    ;               PUSHM S,T
+            MOV     #',',TOS                ; -- PFADOES ","
             ASMtoFORTH
             .word   WORDD,QNUMBER
-            .word   QFBRAN,NotFound          ;                       ABORT
-            FORTHtoASM
-            POPM  #2,S                      ;               POPM T,S
-            ASMtoFORTH
-            .word   PARAM2                  ; -- BODYDOES 0x000N    S=ASMTYPE = 0x000R
+            .word   QFBRAN,NotFound         ;                       ABORT
+            .word   INITPARAM2              ; -- PFADOES 0x000N     S=ASMTYPE = 0x000R
             FORTHtoASM
             MOV     TOS,W                   ; -- BODYDOES n         W = n
             MOV     @PSP+,TOS               ; -- BODYDOES
@@ -980,9 +984,6 @@ MOVA23  BIS #070h,S             ;               set ,xxxx(REG) opcode
 
 TYPE4DOES   .word   lit,','     ; -- BODYDOES ","        char separator for PARAM1
             .word   ACMS1       ; -- OPCODE_addr
-;            .word   XSQUOTE
-;            .byte   3,"2em"
-;            .word   TYPE
             .word   ACMS2       ; -- OPCODE_addr
             .word   DROP,EXIT
 

@@ -170,18 +170,23 @@ DUMP        PUSH    IP
             ADD     @PSP,TOS                ; -- ORG END
             ASMtoFORTH
             .word   SWAP,OVER,OVER          ; -- END ORG END ORG
-            .word   UDOT,LIT,1,MINUS,UDOT   ; -- END ORG          display org end-1
+            .word   UDOT,UDOT               ; -- END ORG          display org end
             .word   LIT,0FFFEh,ANDD,xdo     ; -- END ORG_modulo_2
 DUMP1       .word   CR
-            .word   II,lit,7,UDOTR,SPACE    ; generate address
-            .word   II,lit,10h,PLUS,II,xdo  ; display 16 bytes
+            .word   II,lit,4,UDOTR,SPACE    ; generate address
+
+            .word   II,lit,8,PLUS,II,xdo    ; display first 8 bytes
 DUMP2       .word   II,CFETCH,lit,3,UDOTR
             .word   xloop,DUMP2             ; bytes display loop
+            .word   SPACE
+            .word   II,lit,10h,PLUS,II,lit,8,PLUS,xdo    ; display last 8 bytes
+DUMP3       .word   II,CFETCH,lit,3,UDOTR
+            .word   xloop,DUMP3             ; bytes display loop
             .word   SPACE,SPACE
             .word   II,lit,10h,PLUS,II,xdo  ; display 16 chars
-DUMP3       .word   II,CFETCH
+DUMP4       .word   II,CFETCH
             .word   lit,7Eh,MIN,FBLANK,MAX,EMIT
-            .word   xloop,DUMP3             ; chars display loop
+            .word   xloop,DUMP4             ; chars display loop
             .word   lit,10h,xploop,DUMP1    ; line loop
             .word   RFROM,FBASE,STORE       ; restore current base
             .word   EXIT

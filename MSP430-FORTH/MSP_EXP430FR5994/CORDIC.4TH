@@ -1,0 +1,314 @@
+
+; ----------
+; CORDIC.4th
+; ----------
+
+PWR_STATE
+
+: DEFINED! ECHO 1 ABORT" already loaded!" ;
+
+[DEFINED] {CORDIC} [IF] DEFINED!
+
+[ELSE]
+
+MARKER {CORDIC}
+
+[UNDEFINED] {FIXPOINT} [IF]
+
+CODE HOLDS
+            MOV @R15+,R9
+            ADD R14,R9
+            MOV &$1DB2,R8
+BEGIN       SUB #1,R9
+            SUB #1,R14
+U>= WHILE   SUB #1,R8
+            MOV.B @R9,0(R8)
+REPEAT      MOV R8,&$1DB2
+            MOV @R15+,R14
+            MOV @R13+,R0
+ENDCODE
+
+CODE F#S
+            MOV 2(R15),R9
+            MOV @R15,2(R15)
+            MOV R9,0(R15)
+            MOV R14,R11
+            MOV #0,R12
+BEGIN       MOV @R15,&$4C0
+            MOV &BASE,&$4C8
+            MOV &$4E4,0(R15)
+            MOV &$4E6,R14
+            CMP #10,R14
+    U>= IF  ADD #7,R14
+    THEN    ADD #$30,R14
+            MOV.B R14,$1D90(R12)
+            ADD #1,R12
+            CMP R11,R12
+0= UNTIL    MOV #0,0(R15)
+            MOV R11,R14
+            SUB #2,R15
+            MOV #$1D90,0(R15)
+            JMP HOLDS
+ENDCODE
+
+CODE F.
+MOV R14,R12
+MOV #4,R11
+MOV &BASE,R10
+CMP ##10,R10
+0= IF
+    ADD #1,R11
+ELSE
+    CMP #%10,R10
+    0= IF
+        MOV #16,R11
+    THEN
+THEN
+PUSHM #3,R13
+LO2HI
+    <# DABS
+    R> F#S
+    $2C HOLD
+    #S
+    R> SIGN #>
+    TYPE SPACE
+;
+
+[THEN]
+
+
+CREATE T_ARCTAN
+11520 ,
+6801 ,
+3593 ,
+1824 ,
+916 ,
+458 ,
+229 ,
+115 ,
+57 ,
+29 ,
+14 ,
+7 ,
+4 ,
+2 ,
+1 ,
+
+CREATE T_SCALE
+46340 ,
+41448 ,
+40211 ,
+39900 ,
+39822 ,
+39803 ,
+39798 ,
+39797 ,
+39797 ,
+39797 ,
+39797 ,
+39797 ,
+39797 ,
+39797 ,
+39797 ,
+
+
+CODE POL2REC
+PUSH R13
+MOV @R15+,R8
+SWPB R8
+AND #$00FF,R8
+SWPB R14
+AND #$FF00,R14
+BIS R8,R14
+MOV #-1,R13
+MOV @R15,R9
+MOV #0,R8
+ BEGIN
+    ADD #1,R13
+    MOV R9,R12
+    MOV R8,R11
+    MOV #0,R10
+    GOTO FW1
+    BEGIN
+        RRA R12
+        RRA R11
+        ADD #1,R10
+    FW1 CMP R13,R10
+    0= UNTIL
+    ADD R10,R10
+    CMP #0,R14
+    0>= IF
+        SUB R11,R9
+        ADD R12,R8
+        SUB T_ARCTAN(R10),R14
+    ELSE
+        ADD R11,R9
+        SUB R12,R8
+        ADD T_ARCTAN(R10),R14
+    THEN
+    CMP #0,R14
+    0<> WHILE
+        CMP #14,R13
+ 0= UNTIL
+    THEN
+MOV R9,&$4C0
+MOV T_SCALE(R10),&$4C8
+MOV &$4E6,0(R15)
+MOV R8,&$4C0
+MOV T_SCALE(R10),&$4C8
+MOV &$4E6,R14
+MOV @R1+,R13
+MOV @R13+,R0
+ENDCODE
+
+
+CODE REC2POL
+MOV @R15,R9
+MOV R14,R8
+MOV R8,R11
+CMP #0,R11
+S< IF
+    XOR #-1,R11
+    ADD #1,R11
+THEN
+MOV #-1,R14
+MOV R9,R12
+ADD R11,R12
+0= IF 
+    LO2HI 
+        ABORT" null inputs"
+    HI2LO
+THEN
+CMP R9,R11
+U< IF
+    MOV R9,R11
+THEN
+CMP #16384,R11
+    U>= IF
+    LO2HI
+        ABORT" x or |y| >= 16384"
+    HI2LO
+    THEN
+MOV #1,R12
+RLAM #3,R11
+GOTO FW1
+BEGIN
+    ADD R9,R9
+    ADD R8,R8
+    ADD R12,R12
+    ADD R11,R11
+FW1
+U>= UNTIL
+PUSHM #2,R13
+MOV #-1,R13
+MOV #0,R14
+ BEGIN
+    ADD #1,R13
+    MOV R9,R12
+    MOV R8,R11
+    MOV #0,R10
+    GOTO FW1
+    BEGIN
+        RRA R12
+        RRA R11
+        ADD #1,R10
+    FW1 CMP R13,R10
+    0= UNTIL
+    ADD R10,R10
+    CMP #0,R8
+    0>= IF
+        ADD R11,R9
+        SUB R12,R8
+        ADD T_ARCTAN(R10),R14
+    ELSE
+        SUB R11,R9
+        ADD R12,R8
+        SUB T_ARCTAN(R10),R14
+    THEN
+    CMP #0,R8
+    0<> WHILE
+    CMP #14,R13
+ 0= UNTIL
+    THEN
+MOV R9,&$4C0
+MOV T_SCALE(R10),&$4C8
+MOV &$4E6,R9
+POPM #2,R13
+GOTO FW1                
+BEGIN
+    RRA R9
+FW1 RRA R12
+U>= UNTIL
+MOV R9,0(R15)
+MOV R14,R8
+SWPB R14
+AND #$00FF,R14
+SXT R14
+SWPB R8
+AND #$FF00,R8
+SUB #2,R15
+MOV R8,0(R15)
+MOV @R13+,R0
+ENDCODE
+
+RST_HERE
+
+[THEN] 
+
+: 2000CORDIC
+1000 0 DO
+    POL2REC REC2POL
+LOOP 
+;
+
+ECHO
+
+10000 89,0 POL2REC . .  ; sin, cos --> 
+10000 75,0 POL2REC . .  ; sin, cos --> 
+10000 60,0 POL2REC . .  ; sin, cos --> 
+10000 45,0 POL2REC . .  ; sin, cos --> 
+10000 30,0 POL2REC . .  ; sin, cos --> 
+10000 15,0 POL2REC . .  ; sin, cos --> 
+10000 1,0 POL2REC . .   ; sin, cos --> 
+16384 30,0 POL2REC SWAP . . ; x, y --> 
+16384 45,0 POL2REC SWAP . . ; x, y --> 
+16384 60,0 POL2REC SWAP . . ; x, y --> 
+
+
+2  1  REC2POL F. .          ; phase module --> 
+2 -1  REC2POL F. .          ; phase module --> 
+20  10  REC2POL F. .        ; phase module --> 
+20 -10  REC2POL F. .        ; phase module --> 
+200 100 REC2POL F. .        ; phase module --> 
+100 -100 REC2POL F. .       ; phase module --> 
+2000 1000 REC2POL F. .      ; phase module --> 
+1000 -1000 REC2POL F. .     ; phase module --> 
+16000 8000 REC2POL F. .     ; phase module --> 
+16000 -8000 REC2POL F. .    ; phase module --> 
+16000 0 REC2POL F. .        ; phase module -->
+0 16000 REC2POL F. .        ; phase module -->
+
+
+10000 89,0 POL2REC REC2POL   ROT . F. 
+10000 75,0 POL2REC REC2POL   ROT . F. 
+10000 60,0 POL2REC REC2POL   ROT . F. 
+10000 45,0 POL2REC REC2POL   ROT . F. 
+10000 30,0 POL2REC REC2POL   ROT . F. 
+10000 26,565 POL2REC REC2POL ROT . F. 
+10000 15,0 POL2REC REC2POL   ROT . F. 
+10000 14,036 POL2REC REC2POL ROT . F. 
+10000 7,125 POL2REC REC2POL  ROT . F. 
+10000 1,0 POL2REC REC2POL    ROT . F. 
+
+10000 89,0  2000CORDIC  ROT . F.
+10000 75,0  2000CORDIC  ROT . F.
+10000 60,0  2000CORDIC  ROT . F.
+10000 45,0  2000CORDIC  ROT . F.
+10000 30,0  2000CORDIC  ROT . F.
+10000 26,565 2000CORDIC ROT . F.
+10000 15,0 2000CORDIC   ROT . F.
+10000 14,036 2000CORDIC ROT . F.
+10000 7,125 2000CORDIC  ROT . F.
+10000 1,0 2000CORDIC    ROT . F.
+
+

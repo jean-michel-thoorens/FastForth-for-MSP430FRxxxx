@@ -21,7 +21,7 @@
 \ configure TERATERM as indicated in forthMSP430FR.asm
 \
 \
-\ if you have a MSP-EXP430FR5994 launchpad, program it with MSP_EXP430FR5994_3Mbds_SD_CARD.txt
+\ if you have a MSP-EXP430FR5994 launchpad, program it with MSP_EXP430FR5994_xbauds_SD_CARD.txt
 \ to do, drag and drop this file onto prog.bat
 \ nothing else to do!
 \
@@ -32,7 +32,7 @@
 \   set DTC .equ 1
 \       FREQUENCY   .equ 16
 \       THREADS     .equ 16
-\       TERMINALBAUDRATE    .equ 3000000
+\       TERMINALBAUDRATE    .equ what_you_want
 \         
 \   uncomment:  CONDCOMP
 \               MSP430ASSEMBLER
@@ -130,7 +130,7 @@ LO2HI
 
 : SD_TEST
 PWR_HERE    \ remove all volatile programs from MAIN memory
-ECHO CR
+CR
 ." 0 Set date and time" CR
 ." 1 Load {TOOLS} words" CR
 ." 2 Load {SD_TOOLS} words" CR
@@ -210,4 +210,4 @@ RST_HERE
 
 [THEN]
 
-SD_TEST
+ECHO SD_TEST

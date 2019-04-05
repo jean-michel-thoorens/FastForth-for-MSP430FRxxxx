@@ -92,6 +92,8 @@
 \
 \ rc5   <--- OUT IR_Receiver (1 TSOP32236)
 
+PWR_STATE
+
 [DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]     \ remove application
 
 MARKER {RC5TOLCD}

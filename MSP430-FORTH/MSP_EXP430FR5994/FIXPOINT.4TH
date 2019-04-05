@@ -5,10 +5,17 @@
 
 PWR_STATE
 
-[UNDEFINED] {FIXPOINT} [IF]
+: DEFINED! ECHO 1 ABORT" already loaded!" ;
+
+[DEFINED] {FIXPOINT} [IF] DEFINED!
+
+[ELSE]
 
 MARKER {FIXPOINT}
 
+
+
+[UNDEFINED] HOLDS [IF]
 CODE HOLDS
             MOV @R15+,R9
             ADD R14,R9
@@ -21,6 +28,7 @@ REPEAT      MOV R8,&$1DB2
             MOV @R15+,R14
             MOV @R13+,R0
 ENDCODE
+[THEN]
 
 CODE F+
     ADD @R15+,2(R15)
@@ -38,24 +46,24 @@ ENDCODE
 $1A04 C@ $EF > [IF] ; test tag value MSP430FR413x subfamily without hardware_MPY 
 
 CODE F/
-        PUSHM #4,R7    
-        MOV @R15+,R6
-        MOV @R15+,R9
-        MOV #0,R10
-        MOV @R15,R8
-        MOV #0,R11
-        MOV R9,R12
-        XOR R14,R12
-        AND #-1,R9
-S< IF   XOR #-1,R8
-        XOR #-1,R9
-        ADD #1,R8
-        ADDC #0,R9
-THEN    AND #-1,R14
-S< IF   XOR #-1,R6
-        XOR #-1,R14
-        ADD #1,R6
-        ADDC #0,R14
+            PUSHM #4,R7    
+            MOV @R15+,R6
+            MOV @R15+,R9
+            MOV #0,R10
+            MOV @R15,R8
+            MOV #0,R11
+            MOV R9,R12
+            XOR R14,R12
+            AND #-1,R9
+S< IF       XOR #-1,R8
+            XOR #-1,R9
+            ADD #1,R8
+            ADDC #0,R9
+THEN        AND #-1,R14
+S< IF       XOR #-1,R6
+            XOR #-1,R14
+            ADD #1,R6
+            ADDC #0,R14
 THEN
             MOV #32,R5
 BW1         CMP R14,R10
@@ -81,14 +89,15 @@ FW1
             MOV R7,0(R15)
             MOV R4,R14
             POPM #4,R7
-BW1     AND #-1,R12
-S< IF   XOR #-1,0(R15)
-        XOR #-1,R14
-        ADD #1,0(R15)
-        ADDC #0,R14
-THEN    MOV @R13+,R0
+BW1         AND #-1,R12
+S< IF       XOR #-1,0(R15)
+            XOR #-1,R14
+            ADD #1,0(R15)
+            ADDC #0,R14
+THEN        MOV @R13+,R0
 ENDCODE
 
+[UNDEFINED] F#S [IF]
 CODE F#S 
             MOV 2(R15),R9
             MOV @R15,2(R15)
@@ -115,6 +124,7 @@ U>= UNTIL
             MOV #$1D90,0(R15)
             JMP HOLDS
 ENDCODE
+[THEN]
 
 CODE UDM*
             PUSH R13
@@ -152,77 +162,77 @@ U>= UNTIL   MOV R6,0(R15)
 ENDCODE
 
 CODE F*
-    MOV 2(R15),R12
-    XOR R14,R12
-    BIT #$8000,2(R15)
+        MOV 2(R15),R12
+        XOR R14,R12
+        BIT #$8000,2(R15)
 0<> IF  XOR #-1,2(R15)
         XOR #-1,4(R15)
         ADD #1,4(R15)
         ADDC #0,2(R15)
 THEN
-    COLON
-    DABS UDM*
-    HI2LO
-    MOV @R1+,R13
-    MOV @R15+,R14
-    MOV @R15+,0(R15)
-    GOTO BW1
+        COLON
+        DABS UDM*
+        HI2LO
+        MOV @R1+,R13
+        MOV @R15+,R14
+        MOV @R15+,0(R15)
+        GOTO BW1
 ENDCODE
 
 [ELSE]
 
 CODE F/
-        PUSHM #4,R7
-        MOV @R15+,R6
-        MOV @R15+,R9
-        MOV #0,R10
-        MOV @R15,R8
-        MOV #0,R11
-        MOV R9,R12
-        XOR R14,R12
-        AND #-1,R9
-S< IF   XOR #-1,R8
-        XOR #-1,R9
-        ADD #1,R8
-        ADDC #0,R9
-THEN    AND #-1,R14
-S< IF   XOR #-1,R6
-        XOR #-1,R14
-        ADD #1,R6
-        ADDC #0,R14
-THEN    MOV #32,R5
-BW1     CMP R14,R10
-    0= IF
-        CMP R6,R9
+            PUSHM #4,R7
+            MOV @R15+,R6
+            MOV @R15+,R9
+            MOV #0,R10
+            MOV @R15,R8
+            MOV #0,R11
+            MOV R9,R12
+            XOR R14,R12
+            AND #-1,R9
+S< IF       XOR #-1,R8
+            XOR #-1,R9
+            ADD #1,R8
+            ADDC #0,R9
+THEN        AND #-1,R14
+S< IF       XOR #-1,R6
+            XOR #-1,R14
+            ADD #1,R6
+            ADDC #0,R14
+THEN    
+            MOV #32,R5
+BW1         CMP R14,R10
+    0= IF   CMP R6,R9
     THEN
-    U>= IF
-        SUB R6,R9
-        SUBC R14,R10
+    U>= IF  SUB R6,R9
+            SUBC R14,R10
     THEN
-BW2     ADDC R7,R7
-        ADDC R4,R4
-        SUB #1,R5
-        0< ?GOTO FW1
-        ADD R11,R11
-        ADDC R8,R8
-        ADDC R9,R9
-        ADDC R10,R10
-        U< ?GOTO BW1
-        SUB R6,R9
-        SUBC R14,R10
-        BIS #1,R2
-        GOTO BW2
-FW1     AND #-1,R12
-S< IF   XOR #-1,R7
-        XOR #-1,R4
-        ADD #1,R7
-        ADDC #0,R4
-THEN    MOV R7,0(R15)
-        MOV R4,R14
-        POPM #4,R7
-        MOV @R13+,R0
+BW2         ADDC R7,R7
+            ADDC R4,R4
+            SUB #1,R5
+            0< ?GOTO FW1
+            ADD R11,R11
+            ADDC R8,R8
+            ADDC R9,R9
+            ADDC R10,R10
+            U< ?GOTO BW1
+            SUB R6,R9
+            SUBC R14,R10
+            BIS #1,R2
+            GOTO BW2
+FW1         AND #-1,R12
+S< IF       XOR #-1,R7
+            XOR #-1,R4
+            ADD #1,R7
+            ADDC #0,R4
+THEN        MOV R7,0(R15)
+            MOV R4,R14
+            POPM #4,R7
+            MOV @R13+,R0
 ENDCODE
 
+[UNDEFINED] F#S [IF]
 CODE F#S
             MOV 2(R15),R9
             MOV @R15,2(R15)
@@ -245,6 +255,7 @@ BEGIN       MOV @R15,&$4C0
             MOV #$1D90,0(R15)
             JMP HOLDS
 ENDCODE
+[THEN]
 
 CODE F*
     MOV 4(R15),&$4D4
@@ -259,6 +270,7 @@ ENDCODE
 
 [THEN]
 
+[UNDEFINED] F. [IF]
 CODE F.
 MOV R14,R12
 MOV #4,R11
@@ -287,6 +299,7 @@ CODE S>F
     MOV #0,0(R15)
     MOV @R13+,R0
 ENDCODE
+[THEN]
 
 [UNDEFINED] 2@ [IF]
 
@@ -299,17 +312,15 @@ ENDCODE
 [THEN]
 
 [UNDEFINED] 2CONSTANT [IF]
-
 : 2CONSTANT
 CREATE , ,
 DOES> 2@
 ;
-
-[THEN]
-
 [THEN]
 
 RST_HERE
+
+[THEN]
 
 ECHO
 

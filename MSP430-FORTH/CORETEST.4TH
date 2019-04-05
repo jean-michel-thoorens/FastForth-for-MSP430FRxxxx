@@ -1,17 +1,27 @@
 
-[DEFINED] {ANS_COMP} [IF]
+PWR_STATE
 
-; ===============================================================
+: ESC #27 EMIT ;
+
+: ANSCOMPNOTFOUND
+ECHO
+41              \ number of terminal lines -1  
+0 DO CR LOOP    \ don't erase any line of source
+ESC ." [1J"     \ erase up (41 empty lines)
+ESC ." [H"      \ cursor home
+1 ABORT" {ANS_COMP} word set not found!"
 ;
-;  #####  ####### ######  ####### ####### #######  #####  ####### 
-; #     # #     # #     # #          #    #       #     #    #    
-; #       #     # #     # #          #    #       #          #    
-; #       #     # ######  #####      #    #####    #####     #    
-; #       #     # #   #   #          #    #             #    #    
-; #     # #     # #    #  #          #    #       #     #    #    
-;  #####  ####### #     # #######    #    #######  #####     #    
+
+: CORETESTSUCCESS
+ECHO
+41              \ number of terminal lines -1 
+0 DO CR LOOP    \ don't erase any line of source
+ESC ." [1J"     \ erase up (41 empty lines)
+ESC ." [H"      \ cursor home
+1 ABORT" CORE tests success!"
 ;
-; ===============================================================
+
+[DEFINED] {ANS_COMP} [IF]
 
 
 \ From: John Hayes S1I
@@ -87,6 +97,8 @@ CREATE ACTUAL-RESULTS 20 CELLS ALLOT
     ELSE >IN ! DROP [CHAR] * EMIT
     THEN ;
 
+ECHO HEX
+
 \ From: John Hayes S1I
 \ Subject: core.fr
 \ Date: Mon, 27 Nov 95 13:10
@@ -100,12 +112,6 @@ CREATE ACTUAL-RESULTS 20 CELLS ALLOT
 \ THE RANGE OF UNSIGNED NUMBERS IS 0 ... 2^(N)-1.
 \ I HAVEN'T FIGURED OUT HOW TO TEST KEY, QUIT, ABORT, OR ABORT"...
 \ I ALSO HAVEN'T THOUGHT OF A WAY TO TEST ENVIRONMENT?...
-
-CR
-
-TESTING CORE WORDS
-
-HEX
 
 \ ------------------------------------------------------------------------
 TESTING BASIC ASSUMPTIONS
@@ -1092,7 +1098,6 @@ T{ GDX -> 123 234 }T
 
 CR .( End of Core word set tests) CR
 
-
 [DEFINED] COMPARE [IF]
 \ ------------------------------------------------------------------------
 TESTING COMPARE
@@ -1127,11 +1132,12 @@ T{ s12 s11 COMPARE -> -1 }T
 
 [THEN]      \ COMPARE
 
-$0A BASE !  \ happy end of core test
+$0A BASE !
+
+CORETESTSUCCESS
 
 [ELSE]
 
- ; ANS_COMP NOT FOUND !
+ANSCOMPNOTFOUND
 
 [THEN]
-

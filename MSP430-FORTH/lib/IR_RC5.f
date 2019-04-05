@@ -155,7 +155,7 @@ CODE START                      \
  ;
 
 : STOP                          \ stops multitasking, must to be used before downloading app
-    ['] WARM >BODY  IS WARM     \ remove START app from FORTH init process
+    ['] WARM >BODY IS WARM      \ remove START app from FORTH init process
     ECHO COLD                   \ reset CPU, interrupt vectors, and start FORTH
 ;
 

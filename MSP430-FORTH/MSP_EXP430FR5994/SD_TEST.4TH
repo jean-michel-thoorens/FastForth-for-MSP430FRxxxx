@@ -47,7 +47,7 @@ MOV #$10,&BASE
 ADD @R15,R14
 LO2HI
   SWAP OVER OVER
-  U. U.
+  U.  U.
   $FFF0 AND
   DO  CR
     I 7 U.R SPACE
@@ -62,7 +62,8 @@ LO2HI
 [THEN]
 
 : SD_TEST
-ECHO CR
+PWR_HERE
+CR
 ." 0 Set date and time" CR
 ." 1 Load {TOOLS} words" CR
 ." 2 Load {SD_TOOLS} words" CR
@@ -70,8 +71,8 @@ ECHO CR
 ." 4 Load ANS core tests" CR
 ." 5 Load a 100k program " CR
 ." 6 Read only this source file" CR
-." 7 Append a dump of FORTH to YOURFILE.TXT" CR
-." 8 Delete YOURFILE.TXT" CR
+." 7 append a dump of FORTH to YOURFILE.TXT" CR
+." 8 delete YOURFILE.TXT" CR
 ." 9 Load TST_WORDS" CR
 ." your choice : "
 KEY
@@ -108,7 +109,6 @@ ELSE 1 - ?DUP
                             BEGIN
                                 READ
                             UNTIL
-                            EXIT
                         ELSE 1 - ?DUP
                             0= IF
                                 ." WRITE YOURFILE.TXT" CR
@@ -143,4 +143,4 @@ RST_HERE
 
 [THEN]
 
-SD_TEST
+ECHO SD_TEST

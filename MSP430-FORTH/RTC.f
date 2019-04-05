@@ -134,7 +134,11 @@ THEN
     ." it is " TIME? 
 ;
 
-PWR_HERE
+RST_HERE
+
+[THEN]
+
+: ESC #27 EMIT ;
 
 \ create a word to test DEFERred words
 : [DEFERRED]    \ [DEFERRED] <name>         -- flag
@@ -144,21 +148,27 @@ PWR_HERE
 CREATE ABUF 20 ALLOT
 
 : GET_TIME
-PWR_STATE   \ after PWR_HERE, all will be lost
-CR CR ."    DATE (DMY): "
+PWR_STATE       \ all after PWR_HERE marker will be lost
+42              \ number of terminal lines   
+0 DO CR LOOP    \ don't erase any line of source
+
+ESC ." [1J"     \ erase up (42 empty lines)
+ESC ." [H"      \ cursor home
+
+CR ." DATE (DMY): "
 ABUF ABUF 20 
      [DEFERRED] ACCEPT 
      [IF] ['] ACCEPT >BODY EXECUTE   \   execute default part of ACCEPT
      [ELSE] ACCEPT
      [THEN]
-EVALUATE CR 3 SPACES DATE!
-CR CR ."    TIME (HMS): "
+EVALUATE CR DATE!
+CR CR ." TIME (HMS): "
 ABUF ABUF 20 
      [DEFERRED] ACCEPT 
      [IF] ['] ACCEPT >BODY EXECUTE   \   execute default part of ACCEPT
      [ELSE] ACCEPT
      [THEN]
-EVALUATE CR 3 SPACES TIME!
+EVALUATE CR TIME!
 CR
 ;
 

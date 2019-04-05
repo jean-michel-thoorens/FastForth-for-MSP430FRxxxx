@@ -5,7 +5,11 @@
 
 PWR_STATE
 
-[UNDEFINED] {TOOLS} [IF]
+: DEFINED! ECHO 1 ABORT" already loaded!" ;
+
+[DEFINED] {TOOLS} [IF] DEFINED!
+
+[ELSE]
 
 MARKER {TOOLS} 
 
@@ -37,9 +41,12 @@ COLON
     0= IF 
         DROP DROP EXIT
     THEN
+    BASE @ >R
+    $10 BASE !
     DO 
         I @ U.
     2 +LOOP
+    R> BASE !
 ;
 [THEN]
 
@@ -51,8 +58,6 @@ CODE .RS
     GOTO    BW1
 ENDCODE
 [THEN]
-
-[UNDEFINED] WORDS [IF]
 
 [UNDEFINED] AND [IF]
 
@@ -77,7 +82,7 @@ $1DCA @ PAD
 $1800 @ DUP +
 MOVE
 BEGIN
-    0.
+    0 DUP
     $1800 @ DUP + 0
         DO
         DUP I PAD + @
@@ -137,8 +142,11 @@ LO2HI
   U. U.
   $FFF0 AND
   DO  CR
-    I 7 U.R SPACE
-      I $10 + I
+    I 4 U.R SPACE
+      I 8 + I
+      DO I C@ 3 U.R LOOP
+      SPACE
+      I $10 + I 8 +
       DO I C@ 3 U.R LOOP  
       SPACE SPACE
       I $10 + I
@@ -151,5 +159,4 @@ LO2HI
 RST_HERE
 
 [THEN]
-
 ECHO

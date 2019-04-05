@@ -9,7 +9,7 @@ strinsert fname 1 '\'       ; fname = \file.ext, to force absolute path
 testlink
 if result=0 connect  param3
 
-sendln '     $0A BASE ! ECHO STOP' ; blanks are added to pass LPMx wake up time...
+sendln '     $0A BASE ! PWR_STATE ECHO [DEFINED] STOP [IF] STOP [THEN]' ; blanks are to pass LPMx wake up time...
 
 inputbox 'here you can add a path to the file: ' 'Send a File to SD_CARD target' fname
 

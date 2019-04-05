@@ -2,7 +2,7 @@
 \ MSP-EXP430FR5969_TSTWORDS.4th
 \ -----------------------------
 
-PWR_HERE
+PWR_STATE
 
 \ -----------------------------------------------------------------------
 \ test some assembler words and show how to mix FORTH/ASSEMBLER routines

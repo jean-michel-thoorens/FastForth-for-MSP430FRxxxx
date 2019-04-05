@@ -1,6 +1,6 @@
 
 ; -----------------------------------------------------------------------
-; File Name Test_Extd_ASM.4th
+; TEST_ASM.4th
 ; -----------------------------------------------------------------------
 
 CODE TESTPUSHM
@@ -226,33 +226,18 @@ CODENNM                 ; leaves its execution address (CFA) on stack
     SUB #2,R15
     MOV R14,0(R15)
     MOV @R13+,R0
-ENDCODE IS TRUC         ; TRUC becomes a primary DEFERred word
+ENDCODE 
+DUP . IS TRUC         ; TRUC becomes a primary DEFERred word
                         ; with its default action (DUP) located at its BODY addresse.
 
 TRUC .                  ; display R14 value -->
 
 
-' TRUC >BODY IS TRUC    ; TRUC is reinitialized with its default action
+' TRUC >BODY IS TRUC    ; TRUC is reinitialzed with its default action
 
 
 TRUC .                  ; display R14 value --> 
 
-\ ' DROP IS TRUC          ; TRUC is redirected to DROP
-\ 
-\ TRUC                   ; The generated error displays stack empty! in reverse video, removes the TRUC definition and restarts the interpretation after the end of the file. And as you see, FastForth is able to display long lines, interesting, doesn't it? --> 
-   
-\ bla
-\ bla
-\ bla
-\ 
-\ 
-\ 
-\ 
-\ 
-\ 
-\ 
-\ bla
-\ ...
 
 
 

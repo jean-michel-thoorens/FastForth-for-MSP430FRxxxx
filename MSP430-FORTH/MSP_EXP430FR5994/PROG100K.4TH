@@ -3,6 +3,8 @@
 ; -----------------------------------
 
 
+PWR_STATE
+
 [DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]
 
 MARKER {RC5TOLCD}

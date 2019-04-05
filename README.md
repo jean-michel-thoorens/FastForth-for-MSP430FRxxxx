@@ -40,13 +40,13 @@ With all kernel options, including extended_ASM, FastForth size is 11kB.
     
     Once the Fast Forth kernel is loaded in the target FRAM memory, you add assembly code or 
     FORTH code, or both, by downloading your source files that the embedded FastForth interprets and
-    compiles.    
+    compiles.
     Beforehand, the preprocessor GEMA, by means of a \config\gema\target.pat file, will have translated
     the generic source file.f in a targeted source file.4th. This allows the assembler to use
     symbolic addresses for all peripheral registers without having to declare them in the embedded FORTH.
     A set of .bat files in \MSP430-FORTH folder is furnished to do all this automatically.
 
-    The download, interpretation and compilation of a source_file.4th (without comments) is done
+    The download/interpret/compile/execute of a source_file.4th (without comments) is done
     at a throughput of 40/80/120 kbytes/s with a 8/16/24 MHz clock and at maximum allowed baudrate. 
     Considering a ratio 5/1, that of the compiled code is 8/16/24 kbytes/s.
 
@@ -214,7 +214,7 @@ V201
     Word CR generates CR+LF instead of CR. TYPE is rewritten in assembly.
 
     Added fixed point s15q16 numbers. Thus FAST FORTH recognises : 
-    unsigned/signed numbers u/n (u <= 65535) / (-32768 <=нн n <= 32767), 
+    unsigned/signed numbers u/n (u <= 65535) / (-32768 <= n <= 32767), 
     unsigned/signed double numbers ud/d by adding a decimal point 
     (ud <= .4294967295) / (-.2147483648 <= d <= .2147483647),
     and s15q16 signed numbers by adding a comma (-32768,00000 <= s15q16 <= 32767,00000).

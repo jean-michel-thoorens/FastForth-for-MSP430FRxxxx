@@ -194,7 +194,7 @@ TIB_I2CCNT=\$213A!  \ count of bytes
 TIB_ORG=\$213C!     \ Terminal input buffer, 84 bytes, grow up
 
 HOLDS_ORG=\$2190!   \ a good address for HOLDS
-BASE_HOLD=\$21B2!   \ BASE HOLD area, grow down
+HOLD_BASE=\$21B2!   \ BASE HOLD area, grow down
 
 ! ----------------------
 ! NOT SAVED VARIABLES
@@ -210,7 +210,7 @@ LAST_PSP=\$21BC!
 !STATE=\$21BE!           Interpreter state
 
 SOURCE_LEN=\$21C0!      len of input stream
-SOURCE_ADR=\$21C2!      adr of input stream
+SOURCE_ORG=\$21C2!      adr of input stream
 TOIN=\$21C4!            >IN
 DP=\$21C6!              dictionary ptr
 
@@ -502,29 +502,29 @@ TA3CCR1=\$454!      \ Capture/compare register 1
 TA3EX0=\$460!       \ TA3 expansion register 0    
 TA3IV=\$46E!        \ TA3 interrupt vector        
 
-MPY=\$4C0!          \ 16-bit operand 1 – multiply                     
-MPYS=\$4C2!         \ 16-bit operand 1 – signed multiply              
-MAC=\$4C4!          \ 16-bit operand 1 – multiply accumulate          
-MACS=\$4C6!         \ 16-bit operand 1 – signed multiply accumulate   
-OP2=\$4C8!          \ 16-bit operand 2                                
-RESLO=\$4CA!        \ 16 × 16 result low word                         
-RESHI=\$4CC!        \ 16 × 16 result high word                        
-SUMEXT=\$4CE!       \ 16 × 16 sum extension register                  
-MPY32L=\$4D0!       \ 32-bit operand 1 – multiply low word            
-MPY32H=\$4D2!       \ 32-bit operand 1 – multiply high word           
-MPYS32L=\$4D4!      \ 32-bit operand 1 – signed multiply low word     
-MPYS32H=\$4D6!      \ 32-bit operand 1 – signed multiply high word    
-MAC32L=\$4D8!       \ 32-bit operand 1 – multiply accumulate low word         
-MAC32H=\$4DA!       \ 32-bit operand 1 – multiply accumulate high word        
-MACS32L=\$4DC!      \ 32-bit operand 1 – signed multiply accumulate low word  
-MACS32H=\$4DE!      \ 32-bit operand 1 – signed multiply accumulate high word 
-OP2L=\$4E0!         \ 32-bit operand 2 – low word                 
-OP2H=\$4E2!         \ 32-bit operand 2 – high word                
-RES0=\$4E4!         \ 32 × 32 result 0 – least significant word   
-RES1=\$4E6!         \ 32 × 32 result 1                            
-RES2=\$4E8!         \ 32 × 32 result 2                            
-RES3=\$4EA!         \ 32 × 32 result 3 – most significant word    
-MPY32CTL0=\$4EC!    \ MPY32 control register 0                    
+MPY=\$4C0!          \ 16-bit operand 1 - multiply
+MPYS=\$4C2!         \ 16-bit operand 1 - signed multiply
+MAC=\$4C4!          \ 16-bit operand 1 - multiply accumulate
+MACS=\$4C6!         \ 16-bit operand 1 - signed multiply accumulate
+OP2=\$4C8!          \ 16-bit operand 2
+RESLO=\$4CA!        \ 16 x 16 result low word
+RESHI=\$4CC!        \ 16 x 16 result high word
+SUMEXT=\$4CE!       \ 16 x 16 sum extension register
+MPY32L=\$4D0!       \ 32-bit operand 1 - multiply low word
+MPY32H=\$4D2!       \ 32-bit operand 1 - multiply high word
+MPYS32L=\$4D4!      \ 32-bit operand 1 - signed multiply low word
+MPYS32H=\$4D6!      \ 32-bit operand 1 - signed multiply high word
+MAC32L=\$4D8!       \ 32-bit operand 1 - multiply accumulate low word
+MAC32H=\$4DA!       \ 32-bit operand 1 - multiply accumulate high word
+MACS32L=\$4DC!      \ 32-bit operand 1 - signed multiply accumulate low word
+MACS32H=\$4DE!      \ 32-bit operand 1 - signed multiply accumulate high word
+OP2L=\$4E0!         \ 32-bit operand 2 - low word
+OP2H=\$4E2!         \ 32-bit operand 2 - high word
+RES0=\$4E4!         \ 32 x 32 result 0 - least significant word
+RES1=\$4E6!         \ 32 x 32 result 1
+RES2=\$4E8!         \ 32 x 32 result 2
+RES3=\$4EA!         \ 32 x 32 result 3 - most significant word
+MPY32CTL0=\$4EC!    \ MPY32 control register 0
 
 
 UCA0CTLW0=\$500!    \ eUSCI_A control word 0        
