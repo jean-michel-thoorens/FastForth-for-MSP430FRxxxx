@@ -3,13 +3,13 @@
 ; SD_TOOLS.4th : BASIC TOOLS for SD Card : DIR FAT SECTOR CLUSTER
 ; ---------------------------------------------------------------
 
-PWR_STATE
-
 : DEFINED! ECHO 1 ABORT" already loaded!" ;
 
 [DEFINED] {SD_TOOLS} [IF] DEFINED!
 
 [ELSE]
+
+PWR_STATE
 
 MARKER {SD_TOOLS}
 

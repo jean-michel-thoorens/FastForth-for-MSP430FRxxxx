@@ -1,6 +1,7 @@
+\ -*- coding: utf-8 -*-
 
 ; -----------------------------------------------------
-; ANS_COMP.f    words complement to pass CORETEST.4th
+; ANS_COMP.f    words complement to pass CORETEST.4TH
 ; -----------------------------------------------------
 \
 \ to see kernel options, download FastForthSpecs.f
@@ -27,15 +28,49 @@
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
-PWR_STATE
-
 : DEFINED! ECHO 1 ABORT" already loaded!" ;
 
 [DEFINED] {ANS_COMP} [IF] DEFINED!
 
 [ELSE]
 
+PWR_STATE
+
 MARKER {ANS_COMP}
+
+\ https://forth-standard.org/standard/core/VALUE
+\ ( x "<spaces>name" -- )                      define a Forth VALUE
+\ Skip leading space delimiters. Parse name delimited by a space.
+\ Create a definition for name with the execution semantics defined below,
+\ with an initial value equal to x.
+\ 
+\ name Execution: ( -- x )
+\ Place x on the stack. The value of x is that given when name was created,
+\ until the phrase x TO name is executed, causing a new value of x to be assigned to name.
+\ 
+\ TO name Run-time: ( x -- )
+\ Assign the value x to name.
+
+: VALUE 
+CREATE ,
+DOES> 
+HI2LO
+MOV @RSP+,IP
+BIT #UF10,SR
+0= IF
+    MOV #@,PC
+THEN 
+BIC #UF10,SR
+MOV #!,PC
+ENDCODE
+
+\ https://forth-standard.org/standard/core/TO
+\ TO name Run-time: ( x -- )
+\ Assign the value x to named VALUE.
+CODE TO
+BIS #UF10,SR
+MOV @IP+,PC
+ENDCODE
 
 [UNDEFINED] AND [IF]
 \ https://forth-standard.org/standard/core/AND
@@ -189,10 +224,10 @@ ENDCODE
 [THEN]
 
 \ https://forth-standard.org/standard/core/SMDivREM
-\ SM/REM   d1lo d1hi n2 -- r3 q4  symmetric signed div
+\ SM/REM   DVDlo DVDhi DIVlo -- r3 q4  symmetric signed div
 CODE SM/REM
-MOV TOS,S           \           S=divisor
-MOV @PSP,T          \           T=dividend_sign==>rem_sign
+MOV TOS,S           \           S=DIVlo
+MOV @PSP,T          \           T=DVD_sign==>rem_sign
 CMP #0,TOS          \           n2 >= 0 ?
 S< IF               \
     XOR #-1,TOS
@@ -293,15 +328,17 @@ M* DROP
 >R M* R> FM/MOD NIP
 ;
 
-\ ----------------------------------------------------------------------
-\ DOUBLE OPERATORS
-\ ----------------------------------------------------------------------
-
 \ https://forth-standard.org/standard/core/StoD
 \ S>D    n -- d          single -> double prec.
 : S>D
     DUP 0<
 ;
+
+\ ----------------------------------------------------------------------
+\ DOUBLE OPERATORS
+\ ----------------------------------------------------------------------
+
+[UNDEFINED] {DOUBLE} [IF]
 
 \ https://forth-standard.org/standard/core/TwoFetch
 \ 2@    a-addr -- x1 x2    fetch 2 cells ; the lower address will appear on top of stack
@@ -319,6 +356,19 @@ MOV @PSP+,0(TOS)
 MOV @PSP+,2(TOS)
 MOV @PSP+,TOS
 MOV @IP+,PC
+ENDCODE
+
+\ https://forth-standard.org/standard/double/TwoVALUE
+: 2VALUE
+CREATE
+, ,             \ compile Shi then Flo
+DOES>
+HI2LO
+MOV @RSP+,IP
+BIT #UF10,SR
+0= ?JMP 2@ 
+BIC #UF10,SR
+JMP 2!
 ENDCODE
 
 \ https://forth-standard.org/standard/core/TwoDUP
@@ -359,6 +409,8 @@ MOV 8(PSP),0(PSP)   \ -- x1 x2 x3 x4 x1 x4
 MOV 6(PSP),TOS      \ -- x1 x2 x3 x4 x1 x2
 MOV @IP+,PC
 ENDCODE
+
+[THEN]
 
 \ ----------------------------------------------------------------------
 \ ALIGNMENT OPERATORS
@@ -495,11 +547,9 @@ ENDCODE
 TOIN CONSTANT >IN
 
 [UNDEFINED] PAD [IF]
-
 \ https://forth-standard.org/standard/core/PAD
 \  PAD           --  addr
 PAD_ORG CONSTANT PAD
-
 [THEN]
 
 RST_HERE

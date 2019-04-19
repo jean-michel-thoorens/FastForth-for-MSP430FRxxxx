@@ -1,3 +1,4 @@
+\ -*- coding: utf-8 -*-
 
 ; ---------------------------------------------------------------
 ; SD_TOOLS.f : BASIC TOOLS for SD Card : DIR FAT SECTOR CLUSTER
@@ -31,13 +32,13 @@
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
-PWR_STATE
-
 : DEFINED! ECHO 1 ABORT" already loaded!" ;
 
 [DEFINED] {SD_TOOLS} [IF] DEFINED!
 
 [ELSE]
+
+PWR_STATE
 
 MARKER {SD_TOOLS}
 

@@ -13,8 +13,8 @@ IF /I "%~x1" == ".4TH" GOTO 4TH
 :: ==============================================================================================
 :: source file.f part
 :: %~dpn1.f is the symbolic source file.f described as drive\path\name.f
-:: %~d1\config\gema\%~n2.pat is the pattern file for preprocessor gema.exe
-:: %~dpn1.4TH is the source file.4TH to be sent to the target
+:: %~d1\inc\%~n2.pat is the pattern file for preprocessor gema.exe
+:: %~dpn1.4TH is the source file.4TH to be preprocessed then sent to the target
 :: %~d1 is the drive of arg %1
 :: %~n2 is your selected template by SelectTarget.bat or your scite $(1)
 

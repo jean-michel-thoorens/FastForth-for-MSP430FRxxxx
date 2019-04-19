@@ -29,7 +29,6 @@
     .include "CHIPSTICK_FR2433.asm"
     .ENDIF
 
-
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 ; add here your target.asm item:
 ; .IFDEF MY_MSP430FR5738_1

@@ -3,13 +3,13 @@
 ; FIXPOINT.4th
 ; -----------------------------------------------------
 
-PWR_STATE
-
 : DEFINED! ECHO 1 ABORT" already loaded!" ;
 
 [DEFINED] {FIXPOINT} [IF] DEFINED!
 
 [ELSE]
+
+PWR_STATE
 
 MARKER {FIXPOINT}
 

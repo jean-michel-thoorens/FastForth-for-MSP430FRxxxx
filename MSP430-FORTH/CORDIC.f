@@ -1,3 +1,4 @@
+\ -*- coding: utf-8 -*-
 
 ; ----------
 ; CORDIC.f
@@ -27,13 +28,13 @@
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
-PWR_STATE
-
 : DEFINED! ECHO 1 ABORT" already loaded!" ;
 
 [DEFINED] {CORDIC} [IF] DEFINED!
 
 [ELSE]
+
+PWR_STATE
 
 MARKER {CORDIC}
 

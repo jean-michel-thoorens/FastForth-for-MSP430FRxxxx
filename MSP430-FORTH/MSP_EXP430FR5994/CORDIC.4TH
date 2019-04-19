@@ -3,13 +3,13 @@
 ; CORDIC.4th
 ; ----------
 
-PWR_STATE
-
 : DEFINED! ECHO 1 ABORT" already loaded!" ;
 
 [DEFINED] {CORDIC} [IF] DEFINED!
 
 [ELSE]
+
+PWR_STATE
 
 MARKER {CORDIC}
 

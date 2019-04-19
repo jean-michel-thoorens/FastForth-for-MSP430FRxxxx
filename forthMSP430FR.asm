@@ -973,7 +973,7 @@ UMSLASHMOD  PUSH #DROP          ;3 as return address for MU/MOD
 ; rDODOES = count
 
 ; MU/MOD        DVDlo DVDhi DIVlo -- REMlo QUOTlo QUOThi, also used by fixpoint and #
-MUSMOD      MOV TOS,T           ;1 T = DIV
+MUSMOD      MOV TOS,T           ;1 T = DIVlo
             MOV 2(PSP),S        ;3 S = DVDlo
             MOV @PSP,TOS        ;2 TOS = DVDhi
 MUSMOD1     MOV #0,W            ;1  W = REMlo = 0
@@ -988,7 +988,7 @@ MUSMOD2     MOV #32,rDODOES     ;2  init loop count
 ; -----------------------------------------
 MDIV1       CMP T,W             ;1  REMlo U>= DIV ?
             JNC MDIV2           ;2  no : carry is reset
-            SUB T,W             ;1  yes: REMlo - DIV ; carry is set after soustraction!
+            SUB T,W             ;1  yes: REMlo - DIV ; carry is set
 MDIV2       ADDC X,X            ;1  RLC quotLO
             ADDC Y,Y            ;1  RLC quotHI
             SUB #1,rDODOES      ;1  Decrement loop counter
@@ -1699,8 +1699,8 @@ TONUMEND    MOV S,0(PSP)            ;3 -- x x addr2 cnt2
 ; ?NUMBER makes the interface between INTERPRET and >NUMBER; it's a subset of INTERPRET.
 ; convert a string to a signed number; FORTH 2012 prefixes $, %, # are recognized
 ; digits separator '_' is recognized
-; with DOUBLE_INPUT switched ON, 32 bits numbers (with decimal point) are recognised
-; with FIXPOINT_INPUT switched ON, Q15.16 signed numbers are recognised.
+; with DOUBLE_INPUT switched ON, 32 bits numbers (with decimal point) are recognized
+; with FIXPOINT_INPUT switched ON, Q15.16 signed numbers are recognized.
 ; prefixed chars - # % $ are processed before calling >NUMBER
 ; other (anywhere) chars . , and _ are processed as >NUMBER exits
 ;Z ?NUMBER  addr -- n|d -1  if convert ok ; flag Z=0, UF9=1 if double
@@ -1738,22 +1738,24 @@ PREFIXED    ADD #1,S                ;1
 TONUMEXIT   FORTHtoASM              ;  -- addr ud2lo-hi addr2 cnt2      R-- IP sign BASE    S=addr2
 ; ----------------------------------;
             JZ QNUMNEXT             ;2                                  if conversion is ok
-            SUB #2,IP
+; ----------------------------------;
+            SUB #2,IP               ;                                   redefines TONUMEXIT as >NUMBER return
             CMP.B #28h,W            ;                                   rejected char by >NUMBER is a underscore ?
-            JZ TONUMPLUS            ;                                   skip it
+            JZ TONUMPLUS            ;                                   yes, skip it
+; ----------------------------------;
         .IFDEF DOUBLE_NUMBERS       ;                                   DOUBLE_NUMBERS = DOUBLE_INPUT | FIXPOINT_INPUT
-;            BIT #UF9,SR
-;            JNZ QNUMNEXT
             BIS #UF9,SR             ;2                                  set double number flag
-        .ENDIF
-        .IFDEF DOUBLE_INPUT
+        .ENDIF                      ;
+        .IFDEF DOUBLE_INPUT         ;
             CMP.B #0F7h,W           ;2                                  rejected char by >NUMBER is a decimal point ?
-            JZ TONUMPLUS            ;2                                  skip it
-        .ENDIF
+            JZ TONUMPLUS            ;2                                  yes, skip it
+        .ENDIF                      ;
+; ----------------------------------;
         .IFDEF FIXPOINT_INPUT       ;
             CMP.B #0F5h,W           ;2                                  rejected char by >NUMBER is a comma ?
             JNZ QNUMNEXT            ;2                                  no, that will be followed by abort on conversion error
-S15Q16      MOV TOS,W               ;1 -- addr ud2lo x x x              yes   W=cnt2
+; ----------------------------------;
+S15Q16      MOV TOS,W               ;1 -- addr ud2lo x x x              W=cnt2
             MOV #0,X                ;1 -- addr ud2lo x 0 x              init X = ud2lo' = 0
 S15Q16LOOP  MOV X,2(PSP)            ;3 -- addr ud2lo ud2lo' ud2lo' x    0(PSP) = ud2lo'
             SUB.B #1,W              ;1                                  decrement cnt2
@@ -1798,7 +1800,7 @@ QNUMOK      ADD #2,PSP              ;1 -- addr ud2lo-hi cnt2
             MOV @PSP+,0(PSP)        ;4 -- udlo udhi sign                note : PSP is incremented before write back.
             XOR #-1,TOS             ;1 -- udlo udhi inv(sign)
             JNZ QDOUBLE             ;2                                  if jump : TOS=-1 and Z=0 ==> conversion ok
-Q2NEGATE    XOR #-1,TOS             ;1 -- udlo udhi tf
+QDNEGATE    XOR #-1,TOS             ;1 -- udlo udhi tf
             XOR #-1,2(PSP)          ;3
             XOR #-1,0(PSP)          ;3 -- (dlo dhi)-1 tf
             ADD #1,2(PSP)           ;3
@@ -1892,8 +1894,8 @@ TONUMEND    MOV S,0(PSP)            ;3 -- ud2lo ud2hi adr2 count2
 ; ?NUMBER makes the interface between >NUMBER and INTERPRET; it's a subset of INTERPRET.
 ; convert a string to a signed number; FORTH 2012 prefixes $, %, # are recognized
 ; digits separator '_' is recognized
-; with DOUBLE_INPUT switched ON, 32 bits numbers (with decimal point) are recognised
-; with FIXPOINT_INPUT switched ON, Q15.16 signed numbers are recognised.
+; with DOUBLE_INPUT switched ON, 32 bits numbers (with decimal point) are recognized
+; with FIXPOINT_INPUT switched ON, Q15.16 signed numbers are recognized.
 ; prefixes # % $ and - are processed before calling >NUMBER
 ; not convertible chars '.' , ',' and '_' are processed as >NUMBER exits
 ;Z ?NUMBER  addr -- n|d -1  if convert ok ; flag Z=0, UF9=1 if double
@@ -1937,8 +1939,6 @@ TONUMEXIT   FORTHtoASM              ;  -- addr ud2lo-hi addr2 cnt2      R-- IP s
             CMP.B #28h,Y            ;                                   rejected char by >NUMBER is a underscore ?
             JZ TONUMPLUS            ;                                   skip it
         .IFDEF DOUBLE_NUMBERS       ;                                   DOUBLE_NUMBERS = DOUBLE_INPUT | FIXPOINT_INPUT
-            BIT #UF9,SR
-            JNZ QNUMNEXT
             BIS #UF9,SR             ;2                                  set double number flag
         .ENDIF
         .IFDEF DOUBLE_INPUT
@@ -2250,27 +2250,27 @@ QABORT_TERM                         ; wait the end of downloading source file
             CALL #RXON              ; send XON and/or set RTS low
 QABORTLOOP  BIC #UCRXIFG,&TERM_IFG  ; clear UCRXIFG
         MOV #int(frequency*2730),Y  ; 2730*frequency ==> 65520 @ 24MHz
-QABUSBLOOPJ MOV #8,X                ; 1~        <-------+ windows 10 seems very slow... ==> 2730*36 = 98ms delay
+QABUSBLOOPJ MOV #8,X                ; 1~        <-------+ windows 10 seems very slow... ==> 2730*37 = 101ms delay
             ADD X,X                 ; 1~                | linux seems very very slow... ==> 2730*69 = 188ms delay
 QABUSBLOOPI NOP                     ; 1~        <---+   |
             SUB #1,X                ; 1~            |   | the loop must be longer than longuest existing silence on terminal
             JNZ QABUSBLOOPI         ; 2~ 4~ loop ---+   | i.e. when USB driver refill they buffers.
             SUB #1,Y                ; 1~                |
-            JNZ QABUSBLOOPJ         ; 2~ 36~/69~ loop --+
+            JNZ QABUSBLOOPJ         ; 2~ 37~/69~ loop --+
             BIT #UCRXIFG,&TERM_IFG  ; 4 new char in TERMRXBUF after delay for refill ?
             JNZ QABORTLOOP          ; 2 yes, the input stream is still active: loop back
 ; ----------------------------------;
             mDOCOL                  ;
             .word   PWR_STATE       ; remove all words beyond PWR_HERE, including a definition leading to an error
             .word   lit,LINE,FETCH  ; fetch line number before set ECHO !
-            .word   ECHO            ;
+            .word   ECHO            ; to see abort message
             .word   XSQUOTE         ; -- c-addr u c-addr1 u1
-            .byte   4,27,"[7m"      ;    type ESC[7m
-            .word   TYPE            ; -- c-addr u       set reverse video
+            .byte   4,27,"[7m"      ;    type ESC[7m    (set reverse video)
+            .word   TYPE            ; -- c-addr u   
             .word   QDUP            ;
             .word QFBRAN,ERRLINE_END;       if LINE = 0
 ; ----------------------------------;
-; Display error line:xxx            ;       if LINE <> 0 (if NOECHO)
+; Display error line:xxx            ;       if LINE <> 0 (if NOECHO state before calling ABORT")
 ; ----------------------------------;
             .word   CR              ;
             .word   XSQUOTE         ;       displays the line where error occured
@@ -2278,13 +2278,13 @@ QABUSBLOOPI NOP                     ; 1~        <---+   |
             .word   TYPE            ;
             .word   ONEMINUS        ;
             .word   UDOT            ;
-ERRLINE_END                         ;
+ERRLINE_END                         ; -- c-addr u
 ; ----------------------------------;
 ; Display ABORT" message            ; <== WARM jumps here
 ; ----------------------------------;
 QABORT_DISPLAY                      ;
             .word   TYPE            ; --                type abort message
-            .word   XSQUOTE         ; -- c-addr2 u2
+            .word   XSQUOTE         ; -- c-addr u
             .byte   4,27,"[0m"      ;
             .word   TYPE            ; --                set normal video
 FABORT      .word   ABORT           ; no return; FABORT = BRACTICK-8
@@ -2306,10 +2306,10 @@ BRACTICK    mDOCOL
 ;C '    -- xt           find word in dictionary and leave on stack its execution address
             FORTHWORD "'"
 TICK        mDOCOL          ; separator -- xt
-            .word   FBLANK,WORDD,FIND    ; Z=1 if not found
+            .word   FBLANK,WORDD,FIND
             .word   QFBRAN,NotFound
             .word   EXIT
-NotFound    .word   NotFoundExe          ; in INTERPRET
+NotFound    .word   NotFoundExe     ; see INTERPRET
 
 ;https://forth-standard.org/standard/block/bs
 ; \         --      backslash
@@ -2349,13 +2349,14 @@ DEFERSTORE  MOV @PSP+,2(TOS)        ; -- CFA_DEFER          xt --> [CFA_DEFER+2]
 
             FORTHWORDIMM "IS"       ; immediate
 IS          mDOCOL
-            .word   FSTATE,FETCH        ; STATE @
-            .word   QFBRAN,IS_EXEC      ; if = 0
-IS_COMPILE  .word   BRACTICK            ; find the word, compile its CFA as literal
-            .word   lit,DEFERSTORE,COMMA; compile DEFERSTORE
-            .word   EXIT                ;
-IS_EXEC     .word   TICK,DEFERSTORE     ; find the word, leave its CFA on the stack and
-            .word   EXIT                ; put it into PFA of DEFERed word, then exit.
+            .word   FSTATE,FETCH    ; STATE @
+            .word   QFBRAN,IS_EXEC  ; if = 0
+IS_COMPILE  .word   BRACTICK        ; find the word, compile its CFA as literal
+            .word   lit,DEFERSTORE  ;
+            .word   COMMA           ; compile DEFERSTORE
+            .word   EXIT            ;
+IS_EXEC     .word   TICK,DEFERSTORE ; find the word, leave its CFA on the stack and
+            .word   EXIT            ; put it into PFA of DEFERed word, then exit.
 
 ;https://forth-standard.org/standard/core/IMMEDIATE
 ;C IMMEDIATE        --   make last definition immediate
@@ -2402,8 +2403,8 @@ COLONNONAME SUB #2,PSP
             MOV &DDP,TOS            ; -- xt     of this NONAME word
             MOV TOS,W               ;  W=CFA
             MOV #PAIN,X             ;2 MOV Y,0(X) writes to PAIN read only register = first lure for semicolon REVEAL...
-            MOV #PAOUT,Y            ;2 MOV @X,-2(Y) writes to PAIN register = 2th lure for semicolon REVEAL...
-            CALL #HEADEREND         ; ...because we don't want write a preamble of word in dictionnary!
+            MOV #PAOUT,Y            ;2 MOV @X,-2(Y) also writes to PAIN register = 2th lure for semicolon REVEAL...
+            CALL #HEADEREND         ; ...because we don't want write a preamble of this :NONAME definition in dictionnary!
     .ENDIF ; NONAME
 
 ;-----------------------------------; common part of NONAME and :
@@ -2496,30 +2497,7 @@ CONSTANT    CALL #HEADER            ; W = DDP = CFA + 2 words
             MOV #DOCON,-4(W)        ;   CFA = DOCON
             MOV TOS,-2(W)           ;   PFA = n
             MOV @PSP+,TOS
-            JMP REVEAL              ;   to link created VARIABLE in vocabulary
-
-;;https://forth-standard.org/standard/core/VALUE
-;;( x "<spaces>name" -- )                      define a Forth VALUE
-;;Skip leading space delimiters. Parse name delimited by a space.
-;;Create a definition for name with the execution semantics defined below,
-;;with an initial value equal to x.
-;
-;;name Execution: ( -- x )
-;;Place x on the stack. The value of x is that given when name was created,
-;;until the phrase x TO name is executed, causing a new value of x to be assigned to name.
-;
-;            FORTHWORD "VALUE"       ; VALUE is an alias of CONSTANT
-;            JMP CONSTANT
-;
-;;TO name Run-time: ( x -- )
-;;Assign the value x to name.
-;
-;            FORTHWORDIMM "TO"       ; TO is an alias of IS
-;            JMP IS
-
-; usage : SDIB_ORG IS CIB           ; modify Current_Input_Buffer address to read a SD file sector
-;         ...
-;         TIB_ORG IS CIB            ; restore Terminal_Input_Buffer address as Current_Input_Buffer address
+            JMP REVEAL              ;   to link created CONSTANT in vocabulary
 
 ;https://forth-standard.org/standard/core/CREATE
 ;C CREATE <name>        --          define a CONSTANT with its next address
@@ -3138,7 +3116,7 @@ CLR_RAM_ASM
         MOV #10,&BASE               ;4
         MOV #32,&CAPS               ; init CAPS ON
         RET
-;---------------------------------------;
+;-----------------------------------;
 
 ; --------------------------------------------------------------------------------
 ; forthMSP430FR : WARM
@@ -3219,8 +3197,8 @@ WARMTYPE    .word   XSQUOTE         ;
         FORTHWORD "COLD"
 COLD    BIT #1,&TERM_STATW      ;
         JNZ COLD                ; loop back while TERM_UART is busy
-        MOV #0A504h,&PMMCTL0    ; performs BOR (SYSRSTIV = 6) reset @ next address
-;        MOV #0A508h,&PMMCTL0    ; performs POR (SYSRSTIV = 20) reset @ next address
+        MOV #0A504h,&PMMCTL0    ; performs BOR (SYSRSTIV = #6) reset @ next address
+;        MOV #0A508h,&PMMCTL0    ; performs POR (SYSRSTIV = #20) reset @ next address
 
 ;---------------------------------------------------------------------------------
 ; RESET 1: Initialisation limited to FastForth usage : I/O, RAM, RTC

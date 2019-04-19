@@ -3,13 +3,14 @@
 ; UTILITY.4th
 ; ------------------------------------------------------------------------------
 
-PWR_STATE
 
 : DEFINED! ECHO 1 ABORT" already loaded!" ;
 
 [DEFINED] {TOOLS} [IF] DEFINED!
 
 [ELSE]
+
+PWR_STATE
 
 MARKER {TOOLS} 
 

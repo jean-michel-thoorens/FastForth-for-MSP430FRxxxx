@@ -97,7 +97,7 @@ CREATE ACTUAL-RESULTS 20 CELLS ALLOT
     ELSE >IN ! DROP [CHAR] * EMIT
     THEN ;
 
-ECHO CR HEX
+ECHO HEX
 
 \ From: John Hayes S1I
 \ Subject: core.fr

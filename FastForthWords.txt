@@ -156,13 +156,13 @@ see: http://www.ece.utep.edu/courses/web3376/Notes_files/ee3376-isa.pdf
 ?GOTO           used after a conditionnal (0=,0<>,U>=,U<,0<,S<,S>=) to branch to a label FWx or BWx
 GOTO            used as unconditionnal branch to a label FWx or BWx
 
-BW3             BACKWARD branch destination n°3
-BW2                                         n°2
-BW1                                         N°1
+BW3             BACKWARD branch destination nÂ°3
+BW2                                         nÂ°2
+BW1                                         NÂ°1
 
-FW3             FORWARD branch destination  n°3
-FW2                                         n°2
-FW1                                         n°1
+FW3             FORWARD branch destination  nÂ°3
+FW2                                         nÂ°2
+FW1                                         nÂ°1
 
 ?JMP            used after a conditionnal (0=,0<>,U>=,U<,0<,S<,S>=) to jump to a predefined word
 JMP             unconditionnal jump to a predefined word
@@ -231,6 +231,8 @@ RRCM    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=214
 POPM    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=204
 PUSHM   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=205
 
+ASSEMBLER_EXTENDED WORDS set:
+
 ADDX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=187
 ADDCX   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=188
 ANDX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=189
@@ -256,6 +258,7 @@ CMPA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=235
 MOVA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=238
 SUBA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=241
 
+RPT
 
 CONDCOMP ADD-ON
 ---------------
@@ -330,13 +333,13 @@ QUIT becomes a DEFERed word
 
 ANS_COMPLEMENT ADD-ON
 ---------------------
-PAD             SOURCE          .(              (               DECIMAL         HEX             
+PAD             >IN             SOURCE          .(              (               DECIMAL         HEX             
 FILL            [CHAR]          CHAR            +!              MIN             MAX             2/              
 2*              RSHIFT          LSHIFT          XOR             OR              AND             INVERT          
-2OVER           2SWAP           2DROP           2DUP            2!              2@              S>D             
-CELL+           CELLS           CHAR+           CHARS           ALIGN           ALIGNED         */              
-*/MOD           MOD             /               /MOD            *               FM/MOD          SM/REM          
-M*              UM*             {ANS_COMP}
+2OVER           2SWAP           2DROP           2DUP            2VALUE          2!              2@              
+S>D             CELL+           CELLS           CHAR+           CHARS           ALIGN           ALIGNED         
+*/              */MOD           MOD             /               /MOD            *               FM/MOD          
+SM/REM          M*              UM*             TO              VALUE           {ANS_COMP}
 
 PAD             https://forth-standard.org/standard/core/PAD            
 >IN             https://forth-standard.org/standard/core/toIN
@@ -364,6 +367,7 @@ AND             https://forth-standard.org/standard/core/AND
 2SWAP           https://forth-standard.org/standard/core/TwoSWAP
 2DROP           https://forth-standard.org/standard/core/TwoDROP
 2DUP            https://forth-standard.org/standard/core/TwoDUP
+2VALUE          https://forth-standard.org/standard/double/TwoVALUE
 2!              https://forth-standard.org/standard/core/TwoStore
 2@              https://forth-standard.org/standard/core/TwoFetch
 S>D             https://forth-standard.org/standard/core/StoD
@@ -383,6 +387,8 @@ FM/MOD          https://forth-standard.org/standard/core/FMDivMOD
 SM/REM          https://forth-standard.org/standard/core/SMDivREM
 M*              https://forth-standard.org/standard/core/MTimes
 UM*             https://forth-standard.org/standard/core/UMTimes
+TO              https://forth-standard.org/standard/core/TO
+VALUE           https://forth-standard.org/standard/core/VALUE
 {ANS_COMP}
 
 

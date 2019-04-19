@@ -21,6 +21,38 @@
     FORTHWORD "{ANS_COMP}"
     mNEXT
 
+;https://forth-standard.org/standard/core/VALUE
+;( x "<spaces>name" -- )                      define a Forth VALUE
+;Skip leading space delimiters. Parse name delimited by a space.
+;Create a definition for name with the execution semantics defined below,
+;with an initial value equal to x.
+
+;name Execution: ( -- x )
+;Place x on the stack. The value of x is that given when name was created,
+;until the phrase x TO name is executed, causing a new value of x to be assigned to name.
+
+;TO name Run-time: ( x -- )
+;Assign the value x to name.
+
+            FORTHWORD "VALUE"
+            mDOCOL
+            .word CREATE
+            .word COMMA  ; compile x
+            .word DOES
+            FORTHtoASM
+            MOV @RSP+,IP
+            BIT #UF10,SR
+            JZ FETCH 
+            BIC #UF10,SR
+            JMP STORE
+
+; https://forth-standard.org/standard/core/TO
+;TO name Run-time: ( x -- )
+;Assign the value x to named VALUE.
+            FORTHWORD "TO"
+            BIS #UF10,SR
+            MOV @IP+,PC
+
 ;https://forth-standard.org/standard/core/StoD
 ;C S>D    n -- d          single -> double prec.
             FORTHWORD "S>D"
@@ -238,6 +270,19 @@ TWOSTORE    MOV     @PSP+,0(TOS)
             MOV     @PSP+,2(TOS)
             MOV     @PSP+,TOS
             mNEXT
+
+; https://forth-standard.org/standard/double/TwoVALUE
+            FORTHWORD "2VALUE"
+            mDOCOL
+            .word CREATE
+            .word COMMA,COMMA  ; compile hi then lo
+            .word DOES
+            FORTHtoASM
+            MOV @RSP+,IP
+            BIT #UF10,SR
+            JZ TWOFETCH 
+            BIC #UF10,SR
+            JMP TWOSTORE
 
 ; https://forth-standard.org/standard/core/TwoDUP
 ; 2DUP   x1 x2 -- x1 x2 x1 x2   dup top 2 cells

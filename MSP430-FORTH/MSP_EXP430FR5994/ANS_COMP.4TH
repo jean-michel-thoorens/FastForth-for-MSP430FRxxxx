@@ -1,9 +1,7 @@
 
 ; -----------------------------------------------------
-; ANS_COMP.4th    words complement to pass CORETEST.4th
+; ANS_COMP.4th    words complement to pass CORETEST.4TH
 ; -----------------------------------------------------
-
-PWR_STATE
 
 : DEFINED! ECHO 1 ABORT" already loaded!" ;
 
@@ -11,7 +9,28 @@ PWR_STATE
 
 [ELSE]
 
+PWR_STATE
+
 MARKER {ANS_COMP}
+
+
+: VALUE 
+CREATE ,
+DOES> 
+HI2LO
+MOV @R1+,R13
+BIT #$400,R2
+0= IF
+    MOV #@,R0
+THEN 
+BIC #$400,R2
+MOV #!,R0
+ENDCODE
+
+CODE TO
+BIS #$400,R2
+MOV @R13+,R0
+ENDCODE
 
 [UNDEFINED] AND [IF]
 CODE AND
@@ -220,10 +239,12 @@ M* DROP
 >R M* R> FM/MOD NIP
 ;
 
-
 : S>D
     DUP 0<
 ;
+
+
+[UNDEFINED] {DOUBLE} [IF]
 
 CODE 2@
 SUB #2,R15
@@ -237,6 +258,18 @@ MOV @R15+,0(R14)
 MOV @R15+,2(R14)
 MOV @R15+,R14
 MOV @R13+,R0
+ENDCODE
+
+: 2VALUE
+CREATE
+, ,
+DOES>
+HI2LO
+MOV @R1+,R13
+BIT #$400,R2
+0= ?JMP 2@ 
+BIC #$400,R2
+JMP 2!
 ENDCODE
 
 CODE 2DUP
@@ -269,6 +302,8 @@ MOV 8(R15),0(R15)
 MOV 6(R15),R14
 MOV @R13+,R0
 ENDCODE
+
+[THEN]
 
 CODE ALIGNED
 BIT #1,R14
@@ -363,9 +398,7 @@ ENDCODE
 $1DC4 CONSTANT >IN
 
 [UNDEFINED] PAD [IF]
-
 $1CE4 CONSTANT PAD
-
 [THEN]
 
 RST_HERE

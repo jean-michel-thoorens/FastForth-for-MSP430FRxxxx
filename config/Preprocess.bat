@@ -4,7 +4,7 @@
 @ECHO OFF
 
 ::echo %2
-::echo %~d1\config\gema\%~n2.pat
+::echo %~d1\inc\%~n2.pat
 
 IF "%2" == "" ( 
 echo no file to be preprocessed!
@@ -32,8 +32,8 @@ exit
 
 :preprocess
 ::%~d1\prog\gema.exe -nobackup -line -t '\n=\r\n;\r\n=\r\n' -f %~d1\inc\%~n2.pat %1 %~dp1last.4TH
-::%~d1\prog\gema.exe -nobackup -line -t '-\r\n=\r\n' -f %~d1\inc\%~n2.pat %1 %~dp1last.4TH
-%~d1\prog\gema.exe -nobackup -line -t -f %~d1\inc\%~n2.pat %1 %~dp1last.4TH
+%~d1\prog\gema.exe -nobackup -line -t '-\r\n=\r\n' -f %~d1\inc\%~n2.pat %1 %~dp1last.4TH
+::%~d1\prog\gema.exe -nobackup -line -t -f %~d1\inc\%~n2.pat %1 %~dp1last.4TH
 @XCOPY /D /Y  "%~dp1last.4TH" "%~dp1\%~n2\%~n1.4TH*" > NUL
 exit
 

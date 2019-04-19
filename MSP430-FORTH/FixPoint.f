@@ -1,3 +1,4 @@
+\ -*- coding: utf-8 -*-
 
 ; -----------------------------------------------------
 ; FIXPOINT.f
@@ -31,13 +32,13 @@
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 \
 
-PWR_STATE
-
 : DEFINED! ECHO 1 ABORT" already loaded!" ;
 
 [DEFINED] {FIXPOINT} [IF] DEFINED!
 
 [ELSE]
+
+PWR_STATE
 
 MARKER {FIXPOINT}
 
@@ -250,7 +251,7 @@ S< IF       XOR #-1,Y           \ 1 INV(DVDlo)
             XOR #-1,X           \ 1 INV(DVDhi)
             ADD #1,Y            \ 1 INV(DVDlo)+1
             ADDC #0,X           \ 1 INV(DVDhi)+C
-THEN        AND #-1,TOS         \ 1 DVR < 0 ?
+THEN        AND #-1,TOS         \ 1 DVRhi < 0 ?
 S< IF       XOR #-1,rDOVAR      \ 1 INV(DVRlo)
             XOR #-1,TOS         \ 1 INV(DVRhi)
             ADD #1,rDOVAR       \ 1 INV(DVRlo)+1
