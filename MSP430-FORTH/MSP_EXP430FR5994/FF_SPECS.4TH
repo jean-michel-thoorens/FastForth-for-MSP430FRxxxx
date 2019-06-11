@@ -6,7 +6,28 @@
 ; display all FastForth compilation options
 
 
-WIPE
+RST_STATE
+
+[UNDEFINED] CONSTANT [IF]
+: CONSTANT 
+DEFER
+HI2LO
+MOV @R1+,R13
+MOV #$1285,-4(R10)
+MOV R14,-2(R10)
+MOV @R15+,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] OVER [IF]
+CODE OVER
+MOV R14,-2(R15)
+MOV @R15,R14
+SUB #2,R15
+MOV @R13+,R0
+ENDCODE
+[THEN]
 
 0 CONSTANT CASE IMMEDIATE
 
@@ -40,6 +61,13 @@ LOOP
 $1CE4 CONSTANT PAD
 [THEN]
 
+[UNDEFINED] PLUS [IF]
+CODE +
+ADD @R15+,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
 [UNDEFINED] AND [IF]
 CODE AND
 AND @R15+,R14
@@ -47,6 +75,60 @@ MOV @R13+,R0
 ENDCODE
 [THEN]
 
+
+[UNDEFINED] ROT [IF]
+CODE ROT
+MOV @R15,R10
+MOV R14,0(R15)
+MOV 2(R15),R14
+MOV R10,2(R15)
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] C@ [IF]
+CODE C@
+MOV.B @R14,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] BL [IF]
+#32 CONSTANT BL
+[THEN]
+
+[UNDEFINED] SPACE [IF]
+: SPACE
+BL EMIT ;
+[THEN]
+
+[UNDEFINED] SPACES [IF]
+CODE SPACES
+CMP #0,R14
+0<> IF
+    PUSH R13
+    BEGIN
+        LO2HI
+        BL EMIT
+        HI2LO
+        SUB #2,R13 
+        SUB #1,R14
+    0= UNTIL
+    MOV @R1+,R13
+THEN
+MOV @R15+,R14
+MOV @R13+,R0              
+ENDCODE
+[THEN]
+
+[UNDEFINED] UM/MOD [IF]
+CODE UM/MOD
+    PUSH #DROP
+    MOV #<#,R9
+    ADD #8,R9
+    MOV R9,R0
+ENDCODE
+[THEN]
 
 [UNDEFINED] WORDS [IF]
 : WORDS
@@ -87,42 +169,43 @@ ESC ." [7m"
 ESC ." [0m"
 $1812 @
 
-      DUP 0< IF CR ." LF XTAL" THEN
-DUP + DUP 0< IF CR ." TERMINAL5WIRES" THEN
-DUP + DUP 0< IF CR ." TERMINAL4WIRES" THEN
-DUP + DUP 0< IF CR ." TERMINAL3WIRES" THEN
-DUP + DUP 0< IF CR ." HALFDUPLEX_TERMINAL" THEN
-DUP + DUP 0< IF CR ." PROMPT" THEN
+      DUP 0< IF CR ." 32.768kHz XTAL" THEN
+DUP + DUP 0< IF DUP + CR ." HARDWARE (RTS/CTS) TERMINAL"
+             ELSE DUP + DUP 0< IF CR ." HARDWARE (RTS) TERMINAL" THEN
+             THEN
+DUP + DUP 0< IF CR ." XON/XOFF TERMINAL" THEN
+DUP + DUP 0< IF CR ." HALF-DUPLEX TERMINAL" THEN
+DUP + DUP 0< IF CR ." ASM DATA ACCESS BEYOND $FFFF" THEN
 DUP + DUP 0< IF CR ." BOOTLOADER" THEN
-DUP + DUP 0< IF CR ." SD_CARD_READ_WRITE" THEN
-DUP + DUP 0< IF CR ." SD_CARD_LOADER" THEN
-DUP + DUP 0< IF CR ." FIXPOINT_INPUT" THEN
-DUP + DUP 0< IF CR ." DOUBLE_INPUT" THEN
-DUP + DUP 0< IF CR ." VOCABULARY_SET" THEN
+DUP + DUP 0< IF CR ." SD_CARD READ/WRITE" THEN
+DUP + DUP 0< IF CR ." SD_CARD LOADER" THEN
+DUP + DUP 0< IF CR ." FIXPOINT INPUT" THEN
+DUP + DUP 0< IF CR ." DOUBLE INPUT" THEN
+DUP + DUP 0< IF CR ." VOCABULARY SET" THEN
 DUP + DUP 0< IF CR ." NONAME" THEN
-DUP + DUP 0< IF CR ." EXTENDED_ASM" THEN
+DUP + DUP 0< IF CR ." EXTENDED ASSEMBLER" THEN
 DUP + DUP 0< IF CR ." ASSEMBLER" THEN
-DUP + DUP 0< IF CR ." CONDCOMP" THEN
+DUP + DUP 0< IF CR ." CONDITIONNAL COMPILATION" THEN
 
 0< IF
     CR ESC ." [7m"
     ." OTHER OPTIONS:"
     ESC ." [0m"
-    [DEFINED] {ANS_COMP} [IF] CR ." ANS_COMPLEMENT" [THEN]
-    [DEFINED] {TOOLS}    [IF] CR ." UTILITY" [THEN]
-    [DEFINED] {FIXPOINT} [IF] CR ." FIXPOINT" [THEN]
-    [DEFINED] {SD_TOOLS} [IF] CR ." SD_TOOLS" [THEN]
+    CR ." none"
+    ESC ." [G"
+    [DEFINED] {ANS_COMP} [IF] ." ANS_COMPLEMENT" CR [THEN]
+    [DEFINED] {TOOLS}    [IF] ." UTILITY" CR [THEN]
+    [DEFINED] {FIXPOINT} [IF] ." FIXPOINT" CR [THEN]
+    [DEFINED] {SD_TOOLS} [IF] ." SD_TOOLS" CR [THEN]
     CR CR
     [DEFINED] VOCABULARY [IF]
-    CR ESC ." [7m"
+    ESC ." [7m"
     ." ASSEMBLER word set"
     ESC ." [0m"
-        ALSO ASSEMBLER WORDS CR PREVIOUS
+    ALSO ASSEMBLER WORDS CR PREVIOUS
     [THEN]
-    CR ESC ." [7m"
-    ." FORTH word set"
-    ESC ." [0m"
-    WORDS
+ESC ." [7m" ." FORTH word set" ESC ." [0m"
+WORDS
 THEN
 ;
 
@@ -140,9 +223,12 @@ ESC ." [7m"
 
 $1A04 @
 
-CR ." FastForth V" $1810 @ U. ." for MSP430FR"
+CR ." FastForth V" $1810 @
+0 <# #  8 HOLD # 46 hold  #S #> TYPE SPACE
+." for MSP430FR"
 CASE
     $830C     OF      ." 2355,"   $8000   ENDOF
+    $8328     OF      ." 2476,"   $8000   ENDOF
     $8240     OF      ." 2433,"   $C400   ENDOF
     $81F0     OF      ." 4133,"   $C400   ENDOF
     $8103     OF      ." 5739,"   $C200   ENDOF
@@ -153,21 +239,27 @@ CASE
     $81A8     OF      ." 6989,"   $4400   ENDOF
 
     ABORT" xxxx <-- unrecognized device!"
-ENDCASE
+ENDCASE SPACE 
 
-SPACE $1806 @ 0 1000 UM/MOD U. 
+['] ['] DUP @ $1287 = IF ." DTC=1," DROP
+                         ELSE 2 + @ $1287 =
+                            IF ." DTC=2,"
+                            ELSE ." DTC=3,"
+                            THEN
+                        THEN SPACE 
+
+$1800 @ U. BS ." -Entry word sets, "
+
+$1806 @ 0 1000 UM/MOD U.
 ?DUP IF  BS ." ," U.
 THEN ." MHz, "
 
-$1800 @ U. BS ." -Entry Vocabularies, "
+- U. ." bytes"
 
-- U. ." bytes, "
 
-$FF80 HERE - U. ." bytes free" CR
+CR CR ADDONS
 
-ESC ." [0m"
-
-CR ADDONS
+CR WARM
 ;
 
 ECHO specs

@@ -33,11 +33,7 @@
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
 
-: DEFINED! ECHO 1 ABORT" already loaded!" ;
-
-[DEFINED] {TOOLS} [IF] DEFINED!
-
-[ELSE]
+[UNDEFINED] {TOOLS} [IF]
 
 PWR_STATE
 
@@ -49,6 +45,34 @@ MARKER {TOOLS}
 CODE ?          
     MOV @TOS,TOS
     MOV #U.,PC  \ goto U.
+ENDCODE
+[THEN]
+
+[UNDEFINED] SPACE [IF]
+\ https://forth-standard.org/standard/core/SPACE
+\ SPACE   --               output a space
+: SPACE
+$20 EMIT ;
+[THEN]
+
+[UNDEFINED] SPACES [IF]
+\ https://forth-standard.org/standard/core/SPACES
+\ SPACES   n --            output n spaces
+CODE SPACES
+CMP #0,TOS
+0<> IF
+    PUSH IP
+    BEGIN
+        LO2HI
+        $20 EMIT
+        HI2LO
+        SUB #2,IP 
+        SUB #1,TOS
+    0= UNTIL
+    MOV @RSP+,IP
+THEN
+MOV @PSP+,TOS           \ --         drop n
+NEXT              
 ENDCODE
 [THEN]
 
@@ -71,16 +95,16 @@ COLON
     .                   \ display #cells
     $08 EMIT            \ backspace
     $3E EMIT SPACE      \ char '>' SPACE
-    OVER OVER >         \ 
-    0= IF 
+    2DUP 1+             \ 
+    U< IF 
         DROP DROP EXIT
     THEN                \ display content of stack in hexadecimal
-    BASE @ >R
-    $10 BASE !
+    BASEADR @ >R
+    $10 BASEADR !
     DO 
         I @ U.
     2 +LOOP
-    R> BASE !
+    R> BASEADR !
 ;
 [THEN]
 
@@ -94,51 +118,70 @@ CODE .RS
 ENDCODE
 [THEN]
 
-[UNDEFINED] AND [IF]
+[UNDEFINED] + [IF]
+\ https://forth-standard.org/standard/core/Plus
+\ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
+CODE +
+ADD @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
 
+[UNDEFINED] C@ [IF]
+\ https://forth-standard.org/standard/core/CFetch
+\ C@     c-addr -- char   fetch char from memory
+CODE C@
+MOV.B @TOS,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] AND [IF]
 \ https://forth-standard.org/standard/core/AND
 \ C AND    x1 x2 -- x3           logical AND
 CODE AND
 AND @PSP+,TOS
 MOV @IP+,PC
 ENDCODE
-
 [THEN]
 
-[UNDEFINED] PAD [IF]
-
-\ https://forth-standard.org/standard/core/PAD
-\ C PAD    -- addr
-PAD_ORG CONSTANT PAD
-
+[UNDEFINED] ROT [IF]
+\ https://forth-standard.org/standard/core/ROT
+\ ROT    x1 x2 x3 -- x2 x3 x1
+CODE ROT
+MOV @PSP,W          \ 2 fetch x2
+MOV TOS,0(PSP)      \ 3 store x3
+MOV 2(PSP),TOS      \ 3 fetch x1
+MOV W,2(PSP)        \ 3 store x2
+MOV @IP+,PC
+ENDCODE
 [THEN]
-
 
 [UNDEFINED] WORDS [IF]
 \ https://forth-standard.org/standard/tools/WORDS
 \ list all words of vocabulary first in CONTEXT.
 : WORDS                         \ --            
 CR 
-CONTEXT @ PAD                   \ -- VOC_BODY PAD                  MOVE all threads of VOC_BODY in PAD
-INI_THREAD @ DUP +              \ -- VOC_BODY PAD THREAD*2
-MOVE                            \ -- vocabumary entries are copied in PAD
+CONTEXT @ PAD_ORG                   \ -- VOC_BODY PAD_ORG                  MOVE all threads of VOC_BODY in PAD_ORG
+INI_THREAD @ DUP +              \ -- VOC_BODY PAD_ORG THREAD*2
+MOVE                            \ -- vocabumary entries are copied in PAD_ORG
 BEGIN                           \ -- 
     0 DUP                       \ -- ptr=0 MAX=0                
     INI_THREAD @ DUP + 0        \ -- ptr=0 MAX=0 THREADS*2 0
         DO                      \ -- ptr MAX            I =  PAD_ptr = thread*2
-        DUP I PAD + @           \ -- ptr MAX MAX NFAx
+        DUP I PAD_ORG + @           \ -- ptr MAX MAX NFAx
             U< IF               \ -- ptr MAX            if MAX U< NFAx
                 DROP DROP       \ --                    drop ptr and MAX
-                I DUP PAD + @   \ -- new_ptr new_MAX
+                I DUP PAD_ORG + @   \ -- new_ptr new_MAX
             THEN                \ 
         2 +LOOP                 \ -- ptr MAX
-    ?DUP                        \ -- ptr MAX MAX | -- ptr 0 (all threads in PAD = 0)
+    ?DUP                        \ -- ptr MAX MAX | -- ptr 0 (all threads in PAD_ORG = 0)
 WHILE                           \ -- ptr MAX                    replace it by its LFA
     DUP                         \ -- ptr MAX MAX
     2 - @                       \ -- ptr MAX [LFA]
     ROT                         \ -- MAX [LFA] ptr
-    PAD +                       \ -- MAX [LFA] thread
-    !                           \ -- MAX                [LFA]=new_NFA updates PAD+ptr
+    PAD_ORG +                       \ -- MAX [LFA] thread
+    !                           \ -- MAX                [LFA]=new_NFA updates PAD_ORG+ptr
     DUP                         \ -- MAX MAX
     COUNT $7F AND               \ -- MAX addr count (with suppr. of immediate bit)
     TYPE                        \ -- MAX
@@ -146,23 +189,34 @@ WHILE                           \ -- ptr MAX                    replace it by it
     $10 SWAP - SPACES           \ --                    complete with spaces modulo 16 chars
 REPEAT                          \ --
 DROP                            \ ptr --
-;                               \ all threads in PAD are filled with 0
+;                               \ all threads in PAD_ORG are filled with 0
 [THEN]
 
 [UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {ANS_COMP}
     CODE MAX    \    n1 n2 -- n3       signed maximum
         CMP @PSP,TOS    \ n2-n1
         S< ?GOTO FW1    \ n2<n1
-    BW1 ADD #2,PSP
+BW1     ADD #2,PSP
         MOV @IP+,PC
     ENDCODE
 
     CODE MIN    \    n1 n2 -- n3       signed minimum
         CMP @PSP,TOS    \ n2-n1
         S< ?GOTO BW1    \ n2<n1
-    FW1 MOV @PSP+,TOS
+FW1     MOV @PSP+,TOS
         MOV @IP+,PC
     ENDCODE
+[THEN]
+
+[UNDEFINED] OVER [IF]
+\ https://forth-standard.org/standard/core/OVER
+\ OVER    x1 x2 -- x1 x2 x1
+CODE OVER
+MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
+MOV @PSP,TOS        \ 2 -- x1 (x2) x1
+SUB #2,PSP          \ 1 -- x1 x2 x1
+MOV @IP+,PC
+ENDCODE
 [THEN]
 
 [UNDEFINED] U.R [IF]
@@ -176,11 +230,11 @@ R> OVER - 0 MAX SPACES TYPE
 \ https://forth-standard.org/standard/tools/DUMP
 CODE DUMP                   \ adr n  --   dump memory
 PUSH IP
-PUSH &BASE                  \ save current base
-MOV #$10,&BASE              \ HEX base
+PUSH &BASEADR                  \ save current base
+MOV #$10,&BASEADR              \ HEX base
 ADD @PSP,TOS                \ -- ORG END
 LO2HI
-  SWAP OVER OVER            \ -- END ORG END ORG 
+  SWAP 2DUP                 \ -- END ORG END ORG 
   U. U.                     \ -- END ORG        display org end 
   $FFF0 AND                 \ -- END ORG_modulo_16
   DO  CR                    \ generate line
@@ -192,9 +246,9 @@ LO2HI
       DO I C@ 3 U.R LOOP  
       SPACE SPACE
       I $10 + I             \ display 16 chars
-      DO I C@ $7E MIN BL MAX EMIT LOOP
+      DO I C@ $7E MIN $20 MAX EMIT LOOP
   $10 +LOOP
-  R> BASE !                 \ restore current base
+  R> BASEADR !                 \ restore current base
 ;
 [THEN]  \ endof [UNDEFINED] DUMP
 

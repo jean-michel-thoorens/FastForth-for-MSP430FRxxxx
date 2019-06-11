@@ -26,6 +26,134 @@ ECHO
 
 PWR_STATE
 
+[UNDEFINED] + [IF]
+\ https://forth-standard.org/standard/core/Plus
+\ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
+CODE +
+ADD @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {UTILITY}
+
+CODE MAX    \    n1 n2 -- n3       signed maximum
+    CMP @PSP,TOS    \ n2-n1
+    S<  ?GOTO FW1   \ n2<n1
+BW1 ADD #2,PSP
+    MOV @IP+,PC
+ENDCODE
+
+CODE MIN    \    n1 n2 -- n3       signed minimum
+    CMP @PSP,TOS     \ n2-n1
+    S<  ?GOTO BW1    \ n2<n1
+FW1 MOV @PSP+,TOS
+    MOV @IP+,PC
+ENDCODE
+
+[THEN]
+
+[UNDEFINED] C@ [IF]
+\ https://forth-standard.org/standard/core/CFetch
+\ C@     c-addr -- char   fetch char from memory
+CODE C@
+MOV.B @TOS,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] CONSTANT [IF]
+\ https://forth-standard.org/standard/core/CONSTANT
+\ CONSTANT <name>     n --                      define a Forth CONSTANT 
+: CONSTANT 
+DEFER
+HI2LO
+MOV @RSP+,IP
+MOV #DOCON,-4(W)        \   CFA = DOCON
+MOV TOS,-2(W)           \   PFA = n
+MOV @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] BL [IF]
+\ https://forth-standard.org/standard/core/BL
+\ BL      -- char            an ASCII space
+#32 CONSTANT BL
+[THEN]
+
+[UNDEFINED] SPACE [IF]
+\ https://forth-standard.org/standard/core/SPACE
+\ SPACE   --               output a space
+: SPACE
+BL EMIT ;
+[THEN]
+
+[UNDEFINED] SPACES [IF]
+\ https://forth-standard.org/standard/core/SPACES
+\ SPACES   n --            output n spaces
+CODE SPACES
+CMP #0,TOS
+0<> IF
+    PUSH IP
+    BEGIN
+        LO2HI
+        BL EMIT
+        HI2LO
+        SUB #2,IP 
+        SUB #1,TOS
+    0= UNTIL
+    MOV @RSP+,IP
+THEN
+MOV @PSP+,TOS           \ --         drop n
+NEXT              
+ENDCODE
+[THEN]
+
+[UNDEFINED] OVER [IF]
+\ https://forth-standard.org/standard/core/OVER
+\ OVER    x1 x2 -- x1 x2 x1
+CODE OVER
+MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
+MOV @PSP,TOS        \ 2 -- x1 (x2) x1
+SUB #2,PSP          \ 1 -- x1 x2 x1
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] U.R [IF]        \ defined in {UTILITY}
+: U.R                       \ u n --           display u unsigned in n width (n >= 2)
+  >R  <# 0 # #S #>  
+  R> OVER - 0 MAX SPACES TYPE
+;
+[THEN]
+
+[UNDEFINED] DUMP [IF]       \ defined in {UTILITY}
+\ https://forth-standard.org/standard/tools/DUMP
+CODE DUMP                   \ adr n  --   dump memory
+PUSH IP
+PUSH &BASEADR               \ save current base
+MOV #$10,&BASEADR           \ HEX base
+ADD @PSP,TOS                \ -- ORG END
+LO2HI
+  SWAP                      \ -- END ORG
+  DO  CR                    \ generate line
+    I 4 U.R SPACE           \ generate address
+      I 8 + I
+      DO I C@ 3 U.R LOOP
+      SPACE
+      I $10 + I 8 +
+      DO I C@ 3 U.R LOOP  
+      SPACE SPACE
+      I $10 + I             \ display 16 chars
+      DO I C@ $7E MIN BL MAX EMIT LOOP
+  $10 +LOOP
+  R> BASEADR !              \ restore current base
+;
+[THEN]
+
+PWR_HERE
+
 ; --------------------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER, OPCODES IV : Adda|Cmpa|Mova|Suba (without extended word)
 ; --------------------------------------------------------------------------------
@@ -403,11 +531,11 @@ PWR_STATE
 
 
 : %.
-BASE @ %10 BASE ! SWAP 8 EMIT . BASE !
+BASEADR @ %10 BASEADR ! SWAP 8 EMIT . BASEADR !
 ;
 
 : %U.
-BASE @ %10 BASE ! SWAP 8 EMIT U. BASE ! ;
+BASEADR @ %10 BASEADR ! SWAP 8 EMIT U. BASEADR ! ;
 
 PWR_HERE
 
@@ -424,7 +552,7 @@ RRUX Y
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV Y,TOS
-JMP %.
+MOV #%.,PC
 ENDCODE
 
 RRUX_T ; you should see %111100001111000 --> %
@@ -438,12 +566,12 @@ PWR_STATE
 
 CODE RRUX_T
 MOV #$F0F0,Y
-RPT #0
+RPT #1
 RRUX Y
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV Y,TOS
-JMP %.
+MOV #%.,PC
 ENDCODE
 
 RRUX_T ; you should see %111100001111000 --> %
@@ -452,12 +580,12 @@ PWR_STATE
 
 CODE RRUX_T
 MOV #$F0F0,Y
-RPT #3
+RPT #4
 RRUX Y
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV Y,TOS
-JMP %.
+MOV #%.,PC
 ENDCODE
 
 RRUX_T ; you should see %111100001111 --> %
@@ -466,12 +594,12 @@ PWR_STATE
 
 CODE RRUX_T
 MOV #$F0F0,Y
-RPT #7
+RPT #8
 RRUX Y
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV Y,TOS
-JMP %.
+MOV #%.,PC
 ENDCODE
 
 RRUX_T ; you should see %11110000 --> %
@@ -491,7 +619,7 @@ RRCX Y
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV Y,TOS
-JMP %U.
+MOV #%U.,PC
 ENDCODE
 
 RRCX_T ; you should see %100000000000000 --> %
@@ -505,12 +633,12 @@ PWR_STATE
 CODE RRCX_T
 MOV #$8000,Y
 BIC #C,SR
-RPT #0
+RPT #1
 RRCX Y
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV Y,TOS
-JMP %U.
+MOV #%U.,PC
 ENDCODE
 
 RRCX_T ; you should see %100000000000000 --> %
@@ -520,12 +648,12 @@ PWR_STATE
 CODE RRCX_T
 MOV #$8000,Y
 BIC #C,SR
-RPT #7
+RPT #8
 RRCX Y
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV Y,TOS
-JMP %U.
+MOV #%U.,PC
 ENDCODE
 
 RRCX_T ; you should see %10000000 --> %
@@ -543,7 +671,7 @@ RRAX Y
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV Y,TOS
-JMP %.
+MOV #%.,PC
 ENDCODE
 
 RRAX_T ; you should see %-100000000000000 --> %
@@ -557,29 +685,15 @@ PWR_STATE
 
 CODE RRAX_T
 MOV #$8000,Y
-RPT #0
-RRAX Y
-SUB #2,PSP
-MOV TOS,0(PSP)
-MOV Y,TOS
-JMP %.
-ENDCODE
-
-RRAX_T ; you should see %-100000000000000 --> %
-
-PWR_STATE
-
-CODE RRAX_T
-MOV #$8000,Y
 RPT #1
 RRAX Y
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV Y,TOS
-JMP %.
+MOV #%.,PC
 ENDCODE
 
-RRAX_T ; you should see %-10000000000000 --> %
+RRAX_T ; you should see %-100000000000000 --> %
 
 PWR_STATE
 
@@ -590,7 +704,21 @@ RRAX Y
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV Y,TOS
-JMP %.
+MOV #%.,PC
+ENDCODE
+
+RRAX_T ; you should see %-10000000000000 --> %
+
+PWR_STATE
+
+CODE RRAX_T
+MOV #$8000,Y
+RPT #3
+RRAX Y
+SUB #2,PSP
+MOV TOS,0(PSP)
+MOV Y,TOS
+MOV #%.,PC
 ENDCODE
 
 RRAX_T ; you should see %-1000000000000 --> %
@@ -599,12 +727,12 @@ PWR_STATE
 
 CODE RRAX_T
 MOV #$8000,Y
-RPT #6
+RPT #7
 RRAX Y
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV Y,TOS
-JMP %.
+MOV #%.,PC
 ENDCODE
 
 RRAX_T ; you should see %-100000000 --> %
@@ -636,7 +764,7 @@ PWR_STATE
 
 CODE RLAX_T
 MOV #-1,Y
-RPT #0
+RPT #1
 ADDX Y,Y
 SUB #2,PSP
 MOV TOS,0(PSP)
@@ -650,7 +778,7 @@ PWR_STATE
 
 CODE RLAX_T
 MOV #-1,Y
-RPT #1
+RPT #2
 ADDX Y,Y
 SUB #2,PSP
 MOV TOS,0(PSP)
@@ -664,7 +792,7 @@ PWR_STATE
 
 CODE RLAX_T
 MOV #-1,Y
-RPT #2
+RPT #3
 ADDX Y,Y
 SUB #2,PSP
 MOV TOS,0(PSP)
@@ -678,7 +806,7 @@ PWR_STATE
 
 CODE RLAX_T
 MOV #-1,Y
-RPT #7
+RPT #8
 ADDX Y,Y
 SUB #2,PSP
 MOV TOS,0(PSP)
@@ -717,7 +845,7 @@ PWR_STATE
 CODE ADDX_T
 MOV #0,Y
 MOV #-1,X
-RPT #0
+RPT #1
 ADDX X,Y
 SUB #2,PSP
 MOV TOS,0(PSP)
@@ -732,7 +860,7 @@ PWR_STATE
 CODE ADDX_T
 MOV #0,Y
 MOV #-1,X
-RPT #1
+RPT #2
 ADDX X,Y
 SUB #2,PSP
 MOV TOS,0(PSP)
@@ -747,7 +875,7 @@ PWR_STATE
 CODE ADDX_T
 MOV #0,Y
 MOV #-1,X
-RPT #7
+RPT #8
 ADDX X,Y
 SUB #2,PSP
 MOV TOS,0(PSP)
@@ -787,7 +915,7 @@ PWR_STATE
 CODE SUBX_T
 MOV #0,Y
 MOV #-1,X
-RPT #0
+RPT #1
 SUBX X,Y
 SUB #2,PSP
 MOV TOS,0(PSP)
@@ -802,7 +930,7 @@ PWR_STATE
 CODE SUBX_T
 MOV #0,Y
 MOV #-1,X
-RPT #1
+RPT #2
 SUBX X,Y
 SUB #2,PSP
 MOV TOS,0(PSP)
@@ -817,7 +945,7 @@ PWR_STATE
 CODE SUBX_T
 MOV #0,Y
 MOV #-1,X
-RPT #7
+RPT #8
 SUBX X,Y
 SUB #2,PSP
 MOV TOS,0(PSP)
@@ -830,7 +958,7 @@ SUBX_T ; you should see 8 -->
 PWR_STATE
 
 CODE SUBX_T     \ W register = R10
-MOV #15,W       \ RPT [W] times, modulo 16 <--> RPT #15
+MOV #15,W       \ RPT [W] times, modulo 16 <--> RPT #16
 MOV #0,Y
 MOV #-1,X
 RPT W
@@ -846,7 +974,7 @@ SUBX_T ; you should see 16 -->
 PWR_STATE
 
 CODE SUBX_T
-MOV #32,W       \ RPT [W] times, modulo 16 <--> RPT #0
+MOV #32,W       \ RPT [W] times, modulo 16 <--> RPT #1
 MOV #0,Y
 MOV #-1,X
 RPT W
@@ -862,7 +990,7 @@ SUBX_T ; you should see 1 -->
 PWR_STATE
 
 CODE SUBX_T
-MOV #33,W       \ RPT [W] times, modulo 16 <--> RPT #1
+MOV #33,W       \ RPT [W] times, modulo 16 <--> RPT #2
 MOV #0,Y
 MOV #-1,X
 RPT W
@@ -875,3 +1003,4 @@ ENDCODE
 
 SUBX_T ; you should see 2 -->
 
+RST_STATE

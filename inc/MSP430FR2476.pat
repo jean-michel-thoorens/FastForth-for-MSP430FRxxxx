@@ -1,40 +1,51 @@
-!MSP430FR2633.pat
+!MSP430FR2476.pat
 
 ! ----------------------------------------------
-! MSP430FR2633 MEMORY MAP
+! MSP430FR2476 MEMORY MAP
 ! ----------------------------------------------
-! 0000-0FFF = peripherals (4 KB)
-! 1000-17FF = ROM bootstrap loader BSL1 (4x512 B)
-! 1800-187F = info B (FRAM 128 B)
-! 1880-18FF = info A (FRAM 128 B)
-! 1900-19FF = N/A (mirrored into info A/B)
+! 0000-0005 = reserved
+! 0006-001F = TinyRAM
+! 0020-0FFF = peripherals (4 KB)
+! 1000-17FF = ROM bootstrap loader BSL1 (2k)
+! 1800-19FF = info B (FRAM 512 B)
 ! 1A00-1A7F = TLV device descriptor info (FRAM 128 B)
-! 2000-2FFF = RAM (4 KB)
-! 4000-6FFF = ROM captivate (12 k)
-! C400-FF7F = code memory (FRAM 15232 B)
-! FF80-FFFF = interrupt vectors (FRAM 127 B)
+! 1A80-1FFF = unused
+! 2000-3FFF = RAM (8 KB)
+! 4000-7FFF = unused
+! 8000-17FFF = code memory (FRAM 64 kB)
+! FF80-FFFF = interrupt vectors (FRAM 128 B)
+! C0000-C3FFF = CapTivate lib
+! FFC00-FFFFF = BSL2 (2k)
 ! ----------------------------------------------
+!PAGESIZE        .equ 512         ; MPU unit
+! ----------------------------------------------
+! BSL                           
+! ----------------------------------------------
+BSL1=\$1000!    to $17FF (2k)
+BSL2=\$FFC00!   to $FFFFFF (1k)
 ! ----------------------------------------------
 ! FRAM                          ; INFO B, TLV
 ! ----------------------------------------------
-INFO_ORG =\$1800!
+INFO_ORG =\$1800!   to $19FF (512b)
 INFO_LEN=\$0200!
-TLV_ORG=\$1A00!     Device Descriptor Info (Tag-Lenght-Value)
+TLV_ORG=\$1A00!     to $1A31 Device Descriptor Info (Tag-Lenght-Value)
 TLV_LEN=\$0080!
 DEVICEID=\$1A04!
 ! ----------------------------------------------
 ! RAM
 ! ----------------------------------------------
+TinyRAM_ORG=\$06!
+TinyRAM_LEN=\$1A!
 RAM_ORG=\$2000!
-RAM_LEN=\$1000!
+RAM_LEN=\$2000!
 ! ----------------------------------------------
 ! FRAM
 ! ----------------------------------------------
-MAIN_ORG=\$C400!        Code space start
-xdodoes=\$C400!         restore rDODOES: MOV #xdodoes,rDODOES
-xdocon=\$C40E!          restore rDOCON: MOV #xdocon,rDOCON
-xdovar=\$C420!          restore rDOVAR: MOV #xdocon,rDOVAR  
-xdocol=\$C42A!          restore rDOCOL: MOV #xdocol,rDOCOL      only for DTC model = 1
+MAIN_ORG=\$8000!        Code space start
+xdodoes=\$8000!         restore rDODOES: MOV #xdodoes,rDODOES
+xdocon=\$800E!          restore rDOCON: MOV #xdocon,rDOCON
+xdovar=\$8020!          restore rDOVAR: MOV #xdocon,rDOVAR  
+xdocol=\$802A!          restore rDOCOL: MOV #xdocol,rDOCOL      only for DTC model = 1
 DODOES=\$1284!          CALL rDODOES
 DOCON=\$1285!           CALL rDOCON
 DOVAR=\$1286!           CALL rDOVAR
@@ -44,29 +55,67 @@ DOVAR=\$1286!           CALL rDOVAR
 ! if DTC = 2, restore rDOCOL as this : MOV #EXIT,rDOCOL
 ! if DTC = 3, nothing to do, R7 is free for use.
 ! ----------------------------------------------
-! Interrupt Vectors and signatures - MSP430FR2633
+! Interrupt Vectors and signatures - MSP430FR2476
 ! ----------------------------------------------
-FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
+FRAM_FULL=\$FF40!       64 bytes are sufficient considering what can be compiled in one line and WORD use.
 SIGNATURES=\$FF80!      JTAG/BSL signatures
-JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW; must be reset by wipe.
-JTAG_SIG2=\$FF82!       if JTAG_SIG1=\$AAAA, length of password string @ JTAG_PASSWORD
-BSL_SIG1=\$FF84!  
-BSL_SIG2=\$FF86!  
+JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW ; reset by wipe and by S1+<reset>
+JTAG_SIG2=\$FF82!       if JTAG_SIG <> |\$FFFFFFFF, \$00000000|, SBW and JTAG are locked
+BSL_SIG1=\$FF84!        
+BSL_SIG2=\$FF86!        
 JTAG_PASSWORD=\$FF88!   256 bits
 BSL_PASSWORD=\$FFE0!    256 bits
-VECT_ORG=\$FFD8!        FFD8-FFFF
-VECT_LEN=\$28!
+VECT_ORG=\$FFDA!        FFDA-FFFF
+VECT_LEN=\$38!
+! ----------------------------------------------
 
 
-CAPTIVATE_Vec=\$FFD8!
-P2_Vec=\$FFDA!
-P1_Vec=\$FFDC!
-ADC10_B_Vec=\$FFDE!
-eUSCI_B0_Vec=\$FFE0!
-eUSCI_A1_Vec=\$FFE2!
-eUSCI_A0_Vec=\$FFE4!
-WDT_Vec=\$FFE6!
-RTC_Vec=\$FFE8!
+;   .org    INTVECT         ; FFDA-FFFF 26 vectors + reset
+;
+;           .word  reset        ; FFCAh - eCOMP0       
+;           .word  reset        ; FFCCh - P6       
+;           .word  reset        ; FFCEh - P5       
+;           .word  reset        ; FFD0h - P4       
+;           .word  reset        ; FFD2h - P3       
+;           .word  reset        ; FFD4h - P2       
+;           .word  reset        ; FFD6h - P1       
+;           .word  reset        ; FFD8h - ADC10    
+;           .word  reset        ; FFDAh - eUSCI_B1 
+;           .word  reset        ; FFDCh - eUSCI_B0 
+;           .word  reset        ; FFDEh - eUSCI_A1 
+;           .word  reset        ; FFE0h - eUSCI_A0 
+;           .word  reset        ; FFE2h - WDT      
+;           .word  reset        ; FFE4h - RTC      
+;           .word  reset        ; FFE6h - TB0_x    
+;           .word  reset        ; FFE8h - TB0_0    
+;           .word  reset        ; FFEAh - TA3_x    
+;           .word  reset        ; FFECh - TA3_0    
+;           .word  reset        ; FFEEh - TA2_x    
+;           .word  reset        ; FFF0h - TA2_0    
+;           .word  reset        ; FFF2h - TA1_x    
+;           .word  reset        ; FFF4h - TA1_0    
+;           .word  reset        ; FFF6h - TA0_x    
+;           .word  reset        ; FFF8h - TA0_0    
+;           .word  reset        ; FFFAh - UserNMI  
+;           .word  reset        ; FFFCh - SysNMI  
+
+    
+eCOMP0_Vec=\$FFCA!
+P6_Vec=\$FFCC!
+P5_Vec=\$FFCE!
+P4_Vec=\$FFD0!
+P3_Vec=\$FFD2!
+P2_Vec=\$FFD4!
+P1_Vec=\$FFD6!
+ADC10_B_Vec=\$FFD8!
+eUSCI_B1_Vec=\$FFDA!
+eUSCI_B0_Vec=\$FFDC!
+eUSCI_A1_Vec=\$FFDE!
+eUSCI_A0_Vec=\$FFE0!
+WDT_Vec=\$FFE2!
+RTC_Vec=\$FFE4!
+TB0_x_Vec=\$FFE6!
+TB0_0_Vec=\$FFE8!
 TA3_x_Vec=\$FFEA!
 TA3_0_Vec=\$FFEC!
 TA2_x_Vec=\$FFEE!
@@ -79,8 +128,6 @@ U_NMI_Vec=\$FFFA!
 S_NMI_Vec=\$FFFC!
 RST_Vec=\$FFFE!
 
-
-!MSP430FR2xxx.pat
 
 LPM4=\$F8! SR(LPM4+GIE)
 LPM3=\$D8! SR(LPM3+GIE)
@@ -221,7 +268,17 @@ CURRENT=\$21DA!         CURRENT dictionnary ptr
 BASEADR=\$21DC!           numeric base, must be defined before first reset !
 LINE=\$21DE!            line in interpretation, activated with NOECHO, desactivated with ECHO
 ! ---------------------------------------
-!21E0! 28 RAM bytes free 
+!21E0! 14 RAM bytes free conditionnaly
+! ---------------------------------------
+!ASMBW1=\$21E0          assembler backward reference 1
+!ASMBW2=\$21E2          assembler backward reference 2
+!ASMBW3=\$21E4          assembler backward reference 3
+!ASMFW1=\$21E6          assembler forward reference 1
+!ASMFW2=\$21E8          assembler forward reference 2
+!ASMFW3=\$21EA          assembler forward reference 3
+!RPT_WORD=\$21EC!    
+! ---------------------------------------
+!21EE! 14 RAM bytes free
 ! ---------------------------------------
 
 ! ---------------------------------------
@@ -332,11 +389,31 @@ SDIB_ORG=\$251C!
 SD_END=\$2570!
 SD_LEN=\$16E!
 
-! ============================================
-! Special Fonction Registers (SFR)
-! ============================================
 
 
+! ----------------------------------------------------------------------
+! MSP430FR2433 Peripheral File Map
+! ----------------------------------------------------------------------
+!SFR_SFR         .equ 0100h           ; Special function
+!PMM_SFR         .equ 0120h           ; PMM
+!SYS_SFR         .equ 0140h           ; SYS
+!CS_SFR          .equ 0180h           ; Clock System
+!FRAM_SFR        .equ 01A0h           ; FRAM control
+!CRC16_SFR       .equ 01C0h
+!WDT_A_SFR       .equ 01CCh           ; Watchdog
+!PA_SFR          .equ 0200h           ; PORT1/2
+!PB_SFR          .equ 0220h           ; PORT3
+!RTC_SFR         .equ 0300h
+!TA0_SFR         .equ 0380h
+!TA1_SFR         .equ 03C0h
+!TA2_SFR         .equ 0400h
+!TA3_SFR         .equ 0440h
+!MPY_SFR         .equ 04C0h
+!eUSCI_A0_SFR    .equ 0500h           ; eUSCI_A0
+!eUSCI_A1_SFR    .equ 0520h           ; eUSCI_A1
+!eUSCI_B0_SFR    .equ 0540h           ; eUSCI_B0
+!BACK_MEM_SFR    .equ 0660h
+!ADC10_B_SFR     .equ 0700h
 
 SFRIE1=\$100!       \ SFR enable register
 SFRIFG1=\$102!      \ SFR flag register
@@ -372,7 +449,6 @@ CSCTL6=\$18C!       \ CS control 6
 CSCTL7=\$18E!       \ CS control 7 
 CSCTL8=\$190!       \ CS control 8 
 
-
 FRCTLCTL0=\$1A0!    \ FRAM control 0    
 GCCTL0=\$1A4!       \ General control 0 
 GCCTL1=\$1A6!       \ General control 1 
@@ -383,7 +459,6 @@ CRCINIRES=\$1C4!    \ CRC initialization and result
 CRCRESR=\$1C6!      \ CRC result reverse byte  
 
 WDTCTL=\$1CC!        \ WDT control register
-
 
 PAIN=\$200!
 PAOUT=\$202!
@@ -417,20 +492,69 @@ P2IE=\$21B!
 P2IFG=\$21D!
 P2IV=\$21E!
 
-
 P3IN=\$220!
 P3OUT=\$222!
 P3DIR=\$224!
 P3REN=\$226!
 P3SEL0=\$22A!
 P3SEL1=\$22C!
+P3IV=\$22E!
+P3SELC=\$236!
+P3IES=\$238!
+P3IE=\$23A!
+P3IFG=\$23C!
 
+P4IN=\$221!
+P4OUT=\$223!
+P4DIR=\$225!
+P4REN=\$227!
+P4SEL0=\$22B!
+P4SEL1=\$22D!
+P4SELC=\$237!
+P4IES=\$239!
+P4IE=\$23B!
+P4IFG=\$23D!
+P4IV=\$23E!
+
+PCIN=\$240!
+PCOUT=\$242!
+PCDIR=\$244!
+PCREN=\$246!
+PCSEL0=\$24A!
+PCSEL1=\$24C!
+PCSELC=\$256!
+PCIES=\$258!
+PCIE=\$25A!
+PCIFG=\$25C!
+
+P5IN=\$240!
+P5OUT=\$242!
+P5DIR=\$244!
+P5REN=\$246!
+P5SEL0=\$24A!
+P5SEL1=\$24C!
+P5IV=\$24E!
+P5SELC=\$256!
+P5IES=\$258!
+P5IE=\$25A!
+P5IFG=\$25C!
+
+P6IN=\$241!
+P6OUT=\$243!
+P6DIR=\$245!
+P6REN=\$247!
+P6SEL0=\$24B!
+P6SEL1=\$24D!
+P6SELC=\$257!
+P6IES=\$259!
+P6IE=\$25B!
+P6IFG=\$25D!
+P6IV=\$25E!
 
 RTCCTL=\$300!       \ RTC control                                  
 RTCIV=\$304!        \ RTC interrupt vector word                       
 RTCMOD=\$308!       \ RTC modulo                                       
 RTCCNT=\$30C!       \ RTC counter register    
-
 
 TACLR=4!
 TAIFG=1!
@@ -461,21 +585,43 @@ TA1IV=\$3EE!        \ TA1 interrupt vector
 TA2CTL=\$400!       \ TA2 control                 
 TA2CCTL0=\$402!     \ Capture/compare control 0   
 TA2CCTL1=\$404!     \ Capture/compare control 1   
+TA2CCTL2=\$406!     \ Capture/compare control 2   
 TA2R=\$410!         \ TA2 counter register        
 TA2CCR0=\$412!      \ Capture/compare register 0  
 TA2CCR1=\$414!      \ Capture/compare register 1  
+TA2CCR1=\$416!      \ Capture/compare register 2  
 TA2EX0=\$420!       \ TA2 expansion register 0    
 TA2IV=\$42E!        \ TA2 interrupt vector        
 
 TA3CTL=\$440!       \ TA3 control                 
 TA3CCTL0=\$442!     \ Capture/compare control 0   
 TA3CCTL1=\$444!     \ Capture/compare control 1   
+TA3CCTL1=\$446!     \ Capture/compare control 2   
 TA3R=\$450!         \ TA3 counter register        
 TA3CCR0=\$452!      \ Capture/compare register 0  
 TA3CCR1=\$454!      \ Capture/compare register 1  
+TA3CCR1=\$456!      \ Capture/compare register 2  
 TA3EX0=\$460!       \ TA3 expansion register 0    
 TA3IV=\$46E!        \ TA3 interrupt vector        
 
+TB0CTL=\$480!       \ TB0 control                 
+TB0CCTL0=\$482!     \ Capture/compare control 0   
+TB0CCTL1=\$484!     \ Capture/compare control 1   
+TB0CCTL2=\$486!     \ Capture/compare control 2   
+TB0CCTL3=\$488!     \ Capture/compare control 3   
+TB0CCTL4=\$48A!     \ Capture/compare control 4   
+TB0CCTL5=\$48C!     \ Capture/compare control 5   
+TB0CCTL6=\$48E!     \ Capture/compare control 6   
+TB0R=\$490!         \ TB0 counter register        
+TB0CCR0=\$492!      \ Capture/compare register 0  
+TB0CCR1=\$494!      \ Capture/compare register 1  
+TB0CCR2=\$496!      \ Capture/compare register 2  
+TB0CCR3=\$498!      \ Capture/compare register 3  
+TB0CCR5=\$49A!      \ Capture/compare register 4 
+TB0CCR5=\$49C!      \ Capture/compare register 5  
+TB0CCR6=\$49E!      \ Capture/compare register 6  
+TB0EX0=\$4A0!       \ TB0 expansion register 0    
+TB0IV=\$4AE!        \ TB0 interrupt vector        
 
 MPY=\$4C0!          \ 16-bit operand 1 - multiply
 MPYS=\$4C2!         \ 16-bit operand 1 - signed multiply
@@ -500,7 +646,6 @@ RES1=\$4E6!         \ 32 x 32 result 1
 RES2=\$4E8!         \ 32 x 32 result 2
 RES3=\$4EA!         \ 32 x 32 result 3 - most significant word
 MPY32CTL0=\$4EC!    \ MPY32 control register 0
-
 
 
 UCA0CTLW0=\$500!    \ eUSCI_A control word 0        
@@ -535,7 +680,6 @@ UCA1IE=\$53A!       \ eUSCI_A interrupt enable
 UCA1IFG=\$53C!      \ eUSCI_A interrupt flags       
 UCA1IV=\$53E!       \ eUSCI_A interrupt vector word 
 
-
 UCB0CTLW0=\$540!    \ eUSCI_B control word 0          
 UCB0CTLW1=\$542!    \ eUSCI_B control word 1 
 UCB0BRW=\$546!         
@@ -557,9 +701,29 @@ UCB0IE=\$56A!       \ eUSCI interrupt enable
 UCB0IFG=\$56C!      \ eUSCI interrupt flags           
 UCB0IV=\$56E!       \ eUSCI interrupt vector word     
 
+UCB1CTLW0=\$580!    \ eUSCI_B control word 0          
+UCB1CTLW1=\$582!    \ eUSCI_B control word 1 
+UCB1BRW=\$586!         
+UCB1BR0=\$586!      \ eUSCI_B bit rate 0              
+UCB1BR1=\$587!      \ eUSCI_B bit rate 1              
+UCB1STATW=\$588!    \ eUSCI_B status word 
+UCB1NT0=\$589!      \ eUSCI_B hardware count           
+UCB1TBCNT=\$58A!    \ eUSCI_B byte counter threshold  
+UCB1RXBUF=\$58C!    \ eUSCI_B receive buffer          
+UCB1TXBUF=\$58E!    \ eUSCI_B transmit buffer         
+UCB1I2COA0=\$594!   \ eUSCI_B I2C own address 0       
+UCB1I2COA1=\$596!   \ eUSCI_B I2C own address 1       
+UCB1I2COA2=\$598!   \ eUSCI_B I2C own address 2       
+UCB1I2COA3=\$59A!   \ eUSCI_B I2C own address 3       
+UCB1ADDRX=\$59C!    \ eUSCI_B received address        
+UCB1ADDMASK=\$59E!  \ eUSCI_B address mask            
+UCB1I2CSA=\$5A0!    \ eUSCI I2C slave address         
+UCB1IE=\$5AA!       \ eUSCI interrupt enable          
+UCB1IFG=\$5AC!      \ eUSCI interrupt flags           
+UCB1IV=\$5AE!       \ eUSCI interrupt vector word     
+
 UCTXACK=\$20!
 UCTR=\$10!
-
 
 BAKMEM0=\$660!      \ Backup Memory 0     
 BAKMEM1=\$662!      \ Backup Memory 1     
@@ -578,7 +742,6 @@ BAKMEM13=\$67A!     \ Backup Memory 13
 BAKMEM14=\$67C!     \ Backup Memory 14    
 BAKMEM15=\$67E!     \ Backup Memory 15    
 
-
 ADC10CTL0=\$700!    \ ADC10_B Control register 0               
 ADC10CTL1=\$702!    \ ADC10_B Control register 1               
 ADC10CTL2=\$704!    \ ADC10_B Control register 2               
@@ -592,4 +755,12 @@ ADC10IV=\$71E!      \ ADC10_B Interrupt Vector Word
 
 ADCON=\$10!
 ADCSTART=\$03!
+
+CP0CTL0=\$8E0!      \ Comparator control 0
+CP0CTL1=\$8E2!      \ Comparator control 1
+CP0INT=\$8E6!       \ Comparator interrupt
+CP0IV=\$8E8!        \ Comparator interrupt vector
+CP0DACCTL=\$8EA!    \ Comparator built-in DAC control
+CP0DACDATA=\$8EC!   \ Comparator built-in DAC data
+
 

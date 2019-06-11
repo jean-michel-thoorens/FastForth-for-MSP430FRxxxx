@@ -32,17 +32,20 @@
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 \
 
-: DEFINED! ECHO 1 ABORT" already loaded!" ;
-
-[DEFINED] {FIXPOINT} [IF] DEFINED!
-
-[ELSE]
-
 PWR_STATE
+
+[UNDEFINED] {FIXPOINT} [IF]
 
 MARKER {FIXPOINT}
 
-
+[UNDEFINED] + [IF]
+\ https://forth-standard.org/standard/core/Plus
+\ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
+CODE +
+ADD @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
 
 [UNDEFINED] HOLDS [IF]
 \ https://forth-standard.org/standard/core/HOLDS
@@ -52,7 +55,7 @@ MARKER {FIXPOINT}
 \ (2 supplementary bytes are room for sign - and decimal point)
 \ C HOLDS    addr u --
 CODE HOLDS
-            MOV @PSP+,X     \ 2
+BW3         MOV @PSP+,X     \ 2
             ADD TOS,X       \ 1 src
             MOV &HP,Y       \ 3 dst
 BEGIN       SUB #1,X        \ 1 src-1
@@ -62,6 +65,16 @@ U>= WHILE   SUB #1,Y        \ 1 dst-1
 REPEAT      MOV Y,&HP       \ 3
             MOV @PSP+,TOS   \ 2
             MOV @IP+,PC     \ 4  15 words
+ENDCODE
+[THEN]
+
+[UNDEFINED] DABS [IF]
+\ https://forth-standard.org/standard/double/DABS
+\ DABS     d1 -- |d1|     absolute value
+CODE DABS
+MOV #1-,X   \ 2
+ADD #4,X    \ 1
+MOV X,PC    \ 3
 ENDCODE
 [THEN]
 
@@ -78,7 +91,9 @@ CODE F-                     \ substract Q15.16 numbers
     MOV @IP+,PC
 ENDCODE
 
-$1A04 C@ $EF > [IF] ; test tag value MSP430FR413x subfamily without hardware_MPY 
+TLV_ORG 4 + @ $81F3 U<
+$81EF TLV_ORG 4 + @ U< 
+= [IF]   ; MSP430FR413x subfamily without hardware_MPY
 
 CODE F/                         \ Q15.16 / Q15.16 --> Q15.16 result
             PUSHM #4,rDOCOL    
@@ -155,7 +170,7 @@ CODE F#S
             PUSHM #2,TOS            \                   save TOS,IP
             MOV #0,S                \ -- Qhi Qlo x
 BEGIN       PUSH S                  \                   R-- limit IP count
-            MOV &BASE,TOS           \ -- Qhi Qlo base
+            MOV &BASEADR,TOS           \ -- Qhi Qlo base
             LO2HI
             UM*                     \                   u1 u2 -- RESlo REShi
             HI2LO                   \ -- Qhi RESlo digit
@@ -172,7 +187,7 @@ U>= UNTIL
             MOV #0,0(PSP)           \ -- Qhi 0 len
             SUB #2,PSP              \ -- Qhi 0 x len
             MOV #HOLDS_ORG,0(PSP)   \ -- Qhi 0 addr len
-            JMP HOLDS
+            GOTO BW3                \ JMP HOLDS
 ENDCODE
 [THEN]
 
@@ -231,7 +246,7 @@ THEN
         GOTO BW1            \ goto end of F/ to process sign of result
 ENDCODE
 
-[ELSE] \ hardware multiplier
+[ELSE] ; else if hardware multiplier
 
 CODE F/                     \ Q15.16 / Q15.16 --> Q15.16 result
 \ TOS = DVRhi
@@ -306,7 +321,7 @@ CODE F#S
             MOV TOS,T               \                   T = limit
             MOV #0,S                \                   S = count
 BEGIN       MOV @PSP,&MPY           \                   Load 1st operand
-            MOV &BASE,&OP2          \                   Load 2nd operand
+            MOV &BASEADR,&OP2          \                   Load 2nd operand
             MOV &RES0,0(PSP)        \ -- Qhi RESlo x        low result on stack
             MOV &RES1,TOS           \ -- Qhi RESlo REShi    high result in TOS
             CMP #10,TOS             \                   digit to char
@@ -319,7 +334,7 @@ BEGIN       MOV @PSP,&MPY           \                   Load 1st operand
             MOV T,TOS               \ -- Qhi 0 limit
             SUB #2,PSP              \ -- Qhi 0 x len
             MOV #HOLDS_ORG,0(PSP)   \ -- Qhi 0 addr len
-            JMP HOLDS
+            GOTO BW3                \ JMP HOLDS
 ENDCODE
 [THEN]
 
@@ -336,13 +351,13 @@ CODE F*                 \ signed s15.16 multiplication --> s15.16 result
     MOV @IP+,PC
 ENDCODE
 
-[THEN]  \ hardware multiplier
+[THEN]  \ end of hardware multiplier
 
 [UNDEFINED] F. [IF]
 CODE F.             \ display a Q15.16 number with 4/5/16 digits after comma
 MOV TOS,S           \ S = sign
 MOV #4,T            \ T = 4     preset 4 digits for base 16 and by default
-MOV &BASE,W
+MOV &BASEADR,W
 CMP ##10,W
 0= IF               \           if base 10
     ADD #1,T        \ T = 5     set 5 digits
@@ -359,7 +374,7 @@ LO2HI
     $2C HOLD        \                   $2C = char ','
     #S              \ -- 0 0
     R> SIGN #>      \ -- addr len       R-- IP
-    TYPE SPACE      \ --         
+    TYPE $20 EMIT   \ --         
 ;
 
 CODE S>F         \ convert a signed number to a Q15.16 (signed) number
@@ -369,29 +384,24 @@ CODE S>F         \ convert a signed number to a Q15.16 (signed) number
 ENDCODE
 [THEN]
 
-[UNDEFINED] 2@ [IF]
+RST_HERE
 
-\ https://forth-standard.org/standard/core/TwoFetch
-\ 2@    a-addr -- x1 x2    fetch 2 cells ; the lower address will appear on top of stack
-CODE 2@
-SUB #2,PSP
-MOV 2(TOS),0(PSP)
-MOV @TOS,TOS
-NEXT
-ENDCODE
-[THEN] \ of [UNDEFINED] 2@
+[THEN] \ of [UNDEFINED] {FIXPOINT}
 
 [UNDEFINED] 2CONSTANT [IF]
 \ https://forth-standard.org/standard/double/TwoCONSTANT
 : 2CONSTANT \  udlo/dlo/Qlo udhi/dhi/Qhi --         to create double or Q15.16 CONSTANT
 CREATE , ,  \ compile Qhi then Qlo
-DOES> 2@    \ execution part    addr -- Qhi Qlo
+DOES>       \ execution part    addr -- Qhi Qlo
+HI2LO
+SUB #2,PSP
+MOV 2(TOS),0(PSP)
+MOV @TOS,TOS
+MOV @RSP+,IP
+NEXT
+ENDCODE
 ;
-[THEN] \ of [UNDEFINED] 2CONSTANT
-
-RST_HERE
-
-[THEN] \ of [UNDEFINED] {FIXPOINT}
+[THEN]
 
 ECHO
 
@@ -403,11 +413,11 @@ ECHO
 3,14159 2CONSTANT PI
 PI -1,0 F* 2CONSTANT -PI
 
-$10 BASE !  PI F. 
+$10 BASEADR !  PI F. 
            -PI F.
-%10 BASE !  PI F. 
+%10 BASEADR !  PI F. 
            -PI F.
-#10 BASE !  PI F. 
+#10 BASEADR !  PI F. 
            -PI F.
 
 PI 2,0 F* F.      
@@ -441,3 +451,4 @@ PI -2,0 F/ F.
 181,01933598375 -181,01933598375 f* f.
 -181,01933598375 181,01933598375 f* f.
 -181,01933598375 -181,01933598375 f* f.
+

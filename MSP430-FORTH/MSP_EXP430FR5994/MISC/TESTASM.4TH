@@ -3,7 +3,125 @@
 ; TEST_ASM.4th
 ; -----------------------------------------------------------------------
 
+[UNDEFINED] + [IF]
+CODE +
+ADD @R15+,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] MAX [IF]
+
+CODE MAX
+    CMP @R15,R14
+    S<  ?GOTO FW1
+BW1 ADD #2,R15
+    MOV @R13+,R0
+ENDCODE
+
+CODE MIN
+    CMP @R15,R14
+    S<  ?GOTO BW1
+FW1 MOV @R15+,R14
+    MOV @R13+,R0
+ENDCODE
+
+[THEN]
+
+[UNDEFINED] C@ [IF]
+CODE C@
+MOV.B @R14,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] VARIABLE [IF]
+: VARIABLE 
+DEFER
+HI2LO
+MOV @R1+,R13
+MOV #$1286,-4(R10)
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] CONSTANT [IF]
+: CONSTANT 
+DEFER
+HI2LO
+MOV @R1+,R13
+MOV #$1285,-4(R10)
+MOV R14,-2(R10)
+MOV @R15+,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] SPACE [IF]
+: SPACE
+$20 EMIT ;
+[THEN]
+
+[UNDEFINED] SPACES [IF]
+CODE SPACES
+CMP #0,R14
+0<> IF
+    PUSH R13
+    BEGIN
+        LO2HI
+        $20 EMIT
+        HI2LO
+        SUB #2,R13 
+        SUB #1,R14
+    0= UNTIL
+    MOV @R1+,R13
+THEN
+MOV @R15+,R14
+MOV @R13+,R0              
+ENDCODE
+[THEN]
+
+[UNDEFINED] OVER [IF]
+CODE OVER
+MOV R14,-2(R15)
+MOV @R15,R14
+SUB #2,R15
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] U.R [IF]
+: U.R
+  >R  <# 0 # #S #>  
+  R> OVER - 0 MAX SPACES TYPE
+;
+[THEN]
+
+[UNDEFINED] DUMP [IF]
+CODE DUMP
+PUSH R13
+PUSH &$1DDC
+MOV #$10,&$1DDC
+ADD @R15,R14
+LO2HI
+  SWAP
+  DO  CR
+    I 4 U.R SPACE
+      I 8 + I
+      DO I C@ 3 U.R LOOP
+      SPACE
+      I $10 + I 8 +
+      DO I C@ 3 U.R LOOP  
+      SPACE SPACE
+      I $10 + I
+      DO I C@ $7E MIN $20 MAX EMIT LOOP
+  $10 +LOOP
+  R> $1DDC !
+;
+[THEN]
+
 CODE TESTPUSHM
+BW1
             MOV     #22222,R8
             MOV     #3,R9
             MOV     #2,R10
@@ -30,7 +148,7 @@ CODE TESTPUSHM
 TESTPUSHM  ; you should see 11111 3 2 1 0 -->
 
 CODE TESTPOPM
-            JMP TESTPUSHM
+            GOTO BW1
 ENDCODE
 
 
@@ -40,24 +158,24 @@ TESTPOPM  ; you should see 11111 3 2 1 0 -->
 
 CODE TEST1
 
-            MOV &BASE,&BASE
-            CMP #%10,&BASE
-0<> IF      MOV #2,&BASE
-ELSE        MOV #$0A,&BASE
+            MOV &$1DDC,&$1DDC
+            CMP #%10,&$1DDC
+0<> IF      MOV #2,&$1DDC
+ELSE        MOV #$0A,&$1DDC
 THEN        
             COLON
-            BASE @ U.
+            $1DDC @ U.
             ;
 
 
 : TEST2
-            BASE @ U.
+            $1DDC @ U.
             HI2LO
 
 
-            CMP #2, &BASE
-0<> IF      MOV #2, &BASE
-ELSE        MOV #10,&BASE
+            CMP #2, &$1DDC
+0<> IF      MOV #2, &$1DDC
+ELSE        MOV #10,&$1DDC
 THEN
             MOV @R1+,R13
             MOV @R13+,R0
@@ -65,11 +183,11 @@ ENDCODE
 
 
 CODE TEST3
-            CMP #2, &BASE
-0<> IF      MOV #2, &BASE
-ELSE        MOV #10,&BASE
+            CMP #2, &$1DDC
+0<> IF      MOV #2, &$1DDC
+ELSE        MOV #10,&$1DDC
 THEN        COLON
-            BASE @  U.
+            $1DDC @  U.
 ;
 
 
@@ -94,6 +212,23 @@ ENDCODE
 TEST5  ; you should see :  9 8 7 6 5 4 3 2 1 0 -->
 
 
+
+[UNDEFINED] C, [IF]
+CODE C,
+MOV &$1DC6,R10
+MOV.B R14,0(R10)
+ADD #1,&$1DC6
+MOV @R15+,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] C@ [IF]
+CODE C@
+MOV.B @R14,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
 
 : BYTES_TABLE_IDX
 CREATE 
@@ -219,7 +354,9 @@ TABLE20 PFA_TABLE ! TABLE 10 DUMP
 ; create a primary DEFERred assembly word
 ; -----------------------------------------------------------------------
 
+
 DEFER TRUC              ; here, TRUC is a secondary DEFERred word (i.e. without BODY)
+
 
 
 CODENNM                 ; leaves its execution address (CFA) on stack
@@ -227,7 +364,10 @@ CODENNM                 ; leaves its execution address (CFA) on stack
     MOV R14,0(R15)
     MOV @R13+,R0
 ENDCODE 
-DUP . IS TRUC         ; TRUC becomes a primary DEFERred word
+
+DUP .
+
+IS TRUC                 ; TRUC becomes a primary DEFERred word
                         ; with its default action (DUP) located at its BODY addresse.
 
 TRUC .                  ; display R14 value -->

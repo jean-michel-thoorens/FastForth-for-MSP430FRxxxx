@@ -15,7 +15,6 @@
 \
 \ TARGET SELECTION
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
-\ MSP_EXP430FR4133  CHIPSTICK_FR2433    MSP_EXP430FR2433    MSP_EXP430FR2355
 \
 \ REGISTERS USAGE
 \ R4 to R7 must be saved before use and restored after
@@ -71,6 +70,38 @@ ENDCODE
 
 [THEN]  \ MAX
 
+[UNDEFINED] SPACES [IF]
+\ https://forth-standard.org/standard/core/SPACES
+\ SPACES   n --            output n spaces
+CODE SPACES
+CMP #0,TOS
+0<> IF
+    PUSH IP
+    BEGIN
+        LO2HI
+        $20 EMIT
+        HI2LO
+        SUB #2,IP 
+        SUB #1,TOS
+    0= UNTIL
+    MOV @RSP+,IP
+THEN
+MOV @PSP+,TOS           \ --         drop n
+NEXT              
+ENDCODE
+[THEN]
+
+[UNDEFINED] OVER [IF]
+\ https://forth-standard.org/standard/core/OVER
+\ OVER    x1 x2 -- x1 x2 x1
+CODE OVER
+MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
+MOV @PSP,TOS        \ 2 -- x1 (x2) x1
+SUB #2,PSP          \ 1 -- x1 x2 x1
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
 [UNDEFINED] U.R [IF]
 : U.R                       \ u n --           display u unsigned in n width (n >= 2)
   >R  <# 0 # #S #>  
@@ -94,7 +125,7 @@ COLON
 ;
 
 : DATE!
-DEPTH 2 > IF
+2 DEPTH U< IF
     HI2LO
     MOV     TOS,&RTCYEARL   \ year
     MOV.B   @PSP,&RTCMON    \ month     \ @PSP+ don't work because byte format !
@@ -123,7 +154,7 @@ COLON
 ;
 
 : TIME!
-DEPTH 2 > IF
+2 DEPTH U< IF
     HI2LO
     MOV     TOS,&RTCSEC     \ seconds
     MOV.B   @PSP,&RTCMIN    \ minutes   \ @PSP+ don't work because byte format !
@@ -142,8 +173,8 @@ RST_HERE
 : ESC #27 EMIT ;
 
 \ create a word to test DEFERred words
-: [DEFERRED]    \ [DEFERRED] <name>         -- flag
-    ' @ $4030 = \ CFA of <name> = MOV @PC+,PC ? 
+: [ISDEFERRED?]    \ [ISDEFERRED?] xt -- xt flag
+    DUP @ $4030 = \ CFA of <name> = MOV @PC+,PC ? 
 ; IMMEDIATE
 
 CREATE ABUF 20 ALLOT
@@ -157,18 +188,16 @@ ESC ." [1J"     \ erase up (42 empty lines)
 ESC ." [H"      \ cursor home
 
 CR ." DATE (DMY): "
-ABUF ABUF 20 
-     [DEFERRED] ACCEPT 
-     [IF] ['] ACCEPT >BODY EXECUTE   \   execute default part of ACCEPT
-     [ELSE] ACCEPT
-     [THEN]
+ABUF DUP 20 
+    ['] ACCEPT [ISDEFERRED?] 
+    [IF] >BODY   \   execute default part of ACCEPT
+    [THEN] EXECUTE
 EVALUATE CR DATE!
 CR CR ." TIME (HMS): "
-ABUF ABUF 20 
-     [DEFERRED] ACCEPT 
-     [IF] ['] ACCEPT >BODY EXECUTE   \   execute default part of ACCEPT
-     [ELSE] ACCEPT
-     [THEN]
+ABUF DUP 20 
+    ['] ACCEPT [ISDEFERRED?] 
+    [IF] >BODY   \   execute default part of ACCEPT
+    [THEN] EXECUTE
 EVALUATE CR TIME!
 CR
 ;

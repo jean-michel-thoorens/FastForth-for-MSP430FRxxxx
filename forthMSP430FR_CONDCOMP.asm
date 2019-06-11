@@ -120,8 +120,8 @@ BRACKETELSE0
         .word   ONEPLUS                 ; 
 BRACKETELSE1                            ;
         .word   FBLANK,WORDD,COUNT      ;
-        .word   DUP,QFBRAN,BRACKETELSE5  ; if end of line refill buffer then loop back
-        .word   OVER,OVER               ; 2DUP
+        .word   DUP,QFBRAN,BRACKETELSE5 ; if end of line refill buffer then loop back
+        .word   TWODUP                  ;
         .word   XSQUOTE                 ;
         .byte   6,"[THEN]"              ;
         .word   COMPARE                 ;
@@ -130,7 +130,7 @@ BRACKETELSE1                            ;
         .word   QDUP,QTBRAN,BRACKETELSE1; loop back if count <> 0
         .word   EXIT                    ; else exit
 BRACKETELSE2                            ;
-        .word   OVER,OVER               ; 2DUP
+        .word   TWODUP                  ;
         .word   XSQUOTE                 ;
         .byte   6,"[ELSE]"              ;
         .word   COMPARE                 ;
@@ -151,7 +151,7 @@ BRACKETELSE5                            ;
         .word   TYPE                    ; CR+LF ." ko "     to show false branch of conditionnal compilation
         .word   REFILL                  ; REFILL Input Buffer
         .word   SETIB                   ; SET Input Buffer pointers SOURCE_LEN, SOURCE_ORG and clear >IN
-        .word   BRAN,BRACKETELSE1       ; then loop back   60 words
+        .word   BRAN,BRACKETELSE1       ; then loop back   58 words
 
 
 ;[IF]
@@ -216,7 +216,7 @@ MARKER_DOES FORTHtoASM                  ; execution part
             MOV     @TOS+,&INIVOC       ;       set VOC_LINK value for RST_STATE
             MOV     @TOS,&INIDP         ;       set DP value for RST_STATE
             MOV     @PSP+,TOS           ; --
-            JMP     RST_STATE           ;       execute RST_STATE, PWR_STATE then STATE_DOES
+            MOV     #RST_STATE,PC       ;       execute RST_STATE, PWR_STATE then STATE_DOES
 
             FORTHWORD "MARKER"          ; definition part
             CALL    #HEADER             ;4 W = DP+4

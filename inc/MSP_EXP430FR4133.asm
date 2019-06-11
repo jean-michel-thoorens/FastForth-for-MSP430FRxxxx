@@ -249,9 +249,8 @@ CTS         .set    10h         ; P2.4 bit position
   
 ; PORTx default wanted state : pins as input with pullup resistor
 
-            MOV #00100h,&PBDIR   ; all pins as inputs else P4.0
-            MOV #0FEFFh,&PBOUT   ; OUT1 for all pins else P4
             BIS #0FEFFh,&PBREN   ; pullup for all pins resistors else P4.0
+            MOV #-1,&PBOUT   ; OUT1 for all pins else P4
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT5/6

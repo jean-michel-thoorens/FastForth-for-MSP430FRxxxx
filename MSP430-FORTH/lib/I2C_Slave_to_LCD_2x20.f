@@ -182,16 +182,16 @@ ASM WDT_Int                     \ Watchdog interrupt routine, warning : not FORT
 \ ------------------------------\
 BIT.B #SW2,&SW2_IN              \ test switch S2
 0= IF                           \ case of switch S2 pressed
-  CMP #34,&TB0CCR2              \ maxi Ton = 34/40 & VDD=3V6 ==> LCD_Vo = -2V2
+  CMP #34,&TB0CCRn              \ maxi Ton = 34/40 & VDD=3V6 ==> LCD_Vo = -2V2
   U< IF
-    ADD #1,&TB0CCR2             \ action for switch S2 (P2.5) : 78 mV / increment
+    ADD #1,&TB0CCRn             \ action for switch S2 (P2.5) : 78 mV / increment
   THEN
 ELSE
     BIT.B #SW1,&SW1_IN          \ test switch S1 input
     0= IF                       \ case of Switch S1 pressed
-        CMP #7,&TB0CCR2         \ mini Ton = 6/40 & VDD=3V6 ==> LCD_Vo = 0V
+        CMP #7,&TB0CCRn         \ mini Ton = 6/40 & VDD=3V6 ==> LCD_Vo = 0V
         U>= IF                  \
-        SUB #1,&TB0CCR2         \ action for switch S1 (P2.6) : -78 mV / decrement
+        SUB #1,&TB0CCRn         \ action for switch S1 (P2.6) : -78 mV / decrement
         THEN                    \
     THEN                        \
 THEN                            \
@@ -470,9 +470,9 @@ BIC.B   #LCD_DB,&LCD_DB_REN     \ lcd_db pullup/down disable
 \ ------------------------------\
 \ set TimerB to generate LCD_V0 via TB0.2 and P1.5/P2.2
 \ ------------------------------\
-    MOV #%1100000,&TB0CCTL2     \ output mode = set/reset \ clear CCIFG
-\    MOV #20,&TB0CCR2           \ contrast adjust : 20/40 ==> LCD_Vo = -1V1|+3V6 (Vcc=3V6)
-    MOV #25,&TB0CCR2            \ contrast adjust : 25/40 ==> LCD_Vo = -1V4|+3V3 (Vcc=3V3)
+    MOV #%1100000,&TB0CCTLn     \ output mode = set/reset \ clear CCIFG
+\    MOV #20,&TB0CCRn           \ contrast adjust : 20/40 ==> LCD_Vo = -1V1|+3V6 (Vcc=3V6)
+    MOV #25,&TB0CCRn            \ contrast adjust : 25/40 ==> LCD_Vo = -1V4|+3V3 (Vcc=3V3)
 \ ------------------------------\
 \ WDT interval init part        \
 \ ------------------------------\

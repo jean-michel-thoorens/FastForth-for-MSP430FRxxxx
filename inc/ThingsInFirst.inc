@@ -659,9 +659,8 @@ FREQ    .set " 24MHz"
 ; define MAIN max bound
 ; -------------------------------------
 FRAM_FULL   .equ SIGNATURES-50h ; set to protect JTAG and BSL signatures against overwrite.
-                                ; notice that ALLOT memory space beyond SIGNATURES don't corrupt it,
-                                ; thus 80 bytes are sufficient considering what can be compiled in one line + WORD use.
-                                ; good practice: one line for each ALLOT command.
+                                ; 80 bytes are sufficient considering what can be compiled in one line + WORD use.
+                                ; take care with ALLOT : don't ALLOT more than 32 words by line!
 
 ;-----------------------------------------------------------------------
 ; DEVICE I/O, MEMORY, SFR, vectors and minimum FORTH I/O declarations
@@ -709,6 +708,7 @@ UCA1_SD
     .ENDIF
 
     .IFDEF CHIPSTICK_FR2433
+; no LF_XTAL to select ACLK = REFOCLK
 UCA0_TERM 
 UCB0_SD
     .include "MSP430FR2433.inc"
@@ -721,6 +721,13 @@ UCB1_SD
     .include "MSP430FR2355.inc"
     .ENDIF
 
+    .IFDEF LP_MSP430FR2476
+; LF_XTAL
+UCA0_TERM
+UCA1_SD
+    .include "MSP430FR2476.inc"
+    .ENDIF
+
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 ; add here your device.inc item:
 ;     .IFDEF MY_MSP430FR5738_1
@@ -730,6 +737,124 @@ UCB1_SD
 ;     .include "MSP430FR5738.inc"  ; include device declarations
 ;     .ENDIF
 ;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    .IFDEF MSP_EXP430FR2433_I2C
+LF_XTAL
+UCA1_SD
+UCB0_TERM
+    .include "MSP430FR2433.inc"
+    .ENDIF
+
+    .IFDEF MY_MSP430FR5738
+LF_XTAL
+UCA0_TERM
+UCB0_SD
+    .include "MSP430FR5738.inc"
+    .ENDIF
+
+    .IFDEF MY_MSP430FR5734
+LF_XTAL
+UCA0_TERM
+UCB0_SD
+    .include "MSP430FR5734.inc"
+    .ENDIF
+
+    .IFDEF MY_MSP430FR5948
+LF_XTAL
+UCA0_TERM
+UCA1_SD
+    .include "MSP430FR5948.inc"
+    .ENDIF
+
+    .IFDEF JMJ_BOX
+UCA0_TERM
+; no LF_XTAL to select ACLK = VLOCLK
+    .include "MSP430FR5738.inc"
+    .ENDIF
+
+    .IFDEF PA_PA_MSP430
+UCA0_TERM
+; no LF_XTAL to select ACLK = VLOCLK
+    .include "MSP430FR5738.inc"
+    .ENDIF
+
+    .IFDEF PA_Core_MSP430
+LF_XTAL
+UCA0_TERM
+    .include "MSP430FR5948.inc"
+    .ENDIF
+
+; --------------------------
+; COMPUTE SWITCHES
+; --------------------------
+
+    .IFDEF EXTENDED_MEM
+        .IFNDEF DOUBLE_INPUT
+DOUBLE_INPUT
+        .ENDIF
+    .ENDIF
+
+; define if QUIT is DEFERed
+    .IFDEF SD_CARD_LOADER 
+        .IFNDEF DOUBLE_INPUT
+DOUBLE_INPUT
+        .ENDIF
+        .IFNDEF DEFER_ACCEPT
+DEFER_ACCEPT
+        .ENDIF
+        .IFDEF BOOTLOADER
+            .IFNDEF CONDCOMP
+CONDCOMP                    ; mandatory for Bootstrap
+            .ENDIF
+            .IFNDEF DEFER_QUIT
+DEFER_QUIT
+            .ENDIF
+        .ENDIF
+    .ENDIF
+
+    .IFDEF EXTENDED_ASM
+;        .IFNDEF MSP430ASSEMBLER
+;MSP430ASSEMBLER
+;        .ENDIF
+        .IFNDEF DOUBLE_INPUT
+DOUBLE_INPUT
+        .ENDIF
+    .ELSE
+        .IFDEF EXTENDED_MEM
+            .IFNDEF MSP430ASSEMBLER
+MSP430ASSEMBLER
+            .ENDIF
+            .IFNDEF DOUBLE_INPUT
+DOUBLE_INPUT ; for indirect extended indexed modes of MOVA ADDA CMPA SUBA instructions
+            .ENDIF
+        .ENDIF
+    .ENDIF
+
+
+    .IFDEF FIXPOINT
+        .IFNDEF FIXPOINT_INPUT
+FIXPOINT_INPUT              ; to interpret fixpoint numbers
+        .ENDIF
+    .ENDIF
+
+    .IFDEF FIXPOINT_INPUT
+    .IFNDEF DOUBLE_NUMBERS
+DOUBLE_NUMBERS              ; to process double numbers
+    .ENDIF
+    .ENDIF
+
+    .IFDEF DOUBLE_INPUT
+    .IFNDEF DOUBLE_NUMBERS
+DOUBLE_NUMBERS              ; to process double numbers
+    .ENDIF
+    .ENDIF
+
+; define if Terminal half duplex
+    .IFDEF UARTtoI2C
+        .IFNDEF HALFDUPLEX
+HALFDUPLEX
+        .ENDIF
+    .ENDIF
 
 ; ---------------------------
 ; compute value of FORTHADDON
@@ -765,8 +890,10 @@ FADDON .SET FADDON | 100h
     .IFDEF BOOTLOADER
 FADDON .SET FADDON | 200h
     .ENDIF
-    .IFDEF PROMPT
+    .IFDEF EXTENDED_MEM
+    .IFNDEF EXTENDED_ASM
 FADDON .SET FADDON | 400h
+    .ENDIF
     .ENDIF
     .IFDEF HALFDUPLEX
 FADDON .SET FADDON | 800h
@@ -784,66 +911,5 @@ FADDON .SET FADDON | 4000h
 FADDON .SET FADDON | 8000h
     .ENDIF
 
-; --------------------------
-; COMPUTE SWITCHES
-; --------------------------
-
-    .IFDEF EXTENDED_ASM
-        .IFNDEF MSP430ASSEMBLER
-MSP430ASSEMBLER
-        .ENDIF
-    .ENDIF
-
-; define if QUIT is DEFERed
-    .IFDEF SD_CARD_LOADER 
-        .IFNDEF DOUBLE_INPUT
-DOUBLE_INPUT
-        .ENDIF
-        .IFNDEF DEFER_ACCEPT
-DEFER_ACCEPT
-        .ENDIF
-        .IFDEF BOOTLOADER
-            .IFNDEF CONDCOMP
-CONDCOMP                    ; mandatory for Bootstrap
-            .ENDIF
-            .IFNDEF DEFER_QUIT
-DEFER_QUIT
-            .ENDIF
-        .ENDIF
-    .ENDIF
-
-    .IFDEF EXTENDED_ASM
-        .IFNDEF DOUBLE_INPUT ; for indirect extended indexed modes of MOVA ADDA CMPA SUBA instructions
-DOUBLE_INPUT
-        .ENDIF
-        .IFNDEF DEFER_ACCEPT ; to write EXTD_LOAD"
-DEFER_ACCEPT
-        .ENDIF
-    .ENDIF
-
-    .IFDEF FIXPOINT
-        .IFNDEF FIXPOINT_INPUT
-FIXPOINT_INPUT              ; to interpret fixpoint numbers
-        .ENDIF
-    .ENDIF
-
-    .IFDEF FIXPOINT_INPUT
-    .IFNDEF DOUBLE_NUMBERS
-DOUBLE_NUMBERS              ; to process double numbers
-    .ENDIF
-    .ENDIF
-
-    .IFDEF DOUBLE_INPUT
-    .IFNDEF DOUBLE_NUMBERS
-DOUBLE_NUMBERS              ; to process double numbers
-    .ENDIF
-    .ENDIF
-
-; define if Terminal half duplex
-    .IFDEF UARTtoI2C
-        .IFNDEF HALFDUPLEX
-HALFDUPLEX
-        .ENDIF
-    .ENDIF
 
     .listing ON

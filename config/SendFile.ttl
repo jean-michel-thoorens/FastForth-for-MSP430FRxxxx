@@ -2,11 +2,11 @@
 testlink
 if result=0 connect  param3
 
-inputbox 'Send a File' 'Select File : ' param2
+inputbox 'Send this file to the MSP430FR target:' ' ' param2
 
 strcompare param4 'NOECHO'
 if result = 0 then
-    sendln 'NOECHO $0A BASE ! [DEFINED] STOP [IF] STOP [THEN]' ; set no echo from FastForth
+    sendln 'NOECHO PWR_STATE [DEFINED] STOP [IF] STOP [THEN]' ; set no echo from FastForth
     setecho 0       ; suppr. echo from Teraterm
     showtt 0
 ;    clearscreen 1
@@ -17,7 +17,7 @@ endif
 
 strcompare param4 'HALF'
 if result = 0 then
-    sendln 'NOECHO $0A BASE ! [DEFINED] STOP [IF] STOP [THEN]' ; set no echo from FastForth
+    sendln 'NOECHO PWR_STATE [DEFINED] STOP [IF] STOP [THEN]' ; set no echo from FastForth
     showtt 0
 ;    clearscreen 1
     sendfile inputstr 0
@@ -27,7 +27,7 @@ if result = 0 then
 endif
 
 ; default mode = ECHO
-    sendln 'ECHO $0A BASE ! [DEFINED] STOP [IF] STOP [THEN]'
+    sendln 'ECHO PWR_STATE [DEFINED] STOP [IF] STOP [THEN]'
     setecho 0       ; no echo from Teraterm
     showtt 0
 ;    clearscreen 1

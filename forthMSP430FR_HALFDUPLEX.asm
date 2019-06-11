@@ -20,80 +20,9 @@
             CMP #0Ah,Y              ;2                   received char = LF ? (end of downloading ?)
             JNZ RXON                ;2                   no : RXON return = AKEYREAD1, to process first char of new line.
 ACCEPTNEXT  ADD #2,RSP              ;1                   yes: remove AKEYREAD1 as XON return,
-            MOV #SLEEP,X            ;2                        and set XON return = SLEEP
-            PUSHM  #4,S             ;6                        PUSHM S,T,W,X before SLEEP (and so WAKE on any interrupts)
+            PUSHM  #3,S             ;6                        PUSHM S,T,W before SLEEP (and so WAKE on any interrupts)
+            JMP SLEEP               ;2
 ; ----------------------------------;
-    .IFDEF MEMORYPROTECT
-    .IFDEF FR2_FAMILY               ;
-            MOV #0A503h,&SYSCFG0    ; disable write MAIN + INFO
-    .ELSE
-            MOV #0A501h,&MPUCTL0    ; set MPU (Memory Protection Unit) enable bit 
-    .ENDIF                          ;
-    .ENDIF
-; ----------------------------------;
-
-RXON                                ;
-; ----------------------------------;
-    .IFDEF TERMINAL3WIRES           ;
-RXON_LOOP   BIT #UCTXIFG,&TERM_IFG  ;3  wait the sending end of XON, useless at high baudrates
-            JZ RXON_LOOP            ;2
-            MOV #17,&TERM_TXBUF     ;4  move char XON into TX_buf
-    .ENDIF                          ;
-    .IFDEF TERMINAL4WIRES           ;
-            BIC.B #RTS,&HANDSHAKOUT ;4  set RTS low
-    .ENDIF                          ;
-; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
-; starts first and 3th stopwatches  ;
-; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
-            RET                     ;4  to SLEEP (End of file download or quiet input) or AKEYREAD1 (get next line of file downloading)
-; ----------------------------------;
-
-; ----------------------------------;
-RXOFF                               ;
-; ----------------------------------;
-    .IFDEF TERMINAL3WIRES           ;
-RXOFF_LOOP  BIT #UCTXIFG,&TERM_IFG  ;3  wait the sending end of XOFF, useless at high baudrates
-            JZ RXOFF_LOOP           ;2
-            MOV #19,&TERM_TXBUF     ;4 move XOFF char into TX_buf
-    .ENDIF                          ;
-    .IFDEF TERMINAL4WIRES           ;
-            BIS.B #RTS,&HANDSHAKOUT ;4 set RTS high
-    .ENDIF                          ;
-            RET                     ;4 to ENDACCEPT
-; ----------------------------------;
-
-; ----------------------------------;
-    ASMWORD "SLEEP"                 ;   may be redirected
-SLEEP       MOV @PC+,PC             ;3  Code Field Address (CFA) of SLEEP
-PFASLEEP    .word   BODYSLEEP       ;   Parameter Field Address (PFA) of SLEEP, with default value
-BODYSLEEP   BIS &LPM_MODE,SR        ;3  enter in LPMx sleep mode with GIE=1
-; ----------------------------------;   default FAST FORTH mode (for its input terminal use) : LPM0.
-
-;###############################################################################################################
-;###############################################################################################################
-
-; ### #     # ####### ####### ######  ######  #     # ######  #######  #####     #     # ####### ######  #######
-;  #  ##    #    #    #       #     # #     # #     # #     #    #    #     #    #     # #       #     # #
-;  #  # #   #    #    #       #     # #     # #     # #     #    #    #          #     # #       #     # #
-;  #  #  #  #    #    #####   ######  ######  #     # ######     #     #####     ####### #####   ######  #####
-;  #  #   # #    #    #       #   #   #   #   #     # #          #          #    #     # #       #   #   #
-;  #  #    ##    #    #       #    #  #    #  #     # #          #    #     #    #     # #       #    #  #
-; ### #     #    #    ####### #     # #     #  #####  #          #     #####     #     # ####### #     # #######
-
-;###############################################################################################################
-;###############################################################################################################
-
-
-; here, Fast FORTH sleeps, waiting any interrupt.
-; IP,S,T,W,X,Y registers (R13 to R8) are free for any interrupt routine...
-; ...and so PSP and RSP stacks with their rules of use.
-; remember: in any interrupt routine you must include : BIC #0x78,0(RSP) before RETI
-;           to force return to SLEEP.
-;           or (bad idea ? previous SR flags are lost) simply : ADD #2 RSP, then RET instead of RETI
-
-; ==================================;
-            JMP SLEEP           ;2  here is the return for any interrupts, else TERMINAL_INT  :-)
-; ==================================;
 
 
 ; **********************************;

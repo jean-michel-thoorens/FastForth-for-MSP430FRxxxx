@@ -75,7 +75,7 @@ TERM_BUS=\$30!
 
 TERM_IN=\$200!
 TERM_REN=\$206!
-TERM_SEL=\$20C!
+TERM_SEL=\$20A!     SEL0
 TERM_IE=\$21A!
 TERM_IFG=\$21C!
 
@@ -144,7 +144,7 @@ I2CMM_IN=\$200!
 I2CMM_OUT=\$202!
 I2CMM_DIR=\$204!
 I2CMM_REN=\$206!
-I2CMM_SEL1=\$20C!
+I2CMM_SEL=\$20A!    SEL0
 I2CMM_Vec=\$FFE0!
 MMSDA=\$04!         P1.2
 MMSCL=\$08!         P1.3
@@ -154,7 +154,7 @@ I2CM_IN=\$200!
 I2CM_OUT=\$202!
 I2CM_DIR=\$204!
 I2CM_REN=\$206!
-I2CM_SEL1=\$20C!
+I2CM_SEL=\$20A!     SEL0
 I2CM_Vec=\$FFE0!
 MSDA=\$04!          P1.2
 MSCL=\$08!          P1.3
@@ -164,7 +164,7 @@ I2CS_IN=\$200!
 I2CS_OUT=\$202!
 I2CS_DIR=\$204!
 I2CS_REN=\$206!
-I2CS_SEL1=\$20C!
+I2CS_SEL=\$20A!     SEL0
 I2CS_Vec=\$FFE0!
 SSDA=\$40!          P1.2
 SSCL=\$80!          P1.3
@@ -177,7 +177,7 @@ SD_CDIN=\$201!
 SD_CSOUT=\$203!
 SD_CSDIR=\$205!
 
-SD_SEL=\$20C!   ; to configure UCB0
+SD_SEL=\$20A!   ; PASEL0 to configure UCB0
 SD_REN=\$206!   ; to configure pullup resistors
 SD_BUS=\$0E!    ; pins P1.1 as UCB0CLK, P1.2 as UCB0SIMO & P1.3 as UCB0SOMI
 

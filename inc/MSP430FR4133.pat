@@ -36,6 +36,10 @@ xdodoes=\$C400!         restore rDODOES: MOV #xdodoes,rDODOES
 xdocon=\$C40E!          restore rDOCON: MOV #xdocon,rDOCON
 xdovar=\$C420!          restore rDOVAR: MOV #xdocon,rDOVAR  
 xdocol=\$C42A!          restore rDOCOL: MOV #xdocol,rDOCOL      only for DTC model = 1
+DODOES=\$1284!          CALL rDODOES
+DOCON=\$1285!           CALL rDOCON
+DOVAR=\$1286!           CALL rDOVAR
+
 ! to find DTC value, download \MSP430-FORTH\FastForthSpecs.4th
 ! if DTC = 1, restore rDOCOL as this : MOV #xdocol,rDOCOL
 ! if DTC = 2, restore rDOCOL as this : MOV #EXIT,rDOCOL
@@ -201,7 +205,7 @@ LAST_THREAD=\$21B8!
 LAST_CFA=\$21BA!
 LAST_PSP=\$21BC!
 
-!STATE=\$21BE!           Interpreter state
+STATEADR=\$21BE!           Interpreter state
 
 SOURCE_LEN=\$21C0!      len of input stream
 SOURCE_ORG=\$21C2!      adr of input stream
@@ -212,21 +216,10 @@ LASTVOC=\$21C8!         keep VOC-LINK
 CONTEXT=\$21CA!         CONTEXT dictionnary space (8 CELLS)
 CURRENT=\$21DA!         CURRENT dictionnary ptr
 
-!BASE=\$21DC!           numeric base, must be defined before first reset !
+BASEADR=\$21DC!           numeric base, must be defined before first reset !
 LINE=\$21DE!            line in interpretation, activated with NOECHO, desactivated with ECHO
 ! ---------------------------------------
-!21E0! 16 RAM bytes free conditionnaly
-! ---------------------------------------
-!SAV_CURRENT=\$21E0!    preserve CURRENT when create assembler words
-!ASMBW1=\$21E2          assembler backward reference 1
-!ASMBW2=\$21E4          assembler backward reference 2
-!ASMBW3=\$21E6          assembler backward reference 3
-!ASMFW1=\$21E8          assembler forward reference 1
-!ASMFW2=\$21EA          assembler forward reference 2
-!ASMFW3=\$21EC          assembler forward reference 3
-!RPT_WORD=\$21EE!    
-! ---------------------------------------
-!21EE! 12RAM bytes free
+!21E0! 28 RAM bytes free
 ! ---------------------------------------
 
 ! ---------------------------------------

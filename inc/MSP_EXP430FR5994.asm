@@ -59,7 +59,7 @@
 ; GND
 ; P3.0/A12/C12                 <------------------------> 11 LCD_DB4   
 ; P3.1/A13/C13                 <------------------------> 12 LCD_DB5
-; P3.2/A14/C14                 <------------------------> 13 LCD_DB5
+; P3.2/A14/C14                 <------------------------> 13 LCD_DB6
 ; P3.3/A15/C15                 <------------------------> 14 LCD_DB7
 ; P1.4/TB0.1/UCA0STE/A4/C4
 ; P1.5/TB0.2/UCA0CLK/A5/C5     >---||--+--^/\/\/v--+---->  3 LCD_Vo (=0V6 without modulation)    
@@ -155,9 +155,12 @@
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
-            BIS #3,&PADIR       ; all pins 0 as input else LEDs
-            MOV #0FFFCh,&PAOUT  ; all pins high  else LEDs
-            BIC #3,&PAREN       ; all pins 1 with pull resistors else LEDs
+;            BIS #3,&PADIR       ; all pins 0 as input else LEDs
+;            MOV #0FFFCh,&PAOUT  ; all pins high  else LEDs
+;            BIC #3,&PAREN       ; all pins 1 with pull resistors else LEDs
+
+            BIS #-1,&PAREN       ; all pins 1 with pull up/down resistors
+            MOV #0FFFCh,&PAOUT   ; all pins high  else LEDs
 
 
 ; PORT2 FastForth usage
@@ -206,7 +209,7 @@ SD_CSDIR    .equ P4DIR
 
 
             MOV #-1,&PBREN      ; REN1 all pullup resistors
-            MOV #-1,&PBOUT
+            BIS #-1,&PBOUT
 
     .IFDEF TERMINAL4WIRES
         .IFDEF TERMINAL5WIRES

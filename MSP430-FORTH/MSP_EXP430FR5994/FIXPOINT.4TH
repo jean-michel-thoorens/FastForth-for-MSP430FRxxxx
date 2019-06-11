@@ -3,21 +3,22 @@
 ; FIXPOINT.4th
 ; -----------------------------------------------------
 
-: DEFINED! ECHO 1 ABORT" already loaded!" ;
-
-[DEFINED] {FIXPOINT} [IF] DEFINED!
-
-[ELSE]
-
 PWR_STATE
+
+[UNDEFINED] {FIXPOINT} [IF]
 
 MARKER {FIXPOINT}
 
-
+[UNDEFINED] PLUS [IF]
+CODE +
+ADD @R15+,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
 
 [UNDEFINED] HOLDS [IF]
 CODE HOLDS
-            MOV @R15+,R9
+BW3         MOV @R15+,R9
             ADD R14,R9
             MOV &$1DB2,R8
 BEGIN       SUB #1,R9
@@ -27,6 +28,14 @@ U>= WHILE   SUB #1,R8
 REPEAT      MOV R8,&$1DB2
             MOV @R15+,R14
             MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] DABS [IF]
+CODE DABS
+MOV #1-,R9
+ADD #4,R9
+MOV R9,R0
 ENDCODE
 [THEN]
 
@@ -43,7 +52,9 @@ CODE F-
     MOV @R13+,R0
 ENDCODE
 
-$1A04 C@ $EF > [IF] ; test tag value MSP430FR413x subfamily without hardware_MPY 
+$1A00 4 + @ $81F3 U<
+$81EF $1A00 4 + @ U< 
+= [IF]   ; MSP430FR413x subfamily without hardware_MPY
 
 CODE F/
             PUSHM #4,R7    
@@ -105,7 +116,7 @@ CODE F#S
             PUSHM #2,R14
             MOV #0,R12
 BEGIN       PUSH R12
-            MOV &BASE,R14
+            MOV &$1DDC,R14
             LO2HI
             UM*
             HI2LO
@@ -122,7 +133,7 @@ U>= UNTIL
             MOV #0,0(R15)
             SUB #2,R15
             MOV #$1D90,0(R15)
-            JMP HOLDS
+            GOTO BW3
 ENDCODE
 [THEN]
 
@@ -179,7 +190,7 @@ THEN
         GOTO BW1
 ENDCODE
 
-[ELSE]
+[ELSE] ; else if hardware multiplier
 
 CODE F/
             PUSHM #4,R7
@@ -240,7 +251,7 @@ CODE F#S
             MOV R14,R11
             MOV #0,R12
 BEGIN       MOV @R15,&$4C0
-            MOV &BASE,&$4C8
+            MOV &$1DDC,&$4C8
             MOV &$4E4,0(R15)
             MOV &$4E6,R14
             CMP #10,R14
@@ -253,7 +264,7 @@ BEGIN       MOV @R15,&$4C0
             MOV R11,R14
             SUB #2,R15
             MOV #$1D90,0(R15)
-            JMP HOLDS
+            GOTO BW3
 ENDCODE
 [THEN]
 
@@ -270,11 +281,16 @@ ENDCODE
 
 [THEN]
 
+[UNDEFINED] SPACE [IF]
+: SPACE
+$20 EMIT ;
+[THEN]
+
 [UNDEFINED] F. [IF]
 CODE F.
 MOV R14,R12
 MOV #4,R11
-MOV &BASE,R10
+MOV &$1DDC,R10
 CMP ##10,R10
 0= IF
     ADD #1,R11
@@ -301,25 +317,22 @@ CODE S>F
 ENDCODE
 [THEN]
 
-[UNDEFINED] 2@ [IF]
+RST_HERE
 
-CODE 2@
-SUB #2,R15
-MOV 2(R14),0(R15)
-MOV @R14,R14
-MOV @R13+,R0
-ENDCODE
 [THEN]
 
 [UNDEFINED] 2CONSTANT [IF]
 : 2CONSTANT
 CREATE , ,
-DOES> 2@
+DOES>
+HI2LO
+SUB #2,R15
+MOV 2(R14),0(R15)
+MOV @R14,R14
+MOV @R1+,R13
+MOV @R13+,R0
+ENDCODE
 ;
-[THEN]
-
-RST_HERE
-
 [THEN]
 
 ECHO
@@ -332,11 +345,11 @@ ECHO
 3,14159 2CONSTANT PI
 PI -1,0 F* 2CONSTANT -PI
 
-$10 BASE !  PI F. 
+$10 $1DDC !  PI F. 
            -PI F.
-%10 BASE !  PI F. 
+%10 $1DDC !  PI F. 
            -PI F.
-#10 BASE !  PI F. 
+#10 $1DDC !  PI F. 
            -PI F.
 
 PI 2,0 F* F.      
@@ -370,3 +383,4 @@ PI -2,0 F/ F.
 181,01933598375 -181,01933598375 f* f.
 -181,01933598375 181,01933598375 f* f.
 -181,01933598375 -181,01933598375 f* f.
+

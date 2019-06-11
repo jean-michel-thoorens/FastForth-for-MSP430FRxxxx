@@ -15,7 +15,7 @@
 @echo 6  MSP_EXP430FR2433
 @echo 7  CHIPSTICK_FR2433
 @echo 8  MSP_EXP430FR2355
-
+@echo 9  LP_MSP430FR2476
 
 @set /p choice=your choice: 
 
@@ -27,6 +27,7 @@
 @if %choice% == 6    set template=MSP_EXP430FR2433
 @if %choice% == 7    set template=CHIPSTICK_FR2433
 @if %choice% == 8    set template=MSP_EXP430FR2355
+@if %choice% == 9    set template=LP_MSP430FR2476
 
 @exit /b
 
@@ -44,6 +45,7 @@
 @if /I %device:~0,16%  == MSP_EXP430FR2433 set device=MSP430FR2433
 @if /I %device:~0,16%  == CHIPSTICK_FR2433 set device=MSP430FR2433
 @if /I %device:~0,16%  == MSP_EXP430FR2355 set device=MSP430FR2355
+@if /I %device:~0,15%  == LP_EXP430FR2476  set device=MSP430FR2476
 
 @exit /b
 

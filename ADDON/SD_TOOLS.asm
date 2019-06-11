@@ -18,9 +18,7 @@
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-    .IFNDEF UTILITY
-
-    .IFNDEF ANS_CORE_COMPLEMENT
+    .IFNDEF MAX
 
 ;https://forth-standard.org/standard/core/MAX
 ;C MAX    n1 n2 -- n3       signed maximum
@@ -38,8 +36,46 @@ MIN:        CMP     @PSP,TOS    ; n2-n1
 SELn1:      MOV     @PSP+,TOS
             mNEXT
 
-    .ENDIF ;  ANS_CORE_COMPLIANT
+    .ENDIF
 
+    .IFNDEF SPACE
+;https://forth-standard.org/standard/core/SPACE
+;C SPACE   --               output a space
+            FORTHWORD "SPACE"
+SPACE       SUB #2,PSP              ;1
+            MOV TOS,0(PSP)          ;3
+            MOV #20h,TOS            ;2
+            MOV #EMIT,PC            ;17~  23~
+
+;https://forth-standard.org/standard/core/SPACES
+;C SPACES   n --            output n spaces
+            FORTHWORD "SPACES"
+SPACES      CMP #0,TOS
+            JZ SPACESNEXT2
+            PUSH IP
+            MOV #SPACESNEXT,IP
+            JMP SPACE               ;25~
+SPACESNEXT  FORTHtoASM
+            SUB #2,IP               ;1
+            SUB #1,TOS              ;1
+            JNZ SPACE               ;25~ ==> 27~ by space ==> 2.963 MBds @ 8 MHz
+            MOV @RSP+,IP            ;
+SPACESNEXT2 MOV @PSP+,TOS           ; --         drop n
+            mNEXT                   ;
+
+    .ENDIF
+
+        .IFNDEF OVER
+;https://forth-standard.org/standard/core/OVER
+;C OVER    x1 x2 -- x1 x2 x1
+            FORTHWORD "OVER"
+OVER        MOV TOS,-2(PSP)     ; 3 -- x1 (x2) x2
+            MOV @PSP,TOS        ; 2 -- x1 (x2) x1
+            SUB #2,PSP          ; 1 -- x1 x2 x1
+            mNEXT               ; 4
+        .ENDIF
+
+    .IFNDEF UDOTR
 ;https://forth-standard.org/standard/core/UDotR
 ;X U.R      u n --      display u unsigned in n width
             FORTHWORD "U.R"
@@ -47,31 +83,54 @@ UDOTR       mDOCOL
             .word   TOR,LESSNUM,lit,0,NUM,NUMS,NUMGREATER
             .word   RFROM,OVER,MINUS,lit,0,MAX,SPACES,TYPE
             .word   EXIT
+    .ENDIF
 
+        .IFNDEF CFETCH
+;https://forth-standard.org/standard/core/CFetch
+;C C@     c-addr -- char   fetch char from memory
+            FORTHWORD "C@"
+CFETCH      MOV.B @TOS,TOS      ;2
+            mNEXT               ;4
+        .ENDIF
+
+    .IFNDEF PLUS
+;https://forth-standard.org/standard/core/Plus
+;C +       n1/u1 n2/u2 -- n3/u3     add n1+n2
+            FORTHWORD "+"
+PLUS        ADD @PSP+,TOS
+            mNEXT
+    .ENDIF
+
+    .IFNDEF DUMP
 ;https://forth-standard.org/standard/tools/DUMP
             FORTHWORD "DUMP"
 DUMP        PUSH    IP
-            PUSH    &BASE
-            MOV     #10h,&BASE
-            ADD     @PSP,TOS                ; compute end address
-            AND     #0FFF0h,0(PSP)          ; compute start address
+            PUSH    &BASE                   ; save current base
+            MOV     #10h,&BASE              ; HEX base
+            ADD     @PSP,TOS                ; -- ORG END
             ASMtoFORTH
-            .word   SWAP,xdo                ; generate line
+            .word   SWAP                    ; -- END ORG
+            .word   xdo                     ; --
 DUMP1       .word   CR
-            .word   II,lit,7,UDOTR,SPACE    ; generate address
-            .word   II,lit,10h,PLUS,II,xdo  ; display 16 bytes
+            .word   II,lit,4,UDOTR,SPACE    ; generate address
+
+            .word   II,lit,8,PLUS,II,xdo    ; display first 8 bytes
 DUMP2       .word   II,CFETCH,lit,3,UDOTR
-            .word   xloop,DUMP2
+            .word   xloop,DUMP2             ; bytes display loop
+            .word   SPACE
+            .word   II,lit,10h,PLUS,II,lit,8,PLUS,xdo    ; display last 8 bytes
+DUMP3       .word   II,CFETCH,lit,3,UDOTR
+            .word   xloop,DUMP3             ; bytes display loop
             .word   SPACE,SPACE
             .word   II,lit,10h,PLUS,II,xdo  ; display 16 chars
-DUMP3       .word   II,CFETCH
+DUMP4       .word   II,CFETCH
             .word   lit,7Eh,MIN,FBLANK,MAX,EMIT
-            .word   xloop,DUMP3
-            .word   lit,10h,xploop,DUMP1
-            .word   RFROM,FBASE,STORE
+            .word   xloop,DUMP4             ; chars display loop
+            .word   lit,10h,xploop,DUMP1    ; line loop
+            .word   RFROM,lit,BASE,STORE       ; restore current base
             .word   EXIT
 
-    .ENDIF ; UTILITY
+    .ENDIF
 
     FORTHWORD "{SD_TOOLS}"
     mNEXT
@@ -92,24 +151,28 @@ DisplaySector
     .word   EXIT                    ;
 ; ----------------------------------;
 
-; TIP : How to identify FAT16 or FAT32 SD_Card ?
-; 1 CLUSTER <==> FAT16 RootDIR
-; 2 CLUSTER <==> FAT32 RootDIR
 ; ----------------------------------;
 ; read first sector of Cluster and dump it
 ; ----------------------------------;
             FORTHWORD "CLUSTER"     ; cluster.  --         don't forget to add decimal point to your sector number (if < 65536)
 ; ----------------------------------;
-    MOV     TOS,&ClusterH           ;
-    MOV     @PSP,&ClusterL          ;
-Clust_ClustProcess
-    CALL    #ComputeClusFrstSect    ;
-    MOV     &SectorL,0(PSP)         ;
-    MOV     &SectorH,TOS            ;
-    JMP     SECTOR                  ;
+CLUSTER
+    MOV.B   &SecPerClus,W           ; SecPerClus(54321) = multiplicator
+    MOV     @PSP,X                  ; X = ClusterL
+    JMP     CLUSTER1                ;
+CLUSTERLOOP
+    ADD     X,X                     ; (RLA) shift one left MULTIPLICANDlo16
+    ADDC    TOS,TOS                 ; (RLC) shift one left MULTIPLICANDhi8
+CLUSTER1
+    RRA     W                       ; shift one right multiplicator
+    JNC     CLUSTERLOOP             ; if not carry
+    ADD     &OrgClusters,X          ; add OrgClusters = sector of virtual cluster 0 (word size)
+    MOV     X,0(PSP)      
+    ADDC    #0,TOS                  ; don't forget carry
+    JMP     SECTOR                  ; jump to a defined word
 ; ----------------------------------;
 
-; dump FAT1 sector of last entry
+; dump FAT1 first sector
 ; ----------------------------------;
             FORTHWORD "FAT"         ;VWXY Display first FATsector
 ; ----------------------------------;
@@ -121,14 +184,19 @@ Clust_ClustProcess
 ; ----------------------------------;
 
 
-; dump DIR sector of opened file or first sector of current DIR by default
+; dump current DIR first sector
 ; ----------------------------------;
-            FORTHWORD "DIR"         ; Display DIR sector of CurrentHdl or CurrentDir sector by default 
+            FORTHWORD "DIR"         ;
 ; ----------------------------------;
-    SUB     #4,PSP                  ;           Make room for result
+    SUB     #4,PSP                  ;
     MOV     TOS,2(PSP)              ;           save TOS
-    MOV     &DIRClusterL,&ClusterL  ;
-    MOV     &DIRClusterH,&ClusterH  ;
-    JMP     Clust_ClustProcess      ;
+    MOV     &DIRclusterL,0(PSP)     ;
+    MOV     &DIRclusterH,TOS        ;
+    CMP     #0,TOS
+    JNZ     CLUSTER
+    CMP     #1,0(PSP)               ; cluster 1 ?
+    JNZ     CLUSTER       
+    MOV     &OrgRootDir,0(PSP)      ; if yes, special case of FAT16 OrgRootDir        
+    JMP     SECTOR
 ; ----------------------------------;
 

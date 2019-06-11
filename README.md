@@ -1,23 +1,22 @@
 FastForth for MSP430FRxxxx TI's chips, from 16k FRAM 
 ==================================================
 
-Tested on all MSP-EXP430FRxxxx TI launchpads (5739,5969,5994,6989,4133,2355,2433) and CHIPSTICKFR2433, at 0.5, 1, 2, 4, 8, 12, 16 MHz plus 20MHz and 24MHz with FR23xx,FR57xx devices.
+Tested on all MSP-EXP430FRxxxx TI launchpads (5739,5969,5994,6989,4133,2355,2433,2476), at 0.5, 1, 2, 4, 8, 12, 16 MHz plus 20MHz and 24MHz with FR23xx,FR57xx devices.
 
-Fast Forth is a fast and well-made embedded interpreter/assembler/compiler, very interesting because of its size of 6 KB.
-This includes the FORTH language, a symbolic assembler without labels, conditional compilation, a 16-input search engine which
-speeds up the Forth interpreter by a factor of 4 and a connection to the serial terminal (TERATERM.exe), with 3 wires software flow control (XON/XOFF) and/or 4 wires hardware control flow, up to 6 Mbds.
-If your goal is to program a MSP430FRxxxx in assembler, FAST FORTH is the Swiss Army knife you absolutely need!
+Fast Forth is a fast and well-made embedded interpreter/assembler/compiler, very interesting because of its size under 5.5 KB.
+This includes the FORTH language, an amazing and powerful assembler with conditional compilation, a 16-input search engine which
+speeds up the Forth interpreter by a factor of 4, and a connection to the serial terminal (TERATERM.exe), with 3 wires software flow control (XON/XOFF) and/or 4 wires hardware control flow, up to 6 Mbds.
+If your goal is to program a MSP430FRxxxx in assembler or just to learn assembler, enjoy yourself, try it!
 However, if the IDE works well with Windows 10, it works less well with Linux which suffers from the lack of a good alternative to TERATERM...
 
 For only 3 kbytes in addition, you have the primitives to access the SD\_CARD FAT16 and FAT32: read, write, del, download source files and to copy them from PC to the SD_Card.
-It works with all SD\_CARD memories from 64MB to 64GB. The cycle of read/write byte is below 1 us @ 16 MHz.
+It works with all SD\_CARD memories from 64MB to 64GB. The cycle of read/write a byte is below 1 us @ 16 MHz.
 This enables to make a fast data logger with a small footprint as a MSP430FR5738 QFN24.
 
-With all kernel options, including extended_ASM, FastForth size is 11kB.
+With all kernel options, including extended_ASM and SD_Card driver, FastForth size is below 10.5 kB.
 
-    The files launchpad_xMHz.txt are the executables ready to use with 
-    a PL2303HXD cable and a serial terminal (TERATERM.exe) at 115200Bds with XON/XOFF,
-    or RTS hardware flow control
+    The files launchpad_xMHz.txt are the executables ready to use with a PL2303HXD cable and
+    a serial terminal (TERATERM.exe) at 115200Bds with XON/XOFF, or RTS hardware flow control
     ------------------------------------------------------------------------------------------
     WARNING! don't use it to supply your launchpad: red wire is 5V ==> MSP430FRxxxx destroyed!
     ------------------------------------------------------------------------------------------
@@ -33,20 +32,20 @@ With all kernel options, including extended_ASM, FastForth size is 11kB.
     The interest of XON/XOFF flow control is to allow 3.75kV galvanic isolation of terminal input
     with SOIC8 Si8622EC|ISO7421E, or better yet, powered 5kV galvanic isolation with SOIC16 ISOW7821.
     
-    If you want to change the terminal baudrate on the fly (230400 bds up to 6 Mbds),
-    download to your launchpad the file \MSP430-FORTH\CHNGBAUD.4th.
-    
-    To see all compilation options, download \MSP430-FORTH\FF_SPECS.4th.
-    
     Once the Fast Forth kernel is loaded in the target FRAM memory, you add assembly code or 
     FORTH code, or both, by downloading your source files that the embedded FastForth interprets and
     compiles.
     Beforehand, the preprocessor GEMA, by means of a \config\gema\target.pat file, will have translated
-    the generic source file.f in a targeted source file.4th. This allows the assembler to use
-    symbolic addresses for all peripheral registers without having to declare them in the embedded FORTH.
+    your generic source file.f in a targeted source file.4th. This allows the embedded assembler to use
+    symbolic addresses for all peripheral registers without having to declare them with FORTH words.
     A set of .bat files in \MSP430-FORTH folder is furnished to do all this automatically.
+    
+    If you want to change the terminal baudrate on the fly (230400 bds up to 6 Mbds),
+    download to your launchpad the file \MSP430-FORTH\CHNGBAUD.f.
+    
+    To see all compilation options, download \MSP430-FORTH\FF_SPECS.f.
 
-    The download/interpret/compile/execute of a source_file.4th (without comments) is done
+    The download/interpret/compile/execute of a source_file is done
     at a throughput of 40/80/120 kbytes/s with a 8/16/24 MHz clock and at maximum allowed baudrate. 
     Considering a ratio 5/1, that of the compiled code is 8/16/24 kbytes/s.
 
@@ -54,13 +53,34 @@ With all kernel options, including extended_ASM, FastForth size is 11kB.
     without errors which ensures its compatibility with the FORTH CORE ANS94 standard.
 
     Notice that FAST FORTH interprets lines up to 84 chars, only SPACE as delimiter, only CR+LF as
-        End Of Line, and BACKSPACE. 
+    End Of Line, and BACKSPACE. 
     And that the high limit of FORTH program memory is $FF80. 
 
     Finally, using the SCITE editor as IDE, all is ready to do everything from its "tools" menu.
+    Once the Forth kernel is programmed, say goodbye to owner's any DLL and FET dongle...
 
 What is new ?
 -------------
+
+V301
+
+    -584 bytes, Kernel+CondComp+Assembler is under 5.5 kb.
+   
+    the FORTH kernel is drastically reduced to 82 words, just what the operating system needs.
+    All others are moved in the \ADDON\ANS_COMPLEMENT.asm file, the conditionnal compilation
+    allowing you to use them on request.
+   
+    Taking into account the new TI launchpad LP_MSP430FR2476.
+    
+    Fixed: :NONAME (now aligned), LOAD" (no more crash on error).
+    Modified: ACCEPT, WORD, HEADER, CODE, ENDCODE, ASM, GOTO, ?GOTO, RPT.
+    Removed JMP <word> and ?JMP <word> from assembler (replaced by GOTO BWx and ?GOTO BWx).
+    
+    ACCEPT is modified to include the RXON call in the word SLEEP. 
+    By rewriting the defered word SLEEP, we can easily disable the TERMINAL_INPUT interrupt.
+    See BACKGROUND, START and STOP  in \MSP430-FORTH\RC5toLCD.f.
+
+
 
 V300
 
@@ -1077,6 +1097,9 @@ I have added possibility of several "non canonical" jumps, up to 3 backward and 
         MOV Y,TOS       \ 1 quotient in TOS
         MOV @IP+,PC     \ 4
     ENDCODE
+
+Forward labels FWx are for single use, Backward labels BWx can solve several jumps.
+
 
 
 SYMBOLIC ASSEMBLER ? YES !

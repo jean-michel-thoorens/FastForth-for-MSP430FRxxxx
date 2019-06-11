@@ -28,17 +28,25 @@
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
-: DEFINED! ECHO 1 ABORT" already loaded!" ;
-
-[DEFINED] {CORDIC} [IF] DEFINED!
-
-[ELSE]
 
 PWR_STATE
+
+[UNDEFINED] {CORDIC} [IF] 
 
 MARKER {CORDIC}
 
 [UNDEFINED] {FIXPOINT} [IF] \ define words to display angle as Q15.16 number.
+
+[UNDEFINED] DABS [IF] \
+\ https://forth-standard.org/standard/double/DABS
+\ DABS     d1 -- |d1|     absolute value
+CODE DABS
+MOV #1-,X
+ADD #4,X
+MOV X,PC
+ENDCODE
+[THEN]
+
 
 \ https://forth-standard.org/standard/core/HOLDS
 \ Adds the string represented by addr u to the pictured numeric output string
@@ -47,7 +55,7 @@ MARKER {CORDIC}
 \ (2 supplementary bytes are room for sign - and decimal point)
 \ C HOLDS    addr u --
 CODE HOLDS
-            MOV @PSP+,X     \ 2
+BW1         MOV @PSP+,X     \ 2
             ADD TOS,X       \ 1 src
             MOV &HP,Y       \ 3 dst
 BEGIN       SUB #1,X        \ 1 src-1
@@ -67,7 +75,7 @@ CODE F#S
             MOV TOS,T               \                   T = limit
             MOV #0,S                \                   S = count
 BEGIN       MOV @PSP,&MPY           \                   Load 1st operand
-            MOV &BASE,&OP2          \                   Load 2nd operand
+            MOV &BASEADR,&OP2          \                   Load 2nd operand
             MOV &RES0,0(PSP)        \ -- Qhi RESlo x        low result on stack
             MOV &RES1,TOS           \ -- Qhi RESlo REShi    high result in TOS
             CMP #10,TOS             \                   digit to char
@@ -80,13 +88,13 @@ BEGIN       MOV @PSP,&MPY           \                   Load 1st operand
             MOV T,TOS               \ -- Qhi 0 limit
             SUB #2,PSP              \ -- Qhi 0 x len
             MOV #HOLDS_ORG,0(PSP)   \ -- Qhi 0 addr len
-            JMP HOLDS
+            GOTO BW1                \ JMP HOLDS
 ENDCODE
 
 CODE F.             \ display a Q15.16 number with 4/5/16 digits after comma
 MOV TOS,S           \ S = sign
 MOV #4,T            \ T = 4     preset 4 digits for base 16 and by default
-MOV &BASE,W
+MOV &BASEADR,W
 CMP ##10,W
 0= IF               \           if base 10
     ADD #1,T        \ T = 5     set 5 digits
@@ -103,7 +111,7 @@ LO2HI
     $2C HOLD        \                   $2C = char ','
     #S              \ -- 0 0
     R> SIGN #>      \ -- addr len       R-- IP
-    TYPE SPACE      \ --         
+    TYPE $20 EMIT   \ --         
 ;
 
 [THEN] \ end of [UNDEFINED] {FIXPOINT}
@@ -184,7 +192,7 @@ MOV #0,Y            \ Y = Yi
         RRA S       \ (Xi >> 1)
         RRA T       \ (Yi >> 1)
         ADD #1,W
-    FW1 CMP IP,W    \ W = i ?
+FW1     CMP IP,W    \ W = i ?
     0= UNTIL        \ loop back if W < i
     ADD W,W         \ W = 2i = T_SCALE displacement
     CMP #0,TOS      \ TOS = z
@@ -283,7 +291,7 @@ MOV #0,TOS          \ init z=0
         RRA S       \ (X >> i)
         RRA T       \ (Y >> i)
         ADD #1,W    \
-    FW1 CMP IP,W    \ W = i ?
+FW1     CMP IP,W    \ W = i ?
     0= UNTIL        \ 6~ loop
     ADD W,W         \ W = 2i = T_SCALE displacement
     CMP #0,Y        \ Y sign ?
@@ -296,11 +304,11 @@ MOV #0,TOS          \ init z=0
         ADD S,Y     \ Yi+1 = Yi + ( Xi >> i)
         SUB T_ARCTAN(W),TOS
     THEN
-    CMP #0,Y        \ if Y = 0 quit loop
-    0<> WHILE       \ if Y = 0 goto THEN
-    CMP #14,IP
- 0= UNTIL
-    THEN
+    CMP #0,Y        \
+    0<> WHILE       \ if Y = 0 quit loop ---+
+    CMP #14,IP      \                       |
+ 0= UNTIL           \                       |
+    THEN            \ <---------------------+
 \ multiply x by CORDIC gain
 MOV X,&MPY              \ 3     Load 1st operand
 MOV T_SCALE(W),&OP2     \ 3     CORDIC Gain * 65536
@@ -332,9 +340,21 @@ RST_HERE
 
 [THEN] 
 
-: 2000CORDIC
-1000 0 DO
-    POL2REC REC2POL     \ 1000 loops
+[UNDEFINED] ROT [IF] \
+\ https://forth-standard.org/standard/core/ROT
+\ ROT    x1 x2 x3 -- x2 x3 x1
+CODE ROT
+MOV @PSP,W          \ 2 fetch x2
+MOV TOS,0(PSP)      \ 3 store x3
+MOV 2(PSP),TOS      \ 3 fetch x1
+MOV W,2(PSP)        \ 3 store x2
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+: 1000CORDIC
+500 0 DO
+    POL2REC REC2POL     \ 2 CORDIC op. * 500 loops = 1000 CORDIC
 LOOP 
 ;
 
@@ -365,10 +385,10 @@ ECHO
 1000 -1000 REC2POL F. .     ; phase module --> 
 16000 8000 REC2POL F. .     ; phase module --> 
 16000 -8000 REC2POL F. .    ; phase module --> 
-16000 0 REC2POL F. .        ; phase module -->
-0 16000 REC2POL F. .        ; phase module -->
-\16384 -8192 REC2POL F. .    ; --> abort
-\0 0 REC2POL F. .            ; --> abort
+16000 0 REC2POL F. .        ; phase module --> 
+0 16000 REC2POL F. .        ; phase module --> 
+\ 16384 -8192 REC2POL F. .    ; --> abort
+\ 0 0 REC2POL F. .            ; --> abort
 
 
 10000 89,0 POL2REC REC2POL   ROT . F. 
@@ -382,15 +402,15 @@ ECHO
 10000 7,125 POL2REC REC2POL  ROT . F. 
 10000 1,0 POL2REC REC2POL    ROT . F. 
 
-10000 89,0  2000CORDIC  ROT . F.
-10000 75,0  2000CORDIC  ROT . F.
-10000 60,0  2000CORDIC  ROT . F.
-10000 45,0  2000CORDIC  ROT . F.
-10000 30,0  2000CORDIC  ROT . F.
-10000 26,565 2000CORDIC ROT . F.
-10000 15,0 2000CORDIC   ROT . F.
-10000 14,036 2000CORDIC ROT . F.
-10000 7,125 2000CORDIC  ROT . F.
-10000 1,0 2000CORDIC    ROT . F.
+10000 89,0   1000CORDIC      ROT . F.
+10000 75,0   1000CORDIC      ROT . F.
+10000 60,0   1000CORDIC      ROT . F.
+10000 45,0   1000CORDIC      ROT . F.
+10000 30,0   1000CORDIC      ROT . F.
+10000 26,565 1000CORDIC      ROT . F.
+10000 15,0   1000CORDIC      ROT . F.
+10000 14,036 1000CORDIC      ROT . F.
+10000 7,125  1000CORDIC      ROT . F.
+10000 1,0    1000CORDIC      ROT . F.
 
 

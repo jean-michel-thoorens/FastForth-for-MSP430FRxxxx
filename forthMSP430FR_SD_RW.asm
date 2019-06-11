@@ -304,7 +304,7 @@ OPW_Error                           ; set ECHO, type Pathname, type #error, type
     mDOCOL                          ;
     .word   XSQUOTE                 ;
     .byte   12,"< WriteError",0     ;
-    .word   BRAN,SD_ERROR           ;
+    .word   BRAN,SD_QABORTYES       ; to insert S error as flag, no return
 ; ----------------------------------;
 
 
@@ -469,24 +469,6 @@ Write_File_End
     CALL    #Write_File             ;
     mNEXT                           ;
 ; ----------------------------------;
-
-;Z SD_EMIT  c --    output char c to a SD_CARD file opened as write
-; ----------------------------------;
-    FORTHWORD "SD_EMIT"             ;
-; ----------------------------------;
-SD_EMIT                             ;
-    CMP     #BytsPerSec,&BufferPtr  ; 4 file buffer is full ?
-    JLO     SD_EmitNext             ; 2
-    CALL    #Write_File             ;   BufferPtr = 0
-SD_EmitNext                         ;
-    MOV     &BufferPtr,Y            ; 3 
-    MOV.B   TOS,SD_BUF(Y)           ; 3
-    ADD     #1,&BufferPtr           ; 4
-    MOV     @PSP+,TOS               ; 2
-    mNEXT                           ; 4
-; ----------------------------------; 22~ for SD_EMIT, 22~ for EMIT
-
-
 
 
 ; ======================================================================

@@ -258,7 +258,7 @@ CMPA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=235
 MOVA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=238
 SUBA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=241
 
-RPT
+RPT     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=219
 
 CONDCOMP ADD-ON
 ---------------

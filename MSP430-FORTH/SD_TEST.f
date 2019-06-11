@@ -74,11 +74,11 @@ PWR_STATE
 
 MARKER {SD_TEST}
 
-[UNDEFINED] AND [IF]
-\ https://forth-standard.org/standard/core/AND
-\ C AND    x1 x2 -- x3           logical AND
-CODE AND
-AND @PSP+,TOS
+[UNDEFINED] + [IF]
+\ https://forth-standard.org/standard/core/Plus
+\ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
+CODE +
+ADD @PSP+,TOS
 MOV @IP+,PC
 ENDCODE
 [THEN]
@@ -87,47 +87,111 @@ ENDCODE
     CODE MAX    \    n1 n2 -- n3       signed maximum
         CMP @PSP,TOS    \ n2-n1
         S< ?GOTO FW1    \ n2<n1
-    BW1 ADD #2,PSP
+BW1     ADD #2,PSP
         MOV @IP+,PC
     ENDCODE
 
     CODE MIN    \    n1 n2 -- n3       signed minimum
         CMP @PSP,TOS    \ n2-n1
         S< ?GOTO BW1    \ n2<n1
-    FW1 MOV @PSP+,TOS
+FW1     MOV @PSP+,TOS
         MOV @IP+,PC
     ENDCODE
 [THEN]
 
-[UNDEFINED] U.R [IF]    \ defined in {UTILITY}
+[UNDEFINED] C@ [IF]
+\ https://forth-standard.org/standard/core/CFetch
+\ C@     c-addr -- char   fetch char from memory
+CODE C@
+MOV.B @TOS,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] SPACE [IF]
+\ https://forth-standard.org/standard/core/SPACE
+\ SPACE   --               output a space
+: SPACE
+$20 EMIT ;
+[THEN]
+
+[UNDEFINED] SPACES [IF]
+\ https://forth-standard.org/standard/core/SPACES
+\ SPACES   n --            output n spaces
+CODE SPACES
+CMP #0,TOS
+0<> IF
+    PUSH IP
+    BEGIN
+        LO2HI
+        $20 EMIT
+        HI2LO
+        SUB #2,IP 
+        SUB #1,TOS
+    0= UNTIL
+    MOV @RSP+,IP
+THEN
+MOV @PSP+,TOS           \ --         drop n
+NEXT              
+ENDCODE
+[THEN]
+
+[UNDEFINED] OVER [IF]
+\ https://forth-standard.org/standard/core/OVER
+\ OVER    x1 x2 -- x1 x2 x1
+CODE OVER
+MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
+MOV @PSP,TOS        \ 2 -- x1 (x2) x1
+SUB #2,PSP          \ 1 -- x1 x2 x1
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] U.R [IF]        \ defined in {UTILITY}
 : U.R                       \ u n --           display u unsigned in n width (n >= 2)
 >R  <# 0 # #S #>  
 R> OVER - 0 MAX SPACES TYPE
 ;
 [THEN]
 
-[UNDEFINED] DUMP [IF]    \ defined in {UTILITY}
+[UNDEFINED] DUMP [IF]       \ defined in {UTILITY}
 \ https://forth-standard.org/standard/tools/DUMP
 CODE DUMP                   \ adr n  --   dump memory
 PUSH IP
-PUSH &BASE                  \ save current base
-MOV #$10,&BASE              \ HEX base
+PUSH &BASEADR               \ save current base
+MOV #$10,&BASEADR           \ HEX base
 ADD @PSP,TOS                \ -- ORG END
 LO2HI
-  SWAP OVER OVER            \ -- END ORG END ORG 
-  U.  U.                 \ -- END ORG        display org end 
-  $FFF0 AND                 \ -- END ORG_modulo_16
+  SWAP                      \ -- END ORG
   DO  CR                    \ generate line
-    I 7 U.R SPACE           \ generate address
-      I $10 + I             \ display 16 bytes
+    I 4 U.R SPACE           \ generate address
+      I 8 + I
+      DO I C@ 3 U.R LOOP
+      SPACE
+      I $10 + I 8 +
       DO I C@ 3 U.R LOOP  
       SPACE SPACE
       I $10 + I             \ display 16 chars
-      DO I C@ $7E MIN BL MAX EMIT LOOP
+      DO I C@ $7E MIN $20 MAX EMIT LOOP
   $10 +LOOP
-  R> BASE !                 \ restore current base
+  R> BASEADR !              \ restore current base
 ;
 [THEN]
+
+
+\ SD_EMIT  c --    output char c to a SD_CARD file opened as write
+CODE SD_EMIT
+CMP #512,&BufferPtr     \ 512 bytes by sector
+U>= IF                  \ if file buffer is full
+    MOV #WRITE,X        \ CALL WRITEFILE
+    CALL 2(X)           \ BufferPtr = 0
+THEN
+MOV &BufferPtr,Y        \ 3 
+MOV.B TOS,SD_BUF(Y)     \ 3
+ADD #1,&BufferPtr       \ 4
+MOV @PSP+,TOS           \ 2
+MOV @IP+,PC
+ENDCODE
 
 : SD_TEST
 PWR_HERE    \ remove all volatile programs from MAIN memory

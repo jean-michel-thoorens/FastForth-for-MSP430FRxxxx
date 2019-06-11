@@ -21,6 +21,22 @@
     FORTHWORD "{ANS_COMP}"
     mNEXT
 
+;https://forth-standard.org/standard/core/VARIABLE
+;C VARIABLE <name>       --                      define a Forth VARIABLE
+            FORTHWORD "VARIABLE"
+VARIABLE    CALL #HEADER            ; W = DDP = CFA + 2 words
+            MOV #DOVAR,-4(W)        ;   CFA = DOVAR, PFA is undefined
+            MOV #REVEAL,PC          ;   to link created VARIABLE in vocabulary
+
+;https://forth-standard.org/standard/core/CONSTANT
+;C CONSTANT <name>     n --                      define a Forth CONSTANT
+            FORTHWORD "CONSTANT"
+CONSTANT    CALL #HEADER            ; W = DDP = CFA + 2 words
+            MOV #DOCON,-4(W)        ;   CFA = DOCON
+            MOV TOS,-2(W)           ;   PFA = n
+            MOV @PSP+,TOS
+            MOV #REVEAL,PC          ;   to link created VARIABLE in vocabulary
+
 ;https://forth-standard.org/standard/core/VALUE
 ;( x "<spaces>name" -- )                      define a Forth VALUE
 ;Skip leading space delimiters. Parse name delimited by a space.
@@ -53,12 +69,12 @@
             BIS #UF10,SR
             MOV @IP+,PC
 
-;https://forth-standard.org/standard/core/StoD
-;C S>D    n -- d          single -> double prec.
+; https://forth-standard.org/standard/core/StoD
+; S>D    n -- d          single -> double prec.
             FORTHWORD "S>D"
-STOD:       SUB     #2,PSP
-            MOV     TOS,0(PSP)
-            JMP     ZEROLESS
+STOD        SUB #2,PSP
+            MOV TOS,0(PSP)
+            JMP ZEROLESS
 
     .IFDEF MPY
 
@@ -85,7 +101,7 @@ MSTAR       MOV     @PSP,&MPYS
 ;https://forth-standard.org/standard/core/MTimes
 ;C M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
             FORTHWORD "M*"
-MSTAR:      MOV     TOS,S           ; TOS= n2
+MSTAR       MOV     TOS,S           ; TOS= n2
             XOR     @PSP,S          ; S contains sign of result
             CMP     #0,0(PSP)       ; n1 > -1 ?
             JGE     u1n2MSTAR       ; yes
@@ -109,6 +125,12 @@ u1u2MSTAR   PUSHM   #2,IP           ;           PUSHM IP,S
 MSTARend    mNEXT
 
     .ENDIF ;MPY
+
+;https://forth-standard.org/standard/core/UMDivMOD
+; UM/MOD   udlo|udhi u1 -- r q   unsigned 32/16->r16 q16
+            FORTHWORD "UM/MOD"
+UMSLASHMOD  PUSH #DROP          ;3 as return address for MU/MOD
+            MOV #MUSMOD,PC
 
 ;https://forth-standard.org/standard/core/SMDivREM
 ;C SM/REM   d1lo d1hi n2 -- n3 n4  symmetric signed div
@@ -173,34 +195,40 @@ ABBS        CMP     #0,TOS       ; 1
             JN      NEGAT 
             mNEXT
 
+;https://forth-standard.org/standard/core/Plus
+;C +       n1/u1 n2/u2 -- n3/u3     add n1+n2
+            FORTHWORD "+"
+PLUS        ADD @PSP+,TOS
+            mNEXT
+
 ;https://forth-standard.org/standard/core/Times
 ;C *      n1 n2 -- n3       signed multiply
             FORTHWORD "*"
-STAR:       mDOCOL
+STAR        mDOCOL
             .word   MSTAR,DROP,EXIT
 
 ;https://forth-standard.org/standard/core/DivMOD
 ;C /MOD   n1 n2 -- n3 n4    signed divide/rem'dr
             FORTHWORD "/MOD"
-SLASHMOD:   mDOCOL
+SLASHMOD    mDOCOL
             .word   TOR,STOD,RFROM,FMSLASHMOD,EXIT
 
 ;https://forth-standard.org/standard/core/Div
 ;C /      n1 n2 -- n3       signed divide
             FORTHWORD "/"
-SLASH:      mDOCOL
+SLASH       mDOCOL
             .word   TOR,STOD,RFROM,FMSLASHMOD,NIP,EXIT
 
 ;https://forth-standard.org/standard/core/MOD
 ;C MOD    n1 n2 -- n3       signed remainder
             FORTHWORD "MOD"
-MODD:       mDOCOL
+MODD        mDOCOL
             .word   TOR,STOD,RFROM,FMSLASHMOD,DROP,EXIT
 
 ;https://forth-standard.org/standard/core/TimesDivMOD
 ;C */MOD  n1 n2 n3 -- n4 n5    n1*n2/n3, rem&quot
             FORTHWORD "*/MOD"
-SSMOD:      mDOCOL
+SSMOD       mDOCOL
             .word   TOR,MSTAR,RFROM,FMSLASHMOD,EXIT
 
 ;https://forth-standard.org/standard/core/TimesDiv
@@ -248,12 +276,38 @@ ALIGNN      BIT     #1,&DDP   ; 3
             ADD     #2,TOS
             mNEXT
 
-; https://forth-standard.org/standard/core/StoD
-; S>D    n -- d          single -> double prec.
-            FORTHWORD "S>D"
+;-------------------------------------------------------------------------------
+; STACK OPERATIONS
+;-------------------------------------------------------------------------------
+
+;https://forth-standard.org/standard/core/OVER
+;C OVER    x1 x2 -- x1 x2 x1
+            FORTHWORD "OVER"
+OVER        MOV TOS,-2(PSP)     ; 3 -- x1 (x2) x2
+            MOV @PSP,TOS        ; 2 -- x1 (x2) x1
+            SUB #2,PSP          ; 1 -- x1 x2 x1
+            mNEXT               ; 4
+
+;https://forth-standard.org/standard/core/ROT
+;C ROT    x1 x2 x3 -- x2 x3 x1
+            FORTHWORD "ROT"
+ROT         MOV @PSP,W          ; 2 fetch x2
+            MOV TOS,0(PSP)      ; 3 store x3
+            MOV 2(PSP),TOS      ; 3 fetch x1
+            MOV W,2(PSP)        ; 3 store x2
+            mNEXT               ; 4
+
+;https://forth-standard.org/standard/core/RFetch
+;C R@    -- x     R: x -- x   fetch from rtn stk
+            FORTHWORD "R@"
             SUB #2,PSP
             MOV TOS,0(PSP)
-            JMP ZEROLESS
+            MOV @RSP,TOS
+            mNEXT
+
+;----------------------------------------------------------------------
+; DOUBLE OPERATORS
+;----------------------------------------------------------------------
 
 ; https://forth-standard.org/standard/core/TwoFetch
 ; 2@    a-addr -- x1 x2    fetch 2 cells ; the lower address will appear on top of stack
@@ -284,14 +338,6 @@ TWOSTORE    MOV     @PSP+,0(TOS)
             BIC #UF10,SR
             JMP TWOSTORE
 
-; https://forth-standard.org/standard/core/TwoDUP
-; 2DUP   x1 x2 -- x1 x2 x1 x2   dup top 2 cells
-            FORTHWORD "2DUP"
-            SUB     #4,PSP          ; -- x1 x x x2
-            MOV     TOS,2(PSP)      ; -- x1 x2 x x2
-            MOV     4(PSP),0(PSP)   ; -- x1 x2 x1 x2
-            mNEXT
-
 ; https://forth-standard.org/standard/core/TwoDROP
 ; 2DROP  x1 x2 --          drop 2 cells
             FORTHWORD "2DROP"
@@ -319,6 +365,29 @@ TWOSTORE    MOV     @PSP+,0(TOS)
             MOV     6(PSP),TOS      ; -- x1 x2 x3 x4 x1 x2
             mNEXT
 
+;https://forth-standard.org/standard/core/CFetch
+; C@     c-addr -- char   fetch char from memory
+            FORTHWORD "C@"
+CFETCH      MOV.B @TOS,TOS      ;2
+            mNEXT               ;4
+
+;https://forth-standard.org/standard/core/CStore
+; C!      char c-addr --    store char in memory
+            FORTHWORD "C!"
+CSTORE      MOV.B @PSP+,0(TOS)  ;4
+            ADD #1,PSP          ;1
+            MOV @PSP+,TOS       ;2
+            mNEXT
+
+;https://forth-standard.org/standard/core/CComma
+; C,   char --        append char
+            FORTHWORD "C,"
+CCOMMA      MOV &DDP,W
+            MOV.B TOS,0(W)
+            ADD #1,&DDP
+            MOV @PSP+,TOS
+            mNEXT
+
 ;https://forth-standard.org/standard/core/AND
 ;C AND    x1 x2 -- x3           logical AND
             FORTHWORD "AND"
@@ -340,8 +409,25 @@ XORR        XOR     @PSP+,TOS
 ;https://forth-standard.org/standard/core/INVERT
 ;C INVERT   x1 -- x2            bitwise inversion
             FORTHWORD "INVERT"
-INVERT      XOR     #-1,TOS
+            XOR     #-1,TOS
             mNEXT
+
+;https://forth-standard.org/standard/core/less
+;C <      n1 n2 -- flag        test n1<n2, signed
+            FORTHWORD "<"
+LESS        SUB @PSP+,TOS   ;1 TOS=n2-n1
+            JL FALSETOS     ;2 signed
+            JZ LESSEND      ;2
+TRUETOS     MOV #-1,TOS     ;1 flag Z = 0
+LESSEND     mNEXT           ;4
+
+;https://forth-standard.org/standard/core/more
+;C >     n1 n2 -- flag         test n1>n2, signed
+            FORTHWORD ">"
+GREATER     SUB @PSP+,TOS   ;2 TOS=n2-n1
+            JL TRUETOS      ;2 --> +5
+FALSETOS    AND #0,TOS      ;1 flag Z = 1
+            mNEXT           ;4
 
 ;https://forth-standard.org/standard/core/LSHIFT
 ;C LSHIFT  x1 u -- x2    logical L shift u places
@@ -349,10 +435,10 @@ INVERT      XOR     #-1,TOS
 LSHIFT      MOV     @PSP+,W
             AND     #1Fh,TOS        ; no need to shift more than 16
             JZ      LSH_X
-LSH_1:      ADD     W,W
+LSH_1       ADD     W,W
             SUB     #1,TOS
             JNZ     LSH_1
-LSH_X:      MOV     W,TOS
+LSH_X       MOV     W,TOS
             mNEXT
 
 ;https://forth-standard.org/standard/core/RSHIFT
@@ -361,11 +447,11 @@ LSH_X:      MOV     W,TOS
 RSHIFT      MOV     @PSP+,W
             AND     #1Fh,TOS        ; no need to shift more than 16
             JZ      RSH_X
-RSH_1:      BIC     #1,SR           ; CLRC
+RSH_1       BIC     #1,SR           ; CLRC
             RRC     W
             SUB     #1,TOS
             JNZ     RSH_1
-RSH_X:      MOV     W,TOS
+RSH_X       MOV     W,TOS
             mNEXT
 
 ;https://forth-standard.org/standard/core/TwoTimes
@@ -383,17 +469,17 @@ TWODIV      RRA     TOS
 ;https://forth-standard.org/standard/core/MAX
 ;C MAX    n1 n2 -- n3       signed maximum
             FORTHWORD "MAX"
-MAX:        CMP     @PSP,TOS    ; n2-n1
+MAX         CMP     @PSP,TOS    ; n2-n1
             JL      SELn1       ; n2<n1
-SELn2:      ADD     #2,PSP
+SELn2       ADD     #2,PSP
             mNEXT
 
 ;https://forth-standard.org/standard/core/MIN
 ;C MIN    n1 n2 -- n3       signed minimum
             FORTHWORD "MIN"
-MIN:        CMP     @PSP,TOS    ; n2-n1
+MIN         CMP     @PSP,TOS    ; n2-n1
             JL      SELn2       ; n2<n1
-SELn1:      MOV     @PSP+,TOS
+SELn1       MOV     @PSP+,TOS
             mNEXT
 
 ;https://forth-standard.org/standard/core/PlusStore
@@ -424,11 +510,11 @@ FILL        MOV     @PSP+,X     ; count
             MOV     @PSP+,W     ; address
             CMP     #0,X
             JZ      FILL_X
-FILL_1:     MOV.B   TOS,0(W)    ; store char in memory
+FILL_1      MOV.B   TOS,0(W)    ; store char in memory
             ADD     #1,W
             SUB     #1,X
             JNZ     FILL_1
-FILL_X:     MOV     @PSP+,TOS   ; pop new TOS
+FILL_X      MOV     @PSP+,TOS   ; pop new TOS
             mNEXT
 
 ;https://forth-standard.org/standard/core/HEX
@@ -457,6 +543,67 @@ DOTPAREN    MOV #0,&CAPS
             .word   FBLANK,LIT,CAPS,STORE
             .word   EXIT
 
+;https://forth-standard.org/standard/core/J
+;C J        -- n   R: 4*sys -- 4*sys
+;C                  get the second loop index
+            FORTHWORD "J"
+JJ          SUB #2,PSP      ; make room in TOS
+            MOV TOS,0(PSP)
+            MOV 4(RSP),TOS  ; index = loopctr - fudge
+            SUB 6(RSP),TOS
+            mNEXT
+
+;https://forth-standard.org/standard/core/SPACE
+;C SPACE   --               output a space
+            FORTHWORD "SPACE"
+SPACE       SUB #2,PSP              ;1
+            MOV TOS,0(PSP)          ;3
+            MOV #20h,TOS            ;2
+            JMP EMIT                ;17~  23~
+
+;https://forth-standard.org/standard/core/SPACES
+;C SPACES   n --            output n spaces
+            FORTHWORD "SPACES"
+SPACES      CMP #0,TOS
+            JZ SPACESNEXT2
+            PUSH IP
+            MOV #SPACESNEXT,IP
+            JMP SPACE               ;25~
+SPACESNEXT  FORTHtoASM
+            SUB #2,IP               ;1
+            SUB #1,TOS              ;1
+            JNZ SPACE               ;25~ ==> 27~ by space ==> 2.963 MBds @ 8 MHz
+            MOV @RSP+,IP            ;
+SPACESNEXT2 MOV @PSP+,TOS           ; --         drop n
+            mNEXT                   ;
+
+;https://forth-standard.org/standard/core/UNLOOP
+;UNLOOP   --   R: sys1 sys2 --  drop loop parms
+            FORTHWORD "UNLOOP"
+UNLOOP      ADD #4,RSP
+            MOV @IP+,PC
+
+;https://forth-standard.org/standard/core/LEAVE
+;C LEAVE    --    L: -- adrs
+            FORTHWORDIMM "LEAVE"    ; immediate
+LEAV        MOV &DDP,W              ; compile three words
+            MOV #UNLOOP,0(W)        ; [HERE] = UNLOOP
+            MOV #BRAN,2(W)          ; [HERE+2] = BRAN
+            ADD #6,&DDP             ; [HERE+4] = After LOOP adr
+            ADD #2,&LEAVEPTR
+            ADD #4,W
+            MOV &LEAVEPTR,X
+            MOV W,0(X)              ; leave HERE+4 on LEAVEPTR stack
+            mNEXT
+
+;https://forth-standard.org/standard/core/RECURSE
+;C RECURSE  --      recurse to current definition (compile current definition)
+            FORTHWORDIMM "RECURSE"  ; immediate
+RECURSE     MOV &DDP,X              ;
+            MOV &LAST_CFA,0(X)      ;
+            ADD #2,&DDP             ;
+            mNEXT
+
 ;https://forth-standard.org/standard/core/SOURCE
 ;C SOURCE   -- adr u    current input buffer
             FORTHWORD "SOURCE"
@@ -465,6 +612,12 @@ DOTPAREN    MOV #0,&CAPS
             MOV     &SOURCE_LEN,TOS
             MOV     &SOURCE_ORG,0(PSP)
             mNEXT
+
+;https://forth-standard.org/standard/core/BASE
+;C BASE    -- a-addr       holds conversion radix
+            FORTHWORD "BASE"
+            mDOCON
+            .word   BASE    ; VARIABLE address in RAM space
 
 ;https://forth-standard.org/standard/core/toIN
 ;C >IN     -- a-addr       holds offset in input stream

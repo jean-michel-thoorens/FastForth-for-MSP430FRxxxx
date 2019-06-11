@@ -150,9 +150,8 @@
 ;               P2.3  -   SW2
 ;               P2.5  -   J2.10     <----   SD_CD (Card Detect)
 
-            MOV #-1,&PAREN      ; all inputs with pull resistors
-            MOV #1,&PADIR       ; all pins as input else LED1 as output
-            MOV #0FFFEh,&PAOUT  ; all pins with pullup resistors else LED1 = output low
+            MOV #-1,&PAREN      ; all inputs with pull up/down resistors
+            MOV #0FFFEh,&PAOUT  ; all pins with pullup resistors else LED1
 
     .IFDEF UCA0_TERM
 ; UCA0_RXD  -   P1.6    - J1.3      <----   TX  UARTtoUSB bridge
@@ -200,8 +199,8 @@ SD_CDIN     .equ  P2IN
 ; UCB1 SIMO     P4.6    -   J2.15   ---->   SD_SDI
 ; UCB1 SOMI     P4.7    -   J2.14   <----   SD_SDO
 
-            MOV.B #-1,&PBOUT  ; pullup resistors for all pins
             BIS.B #-1,&PBREN  ; all pins with pull resistors
+            MOV.B #-1,&PBOUT  ; pullup resistors for all pins
 
     .IFDEF UCA1_TERM
 ; UCA1 RXD      P4.2    -   J101.8  <----   TX  UARTtoUSB bridge
@@ -233,9 +232,8 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 
 ;           P6.6    -   LED2 green
 
-            BIS.B #0BFh,&P6REN  ; all pins with pull up resistors else P6.6
-            MOV.B #0BFh,&P6OUT  ; OUT high for all pins else P6.6
-            MOV.B #040h,&P6DIR  ; all pins with pullup resistors else LED2 = output low
+            BIS.B #-1,&P6REN    ; all pins with pull up/down resistors
+            MOV.B #0BFh,&P6OUT  ; all pins with pull up resistors else P6.6
 
 ; ----------------------------------------------------------------------
 ; FRAM config
@@ -271,6 +269,14 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 ;    BIS.B #2,&P1SEL1
 ;    BIS.B #2,&P1DIR
 
+
+    .IFDEF LF_XTAL
+;           MOV     #0000h,&CSCTL3      ; FLL select XT1, FLLREFDIV=0 (default value)
+            MOV     #0000h,&CSCTL4      ; ACLOCK select XT1, MCLK & SMCLK select DCOCLKDIV
+    .ELSE
+            BIS     #0010h,&CSCTL3      ; FLL select REFCLOCK
+;           MOV     #0100h,&CSCTL4      ; ACLOCK select REFO, MCLK & SMCLK select DCOCLKDIV (default value)
+    .ENDIF
 
     .IF FREQUENCY = 0.5
 
@@ -421,14 +427,6 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 
     .ELSEIF
     .error "bad frequency setting, only 0.5,1,2,4,8,12,16,20,24 MHz"
-    .ENDIF
-
-    .IFDEF LF_XTAL
-;           MOV     #0000h,&CSCTL3      ; FLL select XT1, FLLREFDIV=0 (default value)
-            MOV     #0000h,&CSCTL4      ; ACLOCK select XT1, MCLK & SMCLK select DCOCLKDIV
-    .ELSE
-            BIS     #0010h,&CSCTL3      ; FLL select REFCLOCK
-;           MOV     #0100h,&CSCTL4      ; ACLOCK select REFO, MCLK & SMCLK select DCOCLKDIV (default value)
     .ENDIF
 
             BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV preserving a pending request for DEEP_RST

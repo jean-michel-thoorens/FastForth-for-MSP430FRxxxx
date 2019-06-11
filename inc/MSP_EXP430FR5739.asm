@@ -224,8 +224,8 @@ SD_CSDIR    .equ P2DIR
 
 ; P2.7 is used to power the accelerometer and NTC voltage divider ==> output low = power OFF
 
-    MOV #07FEFh,&PAREN  ; all input pins with pull up resistor else P2.7 and P1.4 with pull down
-    MOV #-1,&PAOUT
+    MOV #-1,&PAREN      ; all pins inputs with pull up/down resistor
+    MOV #07FEFh,&PAOUT  ; all input pins with pull up resistor else P2.7 and P1.4
 
     .IFDEF TERMINAL4WIRES
 ; RTS output is wired to the CTS input of UART2USB bridge 
@@ -264,9 +264,8 @@ S1          .equ 1
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
-    MOV #0FF08h,&PAOUT      ; all pins inputs hifh else blues LEDs and ADC inputs
-    BIS #0FF08h,&PAREN      ; all pins with pull resistors else blues LEDs and ADC inputs
-    BIS #000F0h,&PADIR      ; all pins as input else blues LEDs
+    MOV #-1,&PBREN      ; all pins inputs with pull up/down resistor
+    BIS #0FF08h,&PBOUT  ; all pins with pull up resistor else blues LEDs and ADC inputs
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORTJ
@@ -280,9 +279,8 @@ S1          .equ 1
 
 ; PORTx default wanted state : pins as input with pullup resistor else leds output low
 
-    MOV.B #0F0h,&PJOUT      ; all pins high else blues LEDs
-    BIS.B #0F0h,&PJREN      ; all pins 1 with pull resistors else blues LEDs
-    BIS.B #00Fh,&PJDIR      ; all pins as input else blues LEDs
+    BIS.B #-1,&PJREN    ; all pins inputs with pull up/down resistor
+    MOV.B #0F0h,&PJOUT  ; all pins with pull up resistor else blues LEDs
 
 
 ; ----------------------------------------------------------------------

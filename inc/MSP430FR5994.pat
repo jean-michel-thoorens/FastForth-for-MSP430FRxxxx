@@ -59,6 +59,10 @@ xdodoes=\$4000!         restore rDODOES: MOV #xdodoes,rDODOES
 xdocon=\$400E!          restore rDOCON: MOV #xdocon,rDOCON
 xdovar=\$4020!          restore rDOVAR: MOV #xdocon,rDOVAR  
 xdocol=\$402A!          restore rDOCOL: MOV #xdocol,rDOCOL      only for DTC = 1
+DODOES=\$1284!          CALL rDODOES
+DOCON=\$1285!           CALL rDOCON
+DOVAR=\$1286!           CALL rDOVAR
+
 ! to find DTC value, download \MSP430-FORTH\FastForthSpecs.4th
 ! if DTC = 1, restore rDOCOL as this : MOV #xdocol,rDOCOL
 ! if DTC = 2, restore rDOCOL as this : MOV #EXIT,rDOCOL
@@ -249,7 +253,7 @@ LAST_THREAD=\$1DB8!
 LAST_CFA=\$1DBA!
 LAST_PSP=\$1DBC!
 
-!STATE=\$1DBE!       \ Interpreter state
+STATEADR=\$1DBE!       \ Interpreter state
 
 SOURCE_LEN=\$1DC0!  \ len of input stream
 SOURCE_ORG=\$1DC2!  \ adr of input stream
@@ -260,21 +264,10 @@ LASTVOC=\$1DC8!     \ keep VOC-LINK
 CONTEXT=\$1DCA!     \ CONTEXT dictionnary space (8 CELLS)
 CURRENT=\$1DDA!     \ CURRENT dictionnary ptr
 
-!BASE=\$1DDC!        \ numeric base, must be defined before first reset !
+BASEADR=\$1DDC!        \ numeric base, must be defined before first reset !
 LINE=\$1DDE!        \ line in interpretation, activated with NOECHO, desactivated with ECHO
 ! ---------------------------------------
-!1DE0! 16 RAM bytes free conditionnaly
-! ---------------------------------------
-!SAV_CURRENT=\$1DE0! \ preserve CURRENT when create assembler words
-!ASMBW1=\$1DE2!      \ assembler backward reference 1
-!ASMBW2=\$1DE4!      \ assembler backward reference 2
-!ASMBW3=\$1DE6!      \ assembler backward reference 3
-!ASMFW1=\$1DE8!      \ assembler forward reference 1
-!ASMFW2=\$1DEA!      \ assembler forward reference 2
-!ASMFW3=\$1DEC!      \ assembler forward reference 3
-!RPT_WORD=\$1DEE!    \ 
-! ---------------------------------------
-!1DF0! 12 RAM bytes free
+!1DE0! 28 RAM bytes free 
 ! ---------------------------------------
 
 ! ---------------------------------------
@@ -380,7 +373,8 @@ HandleEnd=\$2118!
 !SD_card Input Buffer
 SDIB_I2CADR=\$2118!
 SDIB_I2CCNT=\$211A!
-SDIB_ORG=\$251C!
+SDIB_ORG=\$211C!
+SDIB_LEN=\$54!
 
 SD_END=\$2170!
 SD_LEN=\$16E!

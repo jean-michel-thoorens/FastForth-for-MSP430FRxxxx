@@ -26,13 +26,9 @@
 \ FORTH conditionnals:  unary{ 0= 0< 0> }, binary{ = < > U< }
 \
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
-\ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
+\ ASSEMBLER conditionnal usage with ?GOTO           S<  S>=  U<   U>=  0=  0<>  0<
 
-: DEFINED! ECHO 1 ABORT" already loaded!" ;
-
-[DEFINED] {ANS_COMP} [IF] DEFINED!
-
-[ELSE]
+[UNDEFINED] {ANS_COMP} [IF]
 
 PWR_STATE
 
@@ -51,26 +47,159 @@ MARKER {ANS_COMP}
 \ TO name Run-time: ( x -- )
 \ Assign the value x to name.
 
-: VALUE 
-CREATE ,
-DOES> 
+[UNDEFINED] VARIABLE [IF]
+\ https://forth-standard.org/standard/core/VARIABLE
+\ VARIABLE <name>       --                      define a Forth VARIABLE
+
+: VARIABLE 
+DEFER
 HI2LO
 MOV @RSP+,IP
-BIT #UF10,SR
-0= IF
-    MOV #@,PC
-THEN 
-BIC #UF10,SR
-MOV #!,PC
-ENDCODE
-
-\ https://forth-standard.org/standard/core/TO
-\ TO name Run-time: ( x -- )
-\ Assign the value x to named VALUE.
-CODE TO
-BIS #UF10,SR
+MOV #DOVAR,-4(W)        \   CFA = DOVAR
 MOV @IP+,PC
 ENDCODE
+
+[THEN]
+
+[UNDEFINED] CONSTANT [IF]
+\ https://forth-standard.org/standard/core/CONSTANT
+\ CONSTANT <name>     n --                      define a Forth CONSTANT 
+: CONSTANT 
+DEFER
+HI2LO
+MOV @RSP+,IP
+MOV #DOCON,-4(W)        \   CFA = DOCON
+MOV TOS,-2(W)           \   PFA = n
+MOV @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+\ https://forth-standard.org/standard/core/STATE
+\ STATE   -- a-addr       holds compiler state
+STATEADR CONSTANT STATE
+
+[UNDEFINED] BASE [IF]
+\ https://forth-standard.org/standard/core/BASE
+\ BASE    -- a-addr       holds conversion radix
+BASEADR CONSTANT BASE
+[THEN]
+
+[UNDEFINED] >IN [IF]
+\ https://forth-standard.org/standard/core/toIN
+\ C >IN     -- a-addr       holds offset in input stream
+TOIN CONSTANT >IN
+[THEN]
+
+[UNDEFINED] PAD [IF]
+\ https://forth-standard.org/standard/core/PAD
+\  PAD           --  addr
+PAD_ORG CONSTANT PAD
+[THEN]
+
+[UNDEFINED] BL [IF]
+\ https://forth-standard.org/standard/core/BL
+\ BL      -- char            an ASCII space
+#32 CONSTANT BL
+[THEN]
+
+[UNDEFINED] SPACE [IF]
+\ https://forth-standard.org/standard/core/SPACE
+\ SPACE   --               output a space
+: SPACE
+BL EMIT ;
+[THEN]
+
+[UNDEFINED] SPACES [IF]
+\ https://forth-standard.org/standard/core/SPACES
+\ SPACES   n --            output n spaces
+CODE SPACES
+CMP #0,TOS
+0<> IF
+    PUSH IP
+    BEGIN
+        LO2HI
+        BL EMIT
+        HI2LO
+        SUB #2,IP 
+        SUB #1,TOS
+    0= UNTIL
+    MOV @RSP+,IP
+THEN
+MOV @PSP+,TOS           \ --         drop n
+NEXT              
+ENDCODE
+[THEN]
+
+
+\ \ https://forth-standard.org/standard/core/VALUE
+\ : VALUE                 \ x "<spaces>name" -- 
+\ CREATE ,
+\ DOES> 
+\ HI2LO
+\ MOV @RSP+,IP
+\ BIT #UF10,SR    \ see TO
+\ 0= IF
+\     MOV #@,PC
+\ THEN 
+\ BIC #UF10,SR
+\ MOV #!,PC
+\ ENDCODE
+
+\ \ https://forth-standard.org/standard/core/TO
+\ \ TO name Run-time: ( x -- )
+\ \ Assign the value x to named VALUE.
+\ CODE TO
+\ BIS #UF10,SR
+\ MOV @IP+,PC
+\ ENDCODE
+
+\ https://forth-standard.org/standard/core/StoD
+\ S>D    n -- d          single -> double prec.
+: S>D
+    DUP 0<
+;
+
+[UNDEFINED] NIP [IF]
+\ https://forth-standard.org/standard/core/NIP
+\ NIP      x1 x2 -- x2         Drop the first item below the top of stack
+CODE NIP
+ADD #2,PSP
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] C@ [IF]
+\ https://forth-standard.org/standard/core/CFetch
+\ C@     c-addr -- char   fetch char from memory
+CODE C@
+MOV.B @TOS,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] C! [IF]
+\ https://forth-standard.org/standard/core/CStore
+\ C!      char c-addr --    store char in memory
+CODE C!
+MOV.B @PSP+,0(TOS)  \ 4
+ADD #1,PSP          \ 1
+MOV @PSP+,TOS       \ 2
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] C, [IF]
+\ https://forth-standard.org/standard/core/CComma
+\ C,   char --        append char
+CODE C,
+MOV &DP,W
+MOV.B TOS,0(W)
+ADD #1,&DP
+MOV @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
 
 [UNDEFINED] AND [IF]
 \ https://forth-standard.org/standard/core/AND
@@ -99,11 +228,40 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
+[UNDEFINED] + [IF]
+\ https://forth-standard.org/standard/core/Plus
+\ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
+CODE +
+ADD @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
 \ https://forth-standard.org/standard/core/INVERT
 \ INVERT   x1 -- x2            bitwise inversion
 CODE INVERT
 XOR #-1,TOS
 MOV @IP+,PC
+ENDCODE
+
+\ https://forth-standard.org/standard/core/less
+\ <      n1 n2 -- flag        test n1<n2, signed
+CODE <
+        SUB @PSP+,TOS   \ 1 TOS=n2-n1
+        S< ?GOTO FW1    \ 2 signed
+    0<> IF              \ 2
+BW1     MOV #-1,TOS     \ 1 flag Z = 0
+    THEN
+        MOV @IP+,PC
+ENDCODE
+
+\ https://forth-standard.org/standard/core/more
+\ >     n1 n2 -- flag         test n1>n2, signed
+CODE >
+        SUB @PSP+,TOS   \ 2 TOS=n2-n1
+        S< ?GOTO BW1    \ 2 --> +5
+FW1     AND #0,TOS      \ 1 flag Z = 1
+        MOV @IP+,PC
 ENDCODE
 
 \ https://forth-standard.org/standard/core/LSHIFT
@@ -170,7 +328,9 @@ ENDCODE
 \ --------------------
 \ ARITHMETIC OPERATORS
 \ --------------------
-$1A04 C@ $EF > [IF] ; test tag value MSP430FR413x subfamily without hardware_MPY 
+TLV_ORG 4 + @ $81F3 U<
+$81EF TLV_ORG 4 + @ U< 
+= [IF]   ; MSP430FR413x subfamily without hardware_MPY
 
 \ https://forth-standard.org/standard/core/MTimes
 \ M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
@@ -202,7 +362,7 @@ THEN
 MOV @IP+,PC
 ENDCODE
 
-[ELSE]              ; MSP430FRxxxx with hardware_MPY
+[ELSE]  ; MSP430FRxxxx with hardware_MPY
 
 \ https://forth-standard.org/standard/core/UMTimes
 \ UM*     u1 u2 -- udlo udhi   unsigned 16x16->32 mult.
@@ -222,6 +382,15 @@ CODE M*
 ENDCODE
 
 [THEN]
+
+\ https://forth-standard.org/standard/core/UMDivMOD
+\ UM/MOD   udlo|udhi u1 -- r q   unsigned 32/16->r16 q16
+CODE UM/MOD
+    PUSH #DROP      \
+    MOV #<#,X       \ X = addr of <#
+    ADD #8,X        \ X = addr of MUSMOD
+    MOV X,PC        \ execute MUSMOD then RET to DROP
+ENDCODE
 
 \ https://forth-standard.org/standard/core/SMDivREM
 \ SM/REM   DVDlo DVDhi DIVlo -- r3 q4  symmetric signed div
@@ -328,11 +497,39 @@ M* DROP
 >R M* R> FM/MOD NIP
 ;
 
-\ https://forth-standard.org/standard/core/StoD
-\ S>D    n -- d          single -> double prec.
-: S>D
-    DUP 0<
-;
+\ -------------------------------------------------------------------------------
+\  STACK OPERATIONS
+\ -------------------------------------------------------------------------------
+
+[UNDEFINED] OVER [IF]
+\ https://forth-standard.org/standard/core/OVER
+\ OVER    x1 x2 -- x1 x2 x1
+CODE OVER
+MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
+MOV @PSP,TOS        \ 2 -- x1 (x2) x1
+SUB #2,PSP          \ 1 -- x1 x2 x1
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+\ https://forth-standard.org/standard/core/ROT
+\ ROT    x1 x2 x3 -- x2 x3 x1
+CODE ROT
+MOV @PSP,W          \ 2 fetch x2
+MOV TOS,0(PSP)      \ 3 store x3
+MOV 2(PSP),TOS      \ 3 fetch x1
+MOV W,2(PSP)        \ 3 store x2
+MOV @IP+,PC
+ENDCODE
+
+\ https://forth-standard.org/standard/core/RFetch
+\ R@    -- x     R: x -- x   fetch from return stack
+CODE R@
+SUB #2,PSP
+MOV TOS,0(PSP)
+MOV @RSP,TOS
+MOV @IP+,PC
+ENDCODE
 
 \ ----------------------------------------------------------------------
 \ DOUBLE OPERATORS
@@ -343,42 +540,32 @@ M* DROP
 \ https://forth-standard.org/standard/core/TwoFetch
 \ 2@    a-addr -- x1 x2    fetch 2 cells ; the lower address will appear on top of stack
 CODE 2@
-SUB #2,PSP
-MOV 2(TOS),0(PSP)
-MOV @TOS,TOS
-MOV @IP+,PC
+BW1 SUB #2,PSP
+    MOV 2(TOS),0(PSP)
+    MOV @TOS,TOS
+    MOV @IP+,PC
 ENDCODE
 
 \ https://forth-standard.org/standard/core/TwoStore
 \ 2!    x1 x2 a-addr --    store 2 cells ; the top of stack is stored at the lower adr
 CODE 2!
-MOV @PSP+,0(TOS)
-MOV @PSP+,2(TOS)
-MOV @PSP+,TOS
-MOV @IP+,PC
+BW2 MOV @PSP+,0(TOS)
+    MOV @PSP+,2(TOS)
+    MOV @PSP+,TOS
+    MOV @IP+,PC
 ENDCODE
 
-\ https://forth-standard.org/standard/double/TwoVALUE
-: 2VALUE
-CREATE
-, ,             \ compile Shi then Flo
-DOES>
-HI2LO
-MOV @RSP+,IP
-BIT #UF10,SR
-0= ?JMP 2@ 
-BIC #UF10,SR
-JMP 2!
-ENDCODE
-
-\ https://forth-standard.org/standard/core/TwoDUP
-\ 2DUP   x1 x2 -- x1 x2 x1 x2   dup top 2 cells
-CODE 2DUP
-SUB #4,PSP          \ -- x1 x x x2
-MOV TOS,2(PSP)      \ -- x1 x2 x x2
-MOV 4(PSP),0(PSP)   \ -- x1 x2 x1 x2
-MOV @IP+,PC
-ENDCODE
+\ \ https://forth-standard.org/standard/double/TwoVALUE
+\ : 2VALUE        \ x1 x2 "<spaces>name" --
+\ CREATE , ,      \ compile Shi then Flo
+\ DOES>
+\ HI2LO
+\ MOV @RSP+,IP
+\ BIT #UF10,SR    \see TO
+\ 0= ?GOTO BW1 
+\ BIC #UF10,SR
+\ GOTO BW2
+\ ENDCODE
 
 \ https://forth-standard.org/standard/core/TwoDROP
 \ 2DROP  x1 x2 --          drop 2 cells
@@ -464,6 +651,7 @@ ENDCODE
 \ ---------------------------
 \ BLOCK AND STRING COMPLEMENT
 \ ---------------------------
+
 \ https://forth-standard.org/standard/core/CHAR
 \ CHAR   -- char           parse ASCII character
 : CHAR
@@ -473,7 +661,7 @@ ENDCODE
 \ https://forth-standard.org/standard/core/BracketCHAR
 \ [CHAR]   --          compile character literal
 : [CHAR]
-    CHAR lit lit , ,
+    CHAR POSTPONE LITERAL
 ; IMMEDIATE
 
 \ https://forth-standard.org/standard/core/PlusStore
@@ -504,6 +692,7 @@ ENDCODE
 \ --------------------
 \ INTERPRET COMPLEMENT
 \ --------------------
+
 \ https://forth-standard.org/standard/core/HEX
 CODE HEX
 MOV #$10,&BASE
@@ -532,6 +721,48 @@ COUNT TYPE
 BL CAPS !       \ CAPS ON
 ; IMMEDIATE
 
+\ https://forth-standard.org/standard/core/J
+\ J        -- n   R: 4*sys -- 4*sys
+\ C                  get the second loop index
+CODE J
+SUB #2,PSP      
+MOV TOS,0(PSP)
+MOV 4(RSP),TOS
+SUB 6(RSP),TOS
+MOV @IP+,PC
+ENDCODE
+
+\ https://forth-standard.org/standard/core/UNLOOP
+\ UNLOOP   --   R: sys1 sys2 --  drop loop parms
+CODE UNLOOP
+ADD #4,RSP
+MOV @IP+,PC
+ENDCODE
+
+\ https://forth-standard.org/standard/core/LEAVE
+\ LEAVE    --    L: -- adrs
+CODE LEAVE
+MOV &DP,W               \ compile three words
+MOV #UNLOOP,0(W)        \ [HERE] = UNLOOP
+MOV #.,2(W)             \ DOT + 8 = BRAN
+ADD #8,2(W)             \ [HERE+2] = BRAN
+ADD #6,&DP              \ [HERE+4] = After LOOP adr
+ADD #2,&LEAVEPTR
+ADD #4,W
+MOV &LEAVEPTR,X
+MOV W,0(X)              \ leave HERE+4 on LEAVEPTR stack
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+
+\ https://forth-standard.org/standard/core/RECURSE
+\ C RECURSE  --      recurse to current definition (compile current definition)
+CODE RECURSE
+MOV &DP,X
+MOV &LAST_CFA,0(X)
+ADD #2,&DP
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+
 \ https://forth-standard.org/standard/core/SOURCE
 \ SOURCE    -- adr u    of current input buffer
 CODE SOURCE
@@ -541,16 +772,6 @@ MOV &SOURCE_LEN,TOS
 MOV &SOURCE_ORG,0(PSP)
 MOV @IP+,PC
 ENDCODE
-
-\ https://forth-standard.org/standard/core/toIN
-\ C >IN     -- a-addr       holds offset in input stream
-TOIN CONSTANT >IN
-
-[UNDEFINED] PAD [IF]
-\ https://forth-standard.org/standard/core/PAD
-\  PAD           --  addr
-PAD_ORG CONSTANT PAD
-[THEN]
 
 RST_HERE
 

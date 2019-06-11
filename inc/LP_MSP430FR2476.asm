@@ -1,140 +1,150 @@
 ; -*- coding: utf-8 -*-
+; LP_MSP430FR2476.asm
 
-; Fast Forth For Texas Instrument MSP430FR5739
-; Tested on MSP-EXP430FR2433 launchpad
+; Fast Forth For Texas Instrument MSP430FR247
 ;
-; Copyright (C) <2017>  <J.M. THOORENS>
+; Copyright (C) <2014>  <J.M. THOORENS>
 ;
 ; This program is free software: you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
 ; the Free Software Foundation, either version 3 of the License, or
 ; (at your option) any later version.
-; 
+;
 ; This program is distributed in the hope that it will be useful,
 ; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ; GNU General Public License for more details.
-; 
+;
 ; You should have received a copy of the GNU General Public License
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+; ===================================================================================
+; in case of 3.3V powered by UARTtoUSB bridge, open J13 straps {RST,TST,V+,5V} BEFORE
+; ===================================================================================
+
+;     J101 Target    J101    eZ-FET             UARTtoUSB
+;
+;            DVSS 14 o--o 13 GND  
+;             5V0 12 o--o 11 5V0
+;            DVCC 10 o--o 9  3V3
+;    P1.5 UCA0_RX  8 o--o 7  <------------ TX   UARTtoUSB
+;    P1.4 UCA0_TX  6 o--o 5  <---------+-> RX   UARTtoUSB
+;     SBWTDIO/RST  4 o--o 3            |         _   
+;      SBWTCK/TST  2 o--o 1            +--4k7---o o-- GND
+;                                             DeepRST
+; SD_Card socket
+;  VCC -                       ----> VCC  SD_CardAdapter
+;  GND -                       <---> GND  SD_CardAdapter
+; P2.4 - UCA1 CLK       J2     ----> CLK  SD_CardAdapter (SCK)  
+; P2.6 - UCA1 TXD/SIMO  J1     ----> SDI  SD_CardAdapter (MOSI)
+; P2.5 - UCA1 RXD/SOMI  J1     <---- SDO  SD_CardAdapter (MISO)
+; P1.6 -                J4     ----> CS   SD_CardAdapter (Card Select)
+; P1.7 -                J4     <---- CD   SD_CardAdapter (Card Detect)
+; 
 ; ======================================================================
-; INIT MSP-EXP430FR2433 board
-; ======================================================================
-
-; J101 (7xjumper)
-; "SBWTCK"   ---> TEST
-; "SBWTDIO"  ---> RST
-; "TXD"      <--- P1.4  == UCA0TXD <-- UCA0TXDBUf
-; "RXD"      ---> P1.5  == UCA0RXD --> UCA0RXDBUF
-; "3V3"      <--> 3V3
-; "5V0"      <--> 5V0
-; "GND"      <--> GND
-
-
-; SW1 -- P2.3
-; SW2 -- P2.7
-
-; LED1 - P1.0
-; LED2 - P1.1
-
-; I/O pins on J1:
-; J1.1 - 3V3
-; J1.2 - P1.0
-; J1.3 - P1.5
-; J1.4 - P1.4
-; J1.5 - P1.6
-; J1.6 - P1.7
-; J1.7 - P2.4
-; J1.8 - P2.7
-; J1.9 - P1.3
-; J1.10- P1.2
-
-; I/O pins on J2:
-; J2.11 - P2.0
-; J2.12 - P2.1
-; J2.13 - P3.1
-; J2.14 - P2.5
-; J2.15 - P2.6
-; J2.16 - RST
-; J2.17 - P3.2
-; J2.18 - P2.2
-; J2.19 - P1.1
-; J2.20 - GND
-
-; LFXTAL - P2.0
-; LFXTAL - P2.1
-
-; ======================================================================
-; MSP-EXP430FR2433 LAUNCHPAD    <--> OUTPUT WORLD
+; LP_MSP430FR2476 board
 ; ======================================================================
 
-;                                 +--4k7-< DeepRST switch <-- GND 
-;                                 |
-; P1.4  - UCA0 TXD    J101.6 -  <-+-> RX  UARTtoUSB bridge
-; P1.5  - UCA0 RXD    J101.8 -  <---- TX  UARTtoUSB bridge
-; P1.0  - RTS         J1.2   -  ----> CTS UARTtoUSB bridge (TERMINAL4WIRES)
-; P1.1  - CTS         J2.19  -  <---- RTS UARTtoUSB bridge (TERMINAL5WIRES)
-
-; P1.2  - UCB0 SDA    J1.10  -  <---> SDA I2C Master_Slave
-; P1.3  - UCB0 SCL    J1.9   -  ----> SCL I2C Master_Slave
-        
-; P2.2  - ACLK        J2.18  -  <---- TSSOP32236 (IR RC5) 
-
-; P2.0  -             J2.11  -  ----> SD_CS (Card Select)
-; P2.1  -             J2.12  -  <---- SD_CD (Card Detect)
-; P2.4  - UCA1 CLK    J1.7   -  ----> SD_CLK
-; P2.5  - UCA1 SOMI   J2.14  -  <---- SD_SDO
-; P2.6  - UCA1 SIMO   J2.15  -  ----> SD_SDI
-        
-; P3.1  -             J2.13  -  ----> SCL I2C Soft_Master
-; P3.2  -             J2.17  -  <---> SDA I2C Soft_Master
-        
-
-; P2.0  -             J2.11  -  <---- I2CTERM_SLA0
-; P2.1  -             J2.12  -  <---- I2CTERM_SLA1
-; P2.2  - ACLK        J2.18  -  <---- I2CTERM_SLA2 
-
+; J1 - left ext.
+; 3v3
+; P1.6/UCA0CLK/TA1CLK/TDI/TCLK/A6     
+; P2.5/UCA1RXD/UCA1SOMI/CAP1.2
+; P2.6/UCA1TXD/UCA1SIMO/CAP1.3
+; P2.2/SYNC/ACLK/COMP0.1
+; P5.4/UCB1STE/TA3CLK/A11            
+; P3.5/UCB1CLK/TB0TRG/CAP3.1
+; P4.5/UCB0SOMI/UCB0SCL/TA3.2         
+; P1.3/UCB0SOMI/UCB0SCL/MCLK/A3
+; P1.2/UCB0SIMO/UCB0SDA/TA0.2/A2/VEREF-
+;
+;
+; J3 - left int.
+; 5V
+; GND
+; P1.7/UCA0STE/SMCLK/TDO/A7
+; P4.3/UCB1SOMI/UCB1SCL/TB0.5/A8
+; P4.4/UCB1SIMO/UCB1SDA/TB0.6/A9
+; P5.3/UCB1CLK/TA3.0/A10                      
+; P1.0/UCB0STE/TA0CLK/A0/VEREF+     -<J7>- LED1
+; P1.1/UCB0CLK/TA0.1/COMP0.0/A1     --- TEMPERATURE SENSOR ---<J9>--- 3V3
+; P5.7/TA2.1/COMP0.2 
+; P3.7/TA3.2/CAP2.0
+;
+; J4 - right int.
+; P5.2/UCA0TXD/UCA0SIMO/TB0.4                       
+; P5.1/UCA0RXD/UCA0SOMI/TB0.3       -<J8>- LED2Red
+; P5.0/UCA0CLK/TB0.2                -<J8>- LED2Green
+; P4.7/UCA0STE/TB0.1                -<J8>- LED2Blue
+; P6.0/TA2.2/COMP0.3
+; P3.3/TA2.1/CAP0.1
+; P6.1/TB0CLK
+; P6.2/TB0.0
+; P4.1/TA3.0/CAP2.2
+; P3.1/UCA1STE/CAP1.0
+;
+; J2 - right ext.
+; GND
+; P4.6/UCB0SIMO/UCB0SDA/TA3.1
+; P2.1/XIN
+; P2.0/XOUT
+; /RST/SBWTDIO
+; P3.2/UCB1SIMO/UCB1SDA/CAP3.2
+; P3.6/UCB1SOMI/UCB1SCL/CAP3.3
+; P4.2/TA3CLK/CAP2.3
+; P2.7/UCB1STE/CAP3.0
+; P2.4/UCA1CLK/CAP1.1
+;
+; switch-keys:
+; P4.0/TA3.1/CAP2.1                 - S1 
+; P2.3/TA2.0/CAP0.2                 - S2 
+; /RST                              - S3
+;
+; XTAL LF 32768 Hz
+; P2.0/XOUT
+; P2.1/XIN
+;
+;
+; Clocks:
+; 8 MHz DCO intern
+;
+;
 ; ----------------------------------------------------------------------
-; INIT order : WDT, GPIOs, FRAM, Clock, UARTs...
+; INIT order : LOCK I/O, WDT, GPIOs, FRAM, Clock, UARTs
 ; ----------------------------------------------------------------------
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : LOCK PMM_LOCKLPM5
 ; ----------------------------------------------------------------------
-
 ;              BIS     #LOCKLPM5,&PM5CTL0 ; unlocked by WARM
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : WATCHDOG TIMER A
 ; ----------------------------------------------------------------------
 
-; WDT code
         MOV #WDTPW+WDTHOLD+WDTCNTCL,&WDTCTL    ; stop WDT
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : I/O
 ; ----------------------------------------------------------------------
-
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT1/2
 ; ----------------------------------------------------------------------
 
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
-
 ; PORT1 usage
-; LED1 - P1.0
-; LED2 - P1.1
-; P1.4  - TXD TERMINAL + DEEP_RST
-; P1.5  - RXD TERMINAL
-; P1.0  - RTS TERMINAL     
-; P1.1  - CTS TERMINAL     
+; P1.0 - LED1 green   output low
 
+; PORTx default wanted state : pins as input with pullup resistor
+
+            BIS     #-1,&PAREN      ; all pins with pull up/down resistors
+            MOV     #0FFFEh,&PAOUT  ; all pins with pull up resistors  else P1.0 (LED2)
 
     .IFDEF UCA0_TERM
-TXD         .equ 10h        ; P1.4 = TXD + FORTH Deep_RST pin
-RXD         .equ 20h        ; P1.5
+; P1.4  UCA0-TXD    --> USB2UART RXD    
+; P1.5  UCA0-RXD    <-- USB2UART TXD 
+TXD         .equ 10h      ; P1.4 = TX + FORTH Deep_RST pin
+RXD         .equ 20h      ; P1.5 = RX
 TERM_BUS    .equ 30h
 TERM_IN     .equ P1IN
 TERM_SEL    .equ P1SEL0
@@ -142,91 +152,75 @@ TERM_REN    .equ P1REN
     .ENDIF
 
     .IFDEF UCA1_SD
-SD_SEL      .equ PASEL0     ; to configure UCA1
-SD_REN      .equ PAREN      ; to configure pullup resistors
-SD_BUS      .equ 07000h     ; pins P2.4 as UCA1CLK, P2.5 as UCA1SOMI & P2.6 as UCA1SIMO
+SD_SEL      .equ PASEL0 ; to configure UCA1
+SD_REN      .equ PAREN  ; to configure pullup resistors
+SD_BUS      .equ 7000h  ; pins P2.4 as UCA1CLK, P2.6 as UCA1SIMO & P2.5 as UCA1SOMI
     .ENDIF
 
-; P2.1                <--- SD_CD (Card Detect)
-SD_CD           .equ  2
-SD_CDIN         .equ  P2IN
-; P2.0                ---> SD_CS (Card Select)
-SD_CS           .equ  1
-SD_CSOUT        .equ P2OUT
-SD_CSDIR        .equ P2DIR
+SD_CD       .equ 080h   ; P1.7 as SD_CD
+SD_CS       .equ 040h   ; P1.6 as SD_CS     
+SD_CDIN     .equ P1IN
+SD_CSOUT    .equ P1OUT
+SD_CSDIR    .equ P1DIR
 
+; ----------------------------------------------------------------------
+; POWER ON RESET AND INITIALIZATION : PORT3/4
+; ----------------------------------------------------------------------
+; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
-    .IFDEF UCA1_TERM
-TXD         .equ 40h        ; P2.6 = TXD + FORTH Deep_RST pin
-RXD         .equ 20h        ; P2.5
-TERM_BUS    .equ 60h
-TERM_IN     .equ P2IN       ; TERMINAL TX  pin as FORTH Deep_RST 
-TERM_SEL    .equ P2SEL0
-TERM_REN    .equ P2REN
-    .ENDIF
+            BIS     #-1,&PBREN      ; all pins 1 with pull up/down resistors
+            MOV     #07FFFh,&PBOUT  ; all pins with pull up resistors else P4.7 (LED2B)
 
-            MOV #-1,&PAREN      ; all inputs with pull up/down resistors
-            MOV #0FFFCh,&PAOUT  ; all pins with pullup resistors else LED1/LED2
+; PORT3 usage
+
+; PORT4 usage
+
+; S1 - P4.0
+
+; LED2B - J8 - P4.7
+
+; ----------------------------------------------------------------------
+; POWER ON RESET AND INITIALIZATION : PORT5/6
+; ----------------------------------------------------------------------
+; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
+
+;            BIS     #00003h,&PCDIR  ; all pins 0 as input else P5.0 (LED2G) P5.1 (LED2R)
+;            MOV     #0FFFCh,&PCOUT  ; all pins high  else P5.0 (LED2G) P5.1 (LED2R)
+;            BIS     #0FFFCh,&PCREN  ; all pins with pull resistors else P5.0 (LED2G) P5.1 (LED2R)
+
+            BIS     #-1,&PCREN      ; all pins with pull up/down resistors
+            MOV     #0FFFCh,&PCOUT  ; all pins with pull up resistors else P5.0 (LED2G) P5.1 (LED2R)
+
+; PORT5 usage
+
+; LED2R - J8 - P5.1  red LED
+; LED2G - J8 - P5.0
+
+; PORT6 usage
 
     .IFDEF TERMINAL4WIRES
 ; RTS output is wired to the CTS input of UART2USB bridge 
 ; configure RTS as output high to disable RX TERM during start FORTH
-HANDSHAKOUT .equ    P1OUT
-HANDSHAKIN  .equ    P1IN
-RTS         .equ    1           ; P1.0
-;            BIS.B #RTS,&P1DIR   ; RTS as output high
-            BIS.B #RTS,&P1OUT   ; RTS as output high
+HANDSHAKOUT .equ    P6OUT
+HANDSHAKIN  .equ    P6IN
+RTS         .equ    2           ; P6.1
+            BIS.B #RTS,&P6DIR   ; RTS as output high
         .IFDEF TERMINAL5WIRES
 ; CTS input must be wired to the RTS output of UART2USB bridge 
 ; configure CTS as input low (true) to avoid lock when CTS is not wired
-CTS         .equ    2           ; P1.1
-            BIC.B #CTS,&P1DIR   ; CTS input pulled down
-;            BIC.B #CTS,&P1OUT   ; CTS input pulled down
+CTS         .equ    4           ; P6.2
+            BIC.B #CTS,&P6OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
     .ENDIF  ; TERMINAL4WIRES
-
-
-    .IFDEF UCB0_TERM        ; for MSP_EXP430FR2433_I2C
-I2CM_BUS        .equ    0Ch   ; P1.2=SDA P1.3=SCL
-I2CM_SEL        .equ    P1SEL0
-I2CM_REN        .equ    P1REN
-I2CM_OUT        .equ    P1OUT
-    .ENDIF
-
-    .IFDEF  UCB0_I2CM   ; for TERM2IIC add-on
-I2CT_BUS        .equ    0Ch   ; P1.2=SDA P1.3=SCL
-I2CT_SEL        .equ    P1SEL0
-I2CT_REN        .equ    P1REN
-I2CT_OUT        .equ    P1OUT
-    .ENDIF
-
-I2CT_SLA_BUS    .equ   07h     ; P2.0 P2.1 P2.1
-I2CT_SLA_IN     .equ   P2IN
-I2CT_SLA_OUT    .equ   P2OUT
-I2CT_SLA_DIR    .equ   P2DIR
-I2CT_SLA_REN    .equ   P2REN
-
-
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : PORT3
-; ----------------------------------------------------------------------
-
-; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
-
-; PORT3 usage
-            BIS.B #-1,&P3REN  ; all pins with pull up/down resistors
-            MOV.B #-1,&P3OUT  ; all pins with pull up resistor
-
 
 ; ----------------------------------------------------------------------
 ; FRAM config
 ; ----------------------------------------------------------------------
 
     .IF  FREQUENCY > 8
-            MOV.B   #0A5h, &FRCTL0_H     ; enable FRCTL0 access
-            MOV.B   #10h, &FRCTL0         ; 1 waitstate @ 16 MHz
-            MOV.B   #01h, &FRCTL0_H       ; disable FRCTL0 access
+            MOV.B   #0A5h,&FRCTL0_H ; enable FRCTL0 access
+            MOV.B   #10h,&FRCTL0    ; 1 waitstate @ 16 MHz
+            MOV.B   #01h,&FRCTL0_H  ; disable FRCTL0 access
     .ENDIF
 
 ; ----------------------------------------------------------------------
@@ -241,17 +235,17 @@ I2CT_SLA_REN    .equ   P2REN
 ; POWER ON RESET AND INITIALIZATION : CLOCK SYSTEM
 ; ----------------------------------------------------------------------
 
-; CS code for EXP430FR2433
+; CS code for MSP430FR2476
 
 ; to measure REFO frequency, output ACLK on P2.2: 
 ;    BIS.B #4,&P2SEL1
 ;    BIS.B #4,&P2DIR
-; result : REFO = 32.69kHz
+; result : REFO = xx.xx kHz
 
-; ===================================================================
+; ======================================================================
 ; need to adjust FLLN (and DCO) for each device of MSP430fr2xxx family ?
 ; (no problem with MSP430FR5xxx families without FLL).
-; ===================================================================
+; ======================================================================
 
 ;    .IF FREQUENCY = 0.5
 ;
@@ -359,7 +353,7 @@ I2CT_SLA_REN    .equ   P2REN
 
 ;            MOV     #058h,&CSCTL0       ; preset DCO = measured value @ 0x180 (88)
 ;            MOV     #0001h,&CSCTL1      ; Set 1MHZ DCORSEL,disable DCOFTRIM,Modulation
-            MOV     #1ED1h,&CSCTL0       ; preset MOD=31, DCO = measured value @ 0x180 (209)
+            MOV     #1ED1h,&CSCTL0      ; preset MOD=31, DCO = measured value @ 0x180 (209)
             MOV     #00B0h,&CSCTL1      ; Set 1MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
 ;            MOV     #100Dh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Dh
@@ -378,11 +372,11 @@ I2CT_SLA_REN    .equ   P2REN
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00B0h,&CSCTL1      ; Set 1MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
-;            MOV     #001Dh,&CSCTL2        ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1Dh
+;            MOV     #001Dh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1Dh
                                         ; fCOCLKDIV = 32768 x (29+1) = 0.983 MHz ; measured : 0.989MHz
-            MOV     #001Eh,&CSCTL2         ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1Eh
+            MOV     #001Eh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1Eh
                                         ; fCOCLKDIV = 32768 x (30+1) = 1.015 MHz ; measured : 1.013MHz
-;            MOV     #001Fh,&CSCTL2        ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1Fh
+;            MOV     #001Fh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1Fh
                                         ; fCOCLKDIV = 32768 x (31+1) = 1.049 MHz ; measured : 1.046MHz
 ; =====================================
             MOV     #16,X
@@ -395,7 +389,7 @@ I2CT_SLA_REN    .equ   P2REN
             MOV     #00B2h,&CSCTL1      ; Set 2MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
 ;            MOV     #003Bh,&CSCTL2        ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=3Bh
-                                        ; fCOCLKDIV = 32768 x (59+1) = 1.996 MHz ; measured :  MHz
+                                        ; fCOCLKDIV = 32768 x (59+1) = 1.966 MHz ; measured :  MHz
             MOV     #003Ch,&CSCTL2         ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=3Ch
                                         ; fCOCLKDIV = 32768 x (60+1) = 1.998 MHz ; measured :  MHz
 ;            MOV     #003Dh,&CSCTL2        ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=3Dh
@@ -466,7 +460,7 @@ I2CT_SLA_REN    .equ   P2REN
 
 ;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
 ;            MOV     #00BBh,&CSCTL1      ; Set 16MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
-            MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
+            MOV     #1EFFh,&CSCTL0      ; preset MOD=31, DCO=255  
             MOV     #00BAh,&CSCTL1      ; Set 16MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
 ;            MOV     #01E6h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E6h
@@ -485,24 +479,21 @@ I2CT_SLA_REN    .equ   P2REN
     .ENDIF
 
     .IFDEF LF_XTAL
-;           MOV     #0000h,&CSCTL3      ; FLL select XT1, FLLREFDIV=0 (default value)
+;            MOV     #0000h,&CSCTL3      ; FLL select XT1, FLLREFDIV=0 (default value)
             MOV     #0000h,&CSCTL4      ; ACLOCK select XT1, MCLK & SMCLK select DCOCLKDIV
     .ELSE
             BIS     #0010h,&CSCTL3      ; FLL select REFCLOCK
-;           MOV     #0100h,&CSCTL4      ; ACLOCK select REFO, MCLK & SMCLK select DCOCLKDIV (default value)
+;            MOV     #0100h,&CSCTL4      ; ACLOCK select REFO, MCLK & SMCLK select DCOCLKDIV (default value)
     .ENDIF
 
             BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV preserving a pending request for DEEP_RST
-;            MOV &SAVE_SYSRSTIV,TOS  ;
-;            CMP #2,TOS              ; POWER ON ?
-;            JZ      ClockWaitX      ; yes
-;            RRUM    #1,X            ; wait only 250 ms
+
 ClockWaitX  MOV     #5209,Y             ; wait 0.5s before starting after POR
 
 ClockWaitY  SUB     #1,Y                ;1
-            JNZ     ClockWaitY          ;2 5209x3 = 15625 cycles delay = 15.625ms @ 1MHz
-            SUB     #1,X                ; x 32 @ 1 MHZ = 500ms
+            JNZ     ClockWaitY          ;2 5209x3 = 15627 cycles delay = 15.627ms @ 1MHz
+            SUB     #1,X                ; x 16 @ 1 MHZ = 250ms
             JNZ     ClockWaitX          ; time to stabilize power source ( 500ms )
 
-;WAITFLL     BIT #300h,&CSCTL7         ; wait FLL lock
+;WAITFLL     BIT #300h,&CSCTL7          ; wait FLL lock
 ;            JNZ WAITFLL

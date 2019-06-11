@@ -137,34 +137,37 @@
 ;                                      ---          |
 ;                                  100n |    2k2    |
 ; P2.2 - UCB0 CLK TB0.2  J4.7   >---||--+--^/\/\/v--+---->  3 LCD_Vo (=0V6 without modulation)
-; P3.4 -                 J4.8   ------------------------->  4 LCD_RS
-; P3.5 -                 J4.9   ------------------------->  5 LCD_R/W
-; P3.6 -                 J4.10  ------------------------->  6 LCD_EN0
-; PJ.0 -                 J3.1   <------------------------> 11 LCD_DB4
-; PJ.1 -                 J3.3   <------------------------> 12 LCD_DB5
-; PJ.2 -                 J3.5   <------------------------> 13 LCD_DB5
-; PJ.3 -                 J3.7   <------------------------> 14 LCD_DB7
+; P3.4 -                 J4.8   ----------orange--------->  4 LCD_RS
+; P3.5 -                 J4.9   ----------blue----------->  5 LCD_R/W
+; P3.6 -                 J4.10  ----------black---------->  6 LCD_EN0
+; PJ.0 -                 J3.1   <---------brown----------> 11 LCD_DB4
+; PJ.1 -                 J3.3   <---------red------------> 12 LCD_DB5
+; PJ.2 -                 J3.5   <---------orange---------> 13 LCD_DB5
+; PJ.3 -                 J3.7   <---------yellow---------> 14 LCD_DB7
          
 ;                                 +--4k7-< DeepRST <-- GND 
 ;                                 |
-; P2.0 - UCA0 TXD        J13.8  <-+-> RX   UARTtoUSB bridge
-; P2.1 - UCA0 RXD        J13.10 <---- TX   UARTtoUSB bridge
-; P4.1 - RTS             J13.14 ----> CTS  UARTtoUSB bridge (optional hardware control flow)
+; P2.0 - UCA0 TXD        J13.8  <-+->white--> RX   UARTtoUSB bridge
+; P2.1 - UCA0 RXD        J13.10 <----green--- TX   UARTtoUSB bridge
+; P4.1 - RTS             J13.14 -----blue---> CTS  UARTtoUSB bridge (optional hardware control flow)
 ;  VCC -                 J13.16 <---- VCC  (optional supply from UARTtoUSB bridge - WARNING ! 3.3V !)
 ;  GND -                 J13.20 <---> GND  (optional supply from UARTtoUSB bridge)
          
 ;  VCC -                 J11.1  ----> VCC  SD_CardAdapter
 ;  GND -                 J12.3  <---> GND  SD_CardAdapter
 ; P2.4 - UCA1 CLK        J4.6   ----> CLK  SD_CardAdapter (SCK)  
-; P4.3 -                 J4.5   ----> CS   SD_CardAdapter (Card Select)
 ; P2.5 - UCA1 TXD/SIMO   J4.4   ----> SDI  SD_CardAdapter (MOSI)
 ; P2.6 - UCA1 RXD/SOMI   J4.3   <---- SDO  SD_CardAdapter (MISO)
+; P4.3 -                 J4.5   ----> CS   SD_CardAdapter (Card Select)
 ; P4.2 -                 J4.2   <---- CD   SD_CardAdapter (Card Detect)
-         
-; P4.0 -                 J3.10  <---- OUT  IR_Receiver (1 TSOP32236)
-;  VCC -                 J3.2   ----> VCC  IR_Receiver (2 TSOP32236)
-;  GND -                 J3.9   <---> GND  IR_Receiver (3 TSOP32236)
-         
+;                                                                    
+; P4.0 use is not compatible with core option "TERMINAL5WIRES"
+; P4.0 -                 J3.10  <---- OUT  IR_Receiver (1 TSOP32236) ───┐
+;                                                                       └┌───┐
+;  VCC -                 J3.2   ----> VCC  IR_Receiver (2 TSOP32236) ────| O |
+;                                                                       ┌└───┘
+;  GND -                 J3.9   <---> GND  IR_Receiver (3 TSOP32236) ───┘
+
 ; P1.2 -                 J5.19  <---> SDA  I2C SOFTWARE MASTER
 ; P1.3 -                 J5.11  <---> SCL  I2C SOFTWARE MASTER
 ; P1.4 -           TB0.1 J5.12  <---> free
@@ -221,9 +224,8 @@
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
-            BIS     #1,&PADIR   ; all pins 0 as input else P1.0 (LED2)
             MOV     #0FFFEh,&PAOUT  ; all pins high  else P1.0 (LED2)
-            BIC     #1,&PAREN   ; all pins 1 with pull resistors else P1.0 (LED2)
+            BIS     #-1,&PAREN  ; all pins 1 with pull resistors else P1.0 (LED2)
 
     .IFDEF UCA0_TERM
 ; P2.0  UCA0-TXD    --> USB2UART RXD    
@@ -247,6 +249,12 @@ TERM_SEL    .equ P2SEL1
 TERM_REN    .equ P2REN
     .ENDIF
 
+    .IFDEF UCA1_SD
+SD_SEL      .equ PASEL1 ; to configure UCA1
+SD_REN      .equ PAREN  ; to configure pullup resistors
+SD_BUS      .equ 7000h  ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
+    .ENDIF
+
     .IFDEF UCB0_SD
 SD_SEL      .equ PASEL1 ; to configure UCB0
 SD_REN      .equ PAREN  ; to configure pullup resistors
@@ -259,8 +267,8 @@ SD_BUS      .equ 04C0h  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0S
 ; ----------------------------------------------------------------------
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
-            MOV #-1,&PBREN  ; all pins as input with resistor
-            MOV #-1,&PBOUT  ; all pins as input with resistor
+            BIS #-1,&PBREN  ; all pins as input with resistor
+            MOV #0BFFFh,&PBOUT  ; all pins as input with pull up resistor else P4.6
 
 ; PORT3 usage
 
@@ -299,7 +307,7 @@ SD_CSDIR    .equ P4DIR
 ; PORTx default wanted state : pins as input with pullup resistor
 
             MOV.B #-1,&PJOUT    ; pullup resistors
-            MOV.B #-1,&PJREN    ; enable pullup/pulldown resistors
+            BIS.B #-1,&PJREN    ; enable pullup/pulldown resistors
 
 ; ----------------------------------------------------------------------
 ; FRAM config

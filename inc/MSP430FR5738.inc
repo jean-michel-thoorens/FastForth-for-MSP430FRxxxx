@@ -70,23 +70,23 @@ BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ;        .word  reset        ; $FFCE  -  RTC_B
 ;        .word  reset        ; $FFD0  -  I/O Port 4
 ;        .word  reset        ; $FFD2  -  I/O Port 3
-;        .word  reset        ; $FFD4  -  TB2_1
+;        .word  reset        ; $FFD4  -  TB2_x
 ;        .word  reset        ; $FFD6  -  TB2_0
 ;        .word  reset        ; $FFD8  -  I/O Port 2
-;        .word  reset        ; $FFDA  -  TB1_1
+;        .word  reset        ; $FFDA  -  TB1_x
 ;        .word  reset        ; $FFDC  -  TB1_0
 ;        .word  reset        ; $FFDE  -  I/O Port 1
 ;;   .org BSL_PASSWORD       ;Start of BSL PASSWORD
-;        .word  reset        ; $FFE0  -  TA1_1
+;        .word  reset        ; $FFE0  -  TA1_x
 ;        .word  reset        ; $FFE2  -  TA1_0
 ;        .word  reset        ; $FFE4  -  DMA
-;        .word  reset        ; $FFE8  -  TA0_1
+;        .word  reset        ; $FFE8  -  TA0_x
 ;        .word  reset        ; $FFEA  -  TA0_0
 ;        .word  reset        ; $FFEC  -  ADC10_B
 ;        .word  reset        ; $FFEE  -  eUSCI_B0
 ;        .word  reset        ; $FFF0  -  eUSCI_A0
 ;        .word  reset        ; $FFF2  -  Watchdog
-;        .word  reset        ; $FFF4  -  TB0_1
+;        .word  reset        ; $FFF4  -  TB0_x
 ;        .word  reset        ; $FFF6  -  TB0_0
 ;        .word  reset        ; $FFF8  -  COMP_D
 ;        .word  reset        ; $FFFA  -  userNMI

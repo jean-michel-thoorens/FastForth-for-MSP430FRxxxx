@@ -23,10 +23,143 @@
 \
 \ FORTH conditionnal    : 0= 0< = < > U<
 
+[UNDEFINED] + [IF]
+\ https://forth-standard.org/standard/core/Plus
+\ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
+CODE +
+ADD @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {UTILITY}
+
+CODE MAX    \    n1 n2 -- n3       signed maximum
+    CMP @PSP,TOS    \ n2-n1
+    S<  ?GOTO FW1   \ n2<n1
+BW1 ADD #2,PSP
+    MOV @IP+,PC
+ENDCODE
+
+CODE MIN    \    n1 n2 -- n3       signed minimum
+    CMP @PSP,TOS     \ n2-n1
+    S<  ?GOTO BW1    \ n2<n1
+FW1 MOV @PSP+,TOS
+    MOV @IP+,PC
+ENDCODE
+
+[THEN]
+
+[UNDEFINED] C@ [IF]
+\ https://forth-standard.org/standard/core/CFetch
+\ C@     c-addr -- char   fetch char from memory
+CODE C@
+MOV.B @TOS,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] VARIABLE [IF]
+\ https://forth-standard.org/standard/core/VARIABLE
+\ VARIABLE <name>       --                      define a Forth VARIABLE
+: VARIABLE 
+DEFER
+HI2LO
+MOV @RSP+,IP
+MOV #DOVAR,-4(W)        \   CFA = DOVAR
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] CONSTANT [IF]
+\ https://forth-standard.org/standard/core/CONSTANT
+\ CONSTANT <name>     n --                      define a Forth CONSTANT 
+: CONSTANT 
+DEFER
+HI2LO
+MOV @RSP+,IP
+MOV #DOCON,-4(W)        \   CFA = DOCON
+MOV TOS,-2(W)           \   PFA = n
+MOV @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] SPACE [IF]
+\ https://forth-standard.org/standard/core/SPACE
+\ SPACE   --               output a space
+: SPACE
+$20 EMIT ;
+[THEN]
+
+[UNDEFINED] SPACES [IF]
+\ https://forth-standard.org/standard/core/SPACES
+\ SPACES   n --            output n spaces
+CODE SPACES
+CMP #0,TOS
+0<> IF
+    PUSH IP
+    BEGIN
+        LO2HI
+        $20 EMIT
+        HI2LO
+        SUB #2,IP 
+        SUB #1,TOS
+    0= UNTIL
+    MOV @RSP+,IP
+THEN
+MOV @PSP+,TOS           \ --         drop n
+NEXT              
+ENDCODE
+[THEN]
+
+[UNDEFINED] OVER [IF]
+\ https://forth-standard.org/standard/core/OVER
+\ OVER    x1 x2 -- x1 x2 x1
+CODE OVER
+MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
+MOV @PSP,TOS        \ 2 -- x1 (x2) x1
+SUB #2,PSP          \ 1 -- x1 x2 x1
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] U.R [IF]        \ defined in {UTILITY}
+: U.R                       \ u n --           display u unsigned in n width (n >= 2)
+  >R  <# 0 # #S #>  
+  R> OVER - 0 MAX SPACES TYPE
+;
+[THEN]
+
+[UNDEFINED] DUMP [IF]       \ defined in {UTILITY}
+\ https://forth-standard.org/standard/tools/DUMP
+CODE DUMP                   \ adr n  --   dump memory
+PUSH IP
+PUSH &BASEADR               \ save current base
+MOV #$10,&BASEADR           \ HEX base
+ADD @PSP,TOS                \ -- ORG END
+LO2HI
+  SWAP                      \ -- END ORG
+  DO  CR                    \ generate line
+    I 4 U.R SPACE           \ generate address
+      I 8 + I
+      DO I C@ 3 U.R LOOP
+      SPACE
+      I $10 + I 8 +
+      DO I C@ 3 U.R LOOP  
+      SPACE SPACE
+      I $10 + I             \ display 16 chars
+      DO I C@ $7E MIN $20 MAX EMIT LOOP
+  $10 +LOOP
+  R> BASEADR !              \ restore current base
+;
+[THEN]
+
 \ -----------------------------------------------------------------------
 \ test CPUx instructions PUSHM, POPM, RLAM, RRAM, RRCM, RRUM
 \ -----------------------------------------------------------------------
 CODE TESTPUSHM
+BW1
 \            PUSHM  #16,R14     \ uncomment to test error "out of bounds"
 \            PUSHM  #2,R0       \ uncomment to test error "out of bounds"
 \            PUSHM  #0,IP       \ uncomment to test error "out of bounds"
@@ -61,7 +194,7 @@ CODE TESTPUSHM
 TESTPUSHM  ; you should see 11111 3 2 1 0 -->
 
 CODE TESTPOPM
-            JMP TESTPUSHM
+            GOTO BW1            \ JMP TESTPUSHM
 ENDCODE
 
     \
@@ -75,13 +208,13 @@ TESTPOPM  ; you should see 11111 3 2 1 0 -->
 \ -----------------------------------------------------------------------
 CODE TEST1                  \ the word "CODE" add ASSEMBLER as CONTEXT vocabulary...
 
-            MOV &BASE,&BASE \ to test &xxxx src operand
-            CMP #%10,&BASE
-0<> IF      MOV #2,&BASE    \ if base <> 2
-ELSE        MOV #$0A,&BASE  \ else base = 2
+            MOV &BASEADR,&BASEADR \ to test &xxxx src operand
+            CMP #%10,&BASEADR
+0<> IF      MOV #2,&BASEADR    \ if base <> 2
+ELSE        MOV #$0A,&BASEADR  \ else base = 2
 THEN        
             COLON           \ tips : no "ok" displayed in start of line <==> compilation mode
-            BASE @ U.       \ always display 10 !
+            BASEADR @ U.       \ always display 10 !
             ;
     \
 
@@ -89,13 +222,13 @@ THEN
 \ test a word that starts as word FORTH and ends as assembly word
 \ -----------------------------------------------------------------------
 : TEST2                     \ ":" starts compilation
-            BASE @ U.       \ always display 10 !
+            BASEADR @ U.       \ always display 10 !
             HI2LO           \ switch FORTH to ASM : compile one word (next address)
                             \                       add vocabulary ASSEMBLER as CONTEXT vocabulary
                             \                       switch in interpret mode
-            CMP #2, &BASE
-0<> IF      MOV #2, &BASE   \ if variable system BASE <> 2
-ELSE        MOV #10,&BASE   \ else (BASE = 2)
+            CMP #2, &BASEADR
+0<> IF      MOV #2, &BASEADR   \ if variable system BASE <> 2
+ELSE        MOV #10,&BASEADR   \ else (BASE = 2)
 THEN
 \           MOV #EXIT,PC    \ to pair with ":" i.e. to restore IP saved by : then execute NEXT. 
 \ but even compile two words, it's better to compile an inline EXIT :
@@ -108,11 +241,11 @@ ENDCODE                     \ ends assembler : remove vocabulary ASSEMBLER from 
 \ test a word that starts as assembly word and ends as FORTH word
 \ -----------------------------------------------------------------------
 CODE TEST3                  \ "CODE" starts assembler, i.e. add ASSEMBLER as CONTEXT vocabulary
-            CMP #2, &BASE
-0<> IF      MOV #2, &BASE   \ if variable system BASE <> 2
-ELSE        MOV #10,&BASE   \ else (BASE = 2)
+            CMP #2, &BASEADR
+0<> IF      MOV #2, &BASEADR   \ if variable system BASE <> 2
+ELSE        MOV #10,&BASEADR   \ else (BASE = 2)
 THEN        COLON           \
-            BASE @  U.      \ always display 10 !
+            BASEADR @  U.      \ always display 10 !
 ;                           \
     \
 
@@ -144,6 +277,27 @@ TEST5  ; you should see :  9 8 7 6 5 4 3 2 1 0 -->
 \ -----------------------------------------------------------------------
 \ tests indexing address
 \ -----------------------------------------------------------------------
+
+[UNDEFINED] C, [IF]
+\ https://forth-standard.org/standard/core/CComma
+\ C,   char --        append char
+CODE C,
+MOV &DP,W
+MOV.B TOS,0(W)
+ADD #1,&DP
+MOV @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] C@ [IF]
+\ https://forth-standard.org/standard/core/CFetch
+\ C@     c-addr -- char   fetch char from memory
+CODE C@
+MOV.B @TOS,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
 
 : BYTES_TABLE_IDX
 CREATE 
@@ -279,15 +433,20 @@ TABLE20 PFA_TABLE ! TABLE 10 DUMP
 ; create a primary DEFERred assembly word
 ; -----------------------------------------------------------------------
 
+
 DEFER TRUC              ; here, TRUC is a secondary DEFERred word (i.e. without BODY)
     \
+
 
 CODENNM                 ; leaves its execution address (CFA) on stack
     SUB #2,PSP
     MOV TOS,0(PSP)
     MOV @IP+,PC
 ENDCODE 
-DUP . IS TRUC         ; TRUC becomes a primary DEFERred word
+
+DUP .
+
+IS TRUC                 ; TRUC becomes a primary DEFERred word
                         ; with its default action (DUP) located at its BODY addresse.
 
 TRUC .                  ; display TOS value -->
@@ -299,7 +458,7 @@ TRUC .                  ; display TOS value -->
 TRUC .                  ; display TOS value --> 
 
 \ ' DROP IS TRUC          ; TRUC is redirected to DROP
-\ 
+\  
 \ TRUC                   ; The generated error displays stack empty! in reverse video, removes the TRUC definition and restarts the interpretation after the end of the file. And as you see, FastForth is able to display long lines, interesting, doesn't it? --> 
 \    
 \ bla

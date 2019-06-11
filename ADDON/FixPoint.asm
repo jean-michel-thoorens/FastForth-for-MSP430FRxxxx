@@ -326,7 +326,8 @@ FSTAR1   mDOCOL
         mDOCOL
         .word   LESSNUM,DUP,TOR,DABBS
         .word   lit,4,FNUMS,lit,',',HOLD,NUMS
-        .word   RFROM,SIGN,NUMGREATER,TYPE,SPACE,EXIT
+        .word   RFROM,SIGN,NUMGREATER,TYPE
+        .word   lit,20h,EMIT,EXIT
         
         FORTHWORD "S>F"     ; convert a signed number to a Q15.16 (signed) number
         SUB #2,PSP

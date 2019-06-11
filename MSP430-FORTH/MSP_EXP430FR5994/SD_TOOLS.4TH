@@ -3,15 +3,18 @@
 ; SD_TOOLS.4th : BASIC TOOLS for SD Card : DIR FAT SECTOR CLUSTER
 ; ---------------------------------------------------------------
 
-: DEFINED! ECHO 1 ABORT" already loaded!" ;
-
-[DEFINED] {SD_TOOLS} [IF] DEFINED!
-
-[ELSE]
+[UNDEFINED] {SD_TOOLS} [IF]
 
 PWR_STATE
 
 MARKER {SD_TOOLS}
+
+[UNDEFINED] + [IF]
+CODE +
+ADD @R15+,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
 
 [UNDEFINED] MAX [IF]
 
@@ -31,6 +34,46 @@ ENDCODE
 
 [THEN]
 
+[UNDEFINED] C@ [IF]
+CODE C@
+MOV.B @R14,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] SPACE [IF]
+: SPACE
+$20 EMIT ;
+[THEN]
+
+[UNDEFINED] SPACES [IF]
+CODE SPACES
+CMP #0,R14
+0<> IF
+    PUSH R13
+    BEGIN
+        LO2HI
+        $20 EMIT
+        HI2LO
+        SUB #2,R13 
+        SUB #1,R14
+    0= UNTIL
+    MOV @R1+,R13
+THEN
+MOV @R15+,R14
+MOV @R13+,R0              
+ENDCODE
+[THEN]
+
+[UNDEFINED] OVER [IF]
+CODE OVER
+MOV R14,-2(R15)
+MOV @R15,R14
+SUB #2,R15
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
 [UNDEFINED] U.R [IF]
 : U.R
   >R  <# 0 # #S #>  
@@ -38,68 +81,58 @@ ENDCODE
 ;
 [THEN]
 
-[UNDEFINED] AND [IF]
-
-CODE AND
-AND @R15+,R14
-MOV @R13+,R0
-ENDCODE
-
-[THEN]
-
 [UNDEFINED] DUMP [IF]
 CODE DUMP
 PUSH R13
-PUSH &BASE
-MOV #$10,&BASE
+PUSH &$1DDC
+MOV #$10,&$1DDC
 ADD @R15,R14
 LO2HI
-  SWAP OVER OVER
-  U. U.
-  $FFF0 AND
+  SWAP
   DO  CR
-    I 7 U.R SPACE
-      I $10 + I
+    I 4 U.R SPACE
+      I 8 + I
+      DO I C@ 3 U.R LOOP
+      SPACE
+      I $10 + I 8 +
       DO I C@ 3 U.R LOOP  
       SPACE SPACE
       I $10 + I
-      DO I C@ $7E MIN BL MAX EMIT LOOP
+      DO I C@ $7E MIN $20 MAX EMIT LOOP
   $10 +LOOP
-  R> BASE !
+  R> $1DDC !
 ;
 [THEN]
 
 CODE SECTOR
-    MOV     R14,R9
+BW1 MOV     R14,R9
     MOV     @R15,R10
     CALL    &$1818
 COLON
     <# #S #> TYPE SPACE
     $1E00 $200 DUMP CR ;
 
+CODE CLUSTER
+BW2 MOV.B &$2012,R10
+    MOV @R15,R9
+    GOTO FW1
+    BEGIN
+        ADD R9,R9
+        ADDC R14,R14
+FW1     RRA R10
+    U>= UNTIL
+    ADD     &$2010,R9
+    MOV     R9,0(R15)      
+    ADDC    #0,R14
+    GOTO    BW1
+ENDCODE
+
 CODE FAT
     SUB     #4,R15
     MOV     R14,2(R15)
     MOV     &$2008,0(R15)
     MOV     #0,R14
-    JMP     SECTOR
-ENDCODE
-
-CODE CLUSTER
-    MOV.B &$2012,R10
-    MOV @R15,R9
-    RRA R10
-    U< IF
-        BEGIN
-            ADD R9,R9
-            ADDC R14,R14
-            RRA R10
-        U>= UNTIL
-    THEN
-    ADD     &$2010,R9
-    MOV     R9,0(R15)      
-    ADDC    #0,R14
-    JMP     SECTOR
+    GOTO    BW1
 ENDCODE
 
 CODE DIR
@@ -107,7 +140,12 @@ CODE DIR
     MOV     R14,2(R15)
     MOV     &$202C,0(R15)
     MOV     &$202E,R14
-    JMP     CLUSTER
+    CMP     #0,R14
+    0<>     ?GOTO BW2
+    CMP     #1,0(R15)
+    0<>     ?GOTO BW2
+    MOV     &$200E,0(R15)
+    GOTO    BW1
 ENDCODE
 
 
@@ -115,7 +153,3 @@ RST_HERE
 
 [THEN]
 ECHO
-; added : FAT to DUMP first sector of FAT1 and DIR for that of current DIRectory.
-; added : SECTOR to DUMP a sector and CLUSTER for first sector of a cluster:
-;         include a decimal point to force 32 bits number, example : .2 CLUSTER
-

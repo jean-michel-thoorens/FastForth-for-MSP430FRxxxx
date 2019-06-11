@@ -40,6 +40,10 @@ xdodoes=\$C200!         restore rDODOES: MOV #xdodoes,rDODOES
 xdocon=\$C20E!          restore rDOCON: MOV #xdocon,rDOCON
 xdovar=\$C220!          restore rDOVAR: MOV #xdocon,rDOVAR  
 xdocol=\$C22A!          restore rDOCOL: MOV #xdocol,rDOCOL      only for DTC model = 1
+DODOES=\$1284!          CALL rDODOES
+DOCON=\$1285!           CALL rDOCON
+DOVAR=\$1286!           CALL rDOVAR
+
 ! to find DTC value, download \MSP430-FORTH\FastForthSpecs.4th
 ! if DTC = 1, restore rDOCOL as this : MOV #xdocol,rDOCOL
 ! if DTC = 2, restore rDOCOL as this : MOV #EXIT,rDOCOL
@@ -310,7 +314,7 @@ LAST_THREAD=\$1DB8!
 LAST_CFA=\$1DBA!
 LAST_PSP=\$1DBC!
 
-!STATE=\$1DBE!          Interpreter state
+STATEADR=\$1DBE!          Interpreter state
 
 SOURCE_LEN=\$1DC0!      len of input stream
 SOURCE_ORG=\$1DC2!      adr of input stream
@@ -321,21 +325,10 @@ LASTVOC=\$1DC8!         keep VOC-LINK
 CONTEXT=\$1DCA!         CONTEXT dictionnary space (8 CELLS)
 CURRENT=\$1DDA!         CURRENT dictionnary ptr
 
-!BASE=\$1DDC!           numeric base, must be defined before first reset !
+BASEADR=\$1DDC!           numeric base, must be defined before first reset !
 LINE=\$1DDE!            line in interpretation, activated with NOECHO, desactivated with ECHO
 ! ---------------------------------------
-!1DE0! 16 RAM bytes free conditionnaly
-! ---------------------------------------
-!SAV_CURRENT=\$1DE0! \ preserve CURRENT when create assembler words
-!ASMBW1=\$1DE2!      \ assembler backward reference 1
-!ASMBW2=\$1DE4!      \ assembler backward reference 2
-!ASMBW3=\$1DE6!      \ assembler backward reference 3
-!ASMFW1=\$1DE8!      \ assembler forward reference 1
-!ASMFW2=\$1DEA!      \ assembler forward reference 2
-!ASMFW3=\$1DEC!      \ assembler forward reference 3
-!RPT_WORD=\$1DEE!    \ 
-! ---------------------------------------
-!1DF0! 12 RAM bytes free
+!1DE0! 28 RAM bytes free 
 ! ---------------------------------------
 
 ! ---------------------------------------
@@ -478,6 +471,28 @@ TB0CCR2=\$3D6!      \ Capture/compare register 2
 TB0EX0=\$3E0!       \ TB0 expansion register 0
 TB0IV=\$3EE!        \ TB0 interrupt vector
 
+
+TB1CTL=\$400!       \ TB1 control                 
+TB1CCTL0=\$402!     \ Capture/compare control 0   
+TB1CCTL1=\$404!     \ Capture/compare control 1   
+TB1CCTL2=\$406!     \ Capture/compare control 2   
+TB1R=\$410!         \ TB1 counter register        
+TB1CCR0=\$412!      \ Capture/compare register 0  
+TB1CCR1=\$414!      \ Capture/compare register 1  
+TB1CCR2=\$416!      \ Capture/compare register 2  
+TB1EX0=\$420!       \ TB1 expansion register 0    
+TB1IV=\$42E!        \ TB1 interrupt vector        
+
+TB2CTL=\$440!       \ TB2 control                 
+TB2CCTL0=\$442!     \ Capture/compare control 0   
+TB2CCTL1=\$444!     \ Capture/compare control 1   
+TB2CCTL2=\$446!     \ Capture/compare control 2   
+TB2R=\$450!         \ TB2 counter register        
+TB2CCR0=\$452!      \ Capture/compare register 0  
+TB2CCR1=\$454!      \ Capture/compare register 1  
+TB2CCR2=\$456!      \ Capture/compare register 2  
+TB2EX0=\$460!       \ TB2 expansion register 0    
+TB2IV=\$46E!        \ TB2 interrupt vector        
 
 ! RTC_B
 RTCCTL0=\$4A0!      \ RTC control 0

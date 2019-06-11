@@ -32,15 +32,20 @@
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
-: DEFINED! ECHO 1 ABORT" already loaded!" ;
-
-[DEFINED] {SD_TOOLS} [IF] DEFINED!
-
-[ELSE]
+[UNDEFINED] {SD_TOOLS} [IF]
 
 PWR_STATE
 
 MARKER {SD_TOOLS}
+
+[UNDEFINED] + [IF]
+\ https://forth-standard.org/standard/core/Plus
+\ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
+CODE +
+ADD @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
 
 [UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {UTILITY}
 
@@ -60,6 +65,54 @@ ENDCODE
 
 [THEN]
 
+[UNDEFINED] C@ [IF]
+\ https://forth-standard.org/standard/core/CFetch
+\ C@     c-addr -- char   fetch char from memory
+CODE C@
+MOV.B @TOS,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] SPACE [IF]
+\ https://forth-standard.org/standard/core/SPACE
+\ SPACE   --               output a space
+: SPACE
+$20 EMIT ;
+[THEN]
+
+[UNDEFINED] SPACES [IF]
+\ https://forth-standard.org/standard/core/SPACES
+\ SPACES   n --            output n spaces
+CODE SPACES
+CMP #0,TOS
+0<> IF
+    PUSH IP
+    BEGIN
+        LO2HI
+        $20 EMIT
+        HI2LO
+        SUB #2,IP 
+        SUB #1,TOS
+    0= UNTIL
+    MOV @RSP+,IP
+THEN
+MOV @PSP+,TOS           \ --         drop n
+NEXT              
+ENDCODE
+[THEN]
+
+[UNDEFINED] OVER [IF]
+\ https://forth-standard.org/standard/core/OVER
+\ OVER    x1 x2 -- x1 x2 x1
+CODE OVER
+MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
+MOV @PSP,TOS        \ 2 -- x1 (x2) x1
+SUB #2,PSP          \ 1 -- x1 x2 x1
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
 [UNDEFINED] U.R [IF]        \ defined in {UTILITY}
 : U.R                       \ u n --           display u unsigned in n width (n >= 2)
   >R  <# 0 # #S #>  
@@ -67,37 +120,27 @@ ENDCODE
 ;
 [THEN]
 
-[UNDEFINED] AND [IF]
-
-\ https://forth-standard.org/standard/core/AND
-\ C AND    x1 x2 -- x3           logical AND
-CODE AND
-AND @PSP+,TOS
-MOV @IP+,PC
-ENDCODE
-
-[THEN]
-
 [UNDEFINED] DUMP [IF]       \ defined in {UTILITY}
 \ https://forth-standard.org/standard/tools/DUMP
 CODE DUMP                   \ adr n  --   dump memory
 PUSH IP
-PUSH &BASE                  \ save current base
-MOV #$10,&BASE              \ HEX base
+PUSH &BASEADR               \ save current base
+MOV #$10,&BASEADR           \ HEX base
 ADD @PSP,TOS                \ -- ORG END
 LO2HI
-  SWAP OVER OVER            \ -- END ORG END ORG 
-  U. U.                     \ -- END ORG        display org end 
-  $FFF0 AND                 \ -- END ORG_modulo_16
+  SWAP                      \ -- END ORG
   DO  CR                    \ generate line
-    I 7 U.R SPACE           \ generate address
-      I $10 + I             \ display 16 bytes
+    I 4 U.R SPACE           \ generate address
+      I 8 + I
+      DO I C@ 3 U.R LOOP
+      SPACE
+      I $10 + I 8 +
       DO I C@ 3 U.R LOOP  
       SPACE SPACE
       I $10 + I             \ display 16 chars
-      DO I C@ $7E MIN BL MAX EMIT LOOP
+      DO I C@ $7E MIN $20 MAX EMIT LOOP
   $10 +LOOP
-  R> BASE !                 \ restore current base
+  R> BASEADR !              \ restore current base
 ;
 [THEN]
 
@@ -105,12 +148,31 @@ LO2HI
 \ ----------------------------------\
 CODE SECTOR                         \ sector. --     don't forget to add decimal point to your sector number
 \ ----------------------------------\
-    MOV     TOS,X                   \ X = SectorH
+BW1 MOV     TOS,X                   \ X = SectorH
     MOV     @PSP,W                  \ W = sectorL
     CALL    &ReadSectorWX           \ W = SectorLO  X = SectorHI
 COLON                               \
     <# #S #> TYPE SPACE             \ ud --            display the double number
     SD_BUF $200 DUMP CR ;           \ then dump the sector
+\ ----------------------------------\
+
+\ display first sector of a Cluster
+\ ----------------------------------\
+CODE CLUSTER                        \ cluster.  --        don't forget to add decimal point to your cluster number
+\ ----------------------------------\
+BW2 MOV.B &SecPerClus,W             \ SecPerClus(54321) = multiplicator
+    MOV @PSP,X                      \ X = ClusterL
+    GOTO FW1                        \
+    BEGIN
+        ADD X,X                     \ (RLA) shift one left MULTIPLICANDlo16
+        ADDC TOS,TOS                \ (RLC) shift one left MULTIPLICANDhi8
+FW1     RRA W                       \ shift one right multiplicator
+    U>= UNTIL                       \ carry set
+    ADD     &OrgClusters,X          \ add OrgClusters = sector of virtual cluster 0 (word size)
+    MOV     X,0(PSP)      
+    ADDC    #0,TOS                  \ don't forget carry
+    GOTO    BW1                     \ jump to SECTOR
+ENDCODE
 \ ----------------------------------\
 
 \ ----------------------------------\
@@ -120,28 +182,7 @@ CODE FAT                            \ Display CurFATsector
     MOV     TOS,2(PSP)              \
     MOV     &OrgFAT1,0(PSP)         \
     MOV     #0,TOS                  \ FATsectorHI = 0
-    JMP     SECTOR                  \ jump to a defined word
-ENDCODE
-\ ----------------------------------\
-
-\ display first sector of a Cluster
-\ ----------------------------------\
-CODE CLUSTER                        \ cluster.  --        don't forget to add decimal point to your cluster number
-\ ----------------------------------\
-    MOV.B &SecPerClus,W             \ SecPerClus(54321) = multiplicator
-    MOV @PSP,X                      \ X = ClusterL
-    RRA W                           \
-    U< IF                           \ case of SecPerClus>1
-        BEGIN
-            ADD X,X                 \ (RLA) shift one left MULTIPLICANDlo16
-            ADDC TOS,TOS            \ (RLC) shift one left MULTIPLICANDhi8
-            RRA W                   \ shift one right multiplicator
-        U>= UNTIL                   \ carry set
-    THEN                            \
-    ADD     &OrgClusters,X          \ add OrgClusters = sector of virtual cluster 0 (word size)
-    MOV     X,0(PSP)      
-    ADDC    #0,TOS                  \ don't forget carry
-    JMP     SECTOR                  \ jump to a defined word
+    GOTO    BW1                     \ jump to SECTOR
 ENDCODE
 \ ----------------------------------\
 
@@ -152,7 +193,12 @@ CODE DIR                            \ Display CurrentDir first sector
     MOV     TOS,2(PSP)              \           save TOS
     MOV     &DIRclusterL,0(PSP)     \
     MOV     &DIRclusterH,TOS        \
-    JMP     CLUSTER                 \
+    CMP     #0,TOS
+    0<>     ?GOTO BW2               \ jump to CLUSTER
+    CMP     #1,0(PSP)               \ cluster 1 ?
+    0<>     ?GOTO BW2               \ jump to CLUSTER
+    MOV     &OrgRootDir,0(PSP)      \ if yes, special case of FAT16 OrgRootDir
+    GOTO    BW1                     \ jump to SECTOR
 ENDCODE
 \ ----------------------------------\
 
@@ -161,7 +207,4 @@ RST_HERE
 
 [THEN]
 ECHO
-; added : FAT to DUMP first sector of FAT1 and DIR for that of current DIRectory.
-; added : SECTOR to DUMP a sector and CLUSTER for first sector of a cluster:
-;         include a decimal point to force 32 bits number, example : .2 CLUSTER
 

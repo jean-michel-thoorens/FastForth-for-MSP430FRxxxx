@@ -3,21 +3,21 @@ PWR_STATE
 
 : ESC #27 EMIT ;
 
-: ANSCOMPNOTFOUND
+: PAGEUP
 ECHO
 41              \ number of terminal lines -1  
 0 DO CR LOOP    \ don't erase any line of source
 ESC ." [1J"     \ erase up (41 empty lines)
 ESC ." [H"      \ cursor home
+;
+
+: ANSCOMPNOTFOUND
+PAGEUP
 1 ABORT" {ANS_COMP} word set not found!"
 ;
 
 : CORETESTSUCCESS
-ECHO
-41              \ number of terminal lines -1 
-0 DO CR LOOP    \ don't erase any line of source
-ESC ." [1J"     \ erase up (41 empty lines)
-ESC ." [H"      \ cursor home
+PAGEUP
 1 ABORT" CORE tests success!"
 ;
 
@@ -192,10 +192,10 @@ T{ MSB 1 RSHIFT 2* -> MSB }T
 
 \ ------------------------------------------------------------------------
 TESTING COMPARISONS: 0= = 0< < > U< MIN MAX
-0 INVERT            CONSTANT MAX-UINT
-0 INVERT 1 RSHIFT       CONSTANT MAX-INT
+0 INVERT                    CONSTANT MAX-UINT
+0 INVERT 1 RSHIFT           CONSTANT MAX-INT
 0 INVERT 1 RSHIFT INVERT    CONSTANT MIN-INT
-0 INVERT 1 RSHIFT       CONSTANT MID-UINT
+0 INVERT 1 RSHIFT           CONSTANT MID-UINT
 0 INVERT 1 RSHIFT INVERT    CONSTANT MID-UINT+1
 
 0S CONSTANT <FALSE>

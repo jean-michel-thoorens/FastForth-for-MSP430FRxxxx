@@ -260,18 +260,17 @@ SD_CARD_ERROR                       ; <=== SD_INIT errors 4,8,$10
 SD_CARD_ID_ERROR                    ; <=== SD_INIT error $20 from forthMSP430FR_SD_LowLvl.asm
     BIS.B #SD_CS,&SD_CSOUT          ; SD_CS = high
     mDOCOL                          ;
-    .word ECHO
-    .word   XSQUOTE                 ;
+    .word   XSQUOTE                 ; don't use S register
     .byte   11,"< SD Error!"        ;
 ; ----------------------------------;
 SD_QABORTYES                        ; <=== OPEN file errors from forthMSP430FR_SD_LOAD.asm
 ; ----------------------------------;
     FORTHtoASM                      ;
-    SUB #2,PSP                      ; to avoid stack underflow crash
+    SUB #2,PSP                      ;
+    MOV TOS,0(PSP)                  ;
     MOV #10h,&BASE                  ; select hex
     MOV S,TOS                       ;
     ASMtoFORTH                      ;
-    .word   UDOT                    ;
-    .word   QABORTYES               ; no return...
+    .word UDOT,QABORTYES            ; no return...
 ; ----------------------------------;
 

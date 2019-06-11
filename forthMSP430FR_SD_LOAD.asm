@@ -429,7 +429,6 @@ DELDQ
     FORTHWORD "CLOSE"               ;
 ; ----------------------------------;
     CALL    #CloseHandleT           ;
-CLOSE_END
     mNEXT                           ;
 ; ----------------------------------;
 
@@ -703,11 +702,8 @@ OPEN_Error                          ; S= error
 ; Error 16 : NomoreHandle           ; S = error 16
 ; ----------------------------------;
     mDOCOL                          ; set ECHO, type Pathname, type #error, type "< OpenError"; no return
-    .word   XSQUOTE                 ;
+    .word   XSQUOTE                 ; don't use S register
     .byte   11,"< OpenError"        ;
-SD_ERROR
-    .word   ECHO                    ;
-    .word   HERE,COUNT,TYPE,SPACE   ;
     .word   BRAN,SD_QABORTYES       ; to insert S error as flag, no return
 ; ----------------------------------;
 

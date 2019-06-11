@@ -197,7 +197,7 @@ TERM_BUS=3!
 
 TERM_IN=\$200!
 TERM_REN=\$206!
-TERM_SEL=\$20C!
+TERM_SEL=\$20A!     \ SEL0
 TERM_IE=\$21A!
 TERM_IFG=\$21C!
 
@@ -248,9 +248,9 @@ LCDVo_SEL=\$20A!        SEL0
 LCDVo=\$40!
 !LCD timer
 LCD_TIM_CTL=\$300!      TA0CTL
-LCD_TIM_CCTL=\$306!     TA0CCTL2
+LCD_TIM_CCTLn=\$306!    TA0CCTL2
 LCD_TIM_CCR0=\$312!     TA0CCR0
-LCD_TIM_CCR=\$316!      TA0CCR2
+LCD_TIM_CCRn=\$316!     TA0CCR2
 LCD_TIM_EX0=\$320!      TA0EX0
 
 
@@ -287,10 +287,10 @@ RC5=\$80!               P1.7 IR_RC5
 
 !IR_RC5 timer
 IR_TIM_CTL=\$340!       TA1CTL
-IR_TIM_CCTL2=\$346!     TA1CCTL2
+IR_TIM_CCTLn=\$346!     TA1CCTL2
 IR_TIM_R=\$350!         TA1R
 IR_TIM_CCR0=\$352!      TA1CCR0
-IR_TIM_CCR2=\$356!      TA1CCR2
+IR_TIM_CCRn=\$356!      TA1CCR2
 IR_TIM_EX0=\$360!       TA1EX0
 
 
@@ -347,7 +347,7 @@ SD_CDIN=\$261!
 SD_CSOUT=\$263!
 SD_CSDIR=\$265!
 
-SD_SEL1=\$24C!  ; to configure UCB0
-SD_REN=\$246!   ; to configure pullup resistors
-SD_BUS=\$0E!    ; pins P5.1 as UCB0CLK, P5.2 as UCB0SIMO & P5.3 as UCB0SOMI
+SD_SEL=\$24A!   ; PCSEL0 to configure UCB0
+SD_REN=\$246!   ; PCREN to configure pullup resistors
+SD_BUS=\$000E!  ; pins P5.1 as UCB0CLK, P5.2 as UCB0SIMO & P5.3 as UCB0SOMI
 

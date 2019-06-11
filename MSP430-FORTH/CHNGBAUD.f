@@ -14,6 +14,77 @@
 
 PWR_STATE
 
+[UNDEFINED] CONSTANT [IF]
+\ https://forth-standard.org/standard/core/CONSTANT
+\ CONSTANT <name>     n --                      define a Forth CONSTANT 
+: CONSTANT 
+DEFER
+HI2LO
+MOV @RSP+,IP
+MOV #DOCON,-4(W)        \   CFA = DOCON
+MOV TOS,-2(W)           \   PFA = n
+MOV @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] BL [IF]
+\ https://forth-standard.org/standard/core/BL
+\ BL      -- char            an ASCII space
+#32 CONSTANT BL
+[THEN]
+
+[UNDEFINED] SPACE [IF]
+\ https://forth-standard.org/standard/core/SPACE
+\ SPACE   --               output a space
+: SPACE
+BL EMIT ;
+[THEN]
+
+[UNDEFINED] R@ [IF]
+\ https://forth-standard.org/standard/core/RFetch
+\ R@    -- x     R: x -- x   fetch from return stack
+CODE R@
+SUB #2,PSP
+MOV TOS,0(PSP)
+MOV @RSP,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] < [IF]
+\ https://forth-standard.org/standard/core/less
+\ <      n1 n2 -- flag        test n1<n2, signed
+CODE <
+    SUB @PSP+,TOS   \ 1 TOS=n2-n1
+    S< ?GOTO FW1    \ 2 signed
+    0<> IF          \
+BW1     MOV #-1,TOS \ 1 flag Z = 0
+    THEN
+    MOV @IP+,PC
+ENDCODE
+
+\ https://forth-standard.org/standard/core/more
+\ >     n1 n2 -- flag         test n1>n2, signed
+CODE >
+    SUB @PSP+,TOS   \ 2 TOS=n2-n1
+    S< ?GOTO BW1    \ 2 --> +5
+FW1 AND #0,TOS      \ 1 flag Z = 1
+    MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] UM/MOD [IF]
+\ https://forth-standard.org/standard/core/UMDivMOD
+\ UM/MOD   udlo|udhi u1 -- r q   unsigned 32/16->r16 q16
+CODE UM/MOD
+    PUSH #DROP      \
+    MOV #<#,X       \ X = addr of <#
+    ADD #8,X        \ X = addr of MUSMOD
+    MOV X,PC        \ execute MUSMOD then RET to DROP
+ENDCODE
+[THEN]
+
 : MCLK.
 0 1000 UM/MOD .
 ;

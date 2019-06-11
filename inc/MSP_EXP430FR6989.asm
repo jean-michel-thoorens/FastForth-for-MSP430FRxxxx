@@ -275,9 +275,8 @@ SD_CSDIR    .equ P2DIR
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
-            MOV     #1,&PADIR     ; all pins as input else P1.0
-            MOV     #-2,&PAOUT    ; all pins with pullup resistors else P1.0 output low
-            SUB     #2,&PAREN     ; all pins with pull resistors else P1.0
+            MOV     #-2,&PAOUT    ; all pins with pullup resistors else P1.0
+            BIS     #-1,&PAREN     ; all pins with pull up/down resistor
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4
@@ -368,9 +367,8 @@ CTS         .equ  2             ; P3.1
     
 ; PORTx default wanted state : pins as input with pullup resistor
 
-            MOV     #00080h,&PEDIR    ; all pins as input else P9.7
             MOV     #0FF7Fh,&PEOUT    ; all pins high else P9.7
-            MOV     #0FF7Fh,&PEREN    ; all pins with pull resistors else P9.7
+            MOV     #-1,&PEREN    ; all pins with pull resistors else P9.7
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORTJ

@@ -3,36 +3,11 @@
 ; RC5TOLCD.4th
 ; -----------------------------------
 
-PWR_STATE
+RST_STATE
 
 [DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]
 
 MARKER {RC5TOLCD}
-
-[UNDEFINED] MAX [IF]
-
-CODE MAX
-    CMP @R15,R14
-    S<  ?GOTO FW1
-BW1 ADD #2,R15
-    MOV @R13+,R0
-ENDCODE
-
-CODE MIN
-    CMP @R15,R14
-    S<  ?GOTO BW1
-FW1 MOV @R15+,R14
-    MOV @R13+,R0
-ENDCODE
-
-[THEN]
-
-[UNDEFINED] U.R [IF]
-: U.R
-  >R  <# 0 # #S #>  
-  R> OVER - 0 MAX SPACES TYPE
-;
-[THEN]
 
 CODE 20_US
 BEGIN
@@ -64,8 +39,9 @@ THEN
     MOV @R13+,R0
 ENDCODE
 
-CODE LCD_W
-    SUB #2,R15
+CODE LCD_WRC
+    BIS.B #2,&$243
+BW1 SUB #2,R15
     MOV R14,0(R15)
     RRUM #4,R14
     BIC.B #1,&$243
@@ -75,70 +51,18 @@ COLON
     TOP_LCD 2 20_US 
 ;
 
-CODE LCD_WRC
-    BIS.B #2,&$243
-    JMP LCD_W 
-ENDCODE
-
 CODE LCD_WRF
     BIC.B #2,&$243
-    JMP LCD_W 
+    GOTO BW1
 ENDCODE
 
-: LCD_CLEAR 
-    $01 LCD_WRF 100 20_us
-;
+: LCD_CLEAR $01 LCD_WRF 100 20_us ;
+: LCD_HOME $02 LCD_WRF 100 20_us ;
 
-: LCD_HOME 
-    $02 LCD_WRF 100 20_us 
-;
-
-[UNDEFINED] OR [IF]
-
-CODE OR
-BIS @R15+,R14
-MOV @R13+,R0
-ENDCODE
-
-[THEN]
-
-: LCD_ENTRY_SET     $04 OR LCD_WrF ;
-
-: LCD_DSP_CTRL      $08 OR LCD_WrF ;
-
-: LCD_DSP_SHIFT     $10 OR LCD_WrF ;
-
-: LCD_FN_SET        $20 OR LCD_WrF ;
-
-: LCD_CGRAM_SET     $40 OR LCD_WrF ;
-
-: LCD_GOTO          $80 OR LCD_WrF ;
-
-CODE LCD_R
-    BIC.B #$0F,&$224
-    BIS.B #1,&$243
-COLON
-    TOP_LCD 2 20_us
-    TOP_LCD 2 20_us
-HI2LO
-    RLAM #4,0(R15)
-    ADD.B @R15+,R14
-    MOV @R1+,R13
-    MOV @R13+,R0
-ENDCODE
-
-CODE LCD_RDS
-    BIC.B #2,&$243
-    JMP LCD_R
-ENDCODE
-
-CODE LCD_RDC
-    BIS.B #2,&$243
-    JMP LCD_R
-ENDCODE
 
 
 ASM WDT_INT
+ADD #2,R1
 BIT.B #$20,&$240
 0= IF
     CMP #19,&$3D6
@@ -155,13 +79,11 @@ ELSE
     THEN
 THEN
 BW1
-BW2
-BW3
-BIC #$78,0(R1)
-RETI
+MOV @R1+,R0
 ENDASM
 
 ASM RC5_INT
+ADD #2,R1
 $1806 @ 16000 = [IF]
     MOV #1,&$3A0
 [THEN]
@@ -205,44 +127,45 @@ THEN
 RRUM    #3,R11
 XOR     @R1,R11
 BIT     #$400,R11
-0= ?GOTO BW2
+0= ?GOTO BW1
 XOR #$400,0(R1)
-SUB #4,R15
-MOV &BASE,2(R15)
-MOV #$10,&BASE
-MOV R14,0(R15)
-MOV R9,R14
+SUB #8,R15
+MOV R14,6(R15)
+MOV &$1DDC,4(R15)
+MOV #$10,&$1DDC
+MOV R9,0(R15)
+MOV #0,R14
 LO2HI
-    ['] LCD_CLEAR IS CR
-    ['] LCD_WRC  IS EMIT
-    CR ." $" 2 U.R
-    ['] CR >BODY IS CR
+    LCD_CLEAR
+    <# # #S #36 HOLD #>
+    ['] LCD_WRC IS EMIT
+    TYPE
     ['] EMIT >BODY IS EMIT
 HI2LO
-MOV R14,&BASE
+MOV @R15+,&$1DDC
 MOV @R15+,R14
-GOTO BW3
+MOV @R1+,R0
 ENDASM
 
 ASM BACKGROUND
 BEGIN
+    CALL &$1814
     BIS &$180A,R2
 AGAIN
 ENDASM
 
 CODE STOP
-    MOV #SLEEP,R9
+BW1 MOV #SLEEP,R9
     ADD #4,R9
     MOV R9,-2(R9)
 COLON
 ['] WARM >BODY IS WARM
 ECHO
-." RC5toLCD is removed." CR
-."    type START to restart"
+." RC5toLCD is removed. type START to restart"
 COLD
 ;
 
-CODE START
+CODE APP_INIT
 MOV #%1011010100,&$3C0
 $1806 @ 16000 = [IF]
     MOV #1,&$3E0
@@ -263,16 +186,14 @@ $1806 @ 24000 = [IF]
     BIC.B #4,&$20C
     MOV #RC5_INT,&$FFDE
     MOV #%0100010100,&$340
-    MOV ##1638,&$352
+    MOV ##3276,&$352
     MOV #%10000,&$342
     MOV #WDT_INT,&$FFEA
-    MOV #SLEEP,R9
-    MOV #BACKGROUND,2(R9)
 BIC #1,&$130
 BIS.B #3,&$20D
 MOV &$1808,R8
 CMP #4,R8
-0= ?JMP STOP
+0= ?GOTO BW1
 COLON
     #1000 20_US
     %011 TOP_LCD
@@ -295,9 +216,16 @@ COLON
     ['] CR >BODY IS CR
     ['] EMIT >BODY IS EMIT
     ." RC5toLCD is running. Type STOP to quit"
-    LIT RECURSE IS WARM
     ABORT
 ;
+
+CODE START
+MOV #SLEEP,R9
+MOV #BACKGROUND,2(R9)
+MOV #WARM,R9
+MOV #APP_INIT,2(R9)
+MOV R9,R0
+ENDCODE 
 
 ECHO
             ; downloading RC5toLCD.4th is done

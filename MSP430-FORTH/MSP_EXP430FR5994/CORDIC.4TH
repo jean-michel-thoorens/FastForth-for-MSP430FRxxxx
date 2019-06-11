@@ -3,20 +3,26 @@
 ; CORDIC.4th
 ; ----------
 
-: DEFINED! ECHO 1 ABORT" already loaded!" ;
-
-[DEFINED] {CORDIC} [IF] DEFINED!
-
-[ELSE]
 
 PWR_STATE
+
+[UNDEFINED] {CORDIC} [IF] 
 
 MARKER {CORDIC}
 
 [UNDEFINED] {FIXPOINT} [IF]
 
+[UNDEFINED] DABS [IF]
+CODE DABS
+MOV #1-,R9
+ADD #4,R9
+MOV R9,R0
+ENDCODE
+[THEN]
+
+
 CODE HOLDS
-            MOV @R15+,R9
+BW1         MOV @R15+,R9
             ADD R14,R9
             MOV &$1DB2,R8
 BEGIN       SUB #1,R9
@@ -35,7 +41,7 @@ CODE F#S
             MOV R14,R11
             MOV #0,R12
 BEGIN       MOV @R15,&$4C0
-            MOV &BASE,&$4C8
+            MOV &$1DDC,&$4C8
             MOV &$4E4,0(R15)
             MOV &$4E6,R14
             CMP #10,R14
@@ -48,13 +54,18 @@ BEGIN       MOV @R15,&$4C0
             MOV R11,R14
             SUB #2,R15
             MOV #$1D90,0(R15)
-            JMP HOLDS
+            GOTO BW1
 ENDCODE
+
+[UNDEFINED] SPACE [IF]
+: SPACE
+$20 EMIT ;
+[THEN]
 
 CODE F.
 MOV R14,R12
 MOV #4,R11
-MOV &BASE,R10
+MOV &$1DDC,R10
 CMP ##10,R10
 0= IF
     ADD #1,R11
@@ -133,7 +144,7 @@ MOV #0,R8
         RRA R12
         RRA R11
         ADD #1,R10
-    FW1 CMP R13,R10
+FW1     CMP R13,R10
     0= UNTIL
     ADD R10,R10
     CMP #0,R14
@@ -212,7 +223,7 @@ MOV #0,R14
         RRA R12
         RRA R11
         ADD #1,R10
-    FW1 CMP R13,R10
+FW1     CMP R13,R10
     0= UNTIL
     ADD R10,R10
     CMP #0,R8
@@ -255,8 +266,18 @@ RST_HERE
 
 [THEN] 
 
-: 2000CORDIC
-1000 0 DO
+[UNDEFINED] ROT [IF]
+CODE ROT
+MOV @R15,R10
+MOV R14,0(R15)
+MOV 2(R15),R14
+MOV R10,2(R15)
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+: 1000CORDIC
+500 0 DO
     POL2REC REC2POL
 LOOP 
 ;
@@ -285,8 +306,8 @@ ECHO
 1000 -1000 REC2POL F. .     ; phase module --> 
 16000 8000 REC2POL F. .     ; phase module --> 
 16000 -8000 REC2POL F. .    ; phase module --> 
-16000 0 REC2POL F. .        ; phase module -->
-0 16000 REC2POL F. .        ; phase module -->
+16000 0 REC2POL F. .        ; phase module --> 
+0 16000 REC2POL F. .        ; phase module --> 
 
 
 10000 89,0 POL2REC REC2POL   ROT . F. 
@@ -300,15 +321,15 @@ ECHO
 10000 7,125 POL2REC REC2POL  ROT . F. 
 10000 1,0 POL2REC REC2POL    ROT . F. 
 
-10000 89,0  2000CORDIC  ROT . F.
-10000 75,0  2000CORDIC  ROT . F.
-10000 60,0  2000CORDIC  ROT . F.
-10000 45,0  2000CORDIC  ROT . F.
-10000 30,0  2000CORDIC  ROT . F.
-10000 26,565 2000CORDIC ROT . F.
-10000 15,0 2000CORDIC   ROT . F.
-10000 14,036 2000CORDIC ROT . F.
-10000 7,125 2000CORDIC  ROT . F.
-10000 1,0 2000CORDIC    ROT . F.
+10000 89,0   1000CORDIC      ROT . F.
+10000 75,0   1000CORDIC      ROT . F.
+10000 60,0   1000CORDIC      ROT . F.
+10000 45,0   1000CORDIC      ROT . F.
+10000 30,0   1000CORDIC      ROT . F.
+10000 26,565 1000CORDIC      ROT . F.
+10000 15,0   1000CORDIC      ROT . F.
+10000 14,036 1000CORDIC      ROT . F.
+10000 7,125  1000CORDIC      ROT . F.
+10000 1,0    1000CORDIC      ROT . F.
 
 
