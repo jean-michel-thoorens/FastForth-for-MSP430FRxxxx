@@ -196,28 +196,30 @@
 ; PORT 1  usage
 ; P1.4 is used as analog input from NTC voltage divider
 
-
-
     .IFDEF UCA0_TERM
-TERM_IN     .equ P2IN
-TXD         .equ 1          ; P2.0 = TXD + FORTH Deep_RST pin
-RXD         .equ 2          ; P2.1 = RXD
-TERM_BUS    .equ 3
-TERM_SEL    .equ P2SEL1
-TERM_REN    .equ P2REN
+TERM_IN     .equ    P2IN
+TXD         .equ    1          ; P2.0 = TXD + FORTH Deep_RST pin
+RXD         .equ    2          ; P2.1 = RXD
+TERM_BUS    .equ    3
+TERM_SEL    .equ    P2SEL1
+TERM_REN    .equ    P2REN
     .ENDIF
 
     .IFDEF UCB0_SD
-SD_SEL      .equ PASEL1     ; to configure UCB0
-SD_REN      .equ PAREN      ; to configure pullup resistors
-SD_BUS      .equ 7000h      ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
-SD_CD       .equ 4          ; P2.2 as SD_CD
-SD_CS       .equ 8          ; P2.3 as SD_CS     
-SD_CDIN     .equ P2IN
-SD_CSOUT    .equ P2OUT
-SD_CSDIR    .equ P2DIR
+SD_SEL      .equ    PASEL1     ; to configure UCB0
+SD_REN      .equ    PAREN      ; to configure pullup resistors
+SD_BUS      .equ    7000h      ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
+SD_CD       .equ    4          ; P2.2 as SD_CD
+SD_CS       .equ    8          ; P2.3 as SD_CS     
+SD_CDIN     .equ    P2IN
+SD_CSOUT    .equ    P2OUT
+SD_CSDIR    .equ    P2DIR
     .ENDIF
 
+RTS         .equ    4           ; P2.2
+CTS         .equ    8           ; P2.3
+HANDSHAKOUT .equ    P2OUT
+HANDSHAKIN  .equ    P2IN
 
 ; RTS output is wired to the CTS input of UART2USB bridge 
 ; configure RTS as output high to disable RX TERM during start FORTH
@@ -230,18 +232,13 @@ SD_CSDIR    .equ P2DIR
     .IFDEF TERMINAL4WIRES
 ; RTS output is wired to the CTS input of UART2USB bridge 
 ; configure RTS as output high to disable RX TERM during start FORTH
-HANDSHAKOUT .equ    P2OUT
-HANDSHAKIN  .equ    P2IN
-RTS         .equ    4           ; P2.2
             BIS.B #RTS,&P2DIR   ; RTS as output high
         .IFDEF TERMINAL5WIRES
 ; CTS input must be wired to the RTS output of UART2USB bridge 
 ; configure CTS as input low (true) to avoid lock when CTS is not wired
-CTS         .equ    8           ; P2.3
             BIC.B #CTS,&P2OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
     .ENDIF  ; TERMINAL4WIRES
-
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4

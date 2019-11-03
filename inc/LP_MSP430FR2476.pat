@@ -344,4 +344,39 @@ SSCL=8!                 P4.3
 SSDA=\$10!              P4.4
 S_BUS=\$18!
 
+UCSWRST=1!          eUSCI Software Reset
+UCTXIE=2!           eUSCI Transmit Interrupt Enable
+UCRXIE=1!           eUSCI Receive Interrupt Enable
+UCTXIFG=2!          eUSCI Transmit Interrupt Flag
+UCRXIFG=1!          eUSCI Receive Interrupt Flag
+UCTXIE0=2!          eUSCI_B Transmit Interrupt Enable
+UCRXIE0=1!          eUSCI_B Receive Interrupt Enable
+UCTXIFG0=2!         eUSCI_B Transmit Interrupt Flag
+UCRXIFG0=1!         eUSCI_B Receive Interrupt Flag
+
+I2CM_CTLW0=\$580!   USCI_B1 Control Word Register 0
+I2CM_CTLW1=\$582!   USCI_B1 Control Word Register 1
+I2CM_BRW=\$586!     USCI_B1 Baud Word Rate 0
+I2CM_STATW=\$588!   USCI_B1 status word 
+I2CM_TBCNT=\$58A!   USCI_B1 byte counter threshold  
+I2CM_RXBUF=\$58C!   USCI_B1 Receive Buffer 8
+I2CM_TXBUF=\$58E!   USCI_B1 Transmit Buffer 8
+I2CM_I2COA0=\$594!  USCI_B1 I2C Own Address 0
+I2CM_ADDRX=\$59C!   USCI_B1 Received Address Register 
+I2CM_I2CSA=\$5A0!   USCI_B1 I2C Slave Address
+I2CM_IE=\$5AA!      USCI_B1 Interrupt Enable
+I2CM_IFG=\$5AC!     USCI_B1 Interrupt Flags Register
+
+I2CS_CTLW0=\$580!   USCI_B1 Control Word Register 0
+I2CS_CTLW1=\$582!   USCI_B1 Control Word Register 1
+I2CS_BRW=\$586!     USCI_B1 Baud Word Rate 0
+I2CS_STATW=\$588!   USCI_B1 status word 
+I2CS_TBCNT=\$58A!   USCI_B1 byte counter threshold  
+I2CS_RXBUF=\$58C!   USCI_B1 Receive Buffer 8
+I2CS_TXBUF=\$58E!   USCI_B1 Transmit Buffer 8
+I2CS_I2COA0=\$594!  USCI_B1 I2C Own Address 0
+I2CS_ADDRX=\$59C!   USCI_B1 Received Address Register 
+I2CS_I2CSA=\$5A0!   USCI_B1 I2C Slave Address
+I2CS_IE=\$5AA!      USCI_B1 Interrupt Enable
+I2CS_IFG=\$5AC!     USCI_B1 Interrupt Flags Register
 

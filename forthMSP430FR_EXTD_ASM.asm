@@ -44,38 +44,27 @@
 ; example : POPM #6,IP   pop Y,X,W,T,S,IP registers from return stack
 
 
+;;Z SKIP      char -- addr               ; skip all occurring character 'char'
+;            FORTHWORD "SKIP"            ; used by assembler to parse input stream
+SKIP        MOV #SOURCE_LEN,Y       ;2
+            MOV TOS,W               ; -- char           W=char
+            MOV @Y+,X               ;2 -- char           W=char  X=buf_length
+            MOV @Y,TOS              ;2 -- Start_buf_adr  W=char  X=buf_length
+            ADD TOS,X               ; -- Start_buf_adr  W=char  X=Start_buf_adr+buf_length=End_buf_addr
+            ADD &TOIN,TOS           ; -- Parse_Adr      W=char  X=End_buf_addr
+SKIPLOOP    CMP TOS,X               ; -- Parse_Adr      W=char  X=End_buf_addr
+            JZ SKIPEND              ; -- Parse_Adr      if end of buffer
+            CMP.B @TOS+,W           ; -- Parse_Adr      does character match?
+            JZ SKIPLOOP             ; -- Parse_Adr+1
+SKIPNEXT    SUB #1,TOS              ; -- addr
+SKIPEND     MOV TOS,W               ;
+            SUB @Y,W                ; -- addr           W=Parse_Addr-Start_buf_adr=Toin
+            MOV W,&TOIN             ;
+            MOV @IP+,PC             ; 4
+
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER : search argument "xxxx", IP is free
 ; ----------------------------------------------------------------------
-
-;SearchARG                           ; separator -- n|d or abort" not found"
-;; Search ARG of "#xxxx,"            ; <== PARAM10
-;; Search ARG of "&xxxx,"            ; <== PARAM111
-;; Search ARG of "xxxx(REG),"        ; <== PARAM130
-;; Search ARG of ",&xxxx"            ; <== PARAM111 <== PARAM20
-;; Search ARG of ",xxxx(REG)"        ; <== PARAM210
-;            PUSHM #2,S              ;                   PUSHM S,T as OPCODE, OPCODEADR
-;            ASMtoFORTH              ; -- separator      search word first
-;            .word   WORDD,FIND      ; -- addr
-;            .word QTBRAN,SearchARGW ; -- addr           if word found
-;            .word   QNUMBER         ;
-;            .word   QFBRAN,NotFound ; -- addr           ABORT if not found
-;FSearchEnd  .word   SearchEnd       ; -- value          goto SearchEnd if number found
-;SearchARGW  FORTHtoASM              ; -- xt             xt = CFA
-;            MOV     @TOS+,X         ; -- PFA
-;QDODOES     SUB     #DODOES,X       ;                   DODOES = 1284h
-;            JNZ     QDOCON          ;
-;            ADD     #2,TOS          ; -- BODY           leave BODY address for DOES words
-;            JMP     SearchEnd       ;
-;QDOCON      CMP     #1,X            ; -- PFA            DOCON = 1285h
-;            JNZ     QDOVAR          ;
-;            MOV     @TOS,TOS        ; -- cte            replace PFA by [PFA] for CONSTANT and CREATE words
-;            JMP     SearchEnd       ;
-;QDOVAR      CMP     #2,X            ; -- PFA            DOVAR = 1286h
-;            JZ      SearchEnd       ;                   if DOVAR nothing to do
-;            SUB     #2,TOS          ; -- CFA            replace PFA by CFA for all other words
-;SearchEnd   POPM    #2,S            ;                   POPM T,S
-;            RET                     ;
 
 SearchARG                           ; separator -- n|d or abort" not found"
 ; Search ARG of "#xxxx,"            ; <== PARAM10
@@ -86,30 +75,30 @@ SearchARG                           ; separator -- n|d or abort" not found"
             PUSHM #2,S              ;                   PUSHM S,T as OPCODE, OPCODEADR
             ASMtoFORTH              ; -- separator      search word first
             .word   WORDD,FIND      ; -- addr
-            .word QTBRAN,SearchARGW ; -- addr           if word found
+            .word   QTBRAN,ARGWORD  ; -- addr           if Word found
             .word   QNUMBER         ;
             .word   QFBRAN,NotFound ; -- addr           ABORT if not found
 FSearchEnd  .word   SearchEnd       ; -- value          goto SearchEnd if number found
-SearchARGW  FORTHtoASM              ; -- xt             xt = CFA
+ARGWORD     .word   $+2             ; -- xt             xt = CFA
             MOV     @TOS+,X         ; -- PFA
 QDOVAR      SUB     #DOVAR,X        ;                   DOVAR = 1286h
-            JZ      SearchEnd       ;
-            ADD     #1,X            ; -- PFA            DOCON = 1285h
-            JNZ     QDODOES         ;
-            MOV     @TOS,TOS        ; -- cte
+ISDOVAR     JZ      SearchEnd       ;
+QDOCON      ADD     #1,X            ; -- PFA            DOCON = 1285h
+ISNOTDOCON  JNZ     QDODOES         ;
+ISDOCON     MOV     @TOS,TOS        ; -- cte
             JMP     SearchEnd       ;
 QDODOES     ADD     #2,TOS          ; -- BODY           leave BODY address for DOES words
             ADD     #1,X            ;                   DODOES = 1284h
-            JZ      SearchEnd       ;        
-            SUB     #4,TOS          ; -- CFA
+ISDODOES    JZ      SearchEnd       ;        
+ISOTHER     SUB     #4,TOS          ; -- CFA
 SearchEnd   POPM    #2,S            ;                   POPM T,S
-            RET                     ;
+            MOV     @RSP+,PC        ; RET
 
 ; Arg_Double_to_single conversion needed only for OPCODE type V|VI, 2th pass.
 ARGD2S      BIT #UF9,SR             ; -- Lo Hi
             JZ ARGD2SEND
             MOV @PSP+,TOS           ; -- Lo         skip hi
-ARGD2SEND   RET
+ARGD2SEND   MOV @RSP+,PC            ;
 
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER : search REG
@@ -139,13 +128,13 @@ SearchREG   PUSHM #2,S              ;                   PUSHM S,T as OPCODE, OPC
             ASMtoFORTH              ;               search xx of Rxx
             .word WORDD,QNUMBER     ;
             .word QFBRAN,NOTaREG    ; -- xxxx       if Not a Number
-            FORTHtoASM              ; -- Rn         number is found
+            .word   $+2             ; -- Rn         number is found
             ADD #2,RSP              ;               remove >IN
             CMP #16,TOS             ; -- Rn       
-            JHS BOUNDERROR          ;               abort if Rn out of bounds
-            JLO SearchEnd           ; -- Rn         Z=0 ==> found
+            JC  BOUNDERROR          ;               abort if Rn out of bounds
+            JNC SearchEnd           ; -- Rn         Z=0 ==> found
 
-NOTaREG     FORTHtoASM              ; -- addr       Z=1
+NOTaREG     .word   $+2             ; -- addr       Z=1
             MOV @RSP+,&TOIN         ; -- addr       restore >IN
             JMP SearchEnd           ; -- addr       Z=1 ==> not a register 
 
@@ -161,7 +150,7 @@ NOTaREG     FORTHtoASM              ; -- addr       Z=1
                                     ; sep is comma for src and space for dst .
 PARAM1      mDOCOL                  ; -- sep        OPCODES types I|V sep = ','  OPCODES types II|VI sep = ' '
             .word   FBLANK,SKIP     ; -- sep addr
-            FORTHtoASM              ; -- sep addr
+            .word   $+2             ; -- sep addr
             MOV     #0,S            ; -- sep addr   reset OPCODE
             MOV     &DDP,T          ; -- sep addr   HERE --> OPCODEADR (opcode is preset to its address !)
             ADD     #2,&DDP         ; -- sep addr   cell allot for opcode
@@ -203,7 +192,7 @@ StoreTOS                            ;               <== TYPE1DOES
 ; endcase of all "REG"|"@REG"|"@REG+"               <== PARAM124
 PARAMENDOF  MOV @PSP+,TOS           ; --
             MOV @RSP+,IP            ;
-            mNEXT                   ; --            S=OPCODE,T=OPCODEADR
+            MOV @IP+,PC                   ; --            S=OPCODE,T=OPCODEADR
 ; ----------------------------------;
 PARAM11     CMP.B   #'&',W          ; -- sep
             JNE     PARAM12
@@ -266,7 +255,7 @@ PARAM3                              ; for OPCODES TYPE III
 ; ----------------------------------;
 PARAM2      mDOCOL                  ;               parse input buffer until BL and compute this 2th operand
             .word   FBLANK,SKIP     ;               skip space(s) between "arg1," and "arg2" if any; use not S,T.
-            FORTHtoASM              ; -- c-addr     search for '&' of "&xxxx
+            .word   $+2             ; -- c-addr     search for '&' of "&xxxx
             CMP.B   #'&',0(TOS)     ;
             MOV     #20h,TOS        ; -- ' '        as WORD separator to find xxxx of ",&xxxx"
             JNE     PARAM21         ;               '&' not found
@@ -314,83 +303,83 @@ PARAM210    ADD     #0080h,S        ;               set AD=1
 ; TYPE1DOES     -- BODYDOES      search and compute PARAM1 & PARAM2 as src and dst operands then compile instruction
 TYPE1DOES   .word   lit,',',PARAM1  ; -- BODYDOES
             .word   PARAM2          ; -- BODYDOES           char separator (BL) included in PARAM2
-            FORTHtoASM              ;
+            .word   $+2             ;
 MAKEOPCODE  MOV     T,X             ; -- opcode             X= OPCODEADR to compile opcode
             MOV     @TOS,TOS        ; -- opcode             part of instruction
             BIS     S,TOS           ; -- opcode             opcode is complete
             JMP     StoreTOS        ; --                    then EXIT
 
             asmword "MOV"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,4000h
             asmword "MOV.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,4040h
             asmword "ADD"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,5000h
             asmword "ADD.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,5040h
             asmword "ADDC"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,6000h
             asmword "ADDC.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,6040h
             asmword "SUBC"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,7000h
             asmword "SUBC.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,7040h
             asmword "SUB"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,8000h
             asmword "SUB.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,8040h
             asmword "CMP"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,9000h
             asmword "CMP.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,9040h
             asmword "DADD"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,0A000h
             asmword "DADD.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,0A040h
             asmword "BIT"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,0B000h
             asmword "BIT.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,0B040h
             asmword "BIC"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,0C000h
             asmword "BIC.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,0C040h
             asmword "BIS"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,0D000h
             asmword "BIS.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,0D040h
             asmword "XOR"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,0E000h
             asmword "XOR.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,0E040h
             asmword "AND"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,0F000h
             asmword "AND.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE1DOES,0F040h
 
 ; ----------------------------------------------------------------------
@@ -411,7 +400,7 @@ MAKEOPCODE  MOV     T,X             ; -- opcode             X= OPCODEADR to comp
 ; ----------------------------------------------------------------------
 
 TYPE2DOES   .word   FBLANK,PARAM1   ; -- BODYDOES
-            FORTHtoASM              ;
+            .word   $+2             ;
             MOV     S,W             ;
             AND     #0070h,S        ;                   keep B/W & AS infos in OPCODE
             SWPB    W               ;                   (REG org --> REG dst)
@@ -420,31 +409,31 @@ BIS_ASMTYPE BIS     W,S             ; -- BODYDOES       add it in OPCODE
             JMP     MAKEOPCODE      ; -- then end
 
             asmword "RRC"           ; Rotate Right through Carry ( word)
-            mDODOES
+            CALL rDODOES
             .word   TYPE2DOES,1000h
             asmword "RRC.B"         ; Rotate Right through Carry ( byte)
-            mDODOES
+            CALL rDODOES
             .word   TYPE2DOES,1040h
             asmword "SWPB"          ; Swap bytes
-            mDODOES
+            CALL rDODOES
             .word   TYPE2DOES,1080h
             asmword "RRA"
-            mDODOES
+            CALL rDODOES
             .word   TYPE2DOES,1100h
             asmword "RRA.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE2DOES,1140h
             asmword "SXT"
-            mDODOES
+            CALL rDODOES
             .word   TYPE2DOES,1180h
             asmword "PUSH"
-            mDODOES
+            CALL rDODOES
             .word   TYPE2DOES,1200h
             asmword "PUSH.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE2DOES,1240h
             asmword "CALL"
-            mDODOES
+            CALL rDODOES
             .word   TYPE2DOES,1280h
 
 BOUNDERRWM1 ADD     #1,W            ; <== RRAM|RRUM|RRCM|RLAM error
@@ -475,14 +464,14 @@ BOUNDERROR                          ; <== REG number error
 ; RxxM syntax: RxxM #n,REG  with 0 < n < 5 
 
 TYPE3DOES   .word   FBLANK,SKIP     ;                       skip spaces if any
-            FORTHtoASM              ; -- BODYDOES c-addr
+            .word   $+2             ; -- BODYDOES c-addr
             ADD     #1,&TOIN        ;                       skip "#"
             MOV     #',',TOS        ; -- BODYDOES ","
             ASMtoFORTH
             .word   WORDD,QNUMBER
             .word   QFBRAN,NotFound ;                       ABORT
             .word   PARAM3          ; -- BODYDOES 0x000N    S=OPCODE = 0x000R
-            FORTHtoASM
+            .word   $+2
             MOV     TOS,W           ; -- BODYDOES n         W = n
             MOV     @PSP+,TOS       ; -- BODYDOES
             SUB     #1,W            ;                       W = n floored to 0
@@ -496,50 +485,50 @@ PxxxINSTRU  MOV     S,Y             ;                       S=REG, Y=REG to test
 POPMINSTRU  SUB     W,S             ;                       to make POPM opcode, compute first REG to POP; TI is complicated....
 PUSHMINSTRU SUB     W,Y             ;                       Y=REG-(n-1)
             CMP     #16,Y
-            JHS     BOUNDERRWM1     ;                       JC=JHS    (U>=)
+            JC      BOUNDERRWM1     ;                       JC=JHS    (U>=)
             RLAM    #4,W            ;                       W = n << 4      
             JMP     BIS_ASMTYPE     ; BODYDOES --            
 RxxMINSTRU  CMP     #4,W            ;
-            JHS     BOUNDERRWM1     ;                       JC=JHS    (U>=)
+            JC      BOUNDERRWM1     ;                       JC=JHS    (U>=)
             SWPB    W               ; -- BODYDOES           W = n << 8
             RLAM    #2,W            ;                       W = N << 10
             JMP     BIS_ASMTYPE     ; BODYDOES --
 
             asmword "RRCM.A"
-            mDODOES
+            CALL rDODOES
             .word   TYPE3DOES,0040h
             asmword "RRCM"
-            mDODOES
+            CALL rDODOES
             .word   TYPE3DOES,0050h
             asmword "RRAM.A"
-            mDODOES
+            CALL rDODOES
             .word   TYPE3DOES,0140h
             asmword "RRAM"
-            mDODOES
+            CALL rDODOES
             .word   TYPE3DOES,0150h
             asmword "RLAM.A"
-            mDODOES
+            CALL rDODOES
             .word   TYPE3DOES,0240h
             asmword "RLAM"
-            mDODOES
+            CALL rDODOES
             .word   TYPE3DOES,0250h
             asmword "RRUM.A"
-            mDODOES
+            CALL rDODOES
             .word   TYPE3DOES,0340h
             asmword "RRUM"
-            mDODOES
+            CALL rDODOES
             .word   TYPE3DOES,0350h
             asmword "PUSHM.A"
-            mDODOES
+            CALL rDODOES
             .word   TYPE3DOES,1400h
             asmword "PUSHM"
-            mDODOES
+            CALL rDODOES
             .word   TYPE3DOES,1500h
             asmword "POPM.A"
-            mDODOES
+            CALL rDODOES
             .word   TYPE3DOES,1600h
             asmword "POPM"
-            mDODOES
+            CALL rDODOES
             .word   TYPE3DOES,1700h
 
 ; ----------------------------------------------------------------------
@@ -556,35 +545,35 @@ RxxMINSTRU  CMP     #4,W            ;
 ; OPCODE(code) for TYPE JMP                         = 0x3Cxx + (offset AND 3FF)
 
             asmword "S>="           ; if >= assertion (opposite of jump if < )
-            mDOCON
+            CALL rDOCON
             .word   3800h
 
             asmword "S<"            ; if < assertion
-            mDOCON
+            CALL rDOCON
             .word   3400h
 
             asmword "0>="           ; if 0>= assertion  ; use only with IF UNTIL WHILE !
-            mDOCON
+            CALL rDOCON
             .word   3000h
 
             asmword "0<"            ; jump if 0<        ; use only with ?JMP ?GOTO !
-            mDOCON
+            CALL rDOCON
             .word   3000h
 
             asmword "U<"            ; if U< assertion
-            mDOCON
+            CALL rDOCON
             .word   2C00h
 
             asmword "U>="           ; if U>= assertion
-            mDOCON
+            CALL rDOCON
             .word   2800h
 
             asmword "0<>"           ; if <>0 assertion
-            mDOCON
+            CALL rDOCON
             .word   2400h
 
             asmword "0="            ; if =0 assertion
-            mDOCON
+            CALL rDOCON
             .word   2000h
 
 ;ASM IF      OPCODE -- @OPCODE1
@@ -593,7 +582,7 @@ ASM_IF      MOV     &DDP,W
             MOV     TOS,0(W)        ; compile incomplete opcode
             ADD     #2,&DDP
             MOV     W,TOS
-            mNEXT
+            MOV @IP+,PC
 
 ;ASM THEN     @OPCODE --        resolve forward branch
             asmword "THEN"
@@ -607,7 +596,7 @@ ASM_THEN1   MOV     @PSP+,TOS       ; --
             CMP     #512,W
             JC      BOUNDERRORW     ; (JHS) unsigned branch if u> 511
             BIS     W,0(Y)          ; --       [@OPCODE]=OPCODE completed
-            mNEXT
+            MOV @IP+,PC
 
 ;C ELSE     @OPCODE1 -- @OPCODE2    branch for IF..ELSE
             asmword "ELSE"
@@ -617,8 +606,6 @@ ASM_ELSE    MOV     &DDP,W          ; --        W=HERE
             SUB     #2,PSP
             MOV     W,0(PSP)        ; -- @OPCODE2 @OPCODE1
             JMP     ASM_THEN        ; -- @OPCODE2
-
-;C BEGIN    -- @BEGIN               same as FORTH counterpart
 
 ;C UNTIL    @BEGIN OPCODE --   resolve conditional backward branch
             asmword "UNTIL"
@@ -635,7 +622,7 @@ ASM_UNTIL2  MOV     @PSP+,TOS       ;  --
             BIS     W,Y             ;  --           Y=OPCODE (completed)
             MOV     Y,0(X)
             ADD     #2,&DDP
-            mNEXT
+            MOV @IP+,PC
 
 ;X AGAIN    @BEGIN --      uncond'l backward branch
 ;   unconditional backward branch
@@ -662,57 +649,57 @@ ASM_REPEAT  mDOCOL                  ; -- @WHILE @BEGIN
 ; FWx at the beginning of a line can resolve only one previous GOTO|?GOTO  FWx.
 ; BWx at the beginning of a line can be resolved by any subsequent GOTO|?GOTO BWx.
 
-BACKWDOES   FORTHtoASM
+BACKWDOES   .word   $+2
             MOV @RSP+,IP            ;
             MOV TOS,Y               ; -- PFA        Y = ASMBWx addr
             MOV @PSP+,TOS           ; --
             MOV @Y,W                ;               W = LABEL
             CMP #8,&TOIN            ;               are we colon 8 or more ?
-BACKWUSE    JHS ASM_UNTIL1          ;               yes, use this label  
+BACKWUSE    JC  ASM_UNTIL1          ;               yes, use this label  
 BACKWSET    MOV &DDP,0(Y)           ;               no, set LABEL = DP
-            mNEXT
+            MOV @IP+,PC
 
 ; backward label 1
             asmword "BW1"
-            mdodoes
+            CALL rDODOES
             .word BACKWDOES
             .word 0
 ; backward label 2
             asmword "BW2"
-            mdodoes
+            CALL rDODOES
             .word BACKWDOES
             .word 0
 ; backward label 3
             asmword "BW3"
-            mdodoes
+            CALL rDODOES
             .word BACKWDOES
             .word 0
 
-FORWDOES    FORTHtoASM
+FORWDOES    .word   $+2
             MOV @RSP+,IP
             MOV &DDP,W              ;
             MOV @TOS,Y              ; -- PFA        Y=[ASMFWx]
             CMP #8,&TOIN            ;               are we colon 8 or more ?
-FORWUSE     JLO ASM_THEN1           ;               no: resolve FWx with W=DDP, Y=ASMFWx
+FORWUSE     JNC ASM_THEN1           ;               no: resolve FWx with W=DDP, Y=ASMFWx
 FORWSET     MOV @PSP+,0(W)          ;               yes compile incomplete opcode
             ADD #2,&DDP             ;                   increment DDP
             MOV W,0(TOS)            ;                   store @OPCODE into ASMFWx
             MOV @PSP+,TOS           ;   --
-            mNEXT
+            MOV @IP+,PC
 
 ; forward label 1
             asmword "FW1"
-            mdodoes
+            CALL rDODOES
             .word FORWDOES
             .word 0
 ; forward label 2
             asmword "FW2"
-            mdodoes
+            CALL rDODOES
             .word FORWDOES
             .word 0
 ; forward label 3
             asmword "FW3"
-            mdodoes
+            CALL rDODOES
             .word FORWDOES
             .word 0
 
@@ -752,7 +739,7 @@ GOTONEXT    mDOCOL
 ;-----------------------------------;
 ACMS1       mDOCOL                  ; -- BODYDOES ','   
             .word   FBLANK,SKIP     ; -- BODYDOES ',' addr
-            FORTHtoASM              ;
+            .word   $+2             ;
             MOV.B @TOS,X            ;                   X=first char of opcode string
             MOV @PSP+,TOS           ; -- BODYDOES ','
             MOV @PSP+,S             ; -- ','            S=BODYDOES
@@ -768,7 +755,8 @@ ACMS102     RLAM #4,TOS             ;               8<<src
 ACMS103     BIS S,TOS               ;               update opcode with src|dst
             MOV TOS,0(T)            ;               save opcode
             MOV T,TOS               ; -- OPCODE_addr
-            mSEMI                   ;
+            MOV @RSP+,IP 
+            MOV @IP+,PC             ;
 ;-----------------------------------;
 ACMS11      CMP.B #'#',X            ; -- ','        X=addr
             JNE MOVA12              ;
@@ -812,7 +800,7 @@ MOVA14      BIS #0030h,S            ;               set xxxx(REG), opcode
 ;-----------------------------------;
 ACMS2       mDOCOL                  ; -- OPCODE_addr 
             .word FBLANK,SKIP       ; -- OPCODE_addr addr
-            FORTHtoASM              ;
+            .word   $+2             ;
             MOV @PSP+,T             ; -- addr       T=OPCODE_addr
             MOV @T,S                ;               S=opcode
             MOV.B @TOS,X            ; -- addr       X=first char of string instruction         
@@ -853,16 +841,16 @@ TYPE4DOES   .word   lit,','         ; -- BODYDOES ","        char separator for 
             .word   DROP,EXIT
 
             asmword "MOVA"
-            mDODOES
+            CALL rDODOES
             .word   TYPE4DOES,00C0h
             asmword "CMPA"
-            mDODOES
+            CALL rDODOES
             .word   TYPE4DOES,00D0h
             asmword "ADDA"
-            mDODOES
+            CALL rDODOES
             .word   TYPE4DOES,00E0h
             asmword "SUBA"
-            mDODOES
+            CALL rDODOES
             .word   TYPE4DOES,00F0h
 
 ; --------------------------------------------------------------------------------
@@ -875,7 +863,7 @@ TYPE4DOES   .word   lit,','         ; -- BODYDOES ","        char separator for 
             asmword "CALLA"
             mDOCOL
             .word FBLANK,SKIP       ; -- addr
-            FORTHtoASM
+            .word   $+2
             MOV &DDP,T              ;           T = DDP
             ADD #2,&DDP             ;           make room for opcode
             MOV.B @TOS,TOS          ; -- char   First char of opcode
@@ -888,7 +876,8 @@ CALLA03     RLAM #4,S               ;           (opcode>>4)<<4 = opcode
             BIS TOS,S               ;           update opcode
             MOV S,0(T)              ;           store opcode
             MOV @PSP+,TOS
-            mSEMI
+            MOV @RSP+,IP 
+            MOV @IP+,PC
 ;-----------------------------------;
 CALLA1      ADD #2,S                ;           136h<<4 = opcode for CALLA @REG
             CMP.B #'@',TOS          ; -- char   Search @REG
@@ -928,7 +917,7 @@ CALLA41     CALL #SearchARG         ; -- Lo Hi
 
 PRMX1       mDOCOL                  ; -- sep            OPCODES type V|VI separator = ','|' '
             .word FBLANK,SKIP       ; -- sep addr
-            FORTHtoASM              ;
+            .word   $+2             ;
             MOV.B @TOS,X            ; -- sep addr       X= first char of opcode string
             MOV @PSP+,TOS           ; -- sep
             MOV #1800h,S            ;                   init S=Extended word
@@ -937,7 +926,8 @@ PRMX10      CMP.B #'R',X            ; -- sep
             JNZ PRMX11              ;
 PRMX101     CALL #SearchREG         ; -- Rn             Rn of REG; call SearchREG only to update >IN
 PRMX102     MOV S,TOS               ; -- EW             update Extended word
-PRMX103     mSEMI                   ; -- Ext_Word
+PRMX103     MOV @RSP+,IP 
+            MOV @IP+,PC             ; -- Ext_Word
 ;-----------------------------------;
 PRMX11      MOV #0,&RPT_WORD        ;                   clear RPT
             CMP.B #'#',X            ; -- sep
@@ -984,7 +974,7 @@ PRMX141     MOV #')',TOS            ; -- Hi ')'
 ;-----------------------------------;
 PRMX2       mDOCOL                  ; -- Extended_Word 
             .word   FBLANK,SKIP     ; -- Extended_Word addr
-            FORTHtoASM              ;
+            .word   $+2             ;
             MOV @PSP+,S             ; -- addr     S=Extended_Word
             MOV.B @TOS,X            ; -- addr     X=first char of code instruction
             MOV #' ',TOS            ; -- ' '
@@ -1005,19 +995,35 @@ PRMX22      MOV #'(',TOS            ; -- '('      as WORD separator to find xxxx
             CALL #SearchARG         ; -- Lo Hi    search x.xxxx of x.xxxx(REG)
             JMP PRMX213
     
+;; UPDATE_eXtendedWord
+;;-----------------------------------;
+;UPDATE_XW                           ;   BODYDOES Extended_Word -- BODYDOES+2    >IN R--
+;            MOV &DDP,T              ;
+;            ADD #2,&DDP             ;                   make room for extended word
+;            MOV TOS,S               ;                   S = Extended_Word
+;            MOV @PSP+,TOS           ; -- BODYDOES
+;            BIS &RPT_WORD,S         ;                   update Extended_word with RPT_WORD
+;            MOV #0,&RPT_WORD        ;                   clear RPT before next instruction
+;            BIS @TOS+,S             ; -- BODYDOES+2     update Extended_word with [BODYDOES] = A/L bit
+;            MOV S,0(T)              ;                   store extended word
+;            MOV @RSP+,&TOIN         ;                   >IN R--     restore >IN at the start of instruction string
+;            MOV @IP+,PC             ;
+;;-----------------------------------;
+
+;-----------------------------------;
 ; UPDATE_eXtendedWord
 ;-----------------------------------;
-UPDATE_XW                           ;   BODYDOES Extended_Word -- BODYDOES+2    >IN R--
+UPDATE_XW                           ;   BODYDOES >IN Extended_Word -- BODYDOES+2
+            MOV @PSP+,&TOIN         ; -- BODYDOES EW    restore >IN at the start of instruction string
             MOV &DDP,T              ;
             ADD #2,&DDP             ;                   make room for extended word
             MOV TOS,S               ;                   S = Extended_Word
-            MOV @PSP+,TOS           ; -- BODYDOES
+            MOV @PSP+,TOS           ;
             BIS &RPT_WORD,S         ;                   update Extended_word with RPT_WORD
             MOV #0,&RPT_WORD        ;                   clear RPT before next instruction
             BIS @TOS+,S             ; -- BODYDOES+2     update Extended_word with [BODYDOES] = A/L bit
             MOV S,0(T)              ;                   store extended word
-            MOV @RSP+,&TOIN         ;                   >IN R--     restore >IN at the start of instruction string
-            mNEXT                   ;
+            MOV @IP+,PC             ;
 ;-----------------------------------;
 
 ; --------------------------------------------------------------------------------
@@ -1034,119 +1040,126 @@ UPDATE_XW                           ;   BODYDOES Extended_Word -- BODYDOES+2    
 ; all numeric arguments must be written as DOUBLE numbers (including a point) : $x.xxxx
 
 TYPE5DOES                               ; -- BODYDOES
-            .word   LIT,TOIN,FETCH,TOR  ; R-- >IN                    save >IN for 2th pass
-            .word   lit,','             ; -- BODYDOES ','            char separator for PRMX1
-            .word   PRMX1,PRMX2         ; -- BODYDOES Extended_Word
+;            .word   LIT,TOIN,FETCH,TOR  ;               R-- >IN      save >IN for 2th pass
+;            .word   lit,','             ; -- BODYDOES ','            char separator for PRMX1
+;            .word   PRMX1,PRMX2         ; -- BODYDOES Extended_Word
+;            .word   UPDATE_XW           ; -- BODYDOES+2              >IN is restored ready for 2th pass
+;            .word   BRAN,TYPE1DOES      ; -- BODYDOES+2              2th pass: completes instruction with opcode = [BODYDOES+2]
+            .word   LIT,TOIN,FETCH      ; -- BODYDOES >IN
+            .word   lit,','             ; -- BODYDOES >IN ','            char separator for PRMX1
+            .word   PRMX1,PRMX2         ; -- BODYDOES >IN Extended_Word
             .word   UPDATE_XW           ; -- BODYDOES+2              >IN is restored ready for 2th pass
             .word   BRAN,TYPE1DOES      ; -- BODYDOES+2              2th pass: completes instruction with opcode = [BODYDOES+2]
 
             asmword "MOVX"
-            mDODOES
-            .word   TYPE5DOES,40h,4000h ; [PFADOES]=TYPE5DOES, [BODYDOES]=A/L bit, [BODYDOES+2]=OPCODE,
+            CALL rDODOES
+            .word   TYPE5DOES   ; [PFADOES] = TYPE5DOES
+            .word   40h         ; [BODYDOES] = A/L bit
+            .word   4000h       ; [BODYDOES+2] = OPCODE
             asmword "MOVX.A"
-            mDODOES
+            CALL rDODOES
             .word   TYPE5DOES,0,4040h
             asmword "MOVX.B"
-            mDODOES
+            CALL rDODOES
             .word   TYPE5DOES,40h,4040h
             asmword "ADDX"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,5000h
             asmword "ADDX.A"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,0,5040h
             asmword "ADDX.B"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,5040h
             asmword "ADDCX"  
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,6000h
             asmword "ADDCX.A"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,0,6040h
             asmword "ADDCX.B"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,6040h
             asmword "SUBCX"  
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,7000h
             asmword "SUBCX.A"
-            mDODOES
+            CALL rDODOES
             .word   TYPE5DOES,0,7040h
             asmword "SUBCX.B"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,7040h
             asmword "SUBX"   
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,8000h
             asmword "SUBX.A" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,0,8040h
             asmword "SUBX.B" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,8040h
             asmword "CMPX"   
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,9000h
             asmword "CMPX.A" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,0,9040h
             asmword "CMPX.B" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,9040h
             asmword "DADDX"
-            mDODOES
+            CALL rDODOES
             .word   TYPE5DOES,40h,0A000h
             asmword "DADDX.A"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,0,0A040h
             asmword "DADDX.B"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,0A040h
             asmword "BITX"   
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,0B000h
             asmword "BITX.A" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,0,0B040h
             asmword "BITX.B" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,0B040h
             asmword "BICX"   
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,0C000h
             asmword "BICX.A" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,0,0C040h
             asmword "BICX.B" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,0C040h
             asmword "BISX"
-            mDODOES
+            CALL rDODOES
             .word   TYPE5DOES,40h,0D000h
             asmword "BISX.A" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,0,0D040h
             asmword "BISX.B" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,0D040h
             asmword "XORX"   
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,0E000h
             asmword "XORX.A" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,0,0E040h
             asmword "XORX.B" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,0E040h
             asmword "ANDX"   
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,0F000h
             asmword "ANDX.A" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,0,0F040h
             asmword "ANDX.B" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE5DOES,40h,0F040h
 
 ; --------------------------------------------------------------------------------
@@ -1162,59 +1175,64 @@ TYPE5DOES                               ; -- BODYDOES
 ; all numeric arguments must be written as DOUBLE numbers (including a point) : $x.xxxx
 
 TYPE6DOES                               ; -- BODYDOES
-            .word   LIT,TOIN,FETCH,TOR  ;                       save >IN for 2th pass
-            .word   FBLANK              ; -- BODYDOES ' '
-            .word   PRMX1               ; -- BODYDOES Extended_Word  
+;            .word   LIT,TOIN,FETCH,TOR  ;               R-- >IN      save >IN for 2th pass
+;            .word   FBLANK              ; -- BODYDOES ' '
+;            .word   PRMX1               ; -- BODYDOES Extended_Word  
+;            .word   UPDATE_XW           ; -- BODYDOES+2
+;            .word   BRAN,TYPE2DOES      ; -- BODYDOES+2         pass 2: completes instruction with opcode = [BODYDOES+2]
+            .word   LIT,TOIN,FETCH      ; -- BODYDOES >IN
+            .word   FBLANK              ; -- BODYDOES >IN ' '
+            .word   PRMX1               ; -- BODYDOES >IN Extended_Word  
             .word   UPDATE_XW           ; -- BODYDOES+2
             .word   BRAN,TYPE2DOES      ; -- BODYDOES+2         pass 2: completes instruction with opcode = [BODYDOES+2]
 
             asmword "RRCX"              ; ZC=0; RRCX Rx,Rx may be repeated by prefix RPT #n|Rn
-            mDODOES
+            CALL rDODOES
             .word   TYPE6DOES,40h,1000h
             asmword "RRCX.A"            ; ZC=0; RRCX.A Rx may be repeated by prefix RPT #n|Rn 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE6DOES,0,1040h
             asmword "RRCX.B"            ; ZC=0; RRCX.B Rx may be repeated by prefix RPT #n|Rn
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE6DOES,40h,1040h
             asmword "RRUX"              ; ZC=1; RRUX Rx may be repeated by prefix RPT #n|Rn
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE6DOES,140h,1000h
             asmword "RRUX.A"            ; ZC=1; RRUX.A Rx may be repeated by prefix RPT #n|Rn 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE6DOES,100h,1040h
             asmword "RRUX.B"            ; ZC=1; RRUX.B Rx may be repeated by prefix RPT #n|Rn 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE6DOES,140h,1040h
             asmword "SWPBX"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE6DOES,40h,1080h
             asmword "SWPBX.A"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE6DOES,0,1080h
             asmword "RRAX"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE6DOES,40h,1100h
             asmword "RRAX.A"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE6DOES,0,1140h
             asmword "RRAX.B"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE6DOES,40h,1140h
             asmword "SXTX"
-            mDODOES
+            CALL rDODOES
             .word   TYPE6DOES,40h,1180h
             asmword "SXTX.A" 
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE6DOES,0,1180h
             asmword "PUSHX"  
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE6DOES,40h,1200h
             asmword "PUSHX.A"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE6DOES,0,1240h
             asmword "PUSHX.B"
-            mDODOES          
+            CALL rDODOES          
             .word   TYPE6DOES,40h,1240h
 
 ; ----------------------------------------------------------------------
@@ -1228,7 +1246,7 @@ RPT_WORD    .word 0
             asmword "RPT"           ; RPT #n | RPT Rn     repeat n | [Rn]+1 times modulo 16
             mdocol
             .word FBLANK,SKIP
-            FORTHtoASM              ; -- addr
+            .word   $+2             ; -- addr
             MOV @TOS,X              ;           X=char
             MOV.B #' ',TOS          ; -- ' '    as separator
             CMP.B #'R',X
@@ -1242,4 +1260,5 @@ RPT1        CALL #SearchARG         ; -- $xxxx
             AND #0Fh,TOS            ; -- $000x
 RPT2        MOV TOS,&RPT_WORD
             MOV @PSP+,TOS
-            mSEMI
+            MOV @RSP+,IP 
+            MOV @IP+,PC

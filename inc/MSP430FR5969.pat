@@ -1,109 +1,5 @@
 !MSP430fr5969.pat
 
-! ----------------------------------------------
-! MSP430FR5969 MEMORY MAP
-! ----------------------------------------------
-! 0000-0FFF = peripherals (4 KB)
-! 1000-17FF = ROM bootstrap loader BSL0..3 (4x512 B)
-! 1800-187F = FRAM info D (128 B)
-! 1880-18FF = FRAM info C (128 B)
-! 1900-197F = FRAM info B (128 B)
-! 1980-19FF = FRAM info A (128 B)
-! 1A00-1AFF = TLV device descriptor info (FRAM 256 B)
-! 1B00-1BFF = unused (256 B)
-! 1C00-23FF = RAM (2 KB)
-! 4400-FF7F = code memory (FRAM 47 kB)
-! FF80-FFFF = interrupt vectors (FRAM 127 B)
-! ----------------------------------------------
-! ----------------------------------------------
-! FRAM                          ! INFO B, TLV
-! ----------------------------------------------
-INFO_ORG=\$1800!
-INFO_LEN=\$0200!
-INFOD_ORG=\$1800!
-INFOD_LEN=\$0080!
-INFOC_ORG=\$1880!
-INFOC_LEN=\$0080!
-INFOB_ORG=\$1900!
-INFOB_LEN=\$0080!
-INFOA_ORG=\$1980!
-INFOA_LEN=\$0080!
-TLV_ORG=\$1A00!      ; Device Descriptor Info (Tag-Lenght-Value)
-TLV_LEN=\$0100!      ;
-DEVICEID=\$1A04!
-! ----------------------------------------------
-! RAM
-! ----------------------------------------------
-RAM_ORG=\$1C00!
-RAM_LEN=\$0800!
-! ----------------------------------------------
-! FRAM
-! ----------------------------------------------
-MAIN_ORG=\$4400!        Code space start
-xdodoes=\$4400!         restore rDODOES: MOV #xdodoes,rDODOES
-xdocon=\$440E!          restore rDOCON: MOV #xdocon,rDOCON
-xdovar=\$4420!          restore rDOVAR: MOV #xdocon,rDOVAR  
-xdocol=\$442A!          restore rDOCOL: MOV #xdocol,rDOCOL      only for DTC model = 1
-DODOES=\$1284!          CALL rDODOES
-DOCON=\$1285!           CALL rDOCON
-DOVAR=\$1286!           CALL rDOVAR
-
-! to find DTC value, download \MSP430-FORTH\FastForthSpecs.4th
-! if DTC = 1, restore rDOCOL as this : MOV #xdocol,rDOCOL
-! if DTC = 2, restore rDOCOL as this : MOV #EXIT,rDOCOL
-! if DTC = 3, nothing to do, R7 is free for use.
-! ----------------------------------------------
-! Interrupt Vectors and signatures - MSP430FR5969
-! ----------------------------------------------
-MAIN_LEN=\$FC00!        63k FRAM
-FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
-SIGNATURES=\$FF80!      JTAG/BSL signatures
-JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW; must be reset by wipe.
-JTAG_SIG2=\$FF82!       if JTAG_SIG1=\$AAAA, length of password string @ JTAG_PASSWORD
-BSL_SIG1=\$FF84!  
-BSL_SIG2=\$FF86!  
-JTAG_PASSWORD=\$FF88!   256 bits
-BSL_PASSWORD=\$FFE0!    256 bits
-VECT_ORG=\$FFCC!        FFCC-FFFF
-VECT_LEN=\$34!
-
-AES_Vec=\$FFCC!
-RTC_Vec=\$FFCE!
-P4_Vec=\$FFD0!
-P3_Vec=\$FFD2!
-TA3_x_Vec=\$FFD4!
-TA3_0_Vec=\$FFD6!
-P2_Vec=\$FFD8!
-TA2_x_Vec=\$FFDA!
-TA2_0_Vec=\$FFDC!
-P1_Vec=\$FFDE!
-TA1_x_Vec=\$FFE0!
-TA1_0_Vec=\$FFE2!
-DMA_Vec=\$FFE4!
-eUSCI_A1_Vec=\$FFE6!
-TA0_x_Vec=\$FFE8!
-TA0_0_Vec=\$FFEA!
-ADC12_B_Vec=\$FFEC!
-eUSCI_B0_Vec=\$FFEE!
-eUSCI_A0_Vec=\$FFF0!
-WDT_Vec=\$FFF2!
-TB0_x_Vec=\$FFF4!
-TB0_0_Vec=\$FFF6!
-COMP_D_Vec=\$FFF8!
-U_NMI_Vec=\$FFFA!
-S_NMI_Vec=\$FFFC!
-RST_Vec=\$FFFE!
-
-
-
-LPM4=\$F8! SR(LPM4+GIE)
-LPM3=\$D8! SR(LPM3+GIE)
-LPM2=\$98! SR(LPM2+GIE)
-LPM1=\$58! SR(LPM1+GIE)
-LPM0=\$18! SR(LPM0+GIE)
-
-
-
 ! ============================================
 ! SR bits :
 ! ============================================
@@ -120,6 +16,11 @@ LPM0=\$18! SR(LPM0+GIE)
 \#UF10=\#\$400! = SR(10) User Flag 2  
 \#UF11=\#\$800! = SR(11) User Flag 3  
 
+LPM4=\$F8! SR(LPM4+GIE)
+LPM3=\$D8! SR(LPM3+GIE)
+LPM2=\$98! SR(LPM2+GIE)
+LPM1=\$58! SR(LPM1+GIE)
+LPM0=\$18! SR(LPM0+GIE)
 
 ! ============================================
 ! PORTx, Reg  bits :
@@ -152,19 +53,33 @@ NOP3=MOV R0,R0!     \ MOV PC,PC      one word three cycles
 NEXT=MOV \@R13+,R0! \ MOV @IP+,PC   
 SEMI=MOV \@R1+,R13\nMOV \@R13+,R0!
 
+! ----------------------------------------------
+! MSP430FR5969 MEMORY MAP
+! ----------------------------------------------
+! 0000-0FFF = peripherals (4 KB)
+! 1000-17FF = ROM bootstrap loader BSL0..3 (4x512 B)
+! 1800-19FF = FRAM INFO 512 B
+! 1A00-1AFF = TLV device descriptor info (FRAM 256 B)
+! 1C00-23FF = RAM (2 KB)
+! 4400-FF7F = MAIN (FRAM 47 kB)
+! FF80-FFFF = interrupt vectors (FRAM 127 B)
+! ----------------------------------------------
+! ============================================
+! BSL
+! ============================================
+BSL1=\$1000!
 
-! =================================================
-! MSP430FR5x6x DEVICES HAVE SPECIFIC RAM ADDRESSES!
-! =================================================
-
+! ============================================
+! FRAM INFO
+! ============================================
+INFO_ORG=\$1800!
+INFO_LEN=\$0200!
 
 ! You can check the addresses below by comparing their values in DTCforthMSP430FRxxxx.lst
 ! those addresses are usable with the symbolic assembler
-
-! ============================================
-! FastForth INFO(DCBA) memory map (256 bytes):
-! ============================================
-
+! ----------------------------------------------
+! FastForth INFO
+! ----------------------------------------------
 INI_THREAD=\$1800!      .word THREADS
 TERMBRW_RST=\$1802!     .word TERMBRW_RST
 TERMMCTLW_RST=\$1804!   .word TERMMCTLW_RST
@@ -182,8 +97,21 @@ ReadSectorWX=\$1818!    call with W = SectorLO  X = SectorHI
 WriteSectorWX=\$181A!   call with W = SectorLO  X = SectorHI
 
 ! ============================================
-! FORTH RAM areas :
+! FRAM TLV
 ! ============================================
+TLV_ORG=\$1A00!      ; Device Descriptor Info (Tag-Lenght-Value)
+TLV_LEN=\$0100!      ;
+DEVICEID=\$1A04!
+
+! ============================================
+! RAM
+! ============================================
+RAM_ORG=\$1C00!
+RAM_LEN=\$0800!
+
+! ---------------------------------------
+! FORTH RAM areas :
+! ---------------------------------------
 LSTACK_SIZE=\#16! words
 PSTACK_SIZE=\#48! words
 RSTACK_SIZE=\#48! words
@@ -191,11 +119,9 @@ PAD_LEN=\#84! bytes
 TIB_LEN=\#84! bytes
 HOLD_SIZE=\#34! bytes
 
-! ============================================
-! FastForth RAM memory map (>= 2k):
-! ============================================
-
-
+! ---------------------------------------
+! FastForth RAM memory map (>= 1k)
+! ---------------------------------------
 LEAVEPTR=\$1C00!    \ Leave-stack pointer, init by QUIT
 LSATCK=\$1C00!      \ leave stack,      grow up
 PSTACK=\$1C80!      \ parameter stack,  grow down
@@ -223,10 +149,10 @@ LAST_THREAD=\$1DB8!
 LAST_CFA=\$1DBA!
 LAST_PSP=\$1DBC!
 
-STATEADR=\$1DBE!           Interpreter state
+STATEADR=\$1DBE!        Interpreter state
 
 SOURCE_LEN=\$1DC0!      len of input stream
-SOURCE_ORG=\$1DC2!      adr of input stream
+SOURCE_ADR=\$1DC2!      adr of input stream
 TOIN=\$1DC4!            >IN
 DP=\$1DC6!              dictionary ptr
 
@@ -234,8 +160,9 @@ LASTVOC=\$1DC8!         keep VOC-LINK
 CONTEXT=\$1DCA!         CONTEXT dictionnary space (8 CELLS)
 CURRENT=\$1DDA!         CURRENT dictionnary ptr
 
-BASEADR=\$1DDC!           numeric base, must be defined before first reset !
+BASEADR=\$1DDC!         numeric base, must be defined before first reset !
 LINE=\$1DDE!            line in interpretation, activated with NOECHO, desactivated with ECHO
+
 ! ---------------------------------------
 !1DE0! 28 RAM bytes free 
 ! ---------------------------------------
@@ -344,10 +271,89 @@ HandleEnd=\$2118!
 SDIB_I2CADR=\$2118!
 SDIB_I2CCNT=\$211A!
 SDIB_ORG=\$251C!
+SDIB_LEN=\$54!
 
 SD_END=\$2170!
 SD_LEN=\$16E!
 
+! ============================================
+! FRAM MAIN
+! ============================================
+MAIN_ORG=\$4400!        Code space start
+
+SLEEP=\$4400! 
+BODYSLEEP=\$4404!
+VECT_RESET=\$440E! 
+LIT=\$4424! 
+NEXT_ADR=\$442C!
+XSQUOTE=\$442E! 
+QTBRAN=\$4442! 
+BRAN=\$4448! 
+QFBRAN=\$444C! 
+SKIPBRAN=\$4452! 
+XDO=\$4456! 
+XPLOOP=\$4466! 
+XLOOP=\$4478! 
+MUSMOD=\$447E!          unsigned 32/16 division
+SETIB=\$44C4!           Set Input Buffer with org len values, reset >IN 
+REFILL=\$44D4!          accept one line from input and leave org len of input buffer
+CIB_ADR=\$44E4!         contents currently TIB_ORG; may be redirected to SDIB_ORG
+XDODOES=\$44EC!         restore rDODOES: MOV #XDODOES,rDODOES
+XDOCON=\$44FA!          restore rDOCON: MOV #XDOCON,rDOCON
+XDOVAR=\$4506!          restore rDOVAR: MOV #XDOCON,rDOVAR  
+RFROM=\$4506!           
+XDOCOL=\$4510!          restore rDOCOL: MOV #XDOCOL,rDOCOL      only for DTC model = 1
+
+DODOES=\$1284!          CALL rDODOES
+DOCON=\$1285!           CALL rDOCON
+DOVAR=\$1286!           CALL rDOVAR
+DOCOL=\$1287!
+
+! to find DTC value, download \MSP430-FORTH\FastForthSpecs.4th
+! if DTC = 1, restore rDOCOL as this : MOV #xdocol,rDOCOL
+! if DTC = 2, restore rDOCOL as this : MOV #EXIT,rDOCOL
+! if DTC = 3, nothing to do, R7 is free for use.
+! ----------------------------------------------
+! Interrupt Vectors and signatures - MSP430FR5969
+! ----------------------------------------------
+MAIN_LEN=\$FC00!        63k FRAM
+FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
+SIGNATURES=\$FF80!      JTAG/BSL signatures
+JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW; must be reset by wipe.
+JTAG_SIG2=\$FF82!       if JTAG_SIG1=\$AAAA, length of password string @ JTAG_PASSWORD
+BSL_SIG1=\$FF84!  
+BSL_SIG2=\$FF86!  
+JTAG_PASSWORD=\$FF88!   256 bits
+BSL_PASSWORD=\$FFE0!    256 bits
+VECT_ORG=\$FFCC!        FFCC-FFFF
+VECT_LEN=\$34!
+
+AES_Vec=\$FFCC!
+RTC_Vec=\$FFCE!
+P4_Vec=\$FFD0!
+P3_Vec=\$FFD2!
+TA3_x_Vec=\$FFD4!
+TA3_0_Vec=\$FFD6!
+P2_Vec=\$FFD8!
+TA2_x_Vec=\$FFDA!
+TA2_0_Vec=\$FFDC!
+P1_Vec=\$FFDE!
+TA1_x_Vec=\$FFE0!
+TA1_0_Vec=\$FFE2!
+DMA_Vec=\$FFE4!
+eUSCI_A1_Vec=\$FFE6!
+TA0_x_Vec=\$FFE8!
+TA0_0_Vec=\$FFEA!
+ADC12_B_Vec=\$FFEC!
+eUSCI_B0_Vec=\$FFEE!
+eUSCI_A0_Vec=\$FFF0!
+WDT_Vec=\$FFF2!
+TB0_x_Vec=\$FFF4!
+TB0_0_Vec=\$FFF6!
+COMP_D_Vec=\$FFF8!
+U_NMI_Vec=\$FFFA!
+S_NMI_Vec=\$FFFC!
+RST_Vec=\$FFFE!
 
 ! ============================================
 ! Special Fonction Registers (SFR)

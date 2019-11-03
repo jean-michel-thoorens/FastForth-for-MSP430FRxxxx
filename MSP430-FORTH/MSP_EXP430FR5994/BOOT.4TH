@@ -61,6 +61,20 @@
 \ --------------------------------------------------------------------------------
 
 
+PWR_STATE
+
+[UNDEFINED] = [IF]
+CODE =
+SUB @R15+,R14
+0<> IF
+    AND #0,R14
+    MOV @R13+,R0
+THEN
+XOR #-1,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
 \ it's an example:
 
 $04 = [IF]      \ if origin of SYSRST is <reset>

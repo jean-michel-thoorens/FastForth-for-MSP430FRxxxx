@@ -150,6 +150,10 @@ TERMMCTLW_INI   .equ 00A1h
 TERMBRW_INI     .equ 17
 TERMMCTLW_INI   .equ 04A00h
 
+        .CASE 100000
+; Configure UCBx_TERM for I2C @ 100kHZ / 1MHz
+TERMBRW_INI     .equ 10
+
         .CASE 100800  ; PL2303TA baudrate
 ; Configure UART_TERM @ 100800 bauds / 1MHz
 ; N=1000000/100800=9,920634 ==> UCOS16=0, UCBR0=int(N)=9, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.920634)=0xFD
@@ -255,6 +259,10 @@ TERMMCTLW_INI   .equ 0241h
 TERMBRW_INI     .equ 2
 TERMMCTLW_INI   .equ 0BB21h
 
+        .CASE 100000
+; Configure UCBx_TERM for I2C @ 100kHZ / 2MHz
+TERMBRW_INI     .equ 20
+
         .CASE 115200
 ; Configure UART_TERM @ 57600 bauds / 1MHz
 ; N=1000000/57600=17.301... ==> UCOS16=0, UCBR0=int(N)=17, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.301)=0x4A
@@ -282,6 +290,10 @@ TERMMCTLW_INI   .equ 0000h
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 7
 TERMMCTLW_INI   .equ 05500h
+
+        .CASE 400000
+; Configure UCBx_TERM for I2C @ 400kHZ / 2MHz
+TERMBRW_INI     .equ 5
 
         .CASE 403200  ; PL2303TA baudrate
 ; Configure UART_TERM @ 201600 bauds / 1MHz
@@ -361,6 +373,10 @@ TERMMCTLW_INI   .equ 02081h
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 5551h
 
+        .CASE 100000
+; Configure UCBx_TERM for I2C @ 100kHZ / 4MHz
+TERMBRW_INI     .equ 40
+
         .CASE 115200
 ; Configure UART_TERM @ 115200 bauds / 4MHz
 ; N=8000000/230400=34.7222... ==> UCOS16=1, UCBR0=int(N/16)=2, UCBRF0=int(frac(N/16)*16)=2, UCBRS0= fn(frac(N))=fn(0.72222)=0xBB
@@ -380,6 +396,10 @@ TERMMCTLW_INI   .equ 04A00h
 ; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 1
 TERMMCTLW_INI   .equ 0001h
+
+        .CASE 400000
+; Configure UCBx_TERM for I2C @ 400kHZ / 4MHz
+TERMBRW_INI     .equ 10
 
         .CASE 460800
 ; Configure UART_TERM @ 460800 bauds / 4MHz
@@ -452,6 +472,10 @@ TERMMCTLW_INI   .equ 4901h
 TERMBRW_INI     .equ 8
 TERMMCTLW_INI   .equ 0F7A1h
 
+        .CASE 100000
+; Configure UCBx_TERM for I2C @ 100kHZ / 8MHz
+TERMBRW_INI     .equ 80
+
         .CASE 115200
 ; Configure UART_TERM @ 115200 bauds / 8MHz
 ; N=8000000/115200=69.444... ==> UCOS16=1, UCBR0=int(N/16)=4, UCBRF0=int(frac(N/16)*16)=5, UCBRS0= fn(frac(N))=fn(0.44444)=0x55
@@ -472,6 +496,10 @@ TERMMCTLW_INI   .equ 0BB21h
 ; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 2
 TERMMCTLW_INI   .equ 0001h
+
+        .CASE 400000
+; Configure UCBx_TERM for I2C @ 400kHZ / 8MHz
+TERMBRW_INI     .equ 20
 
         .CASE 460800
 ; Configure UART_TERM @ 460800 bauds / 8MHz
@@ -589,6 +617,10 @@ TERMMCTLW_INI   .equ 09241h
 TERMBRW_INI     .equ 10
 TERMMCTLW_INI   .equ 0AD01h
 
+        .CASE 100000
+; Configure UCBx_TERM for I2C @ 100kHZ / 10MHz
+TERMBRW_INI     .equ 100
+
         .CASE 115200
 ; Configure UART_TERM @ 115200 bauds / 10MHz
 ; Configure UART_TERM @ 230400 bauds / 20MHz
@@ -612,6 +644,10 @@ TERMMCTLW_INI   .equ 92B1h
 ; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 2
 TERMMCTLW_INI   .equ 0081h
+
+        .CASE 400000
+; Configure UCBx_TERM for I2C @ 400kHZ / 10MHz
+TERMBRW_INI     .equ 25
 
         .CASE 460800
 ; Configure UART_TERM @ 460800 bauds / 10MHz
@@ -728,6 +764,10 @@ TERMMCTLW_INI   .equ 05581h
 TERMBRW_INI     .equ 13
 TERMMCTLW_INI   .equ 04901h
 
+        .CASE 100000
+; Configure UCBx_TERM for I2C @ 100kHZ / 12MHz
+TERMBRW_INI     .equ 120
+
         .CASE 115200
 ; Configure UART_TERM @ 115200 bauds / 12MHz
 ; Configure UART_TERM @ 230400 bauds / 24MHz
@@ -751,6 +791,10 @@ TERMMCTLW_INI   .equ 0241h
 ; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 ;TERMBRW_INI     .equ 3
 ;TERMMCTLW_INI   .equ 0001h
+
+        .CASE 400000
+; Configure UCBx_TERM for I2C @ 400kHZ / 12MHz
+TERMBRW_INI     .equ 30
 
         .CASE 460800
 ; Configure UART_TERM @ 460800 bauds / 12MHz
@@ -877,6 +921,10 @@ TERMMCTLW_INI   .equ 0D601h
 TERMBRW_INI     .equ 17
 TERMMCTLW_INI   .equ 0DD51h
 
+        .CASE 100000
+; Configure UCBx_TERM for I2C @ 100kHZ / 16MHz
+TERMBRW_INI     .equ 160
+
         .CASE 115200
 ; Configure UART_TERM @ 115200 bauds / 16MHz
 ; N=16000000/115200=138.888... ==> UCOS16=1, UCBR0=int(N/16)=8, UCBRF0=int(frac(N/16)*16)=10, UCBRS0= fn(frac(N))=fn(0.88888)=0xF7
@@ -897,6 +945,10 @@ TERMMCTLW_INI   .equ 5551h
 ; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 0001h
+
+        .CASE 400000
+; Configure UCBx_TERM for I2C @ 400kHZ / 16MHz
+TERMBRW_INI     .equ 40
 
         .CASE 460800
 ; Configure UART_TERM @ 460800 bauds / 16MHz
@@ -1039,6 +1091,10 @@ TERMMCTLW_INI   .equ 0BF01h
 TERMBRW_INI     .equ 21
 TERMMCTLW_INI   .equ 000A1h
 
+        .CASE 100000
+; Configure UCBx_TERM for I2C @ 100kHZ / 20MHz
+TERMBRW_INI     .equ 200
+
         .CASE 115200
 ; Configure UART_TERM @ 115200 bauds / 20MHz
 ; N=20000000/115200=173.61111... ==> UCOS16=1, UCBR0=int(N/16)=10, UCBRF0=int(frac(N/16)*16)=0, UCBRS0= fn(frac(N))=fn(0.6111)=0xAD
@@ -1059,6 +1115,10 @@ TERMMCTLW_INI   .equ 0EE61h
 ; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 5
 TERMMCTLW_INI   .equ 0001h
+
+        .CASE 400000
+; Configure UCBx_TERM for I2C @ 400kHZ / 20MHz
+TERMBRW_INI     .equ 50
 
         .CASE 460800
 ; Configure UART_TERM @ 460800 bauds / 20MHz
@@ -1150,14 +1210,14 @@ TERMMCTLW_INI   .equ 04900h
 ; Configure UART_TERM @ 9600 bauds / 24MHz
 ; N=24000000/9600=2500 ==> UCOS16=1, UCBR0=int(N/16)=156, UCBRF0=int(frac(N/16)*16)=4, UCBRS0= fn(frac(N))=(fn(0))=0x00
 ; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
-TERMBRW_INI     .equ 156
+TERMBRW_INI     .equ 9Ch
 TERMMCTLW_INI   .equ 0041h
 
         .CASE 19200
 ; Configure UART_TERM @ 19200 bauds / 24MHz
 ; N=24000000/19200=1250 ==> UCOS16=1, UCBR0=int(N/16)=78, UCBRF0=int(frac(N/16)*16)=2, UCBRS0= fn(frac(N))=fn(0)=0x00
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
-TERMBRW_INI     .equ 78
+TERMBRW_INI     .equ 4Eh
 TERMMCTLW_INI   .equ 0021h
 
         .CASE 31250  ; MIDI interface
@@ -1181,6 +1241,10 @@ TERMMCTLW_INI   .equ 0011h
 TERMBRW_INI     .equ 26
 TERMMCTLW_INI   .equ 0D601h
 
+        .CASE 100000
+; Configure UCBx_TERM for I2C @ 100kHZ / 24MHz
+TERMBRW_INI     .equ 240
+
         .CASE 115200
 ; Configure UART_TERM @ 115200 bauds / 24MHz
 ; N=24000000/115200=208.333... ==> UCOS16=1, UCBR0=int(N/16)=13, UCBRF0=int(frac(N/16)*16)=0, UCBRS0= fn(frac(N))=fn(0.333)=0x49
@@ -1201,6 +1265,10 @@ TERMMCTLW_INI   .equ 2081h
 ; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 6
 TERMMCTLW_INI   .equ 0001h
+
+        .CASE 400000
+; Configure UCBx_TERM for I2C @ 400kHZ / 24MHz
+TERMBRW_INI     .equ 60
 
         .CASE 460800
 ; Configure UART_TERM @ 460800 bauds / 24MHz

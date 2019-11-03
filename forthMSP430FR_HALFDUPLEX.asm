@@ -3,6 +3,8 @@
 ; 2- the char loop time,
 ; 3- the time between sending XON/RTS_low and clearing UCRXIFG on first received char,
 ; everything must be done to reduce these times, taking into account the necessity of switching to SLEEP (LPMx mode).
+
+            FORTHWORD "ACCEPT"      ; HalfDuplexACCEPT
 ; ----------------------------------;
 ; (ACCEPT) part I: prepare TERMINAL_INT ;
 ; ----------------------------------;
@@ -40,12 +42,12 @@ AKEYREAD    MOV.B &TERM_RXBUF,Y     ;3  read character into Y, UCRXIFG is cleare
 ; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
 AKEYREAD1                           ; <---  XON RET address 2 ; first emergency: anticipate XOFF on CR as soon as possible
             CMP.B T,Y               ;1      char = CR ?
-            JZ RXOFF            ;2      then RET to ENDACCEPT
+            JZ RXOFF                ;2      then RET to ENDACCEPT
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;+ 4    to send RXOFF
 ; stops the first stopwatch         ;=      first bottleneck (empty line process), best case result: 20~ + LPMx wake_up time..
 ; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;       ...or 11~ in case of empty line
             CMP.B S,Y               ;1      printable char ?
-            JHS ASTORETEST          ;2      yes
+            JC  ASTORETEST          ;2      yes
             CMP.B #8,Y              ;       char = BS ?
             JNE WAITaKEY            ;       case of other control chars
 ; ----------------------------------;
@@ -69,36 +71,28 @@ WAITaKEY    BIT #UCRXIFG,&TERM_IFG  ; 3 new char in TERMRXBUF ?
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
 ; stops the 2th stopwatch           ; best case result: 23~ ==> 434 kBds/MHz
 ; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
+
 ; ----------------------------------;
-ENDACCEPT                           ; <--- XOFF return address
-; ----------------------------------;
-            MOV #LPM0+GIE,&LPM_MODE ; reset LPM_MODE to default mode LPM0 for next line of input stream
-; ----------------------------------;
-    .IFDEF MEMORYPROTECT
-    .IFDEF FR2_FAMILY               ;
-            MOV #0A500h,&SYSCFG0    ; enable write MAIN + INFO
-    .ELSE
-            MOV #0A500h,&MPUCTL0    ; clear MPU (Memory Protection Unit) enable bit 
-    .ENDIF                          ;
-    .ENDIF
+ENDACCEPT                           ; --- Org Ptr       r-- ACCEPT_ret
 ; ----------------------------------;
             CMP #0,&LINE            ; if LINE <> 0...
             JZ ACCEPTEND            ;
             ADD #1,&LINE            ; ...increment LINE
-ACCEPTEND   SUB @PSP+,TOS           ; Org Ptr -- len'
-            MOV @RSP+,IP            ; 2 and continue with INTERPRET with GIE=0.
-                                    ; So FORTH machine is protected against any interrupt...
-            mNEXT                   ; ...until next falling down to LPMx mode of (ACCEPT) part1,
+ACCEPTEND   SUB @PSP+,TOS           ; -- len'
+            MOV @RSP+,IP            ; 2  return to INTERPRET with GIE=0: FORTH is protected against any interrupt...
+; ----------------------------------;
+            MOV #LPM0+GIE,&LPM_MODE ; reset LPM_MODE to default mode LPM0 for next line of input stream
+; ----------------------------------;
+            MOV @IP+,PC             ; ...until next falling down to LPMx mode of (ACCEPT) part1,
 ; **********************************;    i.e. when the FORTH interpreter has no more to do.
 
 ; ------------------------------------------------------------------------------
 ; TERMINAL I/O, output part
 ; ------------------------------------------------------------------------------
 
-
 ;https://forth-standard.org/standard/core/EMIT
 ;C EMIT     c --    output character to the output device ; deferred word
-            FORTHWORD "EMIT"
+            FORTHWORD "EMIT"        ; HalfDuplexEMIT
 EMIT        MOV @PC+,PC             ;3  15~
 PFAEMIT     .word   BODYEMIT        ;  Parameter Field Address (PFA) of EMIT, with its default value
 BODYEMIT    MOV TOS,Y               ; 1
@@ -111,5 +105,4 @@ YEMIT2      BIT.B #CTS,&HANDSHAKIN  ;
     .ENDIF
 YEMIT       .word   4882h           ; hi7/4~ lo:12/4~ send/send_not  echo to terminal
             .word   TERM_TXBUF      ; 3 MOV Y,&TERMTXBUF
-            mNEXT                   ; 4
-
+            MOV @IP+,PC             ;

@@ -72,11 +72,191 @@
 \
 \ rc5   <--- OUT IR_Receiver (1 TSOP32236)
 
-RST_STATE
 
 [DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]     \ remove application
 
+[UNDEFINED] MARKER [IF]
+\  https://forth-standard.org/standard/core/MARKER
+\  MARKER
+\ ( "<spaces>name" -- )
+\ Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
+\ with the execution semantics defined below.
+\ 
+\ name Execution: ( -- )
+\ Restore all dictionary allocation and search order pointers to the state they had just prior to the
+\ definition of name. Remove the definition of name and all subsequent definitions. Restoration
+\ of any structures still existing that could refer to deleted definitions or deallocated data space is
+\ not necessarily provided. No other contextual information such as numeric base is affected
+\
+: MARKER
+CREATE
+HI2LO
+MOV &LASTVOC,0(W)   \ [BODY] = LASTVOC
+SUB #2,Y            \ 1 Y = LFA
+MOV Y,2(W)          \ 3 [BODY+2] = LFA = DP to be restored
+ADD #4,&DP          \ 3 add 2 cells
+LO2HI
+DOES>
+HI2LO
+MOV @RSP+,IP        \ -- PFA
+MOV @TOS+,&INIVOC   \       set VOC_LINK value for RST_STATE
+MOV @TOS,&INIDP     \       set DP value for RST_STATE
+MOV @PSP+,TOS       \ --
+MOV #RST_STATE,PC   \       execute RST_STATE, PWR_STATE then STATE_DOES
+ENDCODE
+[THEN]
+
 MARKER {RC5TOLCD}
+
+[UNDEFINED] @ [IF]
+\ https://forth-standard.org/standard/core/Fetch
+\ @     c-addr -- char   fetch char from memory
+CODE @
+MOV @TOS,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] CONSTANT [IF]
+\ https://forth-standard.org/standard/core/CONSTANT
+\ CONSTANT <name>     n --                      define a Forth CONSTANT 
+: CONSTANT 
+CREATE
+HI2LO
+MOV TOS,-2(W)           \   PFA = n
+MOV @PSP+,TOS
+MOV @RSP+,IP
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] STATE [IF]
+\ https://forth-standard.org/standard/core/STATE
+\ STATE   -- a-addr       holds compiler state
+STATEADR CONSTANT STATE
+[THEN]
+
+[UNDEFINED] = [IF]
+\ https://forth-standard.org/standard/core/Equal
+\ =      x1 x2 -- flag         test x1=x2
+CODE =
+SUB @PSP+,TOS   \ 2
+0<> IF          \ 2
+    AND #0,TOS  \ 1
+    MOV @IP+,PC \ 4
+THEN
+XOR #-1,TOS     \ 1 flag Z = 1
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+[UNDEFINED] IF [IF]
+\ https://forth-standard.org/standard/core/IF
+\ IF       -- IFadr    initialize conditional forward branch
+CODE IF       \ immediate
+SUB #2,PSP              \
+MOV TOS,0(PSP)          \
+MOV &DP,TOS             \ -- HERE
+ADD #4,&DP            \           compile one word, reserve one word
+MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
+ADD #2,TOS              \ -- HERE+2=IFadr
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] THEN [IF]
+\ https://forth-standard.org/standard/core/THEN
+\ THEN     IFadr --                resolve forward branch
+CODE THEN               \ immediate
+MOV &DP,0(TOS)          \ -- IFadr
+MOV @PSP+,TOS           \ --
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] ELSE [IF]
+\ https://forth-standard.org/standard/core/ELSE
+\ ELSE     IFadr -- ELSEadr        resolve forward IF branch, leave ELSEadr on stack
+CODE ELSE     \ immediate
+ADD #4,&DP              \ make room to compile two words
+MOV &DP,W               \ W=HERE+4
+MOV #BRAN,-4(W)
+MOV W,0(TOS)            \ HERE+4 ==> [IFadr]
+SUB #2,W                \ HERE+2
+MOV W,TOS               \ -- ELSEadr
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] DEFER [IF]
+\ https://forth-standard.org/standard/core/DEFER
+\ DEFER "<spaces>name"   --
+\ Skip leading space delimiters. Parse name delimited by a space.
+\ Create a definition for name with the execution semantics defined below.
+
+\ name Execution:   --
+\ Execute the xt that name is set to execute, i.e. NEXT (nothing),
+\ until the phrase ' word IS name is executed, causing a new value of xt to be assigned to name.
+: DEFER
+CREATE
+HI2LO
+MOV #$4030,-4(W)        \ CFA = MOV @PC+,PC = BR MOV @IP+,PC
+MOV #NEXT_ADR,-2(W)     \ PFA = address of MOV @IP+,PC to do nothing.
+MOV @RSP+,IP
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] DEFER! [IF]
+\ https://forth-standard.org/standard/core/DEFERStore
+\ Set the word xt1 to execute xt2. An ambiguous condition exists if xt1 is not for a word defined by DEFER.
+CODE DEFER!             \ xt2 xt1 --
+MOV @PSP+,2(TOS)        \ -- xt1=CFA_DEFER          xt2 --> [CFA_DEFER+2]
+MOV @PSP+,TOS           \ --
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] IS [IF]
+\ https://forth-standard.org/standard/core/IS
+\ IS <name>        xt --
+\ used as is :
+\ DEFER DISPLAY                         create a "do nothing" definition (2 CELLS)
+\ inline command : ' U. IS DISPLAY      U. becomes the runtime of the word DISPLAY
+\ or in a definition : ... ['] U. IS DISPLAY ...
+\ KEY, EMIT, CR, ACCEPT and WARM are examples of DEFERred words
+\
+\ as IS replaces the PFA value of any word, it's a TO alias for VARIABLE and CONSTANT words...
+: IS
+STATE @
+IF  POSTPONE ['] POSTPONE DEFER! 
+ELSE ' DEFER! 
+THEN
+; IMMEDIATE
+[THEN]
+
+[UNDEFINED] >BODY [IF]
+\ https://forth-standard.org/standard/core/toBODY
+\ >BODY     -- addr      leave BODY of a CREATEd word\ also leave default ACTION-OF primary DEFERred word
+CODE >BODY
+ADD #4,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+\ CODE 20uS           \ n --      8MHz version
+\ BEGIN               \ 4 + 16 ~ loop
+\     MOV #39,rDOCON   \ 39
+\     BEGIN           \ 4 ~ loop
+\         NOP
+\         SUB #1,rDOCON
+\     0=  UNTIL
+\     SUB #1,TOS      \ 1
+\ 0= UNTIL
+\ MOV #XDOCON,rDOCON  \ 2
+\ MOV @PSP+,TOS
+\ MOV @RSP+,IP        \
+\ ENDCODE
 
 CODE 20_US                      \ n --      n * 20 us
 BEGIN                           \ here we presume that LCD_TIM_IFG = 1...
@@ -91,8 +271,8 @@ MOV @IP+,PC                     \ 4
 ENDCODE
 
 CODE TOP_LCD                    \ LCD Sample
-\                               \ if write : %xxxxWWWW --
-\                               \ if read  : -- %0000RRRR
+\                               \ if write : %xxxx_WWWW --
+\                               \ if read  : -- %0000_RRRR
     BIS.B #LCD_EN,&LCD_CMD_OUT  \ lcd_en 0-->1
     BIT.B #LCD_RW,&LCD_CMD_IN   \ lcd_rw test
 0= IF                           \ write LCD bits pattern
@@ -113,8 +293,8 @@ ENDCODE
 CODE LCD_WRC                    \ char --         Write Char
     BIS.B #LCD_RS,&LCD_CMD_OUT  \ lcd_rs=1
 BW1 SUB #2,PSP                  \
-    MOV TOS,0(PSP)              \ -- %xxxxLLLL %HHHHLLLL
-    RRUM #4,TOS                 \ -- %xxxxLLLL %xxxxHHHH
+    MOV TOS,0(PSP)              \ -- %xxxx_LLLL %HHHH_LLLL
+    RRUM #4,TOS                 \ -- %xxxx_LLLL %xxxx_HHHH
     BIC.B #LCD_RW,&LCD_CMD_OUT  \ lcd_rw=0
     BIS.B #LCD_DB,&LCD_DB_DIR   \ LCD_Data as output
 COLON                           \ high level word starts here 
@@ -154,11 +334,11 @@ ENDCODE
 \ BW1 BIC.B #LCD_DB,&LCD_DB_DIR   \ LCD_Data as intput
 \     BIS.B #LCD_RW,&LCD_CMD_OUT  \ lcd_rw=1
 \ COLON                           \ starts a FORTH word
-\     TOP_LCD 2 20_us             \ -- %0000HHHH
-\     TOP_LCD 2 20_us             \ -- %0000HHHH %0000LLLL
+\     TOP_LCD 2 20_us             \ -- %0000_HHHH
+\     TOP_LCD 2 20_us             \ -- %0000_HHHH %0000_LLLL
 \ HI2LO                           \ switch from FORTH to assembler
-\     RLAM #4,0(PSP)              \ -- %HHHH0000 %0000LLLL
-\     ADD.B @PSP+,TOS             \ -- %HHHHLLLL
+\     RLAM #4,0(PSP)              \ -- %HHHH_0000 %0000_LLLL
+\     ADD.B @PSP+,TOS             \ -- %HHHH_LLLL
 \     MOV @RSP+,IP                \ restore IP saved by COLON
 \     MOV @IP+,PC                 \
 \ ENDCODE
@@ -318,21 +498,40 @@ ENDASM                          \
 \ ******************************\
 
 \ ------------------------------\
+ASM SYS_OUT                    \ system OUT init, replaces WARM at the request of STOP.
+\ ------------------------------\
+\     ...                         \ init specific I/O sys as you want
+\     ...                         \ before executing default WARM
+    MOV #WARM,X                 \ ['] WARM 
+    ADD #4,X                    \ >BODY
+    MOV X,PC                    \ EXECUTE    (which activates IO and TERMINAL)
+ENDASM
+\ ------------------------------\
+
+\ ------------------------------\
 CODE STOP                       \ stops multitasking, must to be used before downloading app
 \ ------------------------------\
-\ restore default action of primary DEFERred word SLEEP (assembly version)
 BW1 MOV #SLEEP,X                \ the ASM word SLEEP is only visible in mode assembler. 
     ADD #4,X                    \ X = BODY of SLEEP, X-2 = PFA of SLEEP
     MOV X,-2(X)                 \ restore the default background: SLEEP
+    MOV #WARM,X
+    MOV #SYS_OUT,2(X)           \ default WARM is replaced by JMJ_BOX SYS_OUT (ended by default WARM)
+    BIC.B #RC5,&IR_IE           \ clear RC5_Int
+    BIC.B #RC5,&IR_IFG          \ clear RC5_Int flag
+    MOV #0,&LCD_TIM_CTL         \ stop LCD_TIMER
+    MOV #0,&WDT_TIM_CTL         \ stop WDT_TIMER
+    MOV #0,&WDT_TIM_CCTL0       \ clear CCIFG0 disable CCIE0
+    CALL #INIT_VECT             \ reset all vectors other than TERMINAL_int
 COLON                           \ restore default action of primary DEFERred word WARM (FORTH version)
-['] WARM >BODY IS WARM          \ restore the default WARM
 ECHO                            \
-." RC5toLCD is removed. type START to restart"
-COLD                            \ performs reset to reset all interrupt vectors.    
+." RC5toLCD is removed,"
+."  type START to restart"
+ WARM                           \ performs reset to reset all interrupt vectors.    
 ;
+\ ------------------------------\
 
 \ ------------------------------\
-CODE APP_INIT                   \ this routine completes the init of system, i.e. FORTH + this app.
+CODE SYS_INIT                   \ this routine completes the init of system, i.e. FORTH + this app.
 \ ------------------------------\
 \ LCD_TIM_CTL =  %0000 0010 1001 0100\$3C0
 \                    - -             \CNTL Counter lentgh \ 00 = 16 bits
@@ -469,8 +668,9 @@ COLON                           \
     ['] CR >BODY IS CR          \ CR executes its default value
     ['] EMIT >BODY IS EMIT      \ EMIT executes its defaulte value
     ." RC5toLCD is running. Type STOP to quit" \ display message on FastForth Terminal
-    ABORT                       \ ...and end APP_INIT with ABORT, no return.
+    PWR_STATE ABORT             \ init DP and continues with ABORT
 ;                               \
+\ ------------------------------\
 
 \ ------------------------------\
 CODE START                      \ this routine replaces WARM and SLEEP default values by these of this application.
@@ -478,12 +678,13 @@ CODE START                      \ this routine replaces WARM and SLEEP default v
 MOV #SLEEP,X                    \ replace default background process SLEEP
 MOV #BACKGROUND,2(X)            \ by RC5toLCD BACKGROUND
 MOV #WARM,X                     \ replace default WARM
-MOV #APP_INIT,2(X)              \ by RC5toLCD APP_INIT
-MOV X,PC                        \ then execute it
+MOV #SYS_INIT,2(X)              \ by RC5toLCD SYS_INIT
+MOV X,PC                        \ then execute new WARM
 ENDCODE 
+\ ------------------------------\
 
 ECHO
             ; downloading RC5toLCD.4th is done
 RST_HERE    ; this app is protected against <reset>
 
-\ START cold
+START

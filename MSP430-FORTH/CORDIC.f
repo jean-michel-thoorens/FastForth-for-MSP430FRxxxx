@@ -5,12 +5,17 @@
 ; ----------
 \ see CORDICforDummies.pdf
 \
-\ to see kernel options, download FastForthSpecs.f
-\ FastForth kernel options: ASSEMBLER, CONDCOMP, FIXPOINT_INPUT.
+; -----------------------------------------------------------
+; requires FIXPOINT_INPUT kernel addon, see forthMSP430FR.asm
+; -----------------------------------------------------------
 \
-\ TARGET Current Selection (used by preprocessor GEMA to load the pattern: \config\gema\TARGET.pat)
+\ to see kernel options, download FastForthSpecs.f
+\ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP, FIXPOINT_INPUT
+\
+\
+\ LP_MSP430FR2476
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
-\ MSP_EXP430FR2433  MSP_EXP430FR2355    CHIPSTICK_FR2433
+\ MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
 \
 \ REGISTERS USAGE
 \ rDODOES to rEXIT must be saved before use and restored after
@@ -33,20 +38,190 @@ PWR_STATE
 
 [UNDEFINED] {CORDIC} [IF] 
 
-MARKER {CORDIC}
-
-[UNDEFINED] {FIXPOINT} [IF] \ define words to display angle as Q15.16 number.
-
-[UNDEFINED] DABS [IF] \
-\ https://forth-standard.org/standard/double/DABS
-\ DABS     d1 -- |d1|     absolute value
-CODE DABS
-MOV #1-,X
-ADD #4,X
-MOV X,PC
+[UNDEFINED] MARKER [IF]
+\  https://forth-standard.org/standard/core/MARKER
+\  MARKER
+\ ( "<spaces>name" -- )
+\ Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
+\ with the execution semantics defined below.
+\ 
+\ name Execution: ( -- )
+\ Restore all dictionary allocation and search order pointers to the state they had just prior to the
+\ definition of name. Remove the definition of name and all subsequent definitions. Restoration
+\ of any structures still existing that could refer to deleted definitions or deallocated data space is
+\ not necessarily provided. No other contextual information such as numeric base is affected
+\
+: MARKER
+CREATE
+HI2LO
+MOV &LASTVOC,0(W)   \ [BODY] = LASTVOC
+SUB #2,Y            \ 1 Y = LFA
+MOV Y,2(W)          \ 3 [BODY+2] = LFA = DP to be restored
+ADD #4,&DP          \ 3 add 2 cells
+LO2HI
+DOES>
+HI2LO
+MOV @RSP+,IP        \ -- PFA
+MOV @TOS+,&INIVOC   \       set VOC_LINK value for RST_STATE
+MOV @TOS,&INIDP     \       set DP value for RST_STATE
+MOV @PSP+,TOS       \ --
+MOV #RST_STATE,PC   \       execute RST_STATE, PWR_STATE then STATE_DOES
 ENDCODE
 [THEN]
 
+MARKER {CORDIC}
+
+[UNDEFINED] SWAP [IF]
+\ https://forth-standard.org/standard/core/SWAP
+\ SWAP     x1 x2 -- x2 x1    swap top two items
+CODE SWAP
+MOV @PSP,W      \ 2
+MOV TOS,0(PSP)  \ 3
+MOV W,TOS       \ 1
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+[UNDEFINED] IF [IF]
+\ https://forth-standard.org/standard/core/IF
+\ IF       -- IFadr    initialize conditional forward branch
+CODE IF       \ immediate
+SUB #2,PSP              \
+MOV TOS,0(PSP)          \
+MOV &DP,TOS             \ -- HERE
+ADD #4,&DP            \           compile one word, reserve one word
+MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
+ADD #2,TOS              \ -- HERE+2=IFadr
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] THEN [IF]
+\ https://forth-standard.org/standard/core/THEN
+\ THEN     IFadr --                resolve forward branch
+CODE THEN               \ immediate
+MOV &DP,0(TOS)          \ -- IFadr
+MOV @PSP+,TOS           \ --
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] ELSE [IF]
+\ https://forth-standard.org/standard/core/ELSE
+\ ELSE     IFadr -- ELSEadr        resolve forward IF branch, leave ELSEadr on stack
+CODE ELSE     \ immediate
+ADD #4,&DP              \ make room to compile two words
+MOV &DP,W               \ W=HERE+4
+MOV #BRAN,-4(W)
+MOV W,0(TOS)            \ HERE+4 ==> [IFadr]
+SUB #2,W                \ HERE+2
+MOV W,TOS               \ -- ELSEadr
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] BEGIN [IF]
+\ https://forth-standard.org/standard/core/BEGIN
+\ BEGIN    -- BEGINadr             initialize backward branch
+CODE BEGIN              \ immediate
+MOV #HERE,PC            \ BR HERE
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] UNTIL [IF]
+\ https://forth-standard.org/standard/core/UNTIL
+\ UNTIL    BEGINadr --             resolve conditional backward branch
+CODE UNTIL              \ immediate
+    MOV #QFBRAN,X
+BW1 ADD #4,&DP          \ compile two words
+    MOV &DP,W           \ W = HERE
+    MOV X,-4(W)         \ compile Bran or QFBRAN at HERE
+    MOV TOS,-2(W)       \ compile bakcward adr at HERE+2
+    MOV @PSP+,TOS
+    MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] AGAIN [IF]
+\ https://forth-standard.org/standard/core/AGAIN
+\ AGAIN    BEGINadr --             resolve uncondionnal backward branch
+CODE AGAIN     \ immediate
+MOV #BRAN,X
+GOTO BW1
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] WHILE [IF]
+\ https://forth-standard.org/standard/core/WHILE
+\ WHILE    BEGINadr -- WHILEadr BEGINadr
+: WHILE     \ immediate
+POSTPONE IF SWAP
+; IMMEDIATE
+[THEN]
+
+[UNDEFINED] REPEAT [IF]
+\ https://forth-standard.org/standard/core/REPEAT
+\ REPEAT   WHILEadr BEGINadr --     resolve WHILE loop
+: REPEAT
+POSTPONE AGAIN POSTPONE THEN
+; IMMEDIATE
+[THEN]
+
+[UNDEFINED] DO [IF]
+\ https://forth-standard.org/standard/core/DO
+\ DO       -- DOadr   L: -- 0
+CODE DO                 \ immediate
+SUB #2,PSP              \
+MOV TOS,0(PSP)          \
+ADD #2,&DP              \   make room to compile xdo
+MOV &DP,TOS             \ -- HERE+2
+MOV #XDO,-2(TOS)        \   compile xdo
+ADD #2,&LEAVEPTR        \ -- HERE+2     LEAVEPTR+2
+MOV &LEAVEPTR,W         \
+MOV #0,0(W)             \ -- HERE+2     L-- 0
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] LOOP [IF]
+\ https://forth-standard.org/standard/core/LOOP
+\ LOOP    DOadr --         L-- an an-1 .. a1 0
+CODE LOOP               \ immediate
+    MOV #XLOOP,X
+    ADD #4,&DP          \ make room to compile two words
+    MOV &DP,W
+    MOV X,-4(W)         \ xloop --> HERE
+    MOV TOS,-2(W)       \ DOadr --> HERE+2
+BEGIN                   \ resolve all "leave" adr
+    MOV &LEAVEPTR,TOS   \ -- Adr of top LeaveStack cell
+    SUB #2,&LEAVEPTR    \ --
+    MOV @TOS,TOS        \ -- first LeaveStack value
+    CMP #0,TOS          \ -- = value left by DO ?
+0<> WHILE
+    MOV W,0(TOS)        \ move adr after loop as UNLOOP adr
+REPEAT
+    MOV @PSP+,TOS
+    MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+
+[UNDEFINED] {FIXPOINT} [IF] \ define words to display angle as Q15.16 number.
+
+[UNDEFINED] DABS [IF]
+\ https://forth-standard.org/standard/double/DABS
+\ DABS     d1 -- |d1|     absolute value
+CODE DABS
+AND #-1,TOS         \ clear V, set N
+S< IF               \ if positive (N=0)
+    XOR #-1,0(PSP)  \ 4
+    XOR #-1,TOS     \ 1
+    ADD #1,0(PSP)   \ 4
+    ADDC #0,TOS     \ 1
+THEN
+MOV @IP+,PC
+ENDCODE
+[THEN]
 
 \ https://forth-standard.org/standard/core/HOLDS
 \ Adds the string represented by addr u to the pictured numeric output string
@@ -90,6 +265,14 @@ BEGIN       MOV @PSP,&MPY           \                   Load 1st operand
             MOV #HOLDS_ORG,0(PSP)   \ -- Qhi 0 addr len
             GOTO BW1                \ JMP HOLDS
 ENDCODE
+
+[UNDEFINED] R> [IF]
+\ https://forth-standard.org/standard/core/Rfrom
+\ R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
+CODE R>
+MOV rDOVAR,PC
+ENDCODE
+[THEN]
 
 CODE F.             \ display a Q15.16 number with 4/5/16 digits after comma
 MOV TOS,S           \ S = sign
@@ -359,6 +542,10 @@ LOOP
 ;
 
 ECHO
+
+; -----------------------------------------------------------
+; requires FIXPOINT_INPUT kernel addon, see forthMSP430FR.asm
+; -----------------------------------------------------------
 
 \
 10000 89,0 POL2REC . .  ; sin, cos --> 

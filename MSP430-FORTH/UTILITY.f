@@ -8,6 +8,7 @@
 \ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP
 \
 \ TARGET SELECTION
+\ LP_MSP430FR2476
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133  MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
 \
@@ -33,18 +34,303 @@
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
 
+PWR_STATE
+
+[DEFINED] {TOOLS} [IF]  {TOOLS} [THEN]
+
 [UNDEFINED] {TOOLS} [IF]
 
-PWR_STATE
+[UNDEFINED] MARKER [IF]
+\  https://forth-standard.org/standard/core/MARKER
+\  MARKER
+\ ( "<spaces>name" -- )
+\ Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
+\ with the execution semantics defined below.
+\ 
+\ name Execution: ( -- )
+\ Restore all dictionary allocation and search order pointers to the state they had just prior to the
+\ definition of name. Remove the definition of name and all subsequent definitions. Restoration
+\ of any structures still existing that could refer to deleted definitions or deallocated data space is
+\ not necessarily provided. No other contextual information such as numeric base is affected
+\
+\ : MARKER
+\ CREATE
+\ HI2LO
+\ MOV &LASTVOC,0(W)   \ [BODY] = LASTVOC
+\ SUB #2,Y            \ 1 Y = LFA
+\ MOV Y,2(W)          \ 3 [BODY+2] = LFA = DP to be restored
+\ ADD #4,&DP          \ 3 add 2 cells
+\ LO2HI
+\ DOES>
+\ HI2LO
+\ MOV @RSP+,IP        \ -- PFA
+\ MOV @TOS+,&INIVOC   \       set VOC_LINK value for RST_STATE
+\ MOV @TOS,&INIDP     \       set DP value for RST_STATE
+\ MOV @PSP+,TOS       \ --
+\ MOV #RST_STATE,PC   \       execute RST_STATE, PWR_STATE then STATE_DOES
+\ ENDCODE
+\ [THEN]
+
+: MARKER
+CREATE
+LAST_CFA @ >BODY >R
+LASTVOC @ R@ !
+LAST_NFA @ 2 - R> 2 + !  \ [BODY] = LASTVOC
+DOES>
+DUP @ INIVOC !    \       set VOC_LINK value for RST_STATE
+2 + @ INIDP !     \       set DP value for RST_STATE
+RST_STATE
+;                   \       execute RST_STATE, PWR_STATE then STATE_DOES
+[THEN]
 
 MARKER {TOOLS} 
 
-[UNDEFINED] ? [IF]    \
-\ https://forth-standard.org/standard/tools/q
-\ ?         adr --            display the content of adr
-CODE ?          
-    MOV @TOS,TOS
-    MOV #U.,PC  \ goto U.
+PWR_HERE
+
+[UNDEFINED] EXIT [IF]
+\ https://forth-standard.org/standard/core/EXIT
+\ EXIT     --      exit a colon definition; CALL #EXIT performs ASMtoFORTH (10 cycles)
+\                                           JMP #EXIT performs EXIT
+CODE EXIT
+MOV @RSP+,IP    \ 2 pop previous IP (or next PC) from return stack
+MOV @IP+,PC     \ 4 = NEXT
+                \ 6 (ITC-2)
+ENDCODE
+[THEN]
+
+[UNDEFINED] SWAP [IF]
+\ https://forth-standard.org/standard/core/SWAP
+\ SWAP     x1 x2 -- x2 x1    swap top two items
+CODE SWAP
+MOV @PSP,W      \ 2
+MOV TOS,0(PSP)  \ 3
+MOV W,TOS       \ 1
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+\ https://forth-standard.org/standard/core/Uless
+\ U<    u1 u2 -- flag       test u1<u2, unsigned
+[UNDEFINED] U< [IF]
+CODE U<
+SUB @PSP+,TOS   \ 2 u2-u1
+0<> IF
+    MOV #-1,TOS     \ 1
+    U< IF           \ 2 flag 
+        AND #0,TOS  \ 1 flag Z = 1
+    THEN
+THEN
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+[UNDEFINED] IF [IF]
+\ https://forth-standard.org/standard/core/IF
+\ IF       -- IFadr    initialize conditional forward branch
+CODE IF       \ immediate
+SUB #2,PSP              \
+MOV TOS,0(PSP)          \
+MOV &DP,TOS             \ -- HERE
+ADD #4,&DP            \           compile one word, reserve one word
+MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
+ADD #2,TOS              \ -- HERE+2=IFadr
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] THEN [IF]
+\ https://forth-standard.org/standard/core/THEN
+\ THEN     IFadr --                resolve forward branch
+CODE THEN               \ immediate
+MOV &DP,0(TOS)          \ -- IFadr
+MOV @PSP+,TOS           \ --
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] BEGIN [IF]
+\ https://forth-standard.org/standard/core/BEGIN
+\ BEGIN    -- BEGINadr             initialize backward branch
+CODE BEGIN              \ immediate
+MOV #HERE,PC            \ BR HERE
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] UNTIL [IF]
+\ https://forth-standard.org/standard/core/UNTIL
+\ UNTIL    BEGINadr --             resolve conditional backward branch
+CODE UNTIL              \ immediate
+    MOV #QFBRAN,X
+BW1 ADD #4,&DP          \ compile two words
+    MOV &DP,W           \ W = HERE
+    MOV X,-4(W)         \ compile Bran or QFBRAN at HERE
+    MOV TOS,-2(W)       \ compile bakcward adr at HERE+2
+    MOV @PSP+,TOS
+    MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] AGAIN [IF]
+\ https://forth-standard.org/standard/core/AGAIN
+\ AGAIN    BEGINadr --             resolve uncondionnal backward branch
+CODE AGAIN     \ immediate
+MOV #BRAN,X
+GOTO BW1
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] WHILE [IF]
+\ https://forth-standard.org/standard/core/WHILE
+\ WHILE    BEGINadr -- WHILEadr BEGINadr
+: WHILE     \ immediate
+POSTPONE IF SWAP
+; IMMEDIATE
+[THEN]
+
+[UNDEFINED] REPEAT [IF]
+\ https://forth-standard.org/standard/core/REPEAT
+\ REPEAT   WHILEadr BEGINadr --     resolve WHILE loop
+: REPEAT
+POSTPONE AGAIN POSTPONE THEN
+; IMMEDIATE
+[THEN]
+
+[UNDEFINED] DO [IF]
+\ https://forth-standard.org/standard/core/DO
+\ DO       -- DOadr   L: -- 0
+CODE DO                 \ immediate
+SUB #2,PSP              \
+MOV TOS,0(PSP)          \
+ADD #2,&DP              \   make room to compile xdo
+MOV &DP,TOS             \ -- HERE+2
+MOV #XDO,-2(TOS)        \   compile xdo
+ADD #2,&LEAVEPTR        \ -- HERE+2     LEAVEPTR+2
+MOV &LEAVEPTR,W         \
+MOV #0,0(W)             \ -- HERE+2     L-- 0
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] LOOP [IF]
+\ https://forth-standard.org/standard/core/LOOP
+\ LOOP    DOadr --         L-- an an-1 .. a1 0
+CODE LOOP               \ immediate
+    MOV #XLOOP,X
+BW1 ADD #4,&DP          \ make room to compile two words
+    MOV &DP,W
+    MOV X,-4(W)         \ xloop --> HERE
+    MOV TOS,-2(W)       \ DOadr --> HERE+2
+BEGIN                   \ resolve all "leave" adr
+    MOV &LEAVEPTR,TOS   \ -- Adr of top LeaveStack cell
+    SUB #2,&LEAVEPTR    \ --
+    MOV @TOS,TOS        \ -- first LeaveStack value
+    CMP #0,TOS          \ -- = value left by DO ?
+0<> WHILE
+    MOV W,0(TOS)        \ move adr after loop as UNLOOP adr
+REPEAT
+    MOV @PSP+,TOS
+    MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] +LOOP [IF]
+\ https://forth-standard.org/standard/core/PlusLOOP
+\ +LOOP   adrs --   L-- an an-1 .. a1 0
+CODE +LOOP              \ immediate
+MOV #XPLOOP,X
+GOTO BW1
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] I [IF]
+\ https://forth-standard.org/standard/core/I
+\ I        -- n   R: sys1 sys2 -- sys1 sys2
+\                  get the innermost loop index
+CODE I
+SUB #2,PSP              \ 1 make room in TOS
+MOV TOS,0(PSP)          \ 3
+MOV @RSP,TOS            \ 2 index = loopctr - fudge
+SUB 2(RSP),TOS          \ 3
+MOV @IP+,PC             \ 4 13~
+ENDCODE
+[THEN]
+
+[UNDEFINED] DUP [IF]
+\ https://forth-standard.org/standard/core/DUP
+\ DUP      x -- x x      duplicate top of stack
+CODE DUP
+BW1 SUB #2,PSP      \ 2  push old TOS..
+    MOV TOS,0(PSP)  \ 3  ..onto stack
+    MOV @IP+,PC     \ 4
+ENDCODE
+
+\ https://forth-standard.org/standard/core/qDUP
+\ ?DUP     x -- 0 | x x    DUP if nonzero
+CODE ?DUP
+CMP #0,TOS      \ 2  test for TOS nonzero
+0<> ?GOTO BW1    \ 2
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+[UNDEFINED] SWAP [IF]
+\ https://forth-standard.org/standard/core/SWAP
+\ SWAP     x1 x2 -- x2 x1    swap top two items
+CODE SWAP
+MOV @PSP,W      \ 2
+MOV TOS,0(PSP)  \ 3
+MOV W,TOS       \ 1
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+
+[UNDEFINED] DROP [IF]
+\ https://forth-standard.org/standard/core/DROP
+\ DROP     x --          drop top of stack
+CODE DROP
+MOV @PSP+,TOS   \ 2
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+[UNDEFINED] >R [IF]
+\ https://forth-standard.org/standard/core/toR
+\ >R    x --   R: -- x   push to return stack
+CODE >R
+PUSH TOS
+MOV @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] R> [IF]
+\ https://forth-standard.org/standard/core/Rfrom
+\ R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
+CODE R>
+SUB #2,PSP      \ 1
+MOV TOS,0(PSP)  \ 3
+MOV @RSP+,TOS   \ 2
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+[UNDEFINED] @ [IF]
+\ https://forth-standard.org/standard/core/Fetch
+\ @     c-addr -- char   fetch char from memory
+CODE @
+MOV @TOS,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] ! [IF]
+\ https://forth-standard.org/standard/core/Store
+\ !        x a-addr --   store cell in memory
+CODE !
+MOV @PSP+,0(TOS)    \ 4
+MOV @PSP+,TOS       \ 2
+MOV @IP+,PC         \ 4
 ENDCODE
 [THEN]
 
@@ -76,45 +362,23 @@ NEXT
 ENDCODE
 [THEN]
 
-[UNDEFINED] .S [IF]    \
-\ https://forth-standard.org/standard/tools/DotS
-\ .S            --            display <depth> of param Stack and stack contents in hedadecimal if not empty
-CODE .S
-    MOV     TOS,-2(PSP) \ -- TOS ( tos x x )
-    MOV     PSP,TOS
-    SUB     #2,TOS      \ to take count that TOS is first cell
-    MOV     TOS,-6(PSP) \ -- TOS ( tos x  PSP )
-    MOV     #PSTACK,TOS \ -- P0  ( tos x  PSP )
-    SUB     #2,TOS      \ to take count that TOS is first cell
-BW1 MOV     TOS,-4(PSP) \ -- S0  ( tos S0 SP )
-    SUB     #6,PSP      \ -- S0 SP S0
-    SUB     @PSP,TOS    \ -- S0 SP S0-SP
-    RRA     TOS         \ -- S0 SP #cells
-COLON
-    $3C EMIT            \ char '<'
-    .                   \ display #cells
-    $08 EMIT            \ backspace
-    $3E EMIT SPACE      \ char '>' SPACE
-    2DUP 1+             \ 
-    U< IF 
-        DROP DROP EXIT
-    THEN                \ display content of stack in hexadecimal
-    BASEADR @ >R
-    $10 BASEADR !
-    DO 
-        I @ U.
-    2 +LOOP
-    R> BASEADR !
-;
+[UNDEFINED] 2DUP [IF]    \
+\ https://forth-standard.org/standard/core/TwoDUP
+\ 2DUP   x1 x2 -- x1 x2 x1 x2   dup top 2 cells
+CODE 2DUP
+MOV TOS,-2(PSP)     \ 3
+MOV @PSP,-4(PSP)    \ 4
+SUB #4,PSP          \ 1
+MOV @IP+,PC         \ 4
+ENDCODE
 [THEN]
 
-[UNDEFINED] .RS [IF]    \
-\ .RS            --            display <depth> of Return Stack and stack contents if not empty
-CODE .RS
-    MOV     TOS,-2(PSP) \ -- TOS ( tos x x ) 
-    MOV     RSP,-6(PSP) \ -- TOS ( tos x  RSP )
-    MOV     #RSTACK,TOS \ -- R0  ( tos x  RSP )
-    GOTO    BW1
+[UNDEFINED] 1+ [IF]
+\ https://forth-standard.org/standard/core/OnePlus
+\ 1+      n1/u1 -- n2/u2       add 1 to TOS
+CODE 1+
+ADD #1,TOS
+MOV @IP+,PC
 ENDCODE
 [THEN]
 
@@ -123,6 +387,17 @@ ENDCODE
 \ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
 CODE +
 ADD @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] - [IF]
+\ https://forth-standard.org/standard/core/Minus
+\ -      n1/u1 n2/u2 -- n3/u3      n3 = n1-n2
+CODE -
+SUB @PSP+,TOS   \ 2  -- n2-n1
+XOR #-1,TOS     \ 1
+ADD #1,TOS      \ 1  -- n3 = -(n2-n1) = n1-n2
 MOV @IP+,PC
 ENDCODE
 [THEN]
@@ -154,6 +429,119 @@ MOV TOS,0(PSP)      \ 3 store x3
 MOV 2(PSP),TOS      \ 3 fetch x1
 MOV W,2(PSP)        \ 3 store x2
 MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {ANS_COMP}
+    CODE MAX    \    n1 n2 -- n3       signed maximum
+        CMP @PSP,TOS    \ n2-n1
+        S< ?GOTO FW1    \ n2<n1
+BW1     ADD #2,PSP
+        MOV @IP+,PC
+    ENDCODE
+
+    CODE MIN    \    n1 n2 -- n3       signed minimum
+        CMP @PSP,TOS    \ n2-n1
+        S< ?GOTO BW1    \ n2<n1
+FW1     MOV @PSP+,TOS
+        MOV @IP+,PC
+    ENDCODE
+[THEN]
+
+[UNDEFINED] OVER [IF]
+\ https://forth-standard.org/standard/core/OVER
+\ OVER    x1 x2 -- x1 x2 x1
+CODE OVER
+MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
+MOV @PSP,TOS        \ 2 -- x1 (x2) x1
+SUB #2,PSP          \ 1 -- x1 x2 x1
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] MOVE [IF]
+\ https://forth-standard.org/standard/core/MOVE
+\ MOVE    addr1 addr2 u --     smart move
+\             VERSION FOR 1 ADDRESS UNIT = 1 CHAR
+CODE MOVE
+MOV TOS,W           \ W = cnt
+MOV @PSP+,Y         \ Y = addr2 = dst
+MOV @PSP+,X         \ X = addr1 = src
+MOV @PSP+,TOS       \ pop new TOS
+CMP #0,W            \ count = 0 ?
+0<> IF              \ if 0, already done !
+    CMP X,Y         \ Y-X \ dst - src
+    0= ?GOTO FW1    \ already done !
+    U< IF           \ U< if src > dst
+        BEGIN       \ copy W bytes
+            MOV.B @X+,0(Y)
+            ADD #1,Y
+            SUB #1,W
+        0= UNTIL
+        MOV @IP+,PC
+    ELSE            \ U>= if dst > src
+        ADD W,Y     \ copy W bytes beginning with the end
+        ADD W,X
+        BEGIN
+            SUB #1,X
+            SUB #1,Y
+            MOV.B @X,0(Y)
+            SUB #1,W
+        0= UNTIL
+    THEN
+THEN
+FW1 MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] .S [IF]    \
+\ https://forth-standard.org/standard/tools/DotS
+\ .S        TOS -- TOS          display <depth> of param Stack and stack contents in hedadecimal if not empty
+CODE .S
+    MOV     TOS,-2(PSP) \ -- TOS ( TOS x x )
+    MOV     PSP,TOS     \ -- PSP ( TOS x x )
+    SUB     #2,TOS      \ -- PSP ( TOS x x )  to take count that TOS is first cell
+    MOV     TOS,-6(PSP) \ -- TOS ( TOS x  PSP )
+    MOV     #PSTACK,TOS \ -- P0  ( TOS x  PSP )
+    SUB     #2,TOS      \ -- P0  ( TOS x  PSP ) to take count that TOS is first cell
+BW1 MOV     TOS,-4(PSP) \ -- S0  ( TOS S0 PSP ) |  -- TOS ( TOS R0 RSP )
+    SUB     #6,PSP      \ -- TOS S0 PSP S0      |  -- TOS R0 RSP R0 
+    SUB     @PSP,TOS    \ -- TOS S0 PSP S0-SP   |  -- TOS R0 RSP R0-RSP 
+    RRA     TOS         \ -- TOS S0 PSP #cells  |  -- TOS R0 RSP #cells 
+COLON
+    $3C EMIT            \ char '<'
+    .                   \ display #cells
+    $08 EMIT            \ backspace
+    $3E EMIT SPACE      \ char '>' SPACE
+    2DUP 1+             \ 
+    U< IF 
+        DROP DROP EXIT
+    THEN                \ display content of stack in hexadecimal
+    BASEADR @ >R
+    $10 BASEADR !
+    DO 
+        I @ U.
+    2 +LOOP
+    R> BASEADR !
+;
+[THEN]
+
+[UNDEFINED] .RS [IF]    \
+\ .RS         TOS -- TOS           display <depth> of Return Stack and stack contents if not empty
+CODE .RS
+    MOV     TOS,-2(PSP) \ -- TOS ( TOS x x ) 
+    MOV     RSP,-6(PSP) \ -- TOS ( TOS x  RSP )
+    MOV     #RSTACK,TOS \ -- R0  ( TOS x  RSP )
+    GOTO    BW1
+ENDCODE
+[THEN]
+
+[UNDEFINED] ? [IF]    \
+\ https://forth-standard.org/standard/tools/q
+\ ?         adr --            display the content of adr
+CODE ?          
+    MOV @TOS,TOS
+    MOV #U.,PC  \ goto U.
 ENDCODE
 [THEN]
 
@@ -190,33 +578,6 @@ WHILE                           \ -- ptr MAX                    replace it by it
 REPEAT                          \ --
 DROP                            \ ptr --
 ;                               \ all threads in PAD_ORG are filled with 0
-[THEN]
-
-[UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {ANS_COMP}
-    CODE MAX    \    n1 n2 -- n3       signed maximum
-        CMP @PSP,TOS    \ n2-n1
-        S< ?GOTO FW1    \ n2<n1
-BW1     ADD #2,PSP
-        MOV @IP+,PC
-    ENDCODE
-
-    CODE MIN    \    n1 n2 -- n3       signed minimum
-        CMP @PSP,TOS    \ n2-n1
-        S< ?GOTO BW1    \ n2<n1
-FW1     MOV @PSP+,TOS
-        MOV @IP+,PC
-    ENDCODE
-[THEN]
-
-[UNDEFINED] OVER [IF]
-\ https://forth-standard.org/standard/core/OVER
-\ OVER    x1 x2 -- x1 x2 x1
-CODE OVER
-MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
-MOV @PSP,TOS        \ 2 -- x1 (x2) x1
-SUB #2,PSP          \ 1 -- x1 x2 x1
-MOV @IP+,PC
-ENDCODE
 [THEN]
 
 [UNDEFINED] U.R [IF]

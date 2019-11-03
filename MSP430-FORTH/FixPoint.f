@@ -1,8 +1,12 @@
 \ -*- coding: utf-8 -*-
 
 ; -----------------------------------------------------
-; FIXPOINT.f
+; FIXPOINT.f 
 ; -----------------------------------------------------
+
+; -----------------------------------------------------------
+; requires FIXPOINT_INPUT kernel addon, see forthMSP430FR.asm
+; -----------------------------------------------------------
 \
 \ to see kernel options, download FastForthSpecs.f
 \ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP, FIXPOINT_INPUT
@@ -34,7 +38,40 @@
 
 PWR_STATE
 
+[DEFINED] {FIXPOINT} [IF]  {FIXPOINT} [THEN]
+
 [UNDEFINED] {FIXPOINT} [IF]
+
+[UNDEFINED] MARKER [IF]
+\  https://forth-standard.org/standard/core/MARKER
+\  MARKER
+\ ( "<spaces>name" -- )
+\ Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
+\ with the execution semantics defined below.
+\ 
+\ name Execution: ( -- )
+\ Restore all dictionary allocation and search order pointers to the state they had just prior to the
+\ definition of name. Remove the definition of name and all subsequent definitions. Restoration
+\ of any structures still existing that could refer to deleted definitions or deallocated data space is
+\ not necessarily provided. No other contextual information such as numeric base is affected
+\
+: MARKER
+CREATE
+HI2LO
+MOV &LASTVOC,0(W)   \ [BODY] = LASTVOC
+SUB #2,Y            \ 1 Y = LFA
+MOV Y,2(W)          \ 3 [BODY+2] = LFA = DP to be restored
+ADD #4,&DP          \ 3 add 2 cells
+LO2HI
+DOES>
+HI2LO
+MOV @RSP+,IP        \ -- PFA
+MOV @TOS+,&INIVOC   \       set VOC_LINK value for RST_STATE
+MOV @TOS,&INIDP     \       set DP value for RST_STATE
+MOV @PSP+,TOS       \ --
+MOV #RST_STATE,PC   \       execute RST_STATE, PWR_STATE then STATE_DOES
+ENDCODE
+[THEN]
 
 MARKER {FIXPOINT}
 
@@ -44,6 +81,62 @@ MARKER {FIXPOINT}
 CODE +
 ADD @PSP+,TOS
 MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] @ [IF]
+\ https://forth-standard.org/standard/core/Fetch
+\ @     c-addr -- char   fetch char from memory
+CODE @
+MOV @TOS,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] ! [IF]
+\ https://forth-standard.org/standard/core/Store
+\ !        x a-addr --   store cell in memory
+CODE !
+MOV @PSP+,0(TOS)    \ 4
+MOV @PSP+,TOS       \ 2
+MOV @IP+,PC         \ 4
+ENDCODE
+[THEN]
+
+[UNDEFINED] R> [IF]
+\ https://forth-standard.org/standard/core/Rfrom
+\ R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
+CODE R>
+MOV rDOVAR,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] = [IF]
+\ https://forth-standard.org/standard/core/Equal
+\ =      x1 x2 -- flag         test x1=x2
+CODE =
+SUB @PSP+,TOS   \ 2
+0<> IF          \ 2
+    AND #0,TOS  \ 1
+    MOV @IP+,PC \ 4
+THEN
+XOR #-1,TOS     \ 1 flag Z = 1
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+\ https://forth-standard.org/standard/core/Uless
+\ U<    u1 u2 -- flag       test u1<u2, unsigned
+[UNDEFINED] U< [IF]
+CODE U<
+SUB @PSP+,TOS   \ 2 u2-u1
+0<> IF
+    MOV #-1,TOS     \ 1
+    U< IF           \ 2 flag 
+        AND #0,TOS  \ 1 flag Z = 1
+    THEN
+THEN
+MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
@@ -72,9 +165,14 @@ ENDCODE
 \ https://forth-standard.org/standard/double/DABS
 \ DABS     d1 -- |d1|     absolute value
 CODE DABS
-MOV #1-,X   \ 2
-ADD #4,X    \ 1
-MOV X,PC    \ 3
+AND #-1,TOS         \ clear V, set N
+S< IF               \ if positive (N=0)
+    XOR #-1,0(PSP)  \ 4
+    XOR #-1,TOS     \ 1
+    ADD #1,0(PSP)   \ 4
+    ADDC #0,TOS     \ 1
+THEN
+MOV @IP+,PC
 ENDCODE
 [THEN]
 
@@ -409,16 +507,15 @@ ECHO
 ; (volatile) tests
 ; -----------------------
 
-
 3,14159 2CONSTANT PI
 PI -1,0 F* 2CONSTANT -PI
 
 $10 BASEADR !  PI F. 
-           -PI F.
+            -PI F.
 %10 BASEADR !  PI F. 
-           -PI F.
+            -PI F.
 #10 BASEADR !  PI F. 
-           -PI F.
+            -PI F.
 
 PI 2,0 F* F.      
 PI -2,0 F* F.    
@@ -430,25 +527,26 @@ PI -2,0 F/ F.
 -PI 2,0 F/ F.    
 -PI -2,0 F/ F.    
 
-32767,99999 1,0 f* F. 
-32767,99999 1,0 f/ F. 
-32767,99999 2,0 f/ F. 
-32767,99999 4,0 f/ F. 
-32767,99999 8,0 f/ F. 
-32767,99999 16,0 f/ F.
+32767,99999 1,0 F* F. 
+32767,99999 1,0 F/ F. 
+32767,99999 2,0 F/ F. 
+32767,99999 4,0 F/ F. 
+32767,99999 8,0 F/ F. 
+32767,99999 16,0 F/ F.
 
--32767,0 -1,0 f* F.   
--32767,0 -1,0 f/ F.   
--32767,0 -2,0 f/ F.   
--32767,0 -4,0 f/ F.   
--32767,0 -8,0 f/ F.   
--32767,0 -16,0 f/ F.  
--32767,0 -32,0 f/ F.  
--32767,0 -64,0 f/ F.  
+-32767,0 -1,0 F* F.   
+-32767,0 -1,0 F/ F.   
+-32767,0 -2,0 F/ F.   
+-32767,0 -4,0 F/ F.   
+-32767,0 -8,0 F/ F.   
+-32767,0 -16,0 F/ F.  
+-32767,0 -32,0 F/ F.  
+-32767,0 -64,0 F/ F.  
 
-; sqrt(32768)^2 = 32768
-181,01933598375 181,01933598375 f* f.  
-181,01933598375 -181,01933598375 f* f.
--181,01933598375 181,01933598375 f* f.
--181,01933598375 -181,01933598375 f* f.
+; SQRT(32768)^2 = 32768
+181,01933598375 181,01933598375 F* F.  
+181,01933598375 -181,01933598375 F* F.
+-181,01933598375 181,01933598375 F* F.
+-181,01933598375 -181,01933598375 F* F.
+
 

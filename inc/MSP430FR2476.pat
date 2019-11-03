@@ -1,141 +1,5 @@
 !MSP430FR2476.pat
 
-! ----------------------------------------------
-! MSP430FR2476 MEMORY MAP
-! ----------------------------------------------
-! 0000-0005 = reserved
-! 0006-001F = TinyRAM
-! 0020-0FFF = peripherals (4 KB)
-! 1000-17FF = ROM bootstrap loader BSL1 (2k)
-! 1800-19FF = info B (FRAM 512 B)
-! 1A00-1A7F = TLV device descriptor info (FRAM 128 B)
-! 1A80-1FFF = unused
-! 2000-3FFF = RAM (8 KB)
-! 4000-7FFF = unused
-! 8000-17FFF = code memory (FRAM 64 kB)
-! FF80-FFFF = interrupt vectors (FRAM 128 B)
-! C0000-C3FFF = CapTivate lib
-! FFC00-FFFFF = BSL2 (2k)
-! ----------------------------------------------
-!PAGESIZE        .equ 512         ; MPU unit
-! ----------------------------------------------
-! BSL                           
-! ----------------------------------------------
-BSL1=\$1000!    to $17FF (2k)
-BSL2=\$FFC00!   to $FFFFFF (1k)
-! ----------------------------------------------
-! FRAM                          ; INFO B, TLV
-! ----------------------------------------------
-INFO_ORG =\$1800!   to $19FF (512b)
-INFO_LEN=\$0200!
-TLV_ORG=\$1A00!     to $1A31 Device Descriptor Info (Tag-Lenght-Value)
-TLV_LEN=\$0080!
-DEVICEID=\$1A04!
-! ----------------------------------------------
-! RAM
-! ----------------------------------------------
-TinyRAM_ORG=\$06!
-TinyRAM_LEN=\$1A!
-RAM_ORG=\$2000!
-RAM_LEN=\$2000!
-! ----------------------------------------------
-! FRAM
-! ----------------------------------------------
-MAIN_ORG=\$8000!        Code space start
-xdodoes=\$8000!         restore rDODOES: MOV #xdodoes,rDODOES
-xdocon=\$800E!          restore rDOCON: MOV #xdocon,rDOCON
-xdovar=\$8020!          restore rDOVAR: MOV #xdocon,rDOVAR  
-xdocol=\$802A!          restore rDOCOL: MOV #xdocol,rDOCOL      only for DTC model = 1
-DODOES=\$1284!          CALL rDODOES
-DOCON=\$1285!           CALL rDOCON
-DOVAR=\$1286!           CALL rDOVAR
-
-! to find DTC value, download \MSP430-FORTH\FastForthSpecs.4th
-! if DTC = 1, restore rDOCOL as this : MOV #xdocol,rDOCOL
-! if DTC = 2, restore rDOCOL as this : MOV #EXIT,rDOCOL
-! if DTC = 3, nothing to do, R7 is free for use.
-! ----------------------------------------------
-! Interrupt Vectors and signatures - MSP430FR2476
-! ----------------------------------------------
-FRAM_FULL=\$FF40!       64 bytes are sufficient considering what can be compiled in one line and WORD use.
-SIGNATURES=\$FF80!      JTAG/BSL signatures
-JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW ; reset by wipe and by S1+<reset>
-JTAG_SIG2=\$FF82!       if JTAG_SIG <> |\$FFFFFFFF, \$00000000|, SBW and JTAG are locked
-BSL_SIG1=\$FF84!        
-BSL_SIG2=\$FF86!        
-JTAG_PASSWORD=\$FF88!   256 bits
-BSL_PASSWORD=\$FFE0!    256 bits
-VECT_ORG=\$FFDA!        FFDA-FFFF
-VECT_LEN=\$38!
-! ----------------------------------------------
-
-
-;   .org    INTVECT         ; FFDA-FFFF 26 vectors + reset
-;
-;           .word  reset        ; FFCAh - eCOMP0       
-;           .word  reset        ; FFCCh - P6       
-;           .word  reset        ; FFCEh - P5       
-;           .word  reset        ; FFD0h - P4       
-;           .word  reset        ; FFD2h - P3       
-;           .word  reset        ; FFD4h - P2       
-;           .word  reset        ; FFD6h - P1       
-;           .word  reset        ; FFD8h - ADC10    
-;           .word  reset        ; FFDAh - eUSCI_B1 
-;           .word  reset        ; FFDCh - eUSCI_B0 
-;           .word  reset        ; FFDEh - eUSCI_A1 
-;           .word  reset        ; FFE0h - eUSCI_A0 
-;           .word  reset        ; FFE2h - WDT      
-;           .word  reset        ; FFE4h - RTC      
-;           .word  reset        ; FFE6h - TB0_x    
-;           .word  reset        ; FFE8h - TB0_0    
-;           .word  reset        ; FFEAh - TA3_x    
-;           .word  reset        ; FFECh - TA3_0    
-;           .word  reset        ; FFEEh - TA2_x    
-;           .word  reset        ; FFF0h - TA2_0    
-;           .word  reset        ; FFF2h - TA1_x    
-;           .word  reset        ; FFF4h - TA1_0    
-;           .word  reset        ; FFF6h - TA0_x    
-;           .word  reset        ; FFF8h - TA0_0    
-;           .word  reset        ; FFFAh - UserNMI  
-;           .word  reset        ; FFFCh - SysNMI  
-
-    
-eCOMP0_Vec=\$FFCA!
-P6_Vec=\$FFCC!
-P5_Vec=\$FFCE!
-P4_Vec=\$FFD0!
-P3_Vec=\$FFD2!
-P2_Vec=\$FFD4!
-P1_Vec=\$FFD6!
-ADC10_B_Vec=\$FFD8!
-eUSCI_B1_Vec=\$FFDA!
-eUSCI_B0_Vec=\$FFDC!
-eUSCI_A1_Vec=\$FFDE!
-eUSCI_A0_Vec=\$FFE0!
-WDT_Vec=\$FFE2!
-RTC_Vec=\$FFE4!
-TB0_x_Vec=\$FFE6!
-TB0_0_Vec=\$FFE8!
-TA3_x_Vec=\$FFEA!
-TA3_0_Vec=\$FFEC!
-TA2_x_Vec=\$FFEE!
-TA2_0_Vec=\$FFF0!
-TA1_x_Vec=\$FFF2!
-TA1_0_Vec=\$FFF4!
-TA0_x_Vec=\$FFF6!
-TA0_0_Vec=\$FFF8!
-U_NMI_Vec=\$FFFA!
-S_NMI_Vec=\$FFFC!
-RST_Vec=\$FFFE!
-
-
-LPM4=\$F8! SR(LPM4+GIE)
-LPM3=\$D8! SR(LPM3+GIE)
-LPM2=\$98! SR(LPM2+GIE)
-LPM1=\$58! SR(LPM1+GIE)
-LPM0=\$18! SR(LPM0+GIE)
-
-
 ! ============================================
 ! SR bits :
 ! ============================================
@@ -151,6 +15,12 @@ LPM0=\$18! SR(LPM0+GIE)
 \#UF9=\#\$200!  = SR(9) User Flag 1 used by ?NUMBER --> INTERPRET --> LITERAL to process double numbers, else free for use.  
 \#UF10=\#\$400! = SR(10) User Flag 2  
 \#UF11=\#\$800! = SR(11) User Flag 3  
+
+LPM4=\$F8! SR(LPM4+GIE)
+LPM3=\$D8! SR(LPM3+GIE)
+LPM2=\$98! SR(LPM2+GIE)
+LPM1=\$58! SR(LPM1+GIE)
+LPM0=\$18! SR(LPM0+GIE)
 
 ! ============================================
 ! PORTx, Reg  bits :
@@ -182,19 +52,49 @@ NOP3=MOV R0,R0!     \ MOV PC,PC      one word three cycles
 NEXT=MOV \@R13+,R0! \ MOV @IP+,PC   
 SEMI=MOV \@R1+,R13\nMOV \@R13+,R0!
 
+! ----------------------------------------------
+! MSP430FR2476 MEMORY MAP
+! ----------------------------------------------
+! 0000-0005 = reserved
+! 0006-001F = TinyRAM
+! 0020-0FFF = peripherals (4 KB)
+! 1000-17FF = ROM bootstrap loader BSL1 (2k)
+! 1800-19FF = info B (FRAM 512 B)
+! 1A00-1A7F = TLV device descriptor info (FRAM 128 B)
+! 1A80-1FFF = unused
+! 2000-3FFF = RAM (8 KB)
+! 4000-7FFF = unused
+! 8000-17FFF = code memory (FRAM 64 kB)
+! FF80-FFFF = interrupt vectors (FRAM 128 B)
+! C0000-C3FFF = CapTivate lib
+! FFC00-FFFFF = BSL2 (2k)
+! ----------------------------------------------
+!PAGESIZE        .equ 512         ; MPU unit
 
-! ===========================================================
-! MSP430FR2xxx and FR4xxx DEVICES HAVE SPECIFIC RAM ADDRESSES
-! ===========================================================
 
+! ============================================
+! TINY RAM
+! ============================================
+TinyRAM_ORG=\$06!
+TinyRAM_LEN=\$1A!
+
+! ============================================
+! BSL
+! ============================================
+BSL1=\$1000!    to $17FF (2k)
+BSL2=\$FFC00!   to $FFFFFF (1k)
+
+! ============================================
+! FRAM INFO
+! ============================================
+INFO_ORG=\$1800!
+INFO_LEN=\$0200!
 
 ! You can check the addresses below by comparing their values in DTCforthMSP430FRxxxx.lst
 ! those addresses are usable with the symbolic assembler
-
-! ============================================
+! ----------------------------------------------
 ! FastForth INFO(DCBA) memory map (256 bytes):
-! ============================================
-
+! ----------------------------------------------
 INI_THREAD=\$1800!      .word THREADS
 TERMBRW_RST=\$1802!     .word TERMBRW_RST
 TERMMCTLW_RST=\$1804!   .word TERMMCTLW_RST
@@ -212,9 +112,21 @@ ReadSectorWX=\$1818!    call with W = SectorLO  X = SectorHI
 WriteSectorWX=\$181A!   call with W = SectorLO  X = SectorHI
 
 ! ============================================
-! FORTH RAM areas :
+! FRAM TLV
 ! ============================================
+TLV_ORG=\$1A00!     to $1A31 Device Descriptor Info (Tag-Lenght-Value)
+TLV_LEN=\$0080!
+DEVICEID=\$1A04!
 
+! ============================================
+! RAM
+! ============================================
+RAM_ORG=\$2000!
+RAM_LEN=\$2000!
+
+! ----------------------------------------------
+! FORTH RAM areas :
+! ----------------------------------------------
 LSTACK_SIZE=\#16! words
 PSTACK_SIZE=\#48! words
 RSTACK_SIZE=\#48! words
@@ -222,11 +134,9 @@ PAD_LEN=\#84! bytes
 TIB_LEN=\#84! bytes
 HOLD_SIZE=\#34! bytes
 
-! ============================================
+! ----------------------------------------------
 ! FastForth RAM memory map (>= 1k):
-! ============================================
-
-
+! ----------------------------------------------
 LEAVEPTR=\$2000!    \ Leave-stack pointer, init by QUIT
 LSATCK=\$2000!      \ leave stack,      grow up
 PSTACK=\$2080!      \ parameter stack,  grow down
@@ -268,17 +178,7 @@ CURRENT=\$21DA!         CURRENT dictionnary ptr
 BASEADR=\$21DC!           numeric base, must be defined before first reset !
 LINE=\$21DE!            line in interpretation, activated with NOECHO, desactivated with ECHO
 ! ---------------------------------------
-!21E0! 14 RAM bytes free conditionnaly
-! ---------------------------------------
-!ASMBW1=\$21E0          assembler backward reference 1
-!ASMBW2=\$21E2          assembler backward reference 2
-!ASMBW3=\$21E4          assembler backward reference 3
-!ASMFW1=\$21E6          assembler forward reference 1
-!ASMFW2=\$21E8          assembler forward reference 2
-!ASMFW3=\$21EA          assembler forward reference 3
-!RPT_WORD=\$21EC!    
-! ---------------------------------------
-!21EE! 14 RAM bytes free
+!21E0! 28 RAM bytes free
 ! ---------------------------------------
 
 ! ---------------------------------------
@@ -388,6 +288,119 @@ SDIB_ORG=\$251C!
 
 SD_END=\$2570!
 SD_LEN=\$16E!
+
+! ============================================
+! FRAM MAIN
+! ============================================
+MAIN_ORG=\$8000!        Code space start
+
+SLEEP=\$8000! 
+BODYSLEEP=\$8004!
+VECT_RESET=\$800E! 
+LIT=\$8024! 
+NEXT_ADR=\$802C!
+XSQUOTE=\$802E! 
+QTBRAN=\$8042! 
+BRAN=\$8048! 
+QFBRAN=\$804C! 
+SKIPBRAN=\$8052! 
+XDO=\$8056! 
+XPLOOP=\$8066! 
+XLOOP=\$8078! 
+MUSMOD=\$807E!          unsigned 32/16 division
+SETIB=\$80C4!           Set Input Buffer with org len values, reset >IN 
+REFILL=\$80D4!          accept one line from input and leave org len of input buffer
+CIB_ADR=\$80E4!         contents currently TIB_ORG; may be redirected to SDIB_ORG
+XDODOES=\$80EC!         restore rDODOES: MOV #XDODOES,rDODOES
+XDOCON=\$80FA!          restore rDOCON: MOV #XDOCON,rDOCON
+XDOVAR=\$8106!          restore rDOVAR: MOV #XDOCON,rDOVAR  
+RFROM=\$8106!           
+XDOCOL=\$8110!          restore rDOCOL: MOV #XDOCOL,rDOCOL      only for DTC model = 1
+
+DODOES=\$1284!          CALL rDODOES
+DOCON=\$1285!           CALL rDOCON
+DOVAR=\$1286!           CALL rDOVAR
+DOCOL=\$1287!
+
+! to find DTC value, download \MSP430-FORTH\FastForthSpecs.4th
+! if DTC = 1, restore rDOCOL as this : MOV #xdocol,rDOCOL
+! if DTC = 2, restore rDOCOL as this : MOV #EXIT,rDOCOL
+! if DTC = 3, nothing to do, R7 is free for use.
+! ----------------------------------------------
+! Interrupt Vectors and signatures - MSP430FR2476
+! ----------------------------------------------
+FRAM_FULL=\$FF40!       64 bytes are sufficient considering what can be compiled in one line and WORD use.
+SIGNATURES=\$FF80!      JTAG/BSL signatures
+JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW ; reset by wipe and by S1+<reset>
+JTAG_SIG2=\$FF82!       if JTAG_SIG <> |\$FFFFFFFF, \$00000000|, SBW and JTAG are locked
+BSL_SIG1=\$FF84!        
+BSL_SIG2=\$FF86!        
+JTAG_PASSWORD=\$FF88!   256 bits
+BSL_PASSWORD=\$FFE0!    256 bits
+VECT_ORG=\$FFDA!        FFDA-FFFF
+VECT_LEN=\$38!
+! ----------------------------------------------
+
+
+;   .org    INTVECT         ; FFDA-FFFF 26 vectors + reset
+;
+;           .word  reset        ; FFCAh - eCOMP0       
+;           .word  reset        ; FFCCh - P6       
+;           .word  reset        ; FFCEh - P5       
+;           .word  reset        ; FFD0h - P4       
+;           .word  reset        ; FFD2h - P3       
+;           .word  reset        ; FFD4h - P2       
+;           .word  reset        ; FFD6h - P1       
+;           .word  reset        ; FFD8h - ADC10    
+;           .word  reset        ; FFDAh - eUSCI_B1 
+;           .word  reset        ; FFDCh - eUSCI_B0 
+;           .word  reset        ; FFDEh - eUSCI_A1 
+;           .word  reset        ; FFE0h - eUSCI_A0 
+;           .word  reset        ; FFE2h - WDT      
+;           .word  reset        ; FFE4h - RTC      
+;           .word  reset        ; FFE6h - TB0_x    
+;           .word  reset        ; FFE8h - TB0_0    
+;           .word  reset        ; FFEAh - TA3_x    
+;           .word  reset        ; FFECh - TA3_0    
+;           .word  reset        ; FFEEh - TA2_x    
+;           .word  reset        ; FFF0h - TA2_0    
+;           .word  reset        ; FFF2h - TA1_x    
+;           .word  reset        ; FFF4h - TA1_0    
+;           .word  reset        ; FFF6h - TA0_x    
+;           .word  reset        ; FFF8h - TA0_0    
+;           .word  reset        ; FFFAh - UserNMI  
+;           .word  reset        ; FFFCh - SysNMI  
+
+    
+eCOMP0_Vec=\$FFCA!
+P6_Vec=\$FFCC!
+P5_Vec=\$FFCE!
+P4_Vec=\$FFD0!
+P3_Vec=\$FFD2!
+P2_Vec=\$FFD4!
+P1_Vec=\$FFD6!
+ADC10_B_Vec=\$FFD8!
+eUSCI_B1_Vec=\$FFDA!
+eUSCI_B0_Vec=\$FFDC!
+eUSCI_A1_Vec=\$FFDE!
+eUSCI_A0_Vec=\$FFE0!
+WDT_Vec=\$FFE2!
+RTC_Vec=\$FFE4!
+TB0_x_Vec=\$FFE6!
+TB0_0_Vec=\$FFE8!
+TA3_x_Vec=\$FFEA!
+TA3_0_Vec=\$FFEC!
+TA2_x_Vec=\$FFEE!
+TA2_0_Vec=\$FFF0!
+TA1_x_Vec=\$FFF2!
+TA1_0_Vec=\$FFF4!
+TA0_x_Vec=\$FFF6!
+TA0_0_Vec=\$FFF8!
+U_NMI_Vec=\$FFFA!
+S_NMI_Vec=\$FFFC!
+RST_Vec=\$FFFE!
+
+
 
 
 

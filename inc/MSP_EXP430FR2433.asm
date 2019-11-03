@@ -131,73 +131,75 @@
 ; P1.0  - RTS TERMINAL     
 ; P1.1  - CTS TERMINAL     
 
+LED1_OUT    .equ    202h
+LED1_DIR    .equ    204h
+LED1        .equ    1           ;  P1.0
 
-    .IFDEF UCA0_TERM
-TXD         .equ 10h        ; P1.4 = TXD + FORTH Deep_RST pin
-RXD         .equ 20h        ; P1.5
-TERM_BUS    .equ 30h
-TERM_IN     .equ P1IN
-TERM_SEL    .equ P1SEL0
-TERM_REN    .equ P1REN
-    .ENDIF
-
-    .IFDEF UCA1_SD
-SD_SEL      .equ PASEL0     ; to configure UCA1
-SD_REN      .equ PAREN      ; to configure pullup resistors
-SD_BUS      .equ 07000h     ; pins P2.4 as UCA1CLK, P2.5 as UCA1SOMI & P2.6 as UCA1SIMO
-    .ENDIF
-
-; P2.1                <--- SD_CD (Card Detect)
-SD_CD           .equ  2
-SD_CDIN         .equ  P2IN
-; P2.0                ---> SD_CS (Card Select)
-SD_CS           .equ  1
-SD_CSOUT        .equ P2OUT
-SD_CSDIR        .equ P2DIR
-
-
-    .IFDEF UCA1_TERM
-TXD         .equ 40h        ; P2.6 = TXD + FORTH Deep_RST pin
-RXD         .equ 20h        ; P2.5
-TERM_BUS    .equ 60h
-TERM_IN     .equ P2IN       ; TERMINAL TX  pin as FORTH Deep_RST 
-TERM_SEL    .equ P2SEL0
-TERM_REN    .equ P2REN
-    .ENDIF
-
-            MOV #-1,&PAREN      ; all inputs with pull up/down resistors
-            MOV #0FFFCh,&PAOUT  ; all pins with pullup resistors else LED1/LED2
-
-    .IFDEF TERMINAL4WIRES
-; RTS output is wired to the CTS input of UART2USB bridge 
-; configure RTS as output high to disable RX TERM during start FORTH
+RTS         .equ    1           ; P1.0
+CTS         .equ    2           ; P1.1
 HANDSHAKOUT .equ    P1OUT
 HANDSHAKIN  .equ    P1IN
-RTS         .equ    1           ; P1.0
-;            BIS.B #RTS,&P1DIR   ; RTS as output high
-            BIS.B #RTS,&P1OUT   ; RTS as output high
-        .IFDEF TERMINAL5WIRES
-; CTS input must be wired to the RTS output of UART2USB bridge 
-; configure CTS as input low (true) to avoid lock when CTS is not wired
-CTS         .equ    2           ; P1.1
-            BIC.B #CTS,&P1DIR   ; CTS input pulled down
-;            BIC.B #CTS,&P1OUT   ; CTS input pulled down
-        .ENDIF  ; TERMINAL5WIRES
-    .ENDIF  ; TERMINAL4WIRES
 
-
-    .IFDEF UCB0_TERM        ; for MSP_EXP430FR2433_I2C
-I2CM_BUS        .equ    0Ch   ; P1.2=SDA P1.3=SCL
-I2CM_SEL        .equ    P1SEL0
-I2CM_REN        .equ    P1REN
-I2CM_OUT        .equ    P1OUT
+    .IFDEF UCA0_TERM
+TXD         .equ    10h        ; P1.4 = TXD + FORTH Deep_RST pin
+RXD         .equ    20h        ; P1.5
+TERM_BUS    .equ    30h
+TERM_IN     .equ    P1IN
+TERM_SEL    .equ    P1SEL0
+TERM_REN    .equ    P1REN
     .ENDIF
 
-    .IFDEF  UCB0_I2CM   ; for TERM2IIC add-on
-I2CT_BUS        .equ    0Ch   ; P1.2=SDA P1.3=SCL
-I2CT_SEL        .equ    P1SEL0
-I2CT_REN        .equ    P1REN
-I2CT_OUT        .equ    P1OUT
+; P2.1            <--- SD_CD (Card Detect)
+SD_CD       .equ    2
+SD_CDIN     .equ    P2IN
+; P2.0            ---> SD_CS (Card Select)
+SD_CS       .equ    1
+SD_CSOUT    .equ    P2OUT
+SD_CSDIR    .equ    P2DIR
+
+    .IFDEF UCA1_SD
+SD_SEL      .equ    PASEL0     ; to configure UCA1
+SD_REN      .equ    PAREN      ; to configure pullup resistors
+SD_BUS      .equ    07000h     ; pins P2.4 as UCA1CLK, P2.5 as UCA1SOMI & P2.6 as UCA1SIMO
+    .ENDIF
+
+    .IFDEF UCA1_TERM
+TXD         .equ    40h        ; P2.6 = TXD + FORTH Deep_RST pin
+RXD         .equ    20h        ; P2.5
+TERM_BUS    .equ    60h
+TERM_IN     .equ    P2IN       ; TERMINAL TX  pin as FORTH Deep_RST 
+TERM_SEL    .equ    P2SEL0
+TERM_REN    .equ    P2REN
+    .ENDIF
+
+    .IFDEF UCB0_TERM        ; for MSP_EXP430FR2433_I2C
+S_BUS       .equ    0Ch     ; P1.2=SDA P1.3=SCL
+I2CS_SEL    .equ    P1SEL0
+I2CS_REN    .equ    P1REN
+I2CS_OUT    .equ    P1OUT
+I2CS_VEC    .equ    0FFE0h   ; UCB0_Vec
+
+I2CS_CTLW0      .equ 540h   ; USCI_B0 Control Word Register 0
+I2CS_CTLW1      .equ 542h   ; USCI_B0 Control Word Register 1
+I2CS_BRW        .equ 546h   ; USCI_B0 Baud Word Rate 0
+I2CS_STATW      .equ 548h   ; USCI_B0 status word 
+I2CS_TBCNT      .equ 54Ah   ; USCI_B0 byte counter threshold  
+I2CS_RXBUF      .equ 54Ch   ; USCI_B0 Receive Buffer 8
+I2CS_TXBUF      .equ 54Eh   ; USCI_B0 Transmit Buffer 8
+I2CS_I2COA0     .equ 554h   ; USCI_B0 I2C Own Address 0
+I2CS_ADDRX      .equ 55Ch   ; USCI_B0 Received Address Register 
+I2CS_ADDMASK    .equ 55Eh   ; USCI_B0 Address Mask
+I2CS_I2CSA      .equ 560h   ; USCI_B0 I2C Slave Address
+I2CS_IE         .equ 56Ah   ; USCI_B0 Interrupt Enable
+I2CS_IFG        .equ 56Ch   ; USCI_B0 Interrupt Flags Register
+
+    .ENDIF
+
+    .IFDEF  UCB0_I2CM       ; for TERM2IIC add-on
+I2CT_BUS    .equ    0Ch     ; P1.2=SDA P1.3=SCL
+I2CT_SEL    .equ    P1SEL0
+I2CT_REN    .equ    P1REN
+I2CT_OUT    .equ    P1OUT
     .ENDIF
 
 I2CT_SLA_BUS    .equ   07h     ; P2.0 P2.1 P2.1
@@ -206,6 +208,19 @@ I2CT_SLA_OUT    .equ   P2OUT
 I2CT_SLA_DIR    .equ   P2DIR
 I2CT_SLA_REN    .equ   P2REN
 
+            MOV #-1,&PAREN      ; all inputs with pull up/down resistors
+            MOV #0FFFCh,&PAOUT  ; all pins with pullup resistors else LED1/LED2
+
+    .IFDEF TERMINAL4WIRES
+; RTS output is wired to the CTS input of UART2USB bridge 
+; configure RTS as output high to disable RX TERM during start FORTH
+            BIS.B #RTS,&P1DIR   ; RTS as output high
+        .IFDEF TERMINAL5WIRES
+; CTS input must be wired to the RTS output of UART2USB bridge 
+; configure CTS as input low (true) to avoid lock when CTS is not wired
+            BIC.B #CTS,&P1OUT   ; CTS input pulled down
+        .ENDIF  ; TERMINAL5WIRES
+    .ENDIF  ; TERMINAL4WIRES
 
 
 ; ----------------------------------------------------------------------

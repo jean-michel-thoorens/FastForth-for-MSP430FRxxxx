@@ -32,9 +32,42 @@
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
+[DEFINED] {SD_TOOLS} [IF]  {SD_TOOLS} [THEN]
+
 [UNDEFINED] {SD_TOOLS} [IF]
 
 PWR_STATE
+
+[UNDEFINED] MARKER [IF]
+\  https://forth-standard.org/standard/core/MARKER
+\  MARKER
+\ ( "<spaces>name" -- )
+\ Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
+\ with the execution semantics defined below.
+\ 
+\ name Execution: ( -- )
+\ Restore all dictionary allocation and search order pointers to the state they had just prior to the
+\ definition of name. Remove the definition of name and all subsequent definitions. Restoration
+\ of any structures still existing that could refer to deleted definitions or deallocated data space is
+\ not necessarily provided. No other contextual information such as numeric base is affected
+\
+: MARKER
+CREATE
+HI2LO
+MOV &LASTVOC,0(W)   \ [BODY] = LASTVOC
+SUB #2,Y            \ 1 Y = LFA
+MOV Y,2(W)          \ 3 [BODY+2] = LFA = DP to be restored
+ADD #4,&DP          \ 3 add 2 cells
+LO2HI
+DOES>
+HI2LO
+MOV @RSP+,IP        \ -- PFA
+MOV @TOS+,&INIVOC   \       set VOC_LINK value for RST_STATE
+MOV @TOS,&INIDP     \       set DP value for RST_STATE
+MOV @PSP+,TOS       \ --
+MOV #RST_STATE,PC   \       execute RST_STATE, PWR_STATE then STATE_DOES
+ENDCODE
+[THEN]
 
 MARKER {SD_TOOLS}
 
@@ -74,6 +107,16 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
+[UNDEFINED] ! [IF]
+\ https://forth-standard.org/standard/core/Store
+\ !        x a-addr --   store cell in memory
+CODE !
+MOV @PSP+,0(TOS)    \ 4
+MOV @PSP+,TOS       \ 2
+MOV @IP+,PC         \ 4
+ENDCODE
+[THEN]
+
 [UNDEFINED] SPACE [IF]
 \ https://forth-standard.org/standard/core/SPACE
 \ SPACE   --               output a space
@@ -102,6 +145,17 @@ NEXT
 ENDCODE
 [THEN]
 
+[UNDEFINED] SWAP [IF]
+\ https://forth-standard.org/standard/core/SWAP
+\ SWAP     x1 x2 -- x2 x1    swap top two items
+CODE SWAP
+MOV @PSP,W      \ 2
+MOV TOS,0(PSP)  \ 3
+MOV W,TOS       \ 1
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
 [UNDEFINED] OVER [IF]
 \ https://forth-standard.org/standard/core/OVER
 \ OVER    x1 x2 -- x1 x2 x1
@@ -113,11 +167,100 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
+[UNDEFINED] >R [IF]
+\ https://forth-standard.org/standard/core/toR
+\ >R    x --   R: -- x   push to return stack
+CODE >R
+PUSH TOS
+MOV @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] R> [IF]
+\ https://forth-standard.org/standard/core/Rfrom
+\ R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
+CODE R>
+MOV rDOVAR,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] - [IF]
+\ https://forth-standard.org/standard/core/Minus
+\ -      n1/u1 n2/u2 -- n3/u3     n3 = n1-n2
+CODE -
+SUB @PSP+,TOS   \ 2  -- n2-n1 ( = -n3)
+XOR #-1,TOS     \ 1
+ADD #1,TOS      \ 1  -- n3 = -(n2-n1) = n1-n2
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
 [UNDEFINED] U.R [IF]        \ defined in {UTILITY}
 : U.R                       \ u n --           display u unsigned in n width (n >= 2)
   >R  <# 0 # #S #>  
   R> OVER - 0 MAX SPACES TYPE
 ;
+[THEN]
+
+[UNDEFINED] DO [IF]
+\ https://forth-standard.org/standard/core/DO
+\ DO       -- DOadr   L: -- 0
+CODE DO                 \ immediate
+SUB #2,PSP              \
+MOV TOS,0(PSP)          \
+ADD #2,&DP              \   make room to compile xdo
+MOV &DP,TOS             \ -- HERE+2
+MOV #XDO,-2(TOS)        \   compile xdo
+ADD #2,&LEAVEPTR        \ -- HERE+2     LEAVEPTR+2
+MOV &LEAVEPTR,W         \
+MOV #0,0(W)             \ -- HERE+2     L-- 0
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] LOOP [IF]
+\ https://forth-standard.org/standard/core/LOOP
+\ LOOP    DOadr --         L-- an an-1 .. a1 0
+CODE LOOP               \ immediate
+    MOV #XLOOP,X
+BW1 ADD #4,&DP          \ make room to compile two words
+    MOV &DP,W
+    MOV X,-4(W)         \ xloop --> HERE
+    MOV TOS,-2(W)       \ DOadr --> HERE+2
+BEGIN                   \ resolve all "leave" adr
+    MOV &LEAVEPTR,TOS   \ -- Adr of top LeaveStack cell
+    SUB #2,&LEAVEPTR    \ --
+    MOV @TOS,TOS        \ -- first LeaveStack value
+    CMP #0,TOS          \ -- = value left by DO ?
+0<> WHILE
+    MOV W,0(TOS)        \ move adr after loop as UNLOOP adr
+REPEAT
+    MOV @PSP+,TOS
+    MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] +LOOP [IF]
+\ https://forth-standard.org/standard/core/PlusLOOP
+\ +LOOP   adrs --   L-- an an-1 .. a1 0
+CODE +LOOP              \ immediate
+MOV #XPLOOP,X
+GOTO BW1
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] I [IF]
+\ https://forth-standard.org/standard/core/I
+\ I        -- n   R: sys1 sys2 -- sys1 sys2
+\                  get the innermost loop index
+CODE I
+SUB #2,PSP              \ 1 make room in TOS
+MOV TOS,0(PSP)          \ 3
+MOV @RSP,TOS            \ 2 index = loopctr - fudge
+SUB 2(RSP),TOS          \ 3
+MOV @IP+,PC             \ 4 13~
+ENDCODE
 [THEN]
 
 [UNDEFINED] DUMP [IF]       \ defined in {UTILITY}

@@ -19,14 +19,23 @@
 
 
     FORTHWORD "{TOOLS}"
-    mNEXT
+    MOV @IP+,PC
+
+    .IFNDEF TOR
+; https://forth-standard.org/standard/core/toR
+; >R    x --   R: -- x   push to return stack
+            FORTHWORD ">R"
+TOR         PUSH TOS
+            MOV @PSP+,TOS
+            MOV @IP+,PC
+    .ENDIF
 
         .IFNDEF ANDD
 ;https://forth-standard.org/standard/core/AND
 ;C AND    x1 x2 -- x3           logical AND
             FORTHWORD "AND"
 ANDD        AND     @PSP+,TOS
-            mNEXT
+            MOV @IP+,PC
         .ENDIF
 
         .IFNDEF CFETCH
@@ -34,7 +43,7 @@ ANDD        AND     @PSP+,TOS
 ;C C@     c-addr -- char   fetch char from memory
             FORTHWORD "C@"
 CFETCH      MOV.B @TOS,TOS      ;2
-            mNEXT               ;4
+            MOV @IP+,PC               ;4
         .ENDIF
 
         .IFNDEF SPACE
@@ -54,15 +63,27 @@ SPACES      CMP #0,TOS
             PUSH IP
             MOV #SPACESNEXT,IP
             JMP SPACE               ;25~
-SPACESNEXT  FORTHtoASM
+SPACESNEXT  .word   $+2
             SUB #2,IP               ;1
             SUB #1,TOS              ;1
             JNZ SPACE               ;25~ ==> 27~ by space ==> 2.963 MBds @ 8 MHz
             MOV @RSP+,IP            ;
 SPACESNEXT2 MOV @PSP+,TOS           ; --         drop n
-            mNEXT                   ;
+            MOV @IP+,PC                   ;
 
         .ENDIF
+
+    .IFNDEF II
+; https://forth-standard.org/standard/core/I
+; I        -- n   R: sys1 sys2 -- sys1 sys2
+;                  get the innermost loop index
+            FORTHWORD "I"
+II          SUB #2,PSP              ;1 make room in TOS
+            MOV TOS,0(PSP)          ;3
+            MOV @RSP,TOS            ;2 index = loopctr - fudge
+            SUB 2(RSP),TOS          ;3
+            MOV @IP+,PC             ;4 13~
+    .ENDIF
 
 ;https://forth-standard.org/standard/tools/DotS
             FORTHWORD ".S"      ; --            print <depth> of Param Stack and stack contents if not empty
@@ -130,7 +151,7 @@ WORDS2      .word   EXIT                ; --
 ;https://forth-standard.org/standard/core/PAD
 ; PAD           --  pad address
             FORTHWORD "PAD"
-PAD         mDOCON
+PAD         CALL rDOCON
             .WORD    PAD_ORG
         .ENDIF
 
@@ -142,7 +163,7 @@ ROT         MOV @PSP,W          ; 2 fetch x2
             MOV TOS,0(PSP)      ; 3 store x3
             MOV 2(PSP),TOS      ; 3 fetch x1
             MOV W,2(PSP)        ; 3 store x2
-            mNEXT               ; 4
+            MOV @IP+,PC               ; 4
         .ENDIF
 
 ;https://forth-standard.org/standard/tools/WORDS
@@ -185,18 +206,18 @@ WORDS5      .word   DROP
 ;https://forth-standard.org/standard/core/MAX
 ;C MAX    n1 n2 -- n3       signed maximum
             FORTHWORD "MAX"
-MAX:        CMP     @PSP,TOS    ; n2-n1
+MAX         CMP     @PSP,TOS    ; n2-n1
             JL      SELn1       ; n2<n1
-SELn2:      ADD     #2,PSP
-            mNEXT
+SELn2       ADD     #2,PSP
+            MOV @IP+,PC
 
 ;https://forth-standard.org/standard/core/MIN
 ;C MIN    n1 n2 -- n3       signed minimum
             FORTHWORD "MIN"
-MIN:        CMP     @PSP,TOS    ; n2-n1
+MIN         CMP     @PSP,TOS    ; n2-n1
             JL      SELn2       ; n2<n1
-SELn1:      MOV     @PSP+,TOS
-            mNEXT
+SELn1       MOV     @PSP+,TOS
+            MOV @IP+,PC
 
     .ENDIF
 
@@ -205,7 +226,7 @@ SELn1:      MOV     @PSP+,TOS
 ;C +       n1/u1 n2/u2 -- n3/u3     add n1+n2
             FORTHWORD "+"
 PLUS        ADD @PSP+,TOS
-            mNEXT
+            MOV @IP+,PC
     .ENDIF
 
         .IFNDEF OVER
@@ -215,7 +236,7 @@ PLUS        ADD @PSP+,TOS
 OVER        MOV TOS,-2(PSP)     ; 3 -- x1 (x2) x2
             MOV @PSP,TOS        ; 2 -- x1 (x2) x1
             SUB #2,PSP          ; 1 -- x1 x2 x1
-            mNEXT               ; 4
+            MOV @IP+,PC               ; 4
         .ENDIF
 
     .IFNDEF UDOTR

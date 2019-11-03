@@ -20,7 +20,18 @@
 
 
     FORTHWORD "{FIXPOINT}"
-    mNEXT
+    MOV @IP+,PC
+
+    .IFNDEF DABS
+DABS    AND #-1,TOS         ; clear V, set N
+        JGE DABSEND         ; if positive (N=0)
+        XOR #-1,0(PSP)      ;4
+        XOR #-1,TOS         ;1
+        ADD #1,0(PSP)       ;4
+        ADDC #0,TOS         ;1
+DABSEND MOV @IP+,PC
+    .ENDIF
+
 
 ; https://forth-standard.org/standard/core/HOLDS
 ; Adds the string represented by addr u to the pictured numeric output string
@@ -35,13 +46,13 @@ HOLDS1      ADD TOS,X       ; 1 src
             MOV &HP,Y       ; 3 dst
 HOLDSLOOP   SUB #1,X        ; 1 src-1
             SUB #1,TOS      ; 1 cnt-1
-            JLO HOLDSNEXT   ; 2
+            JNC HOLDSNEXT   ; 2
             SUB #1,Y        ; 1 dst-1
             MOV.B @X,0(Y)   ; 4
             JMP HOLDSLOOP   ; 2
 HOLDSNEXT   MOV Y,&HP       ; 3
             MOV @PSP+,TOS   ; 2
-            mNEXT            ; 4  15 words
+            MOV @IP+,PC     ; 4  15 words
 
         FORTHWORD "F+"      ; -- d1lo d1hi d2lo d2hi
         ADD @PSP+,2(PSP)    ; -- sumlo  d1hi d2hi
@@ -89,7 +100,7 @@ Q6432       MOV #32,R5      ; init loop count
 Q321        CMP TOS,W       ;1 REMhi <> DIVhi ?
             JNZ Q322        ;2 yes
             CMP R6,X        ;1 REMlo U< DIVlo ?
-Q322        JLO Q323        ;2 yes: REM U< DIV
+Q322        JNC Q323        ;2 yes: REM U< DIV
             SUB R6,X        ;1 no:  REMlo - DIVlo  (carry is set)
             SUBC TOS,W      ;1      REMhi - DIVhi
 Q323        ADDC R7,R7      ;1 RLC quotLO
@@ -134,13 +145,13 @@ FNUMSLOOP   MOV @PSP,&MPY           ;                   Load 1st operand
             MOV &RES0,0(PSP)        ; -- Qhi Qlo' x     low result on stack
             MOV &RES1,TOS           ; -- Qhi Qlo' digit high result in TOS
             CMP #10,TOS             ;                   digit to char
-            JLO FNUMS2CHAR
+            JNC FNUMS2CHAR
             ADD #7,TOS
 FNUMS2CHAR  ADD #30h,TOS
             MOV.B TOS,HOLDS_ORG(S)  ; -- Qhi Qlo' char  char to string
             ADD #1,S                ;                   count+1
             CMP T,S                 ;2                  count=limit ?
-            JLO FNUMSLOOP           ;                   loop back if U<
+            JNC FNUMSLOOP           ;                   loop back if U<
             MOV T,TOS               ; -- Qhi Qlo' limit
             MOV #0,0(PSP)           ; -- Qhi 0 limit
             MOV #HOLDS_ORG,X        ; -- Qhi 0 len      X= org
@@ -193,7 +204,7 @@ Q6432       MOV #32,R5      ; init loop count
 Q321        CMP TOS,W       ;1 REMhi <> DIVhi ?
             JNZ Q322        ;2 yes
             CMP R6,X        ;1 REMlo U< DIVlo ?
-Q322        JLO Q323        ;2 yes: REM U< DIV
+Q322        JNC Q323        ;2 yes: REM U< DIV
             SUB R6,X        ;1 no:  REMlo - DIVlo  (carry is set)
             SUBC TOS,W      ;1      REMhi - DIVhi
 Q323        ADDC R7,R7      ;1 RLC quotLO
@@ -246,17 +257,17 @@ FNUMS
 FNUMSLOOP   PUSH S                  ;                   R-- limit IP count
             MOV &BASE,TOS           ; -- Qhi Qlo base
             MOV #UMSTAR,PC 
-FNUMSNEXT   FORTHtoASM              ; -- Qhi QloRem digit
+FNUMSNEXT   .word   $+2             ; -- Qhi QloRem digit
             SUB #2,IP
             CMP #10,TOS             ;                   digit to char
-            JLO FNUMS2CHAR
+            JNC FNUMS2CHAR
             ADD #7,TOS
 FNUMS2CHAR  ADD #30h,TOS
             MOV @RSP+,S             ;                       R-- limit IP
             MOV.B TOS,HOLDS_ORG(S)  ; -- Qhi Qlorem char    char to stringto string
             ADD #1,S                ;                       count+1
             CMP 2(RSP),S            ;3                      count=limit ?
-            JLO FNUMSLOOP           ;                       no
+            JNC FNUMSLOOP           ;                       no
             POPM #2,TOS             ; -- Qhi Qlorem limit   POPM IP,TOS
             MOV #0,0(PSP)           ; -- Qhi 0 limit
             MOV #HOLDS_ORG,X        ; -- Qhi 0 len          X= org
@@ -294,7 +305,7 @@ UDMT4   ADD IP,IP       ; 1 (RLA LSBs) MDlo *2
         ADDC R5,R5      ; 1 (RLC MSBs) MDHI *2
         ADD X,X         ; 1 (RLA) NEXT BIT TO TEST
         ADDC Y,Y        ; 1 (RLA) NEXT BIT TO TEST
-        JLO UDMT1       ; 2 IF BIT IN CARRY: FINISHED    32 * 16~ (average loop)
+        JNC UDMT1       ; 2 IF BIT IN CARRY: FINISHED    32 * 16~ (average loop)
         MOV R6,0(PSP)   ; 3
         MOV R7,TOS      ; 1 high result in TOS
         POPM  #4,R7     ; 6  POPM R4 R5 R6 R7
@@ -312,8 +323,8 @@ UDMT4   ADD IP,IP       ; 1 (RLA LSBs) MDlo *2
         ADD #1,4(PSP)
         ADDC #0,2(PSP)
 FSTAR1   mDOCOL
-        .word DABBS,UDMT
-        FORTHtoASM          ; -- RES0 RES1 RES2 RES3 
+        .word DABS,UDMT
+        .word   $+2         ; -- RES0 RES1 RES2 RES3 
         MOV @RSP+,IP
         MOV @PSP+,TOS       ; -- RES0 RES1 RES2
         MOV @PSP+,0(PSP)    ; -- RES1 RES2
@@ -322,9 +333,18 @@ FSTAR1   mDOCOL
 
     .ENDIF
 
+    .IFNDEF TOR
+; https://forth-standard.org/standard/core/toR
+; >R    x --   R: -- x   push to return stack
+;            FORTHWORD ">R"
+TOR         PUSH TOS
+            MOV @PSP+,TOS
+            MOV @IP+,PC
+    .ENDIF
+
         FORTHWORD "F."      ; display a Q15.16 number with 4 digits after comma
         mDOCOL
-        .word   LESSNUM,DUP,TOR,DABBS
+        .word   LESSNUM,DUP,TOR,DABS
         .word   lit,4,FNUMS,lit,',',HOLD,NUMS
         .word   RFROM,SIGN,NUMGREATER,TYPE
         .word   lit,20h,EMIT,EXIT

@@ -40,26 +40,26 @@ HDLCurClusToFAT1sectWofstY          ;WXY Input: T=currentHandle, Output: W=FATse
 ; ----------------------------------;
 ClusterToFAT1sectWofstY             ;WXY Input : Cluster ; Output: W = FATsector, Y = FAToffset
 ; ----------------------------------;
-    MOV.B   &ClusterL+1,W           ;3 W = ClusterLoHI
-    MOV.B   &ClusterL,Y             ;3 Y = ClusterLoLo
-    CMP     #1,&FATtype             ;3 FAT16?
-    JZ      CTF1S_end               ;2 yes
+    MOV.B &ClusterL+1,W             ;3 W = ClusterLoHI
+    MOV.B &ClusterL,Y               ;3 Y = ClusterLoLo
+    CMP #1,&FATtype                 ;3 FAT16?
+    JZ CTF1S_end                    ;2 yes
 
 ; input : Cluster n, max = 7FFFFF (SDcard up to 256 GB)
 ; ClusterLoLo*4 = displacement in 512 bytes sector   ==> FAToffset
 ; ClusterHiLo&ClusterLoHi +C  << 1 = relative FATsector + orgFAT1       ==> FATsector
 ; ----------------------------------;
-    MOV.B   &ClusterH,X             ;  X = 0:ClusterHiLo
-    SWPB    X                       ;  X = ClusterHiLo:0
-    ADD     X,W                     ;  W = ClusterHiLo:ClusterLoHi  
+    MOV.B &ClusterH,X               ;  X = 0:ClusterHiLo
+    SWPB X                          ;  X = ClusterHiLo:0
+    ADD X,W                         ;  W = ClusterHiLo:ClusterLoHi  
 ; ----------------------------------;
-    SWPB    Y                       ;  Y = ClusterLoLo:0
-    ADD     Y,Y                     ;1 Y = ClusterLoLo:0 << 1 + carry for FATsector
-    ADDC    W,W                     ;  W = ClusterHiLo:ClusterLoHi << 1 = ClusterHiLo:ClusterL / 128
-    SWPB    Y
+    SWPB Y                          ;  Y = ClusterLoLo:0
+    ADD Y,Y                         ;1 Y = ClusterLoLo:0 << 1 + carry for FATsector
+    ADDC W,W                        ;  W = ClusterHiLo:ClusterLoHi << 1 = ClusterHiLo:ClusterL / 128
+    SWPB Y   
 CTF1S_end
-    ADD     Y,Y                     ;  Y = 0:ClusterLoLo << 1
-    RET                             ;4
+    ADD Y,Y                         ;  Y = 0:ClusterLoLo << 1
+    MOV @RSP+,PC                    ;4
 ; ----------------------------------;
 
 
@@ -108,20 +108,20 @@ CCFS_NEXT                           ;  C = 1, it's done
     .ENDIF ; MPY
 ; ----------------------------------;
 CCFS_RET                            ;
-    RET                             ;
+    MOV @RSP+,PC                    ;
 ; ----------------------------------;
 
 
 ; ----------------------------------;
 ComputeHDLcurrentSector             ; input: currentHandle, output: Cluster, Sector
 ; ----------------------------------;
-    MOV   HDLL_CurClust(T),&ClusterL;
-    MOV   HDLH_CurClust(T),&ClusterH;
-    CALL  #ComputeClusFrstSect      ;
-    MOV.B   HDLB_ClustOfst(T),W     ;
-    ADD     W,&SectorL              ;
-    ADDC    #0,&SectorH             ;
-    RET                             ;
+    MOV HDLL_CurClust(T),&ClusterL  ;
+    MOV HDLH_CurClust(T),&ClusterH  ;
+    CALL #ComputeClusFrstSect       ;
+    MOV.B HDLB_ClustOfst(T),W       ;
+    ADD W,&SectorL                  ;
+    ADDC #0,&SectorH                ;
+    MOV @RSP+,PC                    ;
 ; ----------------------------------;
 
 
@@ -141,7 +141,7 @@ ParseEntryNameSpacesLoop            ;
     SUB     #1,X                    ;
     JNZ     ParseEntryNameSpacesLoop;
 PENSL_END                           ;
-    RET                             ; 
+    MOV @RSP+,PC                    ; 
 ; ----------------------------------; 
 
 
@@ -162,7 +162,7 @@ Read_File                           ; <== SD_ACCEPT, READ
     SUBC    #0,HDLH_CurSize(T)      ;
     ADD.B   #1,HDLB_ClustOfst(T)    ; current cluster offset is incremented
     CMP.B &SecPerClus,HDLB_ClustOfst(T) ; Cluster Bound reached ?
-    JLO SetBufLenAndLoadCurSector   ; no
+    JNC SetBufLenAndLoadCurSector   ; no
 ; ----------------------------------;
 ;SearchNextCluster                  ; yes
 ; ----------------------------------;
@@ -181,9 +181,9 @@ SetBufLenAndLoadCurSector           ;WXY <== previous handle reLOAD with BufferP
     CMP     #0,HDLH_CurSize(T)      ; CurSize > 65535 ?
     JNZ     LoadHDLcurrentSector    ; yes
     CMP HDLL_CurSize(T),&BufferPtr  ; BufferPtr >= CurSize ? (BufferPtr = 0 or see RestorePreviousLoadedBuffer)
-    JHS      CloseHandleT           ; yes
+    JC       CloseHandleT           ; yes
     CMP #bytsPerSec,HDLL_CurSize(T) ; CurSize >= 512 ?
-    JHS     LoadHDLcurrentSector    ; yes
+    JC      LoadHDLcurrentSector    ; yes
     MOV HDLL_CurSize(T),&BufferLen  ; no: adjust BufferLen
 ; ==================================;
 LoadHDLcurrentSector                ; <=== OPEN_WRITE_APPEND
@@ -208,14 +208,14 @@ ReadSector                          ;
 ; ----------------------------------; input : Cluster, EntryOfst
 GetFreeHandle                       ;STWXY init handle(HDLL_DIRsect,HDLW_DIRofst,HDLL_FirstClus = HDLL_CurClust,HDLL_CurSize)
 ; ----------------------------------; output : T = new CurrentHdl
-    MOV     #8,S                    ; prepare file already open error
-    MOV     #FirstHandle,T          ;
-    MOV     #0,X                    ; X = init previous handle as 0
+    MOV #8,S                        ; prepare file already open error
+    MOV #FirstHandle,T              ;
+    MOV #0,X                        ; X = init previous handle as 0
 ; ----------------------------------;
 SearchHandleLoop                    ;
 ; ----------------------------------;
-    CMP.B   #0,HDLB_Token(T)        ; free handle ?
-    JZ      FreeHandleFound         ; yes
+    CMP.B #0,HDLB_Token(T)          ; free handle ?
+    JZ FreeHandleFound              ; yes
 AlreadyOpenTest                     ; no
     CMP     &ClusterH,HDLH_FirstClus(T);
     JNE     SearchNextHandle        ;
@@ -228,7 +228,7 @@ SearchNextHandle                    ;
     JNZ     SearchHandleLoop        ;
     ADD     S,S                     ; 16 = no more handle error, abort ===>
 InitHandleRET                       ;
-    RET                             ;
+    MOV @RSP+,PC                             ;
 ; ----------------------------------;
 FreeHandleFound                     ; T = new handle, X = previous handle
 ; ----------------------------------;
@@ -276,15 +276,15 @@ InitHandle                          ;
 ; ----------------------------------;
 ReplaceInputBuffer                  ;
 ; ----------------------------------;
-    MOV     #SDIB_ORG,&PFACIB       ; set SD Input Buffer as Current Input Buffer before return to QUIT
-    MOV     #SD_ACCEPT,&PFAACCEPT   ; redirect ACCEPT to SD_ACCEPT before return to QUIT
+    MOV #SDIB_ORG,&CIB_ADR          ; set SD Input Buffer as Current Input Buffer before return to QUIT
+    MOV #SD_ACCEPT,&PFAACCEPT       ; redirect ACCEPT to SD_ACCEPT before return to QUIT
 ; ----------------------------------;
 SaveBufferContext                   ; (see CloseHandleT) 
 ; ----------------------------------;
     MOV &SOURCE_LEN,HDLW_PrevLEN(T) ; = CPL
-    SUB     &TOIN,HDLW_PrevLEN(T)   ; PREVLEN = CPL - >IN
+    SUB &TOIN,HDLW_PrevLEN(T)       ; PREVLEN = CPL - >IN
     MOV &SOURCE_ORG,HDLW_PrevORG(T) ; = CIB
-    ADD     &TOIN,HDLW_PrevORG(T)   ; PrevORG = CIB + >IN
+    ADD &TOIN,HDLW_PrevORG(T)       ; PrevORG = CIB + >IN
     JMP SetBufLenAndLoadCurSector   ; then RET
 ; ----------------------------------;
 
@@ -292,10 +292,10 @@ SaveBufferContext                   ; (see CloseHandleT)
 ; ----------------------------------;
 CloseHandleHere                     ;
 ; ----------------------------------;
-    MOV.B   #0,HDLB_Token(T)        ; release the handle
-    MOV     @T,T                    ; T = previous handle
-    MOV     T,&CurrentHdl           ; becomes current handle
-    CMP  #0,T                       ;
+    MOV.B #0,HDLB_Token(T)          ; release the handle
+    MOV @T,T                        ; T = previous handle
+    MOV T,&CurrentHdl               ; becomes current handle
+    CMP #0,T                        ;
     JZ CloseHandleRet               ; if no more handle
 ; ----------------------------------;
 RestorePreviousLoadedBuffer         ;
@@ -305,27 +305,27 @@ RestorePreviousLoadedBuffer         ;
     BIC #Z,SR                       ; 
 ; ----------------------------------;
 CloseHandleRet                      ;
-    RET                             ; Z = 1 if no more handle
+    MOV @RSP+,PC                             ; Z = 1 if no more handle
 ; ----------------------------------;
 
 
 ; ==================================;
 CloseHandleT                        ; <== CLOSE, Read_File, TERM2SD", OPEN_DEL
 ; ==================================;
-    MOV     &CurrentHdl,T           ;
-    CMP     #0,T                    ; no handle?
-    JZ      CloseHandleRet          ; RET
+    MOV &CurrentHdl,T               ;
+    CMP #0,T                        ; no handle?
+    JZ CloseHandleRet               ; RET
 ; ----------------------------------;
     .IFDEF SD_CARD_READ_WRITE
-    CMP.B   #2,HDLB_Token(T)        ; opened as write (updated) file ?
-    JNZ     TestClosedToken         ; no
-    CALL    #WriteBuffer            ;SWXY
-    CALL    #OPWW_UpdateDirectory   ;SWXY
+    CMP.B #2,HDLB_Token(T)          ; opened as write (updated) file ?
+    JNZ TestClosedToken             ; no
+    CALL #WriteBuffer               ;SWXY
+    CALL #OPWW_UpdateDirectory      ;SWXY
     .ENDIF                          ;
 ; ----------------------------------;
 TestClosedToken                     ;
 ; ----------------------------------;
-    CMP.B   #0,HDLB_Token(T)        ;
+    CMP.B #0,HDLB_Token(T)          ;
 ; ----------------------------------;
 CaseOfAnyReadWriteDelFileIsClosed   ; token >= 0
 ; ----------------------------------;
@@ -352,7 +352,7 @@ CheckFirstLoadedFileIsClosed        ;
 ; ----------------------------------;
 RestoreDefaultACCEPT                ;               if no more handle, first loaded file is closed...
 ; ----------------------------------;
-    MOV #TIB_ORG,&PFACIB            ;               restore TIB as Current Input Buffer for next line (next QUIT)
+    MOV #TIB_ORG,&CIB_ADR           ;               restore TIB as Current Input Buffer for next line (next QUIT)
     MOV #BODYACCEPT,&PFAACCEPT      ;               restore default ACCEPT for next line (next QUIT)
     MOV #ECHO,PC                    ; -- org len    if return to Terminal ACCEPT
 ; ----------------------------------;
@@ -429,7 +429,7 @@ DELDQ
     FORTHWORD "CLOSE"               ;
 ; ----------------------------------;
     CALL    #CloseHandleT           ;
-    mNEXT                           ;
+    MOV @IP+,PC                           ;
 ; ----------------------------------;
 
     .ENDIF ; SD_CARD_READ_WRITE
@@ -490,7 +490,7 @@ OPEN_COMP                           ;
 OPEN_EXEC                           ;
     mDOCOL                          ; if exec state
     .word   lit,'"',WORDD,COUNT     ; -- open_type addr u
-    FORTHtoASM                      ;
+    .word   $+2                     ;
     MOV     @RSP+,IP                ;
 ; ----------------------------------;
 ParenOpen                           ; -- open_type HERE             HERE as pathname ptr
@@ -575,7 +575,7 @@ OPN_DotNotFound                     ;
     CMP.B   #'\\',-1(rDOCON)        ; FirstNotEqualChar of Pathname = "\" ?
     JZ      OPN_EntryFound          ;
     CMP     rDOCON,TOS              ; EOS exceeded ?
-    JLO     OPN_EntryFound          ; yes
+    JNC     OPN_EntryFound          ; yes
 ; ----------------------------------;
 OPN_DIRentryMismatch                ;
 ; ----------------------------------;
@@ -612,7 +612,7 @@ OPN_CompareExt3chars                ;
     JMP     OPN_EntryFound          ;
 OPN_ExtNotEqualChar                 ;
     CMP     rDOCON,TOS              ; EOS exceeded ?
-    JHS     OPN_DIRentryMismatch    ; no, loop back   
+    JC      OPN_DIRentryMismatch    ; no, loop back   
     CMP.B   #'\\',-1(rDOCON)        ; FirstNotEqualChar = "\" ?
     JNZ     OPN_DIRentryMismatch    ;
     CALL    #ParseEntryNameSpaces   ; parse X spaces, X{0,...,3}
@@ -636,7 +636,7 @@ OPN_DIRfound                        ; entry is a DIRECTORY
     MOV     &FATtype,&ClusterL      ; set cluster as RootDIR cluster
 OPN_DIRfoundNext                    ;
     CMP     rDOCON,TOS              ; EOS exceeded ?
-    JHS     OPN_EndOfStringTest     ; no: (we presume that FirstNotEqualChar = "\") ==> loop back
+    JC      OPN_EndOfStringTest     ; no: (we presume that FirstNotEqualChar = "\") ==> loop back
 ; ----------------------------------;
 OPN_SetCurrentDIR                   ; -- open_type ptr
 ; ----------------------------------;
@@ -689,7 +689,7 @@ OPEN_LOAD                           ;
     CMP     #0,S                    ; open file happy end ?
     JNZ     OPEN_Error              ; no
 OPEN_LOAD_END
-    mNEXT                           ;
+    MOV @IP+,PC                     ;
 ; ----------------------------------;
 
 ; ----------------------------------;

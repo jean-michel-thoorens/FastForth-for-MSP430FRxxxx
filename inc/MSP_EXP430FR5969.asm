@@ -267,36 +267,36 @@ SD_BUS      .equ 04C0h  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0S
 ; ----------------------------------------------------------------------
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
-            BIS #-1,&PBREN  ; all pins as input with resistor
-            MOV #0BFFFh,&PBOUT  ; all pins as input with pull up resistor else P4.6
-
 ; PORT3 usage
 
 ; PORT4 usage
+; P4.5 - switch S1
+; P4.6 - LED1 red
+
+CTS         .equ    1       ; P4.0
+RTS         .equ    2       ; P4.1
+HANDSHAKOUT .equ    P4OUT
+HANDSHAKIN  .equ    P4IN
+
+SD_CD       .equ    4       ; P4.2 as SD_CD
+SD_CS       .equ    8       ; P4.3 as SD_CS     
+SD_CDIN     .equ    P4IN
+SD_CSOUT    .equ    P4OUT
+SD_CSDIR    .equ    P4DIR
+
+            BIS #-1,&PBREN  ; all pins as input with resistor
+            MOV #0BFFFh,&PBOUT  ; all pins as input with pull up resistor else P4.6
 
     .IFDEF TERMINAL4WIRES
 ; RTS output is wired to the CTS input of UART2USB bridge 
 ; configure RTS as output high to disable RX TERM during start FORTH
-HANDSHAKOUT .equ    P4OUT
-HANDSHAKIN  .equ    P4IN
-RTS         .equ    2           ; P4.1
             BIS.B #RTS,&P4DIR   ; RTS as output high
         .IFDEF TERMINAL5WIRES
 ; CTS input must be wired to the RTS output of UART2USB bridge 
 ; configure CTS as input low (true) to avoid lock when CTS is not wired
-CTS         .equ    1           ; P4.0
             BIC.B #CTS,&P4OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
     .ENDIF  ; TERMINAL4WIRES
-
-SD_CD       .equ 4        ; P4.2 as SD_CD
-SD_CS       .equ 8        ; P4.3 as SD_CS     
-SD_CDIN     .equ P4IN
-SD_CSOUT    .equ P4OUT
-SD_CSDIR    .equ P4DIR
-
-; P4.5 - switch S1
-; P4.6 - LED1 red
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORTJ

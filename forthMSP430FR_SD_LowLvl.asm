@@ -85,7 +85,7 @@ Send_CMD_Loop                       ;
 FullSpeedSend                       ;
 ;   NOP                             ;0 NOPx adjusted to avoid SD error
     SUB.B   #1,X                    ;1
-    JHS     Send_CMD_PUT            ;2 U>= : don't skip SD_CMD_FRM(0) !
+    JC      Send_CMD_PUT            ;2 U>= : don't skip SD_CMD_FRM(0) !
 
                                     ; host must provide height clock cycles to complete operation
                                     ; here X=255, so wait for CMD return expected value with PUT FFh 256 times
@@ -110,7 +110,7 @@ FullSpeedGET                        ;
     CMP.B   &SD_RXBUF,W             ;3 return value = ExpectedValue ?
     JNZ     Wait_Command_Response   ;2 16~ full speed loop
 SPI_WAIT_RET                        ; flag Z = 1 <==> Returned value = expected value
-    RET                             ; W = expected value, unchanged
+    MOV @RSP+,PC                    ; W = expected value, unchanged
 ; ----------------------------------;
 
 
@@ -140,7 +140,7 @@ FullSpeedPut
             SUB #1,X                ;1
             JNZ SPI_PUT             ;2 12~ loop
 SPI_PUT_END MOV.B &SD_RXBUF,W       ;3
-            RET                     ;4
+            MOV @RSP+,PC            ;4
 ; ----------------------------------;
 
 ; ==================================;
@@ -182,7 +182,7 @@ ReadWriteHappyEnd                   ; <==== WriteSector
 ; ----------------------------------;
     BIC     #3,S                    ; reset read and write errors
     BIS.B   #SD_CS,&SD_CSOUT        ; SD_CS = high  
-    RET                             ; 
+    MOV @RSP+,PC                    ; 
 ; ----------------------------------;
 
     .IFDEF SD_CARD_READ_WRITE
@@ -265,7 +265,7 @@ SD_CARD_ID_ERROR                    ; <=== SD_INIT error $20 from forthMSP430FR_
 ; ----------------------------------;
 SD_QABORTYES                        ; <=== OPEN file errors from forthMSP430FR_SD_LOAD.asm
 ; ----------------------------------;
-    FORTHtoASM                      ;
+    .word   $+2                     ;
     SUB #2,PSP                      ;
     MOV TOS,0(PSP)                  ;
     MOV #10h,&BASE                  ; select hex

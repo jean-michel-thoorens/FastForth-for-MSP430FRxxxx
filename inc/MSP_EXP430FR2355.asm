@@ -119,11 +119,6 @@
 ; INIT order : WDT, GPIOs, FRAM, Clock, UARTs...
 ; ----------------------------------------------------------------------
 
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : LOCK PMM_LOCKLPM5
-; ----------------------------------------------------------------------
-
-;              BIS     #LOCKLPM5,&PM5CTL0 ; unlocked by WARM
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : WATCHDOG TIMER A
@@ -175,7 +170,7 @@ RTS         .equ    1           ; P2.0
 ; CTS input must be wired to the RTS output of UART2USB bridge 
 ; configure CTS as input low (true) to avoid lock when CTS is not wired
 CTS         .equ    2           ; P2.1
-            BIC.B #CTS,&P2OUT   ; CTS input pulled down
+            BIC.B #CTS,&P2OUT   ; CTS input resistor is pulled down
         .ENDIF  ; TERMINAL5WIRES
     .ENDIF  ; TERMINAL4WIRES
 
@@ -273,31 +268,32 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
     .IFDEF LF_XTAL
 ;           MOV     #0000h,&CSCTL3      ; FLL select XT1, FLLREFDIV=0 (default value)
             MOV     #0000h,&CSCTL4      ; ACLOCK select XT1, MCLK & SMCLK select DCOCLKDIV
+;            BIC.B   #1,&CSCTL6          ; disable XT1AUTOOFF
+
+            BIS.B   #0C0h,&P2SEL1       ; P2.6 as XOUT, P2.7 as XIN
+
     .ELSE
             BIS     #0010h,&CSCTL3      ; FLL select REFCLOCK
 ;           MOV     #0100h,&CSCTL4      ; ACLOCK select REFO, MCLK & SMCLK select DCOCLKDIV (default value)
     .ENDIF
 
+
     .IF FREQUENCY = 0.5
 
-;            MOV     #058h,&CSCTL0       ; preset DCO = measured value @ 0x180 (88)
-;            MOV     #0001h,&CSCTL1      ; Set 1MHZ DCORSEL,disable DCOFTRIM,Modulation
             MOV     #1ED1h,&CSCTL0       ; preset MOD=31, DCO = measured value @ 0x180 (209)
             MOV     #00B0h,&CSCTL1      ; Set 1MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
 ;            MOV     #100Dh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Dh
                                         ; fCOCLKDIV = 32768 x (13+1) = 0.459 MHz ; measured :  MHz
-;            MOV     #100Eh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Eh
+            MOV     #100Eh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Eh
                                         ; fCOCLKDIV = 32768 x (14+1) = 0.491 MHz ; measured :  MHz
-            MOV     #100Fh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Fh
+;            MOV     #100Fh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Fh
                                         ; fCOCLKDIV = 32768 x (15+1) = 0.524 MHz ; measured :  MHz
 ; =====================================
             MOV     #8,X
 
     .ELSEIF FREQUENCY = 1
 
-;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
-;            MOV     #00B1h,&CSCTL1      ; Set 1MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00B0h,&CSCTL1      ; Set 1MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
@@ -312,13 +308,11 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 
     .ELSEIF FREQUENCY = 2
 
-;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
-;            MOV     #00B3h,&CSCTL1      ; Set 2MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00B2h,&CSCTL1      ; Set 2MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
 ;            MOV     #003Bh,&CSCTL2        ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=3Bh
-                                        ; fCOCLKDIV = 32768 x (59+1) = 1.996 MHz ; measured :  MHz
+                                        ; fCOCLKDIV = 32768 x (59+1) = 1.966 MHz ; measured :  MHz
             MOV     #003Ch,&CSCTL2         ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=3Ch
                                         ; fCOCLKDIV = 32768 x (60+1) = 1.998 MHz ; measured :  MHz
 ;            MOV     #003Dh,&CSCTL2        ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=3Dh
@@ -328,8 +322,6 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 
     .ELSEIF FREQUENCY = 4
 
-;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
-;            MOV     #00B5h,&CSCTL1      ; Set 4MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00B4h,&CSCTL1      ; Set 4MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
@@ -346,14 +338,12 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 
     .ELSEIF FREQUENCY = 8
 
-;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
-;            MOV     #00B7h,&CSCTL1      ; Set 8MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00B6h,&CSCTL1      ; Set 8MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
-;            MOV     #00F3h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=F3h
+            MOV     #00F3h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=F3h
                                         ; fCOCLKDIV = 32768 x (243+1) = 7.995 MHz ; measured : 7.976MHz
-            MOV     #00F4h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=F4h
+;            MOV     #00F4h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=F4h
                                         ; fCOCLKDIV = 32768 x (244+1) = 8.028 MHz ; measured : 8.009MHz
 
 ;            MOV     #00F5h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=F5h
@@ -363,14 +353,12 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 
     .ELSEIF FREQUENCY = 12
 
-;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
-;            MOV     #00B9h,&CSCTL1      ; Set 12MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00B8h,&CSCTL1      ; Set 12MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
-;            MOV     #016Dh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E7h
+            MOV     #016Dh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E7h
                                         ; fCOCLKDIV = 32768 x 365+1) = 11.993 MHz ; measured : 11.xxxMHz
-            MOV     #016Eh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E8h
+;            MOV     #016Eh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E8h
                                         ; fCOCLKDIV = 32768 x 366+1) = 12.025 MHz ; measured : 12.xxxMHz
 ;            MOV     #016Fh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E9h
                                         ; fCOCLKDIV = 32768 x 367+1) = 12.058 MHz ; measured : 12.xxxMHz
@@ -379,8 +367,6 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 
     .ELSEIF FREQUENCY = 16
 
-;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
-;            MOV     #00BBh,&CSCTL1      ; Set 16MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00BAh,&CSCTL1      ; Set 16MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
@@ -395,8 +381,6 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 
     .ELSEIF FREQUENCY = 20
 
-;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
-;            MOV     #00BDh,&CSCTL1      ; Set 20MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00BCh,&CSCTL1      ; Set 20MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
@@ -411,8 +395,6 @@ SD_BUS      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 
     .ELSEIF FREQUENCY = 24
 
-;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
-;            MOV     #00BFh,&CSCTL1      ; Set 24MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00BEh,&CSCTL1      ; Set 24MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)

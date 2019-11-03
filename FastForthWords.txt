@@ -1,22 +1,28 @@
 
+RETURN-STACK-CELLS  = 48            maximum size of the return stack, in cells
+STACK-CELLS         = 48            maximum size of the data stack, in cells
+/COUNTED-STRING	    = 255           maximum size of a counted string, in characters
+/HOLD	            = 34            size of the pictured numeric output string buffer, in characters
+/PAD	            = 84            size of the scratch area pointed to by PAD, in characters
+ADDRESS-UNIT-BITS   = 16            size of one address unit, in bits
+FLOORED	            = true          true if floored division is the default
+MAX-CHAR	        = 255           maximum value of any character in the implementation-defined character set
+MAX-N               = 32767         largest usable signed integer
+MAX-U               = 65535         largest usable unsigned integer
+MAX-D	            = 2147483647    largest usable signed double number
+MAX-UD              = 4294967295    largest usable unsigned double number
+
+
 FORTH vocabulary
 ----------------
-COLD            WARM            WIPE            RST_HERE        PWR_HERE        RST_STATE       PWR_STATE       
-MOVE            LEAVE           +LOOP           LOOP            DO              REPEAT          WHILE           
-AGAIN           UNTIL           BEGIN           THEN            ELSE            IF              >BODY           
-DEFER           DOES>           CREATE          CONSTANT        VARIABLE        :               ;               
-POSTPONE        RECURSE         IMMEDIATE       IS              [']             ]               [               
-\               '               ABORT"          ABORT           QUIT            EVALUATE        COUNT           
-LITERAL         ,               EXECUTE         >NUMBER         FIND            WORD            ."              
-S"              CR              TYPE            SPACES          SPACE           NOECHO          ECHO            
-EMIT            ACCEPT          KEY             C,              ALLOT           HERE            .               
-D.              U.              SIGN            HOLD            #>              #S              #               
-UM/MOD          <#              STATE           BASE            BL              J               I               
-UNLOOP          U<              >               <               =               0<              0=              
-DABS            1-              1+              1-              1+              -               +               
-C!              C@              !               @               DEPTH           R@              R>              
->R              ROT             OVER            SWAP            NIP             DROP            ?DUP            
-DUP             LIT             EXIT
+COLD            WARM            WIPE            RST_HERE        PWR_HERE        RST_STATE       PWR_STATE
+BEGIN           DOES>           CREATE          ;               :               IMMEDIATE       POSTPONE        
+]               [               \               [']             ABORT"          ABORT           QUIT            
+EVALUATE        COUNT           LITERAL         ALLOT           ,               >NUMBER         FIND            
+WORD            ."              S"              .               U.              SIGN            HOLD            
+#>              #S              #               <#              KEY             CR              TYPE            
+NOECHO          ECHO            EMIT            ACCEPT
+
 
 COLD            Software reset
 
@@ -32,34 +38,21 @@ RST_STATE       removes all words defined after RST_HERE (COLD or <reset> have s
 
 PWR_STATE       removes all words defined after PWR_HERE (an occurring error has same effect)
 
-MOVE            https://forth-standard.org/standard/core/MOVE
-LEAVE           https://forth-standard.org/standard/core/LEAVE
-+LOOP           https://forth-standard.org/standard/core/PlusLOOP
-LOOP            https://forth-standard.org/standard/core/LOOP
-DO              https://forth-standard.org/standard/core/DO        
-REPEAT          https://forth-standard.org/standard/core/REPEAT
-WHILE           https://forth-standard.org/standard/core/WHILE
-AGAIN           https://forth-standard.org/standard/core/AGAIN
-UNTIL           https://forth-standard.org/standard/core/UNTIL
+NOECHO          stop display on output 
+
+ECHO            start display on output
+
 BEGIN           https://forth-standard.org/standard/core/BEGIN
-THEN            https://forth-standard.org/standard/core/THEN
-ELSE            https://forth-standard.org/standard/core/ELSE
-IF              https://forth-standard.org/standard/core/IF
-;               https://forth-standard.org/standard/core/Semi
-:               https://forth-standard.org/standard/core/Colon
-DEFER           https://forth-standard.org/standard/core/DEFER
 DOES>           https://forth-standard.org/standard/core/DOES
 CREATE          https://forth-standard.org/standard/core/CREATE
-CONSTANT        https://forth-standard.org/standard/core/CONSTANT
-VARIABLE        https://forth-standard.org/standard/core/VARIABLE
-POSTPONE        https://forth-standard.org/standard/core/POSTPONE
-RECURSE         https://forth-standard.org/standard/core/RECURSE
+;               https://forth-standard.org/standard/core/Semi
+:               https://forth-standard.org/standard/core/Colon
 IMMEDIATE       https://forth-standard.org/standard/core/IMMEDIATE
-IS              https://forth-standard.org/standard/core/IS
-[']             https://forth-standard.org/standard/core/BracketTick
+POSTPONE        https://forth-standard.org/standard/core/POSTPONE
 ]               https://forth-standard.org/standard/core/right-bracket
 [               https://forth-standard.org/standard/core/Bracket
 \               https://forth-standard.org/standard/block/bs
+[']             https://forth-standard.org/standard/core/BracketTick
 '               https://forth-standard.org/standard/core/Tick
 ABORT"          https://forth-standard.org/standard/core/ABORTq
 ABORT           https://forth-standard.org/standard/core/ABORT
@@ -67,71 +60,26 @@ QUIT            https://forth-standard.org/standard/core/QUIT
 EVALUATE        https://forth-standard.org/standard/core/EVALUATE
 COUNT           https://forth-standard.org/standard/core/COUNT
 LITERAL         https://forth-standard.org/standard/core/LITERAL
+ALLOT           https://forth-standard.org/standard/core/ALLOT
 ,               https://forth-standard.org/standard/core/Comma
-EXECUTE         https://forth-standard.org/standard/core/EXECUTE
 >NUMBER         https://forth-standard.org/standard/core/toNUMBER
 FIND            https://forth-standard.org/standard/core/FIND
 WORD            https://forth-standard.org/standard/core/WORD
 ."              https://forth-standard.org/standard/core/Dotq
 S"              https://forth-standard.org/standard/core/Sq
-TYPE            https://forth-standard.org/standard/core/TYPE
-SPACES          https://forth-standard.org/standard/core/SPACES
-SPACE           https://forth-standard.org/standard/core/SPACE
-CR              DEFERed word, https://forth-standard.org/standard/core/CR
-NOECHO          stop display on output 
-ECHO            start display on output
-EMIT            DEFERed word, https://forth-standard.org/standard/core/EMIT
-ACCEPT          DEFERed word, https://forth-standard.org/standard/core/ACCEPT
-KEY             DEFERed word, https://forth-standard.org/standard/core/KEY
-C,              https://forth-standard.org/standard/core/CComma
-ALLOT           https://forth-standard.org/standard/core/ALLOT
-HERE            https://forth-standard.org/standard/core/HERE
 .               https://forth-standard.org/standard/core/d
-D.              https://forth-standard.org/standard/double/Dd
 U.              https://forth-standard.org/standard/core/Ud
 SIGN            https://forth-standard.org/standard/core/SIGN
 HOLD            https://forth-standard.org/standard/core/HOLD
 #>              https://forth-standard.org/standard/core/num-end
 #S              https://forth-standard.org/standard/core/numS
 #               https://forth-standard.org/standard/core/num
-UM/MOD          https://forth-standard.org/standard/core/UMDivMOD
 <#              https://forth-standard.org/standard/core/num-start
-BL              https://forth-standard.org/standard/core/BL
-STATE           https://forth-standard.org/standard/core/STATE
-BASE            https://forth-standard.org/standard/core/BASE
-J               https://forth-standard.org/standard/core/J
-I               https://forth-standard.org/standard/core/I
-UNLOOP          https://forth-standard.org/standard/core/UNLOOP
-U<              https://forth-standard.org/standard/core/Uless
->               https://forth-standard.org/standard/core/more
-<               https://forth-standard.org/standard/core/less
-=               https://forth-standard.org/standard/core/Equal
-0<              https://forth-standard.org/standard/core/Zeroless
-0=              https://forth-standard.org/standard/core/ZeroEqual
-DABS            https://forth-standard.org/standard/double/DABS
-ABS             https://forth-standard.org/standard/core/ABS
-NEGATE          https://forth-standard.org/standard/core/NEGATE
-1-              https://forth-standard.org/standard/core/OneMinus
-1+              https://forth-standard.org/standard/core/OnePlus
--               https://forth-standard.org/standard/core/Minus
-+               https://forth-standard.org/standard/core/Plus
-C!              https://forth-standard.org/standard/core/CStore
-C@              https://forth-standard.org/standard/core/CFetch
-!               https://forth-standard.org/standard/core/Store
-@               https://forth-standard.org/standard/core/Fetch
-DEPTH           https://forth-standard.org/standard/core/DEPTH
-R@              https://forth-standard.org/standard/core/RFetch
-R>              https://forth-standard.org/standard/core/Rfrom
->R              https://forth-standard.org/standard/core/toR
-ROT             https://forth-standard.org/standard/core/ROT
-OVER            https://forth-standard.org/standard/core/OVER
-SWAP            https://forth-standard.org/standard/core/SWAP
-NIP             https://forth-standard.org/standard/core/NIP
-DROP            https://forth-standard.org/standard/core/DROP
-?DUP            https://forth-standard.org/standard/core/qDUP
-DUP             https://forth-standard.org/standard/core/DUP
-LIT             execution part of LITERAL            
-EXIT            https://forth-standard.org/standard/core/EXIT
+KEY             DEFERed word, https://forth-standard.org/standard/core/KEY
+CR              DEFERed word, https://forth-standard.org/standard/core/CR
+TYPE            https://forth-standard.org/standard/core/TYPE
+EMIT            DEFERed word, https://forth-standard.org/standard/core/EMIT
+ACCEPT          DEFERed word, https://forth-standard.org/standard/core/ACCEPT
 
 
 ASSEMBLER vocabulary
@@ -156,13 +104,13 @@ see: http://www.ece.utep.edu/courses/web3376/Notes_files/ee3376-isa.pdf
 ?GOTO           used after a conditionnal (0=,0<>,U>=,U<,0<,S<,S>=) to branch to a label FWx or BWx
 GOTO            used as unconditionnal branch to a label FWx or BWx
 
-BW3             BACKWARD branch destination n째3
-BW2                                         n째2
-BW1                                         N째1
+BW3             BACKWARD branch destination n�3
+BW2                                         n�2
+BW1                                         N�1
 
-FW3             FORWARD branch destination  n째3
-FW2                                         n째2
-FW1                                         n째1
+FW3             FORWARD branch destination  n�3
+FW2                                         n�2
+FW1                                         n�1
 
 ?JMP            used after a conditionnal (0=,0<>,U>=,U<,0<,S<,S>=) to jump to a predefined word
 JMP             unconditionnal jump to a predefined word
@@ -270,7 +218,6 @@ MARKER          [DEFINED]       [UNDEFINED]     [IF]            [ELSE]          
 [ELSE]          https://forth-standard.org/standard/tools/BracketELSE
 [THEN]          https://forth-standard.org/standard/tools/BracketTHEN
 COMPARE         https://forth-standard.org/standard/string/COMPARE
-MARKER          https://forth-standard.org/standard/core/MARKER
 
 
 VOCABULARY ADD-ON
@@ -333,50 +280,60 @@ QUIT becomes a DEFERed word
 
 ANS_COMPLEMENT ADD-ON
 ---------------------
-PAD             >IN             SOURCE          .(              (               DECIMAL         HEX             
-FILL            [CHAR]          CHAR            +!              MIN             MAX             2/              
-2*              RSHIFT          LSHIFT          XOR             OR              AND             INVERT          
-2OVER           2SWAP           2DROP           2DUP            2VALUE          2!              2@              
-S>D             CELL+           CELLS           CHAR+           CHARS           ALIGN           ALIGNED         
-*/              */MOD           MOD             /               /MOD            *               FM/MOD          
-SM/REM          M*              UM*             TO              VALUE           {ANS_COMP}
+SPACES          SPACE           BL              PAD             >IN             BASE            STATE           
+CONSTANT        VARIABLE        SOURCE          RECURSE         EXECUTE         >BODY           .(              
+(               DECIMAL         HEX             HERE            FILL            MOVE            +!              
+[CHAR]          CHAR            CELL+           CELLS           CHAR+           CHARS           ALIGN           
+ALIGNED         2OVER           2SWAP           2DROP           2DUP            2!              2@              
+R@              ROT             OVER            */              */MOD           MOD             /               
+/MOD            *               FM/MOD          ABS             NEGATE          SM/REM          UM/MOD          
+M*              UM*             2/              2*              MIN             MAX             RSHIFT          
+LSHIFT          INVERT          1-              1+              S>D             XOR             OR              
+AND             LEAVE           UNLOOP          J               I               +LOOP           LOOP            
+DO              REPEAT          WHILE           AGAIN           UNTIL           ELSE            THEN            
+IF              >               <               U<              =               0<              0=              
+C,              C!              C@              R>              >R              NIP             DROP            
+SWAP            DEPTH           EXIT            ?DUP            DUP             !               @               
+-               +               {CORE_COMP}
 
+SPACES          https://forth-standard.org/standard/core/SPACES
+SPACE           https://forth-standard.org/standard/core/SPACE
+BL              https://forth-standard.org/standard/core/BL
 PAD             https://forth-standard.org/standard/core/PAD            
 >IN             https://forth-standard.org/standard/core/toIN
->BODY           https://forth-standard.org/standard/core/toBODY
+BASE            https://forth-standard.org/standard/core/BASE
+STATE           https://forth-standard.org/standard/core/STATE
+CONSTANT        https://forth-standard.org/standard/core/CONSTANT
+VARIABLE        https://forth-standard.org/standard/core/VARIABLE
 SOURCE          https://forth-standard.org/standard/core/SOURCE
+RECURSE         https://forth-standard.org/standard/core/RECURSE
+EXECUTE         https://forth-standard.org/standard/core/EXECUTE
+>BODY           https://forth-standard.org/standard/core/toBODY
 .(              https://forth-standard.org/standard/core/Dotp
 (               https://forth-standard.org/standard/core/p
 DECIMAL         https://forth-standard.org/standard/core/DECIMAL
 HEX             https://forth-standard.org/standard/core/HEX
+HERE            https://forth-standard.org/standard/core/HERE
 FILL            https://forth-standard.org/standard/core/FILL
+MOVE            https://forth-standard.org/standard/core/MOVE
++!              https://forth-standard.org/standard/core/PlusStore
 [CHAR]          https://forth-standard.org/standard/core/BracketCHAR
 CHAR            https://forth-standard.org/standard/core/CHAR
-+!              https://forth-standard.org/standard/core/PlusStore
-2/              https://forth-standard.org/standard/core/TwoDiv
-2*              https://forth-standard.org/standard/core/TwoTimes
-MIN             https://forth-standard.org/standard/core/MIN
-MAX             https://forth-standard.org/standard/core/MAX
-RSHIFT          https://forth-standard.org/standard/core/RSHIFT
-LSHIFT          https://forth-standard.org/standard/core/LSHIFT
-INVERT          https://forth-standard.org/standard/core/INVERT
-XOR             https://forth-standard.org/standard/core/XOR
-OR              https://forth-standard.org/standard/core/OR
-AND             https://forth-standard.org/standard/core/AND
-2OVER           https://forth-standard.org/standard/core/TwoOVER
-2SWAP           https://forth-standard.org/standard/core/TwoSWAP
-2DROP           https://forth-standard.org/standard/core/TwoDROP
-2DUP            https://forth-standard.org/standard/core/TwoDUP
-2VALUE          https://forth-standard.org/standard/double/TwoVALUE
-2!              https://forth-standard.org/standard/core/TwoStore
-2@              https://forth-standard.org/standard/core/TwoFetch
-S>D             https://forth-standard.org/standard/core/StoD
 CELL+           https://forth-standard.org/standard/core/CELLPlus
 CELLS           https://forth-standard.org/standard/core/CELLS
 CHAR+           https://forth-standard.org/standard/core/CHARPlus
 CHARS           https://forth-standard.org/standard/core/CHARS
 ALIGN           https://forth-standard.org/standard/core/ALIGN
 ALIGNED         https://forth-standard.org/standard/core/ALIGNED
+2OVER           https://forth-standard.org/standard/core/TwoOVER
+2SWAP           https://forth-standard.org/standard/core/TwoSWAP
+2DROP           https://forth-standard.org/standard/core/TwoDROP
+2DUP            https://forth-standard.org/standard/core/TwoDUP
+2!              https://forth-standard.org/standard/core/TwoStore
+2@              https://forth-standard.org/standard/core/TwoFetch
+R@              https://forth-standard.org/standard/core/RFetch
+ROT             https://forth-standard.org/standard/core/ROT
+OVER            https://forth-standard.org/standard/core/OVER
 */              https://forth-standard.org/standard/core/TimesDiv
 */MOD           https://forth-standard.org/standard/core/TimesDivMOD
 MOD             https://forth-standard.org/standard/core/MOD
@@ -384,12 +341,74 @@ MOD             https://forth-standard.org/standard/core/MOD
 /MOD            https://forth-standard.org/standard/core/DivMOD
 *               https://forth-standard.org/standard/core/Times
 FM/MOD          https://forth-standard.org/standard/core/FMDivMOD
+ABS             https://forth-standard.org/standard/core/ABS
+NEGATE          https://forth-standard.org/standard/core/NEGATE
 SM/REM          https://forth-standard.org/standard/core/SMDivREM
+UM/MOD          https://forth-standard.org/standard/core/UMDivMOD
 M*              https://forth-standard.org/standard/core/MTimes
 UM*             https://forth-standard.org/standard/core/UMTimes
+2/              https://forth-standard.org/standard/core/TwoDiv
+2*              https://forth-standard.org/standard/core/TwoTimes
+MIN             https://forth-standard.org/standard/core/MIN
+MAX             https://forth-standard.org/standard/core/MAX
+RSHIFT          https://forth-standard.org/standard/core/RSHIFT
+LSHIFT          https://forth-standard.org/standard/core/LSHIFT
+INVERT          https://forth-standard.org/standard/core/INVERT
+1-              https://forth-standard.org/standard/core/OneMinus
+1+              https://forth-standard.org/standard/core/OnePlus
+S>D             https://forth-standard.org/standard/core/StoD
+XOR             https://forth-standard.org/standard/core/XOR
+OR              https://forth-standard.org/standard/core/OR
+AND             https://forth-standard.org/standard/core/AND
+LEAVE           https://forth-standard.org/standard/core/LEAVE
+UNLOOP          https://forth-standard.org/standard/core/UNLOOP
+J               https://forth-standard.org/standard/core/J
+I               https://forth-standard.org/standard/core/I
++LOOP           https://forth-standard.org/standard/core/PlusLOOP
+LOOP            https://forth-standard.org/standard/core/LOOP
+DO              https://forth-standard.org/standard/core/DO        
+REPEAT          https://forth-standard.org/standard/core/REPEAT
+WHILE           https://forth-standard.org/standard/core/WHILE
+AGAIN           https://forth-standard.org/standard/core/AGAIN
+UNTIL           https://forth-standard.org/standard/core/UNTIL
+THEN            https://forth-standard.org/standard/core/THEN
+ELSE            https://forth-standard.org/standard/core/ELSE
+IF              https://forth-standard.org/standard/core/IF
+>               https://forth-standard.org/standard/core/more
+<               https://forth-standard.org/standard/core/less
+U<              https://forth-standard.org/standard/core/Uless
+=               https://forth-standard.org/standard/core/Equal
+0<              https://forth-standard.org/standard/core/Zeroless
+0=              https://forth-standard.org/standard/core/ZeroEqual
+C,              https://forth-standard.org/standard/core/CComma
+C!              https://forth-standard.org/standard/core/CStore
+C@              https://forth-standard.org/standard/core/CFetch
+R>              https://forth-standard.org/standard/core/Rfrom
+>R              https://forth-standard.org/standard/core/toR
+NIP             https://forth-standard.org/standard/core/NIP
+DROP            https://forth-standard.org/standard/core/DROP
+SWAP            https://forth-standard.org/standard/core/SWAP
+DEPTH           https://forth-standard.org/standard/core/DEPTH
+EXIT            https://forth-standard.org/standard/core/EXIT
+?DUP            https://forth-standard.org/standard/core/qDUP
+DUP             https://forth-standard.org/standard/core/DUP
+!               https://forth-standard.org/standard/core/Store
+@               https://forth-standard.org/standard/core/Fetch
+-               https://forth-standard.org/standard/core/Minus
++               https://forth-standard.org/standard/core/Plus
+{CORE_COMP}
+
+
+OTHER WORDS
+
+
+MARKER          https://forth-standard.org/standard/core/MARKER
+DEFER           https://forth-standard.org/standard/core/DEFER
+IS              https://forth-standard.org/standard/core/IS
+D.              https://forth-standard.org/standard/double/Dd
+DABS            https://forth-standard.org/standard/double/DABS
 TO              https://forth-standard.org/standard/core/TO
 VALUE           https://forth-standard.org/standard/core/VALUE
-{ANS_COMP}
 
 
 FIXPOINT ADD-ON

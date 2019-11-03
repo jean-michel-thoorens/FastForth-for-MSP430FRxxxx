@@ -48,9 +48,169 @@
 
 PWR_STATE
 
-[UNDEFINED] {RTC} [IF]
+[UNDEFINED] U< [IF]
+CODE U<
+SUB @PSP+,TOS   \ 2 u2-u1
+0<> IF
+    MOV #-1,TOS     \ 1
+    U< IF           \ 2 flag 
+        AND #0,TOS  \ 1 flag Z = 1
+    THEN
+THEN
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+[UNDEFINED] = [IF]
+\ https://forth-standard.org/standard/core/Equal
+\ =      x1 x2 -- flag         test x1=x2
+CODE =
+SUB @PSP+,TOS   \ 2
+0<> IF          \ 2
+    AND #0,TOS  \ 1
+    MOV @IP+,PC \ 4
+THEN
+XOR #-1,TOS     \ 1 flag Z = 1
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+[UNDEFINED] AND [IF]
+\ https://forth-standard.org/standard/core/AND
+\ C AND    x1 x2 -- x3           logical AND
+CODE AND
+AND @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] @ [IF]
+\ https://forth-standard.org/standard/core/Fetch
+\ @     c-addr -- char   fetch char from memory
+CODE @
+MOV @TOS,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+: RTCNOTFOUND
+ECHO \ return to column 1
+1 ABORT" no RTC found!"
+;
+
+DEVICEID @ $831D SWAP U< [IF] RTCNOTFOUND [THEN] \ MSP430FR21xx/23xx
+DEVICEID @ $823C OVER U<
+           $8241 U< AND [IF] RTCNOTFOUND [THEN] \ MSP430FR25xx/26xx
+DEVICEID @ $81F0 OVER U< 
+           $81F3 U< AND [IF] RTCNOTFOUND [THEN] \ MSP430FR41xx
+
+[DEFINED] {RTC} [IF]  {RTC} [THEN]
+
+[UNDEFINED] MARKER [IF]
+\  https://forth-standard.org/standard/core/MARKER
+\  MARKER
+\ ( "<spaces>name" -- )
+\ Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
+\ with the execution semantics defined below.
+\ 
+\ name Execution: ( -- )
+\ Restore all dictionary allocation and search order pointers to the state they had just prior to the
+\ definition of name. Remove the definition of name and all subsequent definitions. Restoration
+\ of any structures still existing that could refer to deleted definitions or deallocated data space is
+\ not necessarily provided. No other contextual information such as numeric base is affected
+\
+: MARKER
+CREATE
+HI2LO
+MOV &LASTVOC,0(W)   \ [BODY] = LASTVOC
+SUB #2,Y            \ 1 Y = LFA
+MOV Y,2(W)          \ 3 [BODY+2] = LFA = DP to be restored
+ADD #4,&DP          \ 3 add 2 cells
+LO2HI
+DOES>
+HI2LO
+MOV @RSP+,IP        \ -- PFA
+MOV @TOS+,&INIVOC   \       set VOC_LINK value for RST_STATE
+MOV @TOS,&INIDP     \       set DP value for RST_STATE
+MOV @PSP+,TOS       \ --
+MOV #RST_STATE,PC   \       execute RST_STATE, PWR_STATE then STATE_DOES
+ENDCODE
+[THEN]
 
 MARKER {RTC}
+
+[UNDEFINED] IF [IF]
+\ https://forth-standard.org/standard/core/IF
+\ IF       -- IFadr    initialize conditional forward branch
+CODE IF       \ immediate
+SUB #2,PSP              \
+MOV TOS,0(PSP)          \
+MOV &DP,TOS             \ -- HERE
+ADD #4,&DP            \           compile one word, reserve one word
+MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
+ADD #2,TOS              \ -- HERE+2=IFadr
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] THEN [IF]
+\ https://forth-standard.org/standard/core/THEN
+\ THEN     IFadr --                resolve forward branch
+CODE THEN               \ immediate
+MOV &DP,0(TOS)          \ -- IFadr
+MOV @PSP+,TOS           \ --
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] DO [IF]
+\ https://forth-standard.org/standard/core/DO
+\ DO       -- DOadr   L: -- 0
+CODE DO                 \ immediate
+SUB #2,PSP              \
+MOV TOS,0(PSP)          \
+ADD #2,&DP              \   make room to compile xdo
+MOV &DP,TOS             \ -- HERE+2
+MOV #XDO,-2(TOS)        \   compile xdo
+ADD #2,&LEAVEPTR        \ -- HERE+2     LEAVEPTR+2
+MOV &LEAVEPTR,W         \
+MOV #0,0(W)             \ -- HERE+2     L-- 0
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] LOOP [IF]
+\ https://forth-standard.org/standard/core/LOOP
+\ LOOP    DOadr --         L-- an an-1 .. a1 0
+CODE LOOP               \ immediate
+    MOV #XLOOP,X
+BW1 ADD #4,&DP          \ make room to compile two words
+    MOV &DP,W
+    MOV X,-4(W)         \ xloop --> HERE
+    MOV TOS,-2(W)       \ DOadr --> HERE+2
+BEGIN                   \ resolve all "leave" adr
+    MOV &LEAVEPTR,TOS   \ -- Adr of top LeaveStack cell
+    SUB #2,&LEAVEPTR    \ --
+    MOV @TOS,TOS        \ -- first LeaveStack value
+    CMP #0,TOS          \ -- = value left by DO ?
+0<> WHILE
+    MOV W,0(TOS)        \ move adr after loop as UNLOOP adr
+REPEAT
+    MOV @PSP+,TOS
+    MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] - [IF]
+\ https://forth-standard.org/standard/core/Minus
+\ -      n1/u1 n2/u2 -- n3/u3     n3 = n1-n2
+CODE -
+SUB @PSP+,TOS   \ 2  -- n2-n1 ( = -n3)
+XOR #-1,TOS     \ 1
+ADD #1,TOS      \ 1  -- n3 = -(n2-n1) = n1-n2
+MOV @IP+,PC
+ENDCODE
+[THEN]
 
 [UNDEFINED] MAX [IF]
 
@@ -99,6 +259,69 @@ MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
 MOV @PSP,TOS        \ 2 -- x1 (x2) x1
 SUB #2,PSP          \ 1 -- x1 x2 x1
 MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] DUP [IF]
+\ https://forth-standard.org/standard/core/DUP
+\ DUP      x -- x x      duplicate top of stack
+CODE DUP
+BW1 SUB #2,PSP      \ 2  push old TOS..
+    MOV TOS,0(PSP)  \ 3  ..onto stack
+    MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+[UNDEFINED] DEPTH [IF]
+\ https://forth-standard.org/standard/core/DEPTH
+\ DEPTH    -- +n        number of items on stack, must leave 0 if stack empty
+CODE DEPTH
+MOV TOS,-2(PSP)
+MOV #PSTACK,TOS
+SUB PSP,TOS     \ PSP-S0--> TOS
+RRA TOS         \ TOS/2   --> TOS
+SUB #2,PSP      \ post decrement stack...
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] >R [IF]
+\ https://forth-standard.org/standard/core/toR
+\ >R    x --   R: -- x   push to return stack
+CODE >R
+PUSH TOS
+MOV @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] R> [IF]
+\ https://forth-standard.org/standard/core/Rfrom
+\ R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
+CODE R>
+SUB #2,PSP      \ 1
+MOV TOS,0(PSP)  \ 3
+MOV @RSP+,TOS   \ 2
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+[UNDEFINED] >BODY [IF]
+\ https://forth-standard.org/standard/core/toBODY
+\ >BODY     -- addr      leave BODY of a CREATEd word\ also leave default ACTION-OF primary DEFERred word
+CODE >BODY
+ADD #4,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] EXECUTE [IF] \ "
+\ https://forth-standard.org/standard/core/EXECUTE
+\ EXECUTE   i*x xt -- j*x   execute Forth word at 'xt'
+CODE EXECUTE
+MOV TOS,W               \ 1 put word address into W
+MOV @PSP+,TOS           \ 2 fetch new TOS
+MOV W,PC                \ 3 fetch code address into PC
 ENDCODE
 [THEN]
 
@@ -166,16 +389,12 @@ THEN
     ." it is " TIME? 
 ;
 
-RST_HERE
+PWR_HERE
 
+[UNDEFINED] ESC" [IF]
+\ ESC" <string>" --    send an escape sequence
+: ESC" $1B POSTPONE LITERAL POSTPONE EMIT POSTPONE S" POSTPONE TYPE ; IMMEDIATE \ "
 [THEN]
-
-: ESC #27 EMIT ;
-
-\ create a word to test DEFERred words
-: [ISDEFERRED?]    \ [ISDEFERRED?] xt -- xt flag
-    DUP @ $4030 = \ CFA of <name> = MOV @PC+,PC ? 
-; IMMEDIATE
 
 CREATE ABUF 20 ALLOT
 
@@ -184,21 +403,17 @@ PWR_STATE       \ all after PWR_HERE marker will be lost
 42              \ number of terminal lines   
 0 DO CR LOOP    \ don't erase any line of source
 
-ESC ." [1J"     \ erase up (42 empty lines)
-ESC ." [H"      \ cursor home
+ESC" [1J"       \ erase up (42 empty lines)
+ESC" [H"        \ cursor home
 
 CR ." DATE (DMY): "
-ABUF DUP 20 
-    ['] ACCEPT [ISDEFERRED?] 
-    [IF] >BODY   \   execute default part of ACCEPT
-    [THEN] EXECUTE
-EVALUATE CR DATE!
+ABUF
+DUP 20 ['] ACCEPT >BODY EXECUTE    \   execute default part of ACCEPT
+    EVALUATE CR DATE!
 CR CR ." TIME (HMS): "
-ABUF DUP 20 
-    ['] ACCEPT [ISDEFERRED?] 
-    [IF] >BODY   \   execute default part of ACCEPT
-    [THEN] EXECUTE
-EVALUATE CR TIME!
+ABUF
+DUP 20 ['] ACCEPT >BODY EXECUTE    \   execute default part of ACCEPT
+    EVALUATE CR TIME!
 CR
 ;
 

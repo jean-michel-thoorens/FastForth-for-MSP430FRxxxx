@@ -95,8 +95,8 @@
 ! P2.1  -             J2.12  -  <---- SD_CD (Card Detect)
 ! P2.0  -             J2.11  -  ----> SD_CS (Card Select)
 !       
-! P1.2  - UCB0 SDA    J1.10  -  <---> SDA I2C Slave
 ! P1.3  - UCB0 SCL    J1.9   -  ----> SCL I2C Slave
+! P1.2  - UCB0 SDA    J1.10  -  <---> SDA I2C Slave
 !       
 ! P3.1  -             J2.13  -  ----> SCL I2C SoftMaster
 ! P3.2  -             J2.17  -  <---> SDA I2C SoftMaster
@@ -143,6 +143,7 @@ HANDSHAKOUT=\$202!
 ! APPLICATION I/O :
 ! ============================================
 LED1_OUT=\$202!
+LED1_DIR=\$204!
 LED1=1!          P1.0
 
 LED2_OUT=\$202!
@@ -191,7 +192,7 @@ I2CMM_OUT=\$202!
 I2CMM_DIR=\$204!
 I2CMM_REN=\$206!
 I2CMM_SEL=\$20A!    SEL0   
-I2CMM_Vec=\$FFE0!
+I2CMM_Vec=\$FFE0!   UCB0_Vec
 MMSDA=\$04!         P1.2
 MMSCL=\$08!         P1.3
 MM_BUS=\$0C!
@@ -202,7 +203,7 @@ I2CM_OUT=\$202!
 I2CM_DIR=\$204!
 I2CM_REN=\$206!
 I2CM_SEL=\$20A!     SEL0
-I2CM_Vec=\$FFE0!
+I2CM_Vec=\$FFE0!    UCB0_Vec
 MSDA=\$04!          P1.2
 MSCL=\$08!          P1.3
 M_BUS=\$0C!
@@ -213,10 +214,46 @@ I2CS_OUT=\$202!
 I2CS_DIR=\$204!
 I2CS_REN=\$206!
 I2CS_SEL=\$20A!     SEL0
-I2CS_Vec=\$FFE0!
-SSDA=\$40!          P1.2
-SSCL=\$80!          P1.3
-S_BUS=\$C0!
+I2CS_Vec=\$FFE0!    UCB0_Vec
+SSDA=\$04!          P1.2
+SSCL=\$08!          P1.3
+S_BUS=\$0C!
+
+UCSWRST=1!          eUSCI Software Reset
+UCTXIE=2!           eUSCI Transmit Interrupt Enable
+UCRXIE=1!           eUSCI Receive Interrupt Enable
+UCTXIFG=2!          eUSCI Transmit Interrupt Flag
+UCRXIFG=1!          eUSCI Receive Interrupt Flag
+UCTXIE0=2!          eUSCI_B Transmit Interrupt Enable
+UCRXIE0=1!          eUSCI_B Receive Interrupt Enable
+UCTXIFG0=2!         eUSCI_B Transmit Interrupt Flag
+UCRXIFG0=1!         eUSCI_B Receive Interrupt Flag
+
+I2CM_CTLW0=\$540!   USCI_B0 Control Word Register 0
+I2CM_CTLW1=\$542!   USCI_B0 Control Word Register 1
+I2CM_BRW=\$546!     USCI_B0 Baud Word Rate 0
+I2CM_STATW=\$548!   USCI_B0 status word 
+I2CM_TBCNT=\$54A!   USCI_B0 byte counter threshold  
+I2CM_RXBUF=\$54C!   USCI_B0 Receive Buffer 8
+I2CM_TXBUF=\$54E!   USCI_B0 Transmit Buffer 8
+I2CM_I2COA0=\$554!  USCI_B0 I2C Own Address 0
+I2CM_ADDRX=\$55C!   USCI_B0 Received Address Register 
+I2CM_I2CSA=\$560!   USCI_B0 I2C Slave Address
+I2CM_IE=\$56A!      USCI_B0 Interrupt Enable
+I2CM_IFG=\$56C!     USCI_B0 Interrupt Flags Register
+
+I2CS_CTLW0=\$540!   USCI_B0 Control Word Register 0
+I2CS_CTLW1=\$542!   USCI_B0 Control Word Register 1
+I2CS_BRW=\$546!     USCI_B0 Baud Word Rate 0
+I2CS_STATW=\$548!   USCI_B0 status word 
+I2CS_TBCNT=\$54A!   USCI_B0 byte counter threshold  
+I2CS_RXBUF=\$54C!   USCI_B0 Receive Buffer 8
+I2CS_TXBUF=\$54E!   USCI_B0 Transmit Buffer 8
+I2CS_I2COA0=\$554!  USCI_B0 I2C Own Address 0
+I2CS_ADDRX=\$55C!   USCI_B0 Received Address Register 
+I2CS_I2CSA=\$560!   USCI_B0 I2C Slave Address
+I2CS_IE=\$56A!      USCI_B0 Interrupt Enable
+I2CS_IFG=\$56C!     USCI_B0 Interrupt Flags Register
 
 SD_CD=2!        ; P2.1 as SD_CD
 SD_CS=1!        ; P2.0 as SD_CS     

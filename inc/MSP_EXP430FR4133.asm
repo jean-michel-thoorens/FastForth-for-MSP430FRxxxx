@@ -191,47 +191,29 @@
 ; P1.1 - RX0
 
     .IFDEF UCA0_TERM
-TXD         .equ 1     ; P1.0 = TXD + FORTH Deep_RST pin
-RXD         .equ 2     ; P1.1
-TERM_BUS    .equ 003h  ; TX RX
-TERM_IN     .equ P1IN
-TERM_REN    .equ P1REN
-TERM_SEL    .equ P1SEL0
+TXD         .equ    1       ; P1.0 = TXD + FORTH Deep_RST pin
+RXD         .equ    2       ; P1.1
+TERM_BUS    .equ    003h    ; TX RX
+TERM_IN     .equ    P1IN
+TERM_REN    .equ    P1REN
+TERM_SEL    .equ    P1SEL0
     .ENDIF
 
-
-    .IFDEF TERMINAL4WIRES
-
-; RTS output is wired to the CTS input of UART2USB bridge 
-; configure RTS as output high to disable RX TERM during start FORTH
-
+RTS         .set    8           ; P2.3 bit position
+CTS         .set    10h         ; P2.4 bit position
 HANDSHAKOUT .set    P2OUT
 HANDSHAKIN  .set    P2IN
 
-RTS         .set    8           ; P2.3 bit position
-
-            BIS #00800h,&PADIR  ; all pins as input else RTS P2.3 as output
             BIS #-1,&PAREN      ; all input pins with resistor
+            BIS #-1,&PAOUT      ; all pins with PULLUP resistor
 
+    .IFDEF TERMINAL4WIRES
+; RTS output is wired to the CTS input of UART2USB bridge 
+; configure RTS as output high to disable RX TERM during start FORTH
+            BIS.B #RTS,&P2DIR   ; RTS as output high
         .IFDEF TERMINAL5WIRES
-
-CTS         .set    10h         ; P2.4 bit position
-
-            MOV #0EFFFh,&PAOUT  ; P2.3 (RTS) as output HIGH, P2.4 (CTS) I pull down, others I pull up, 
-
-        .ELSEIF
-
-            MOV #-1,&PAOUT      ; that acts as pull up resistor, and P2.3 (RTS) as output HIGH
-
+            BIC.B #CTS,&P2OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
-
-    .ELSEIF
-
-; PORTx default wanted state : pins as input with pullup resistor
-
-            MOV #-1,&PAOUT  ; OUT1 for all pins
-            BIS #-1,&PAREN  ; all pins with pullup resistors
-
     .ENDIF  ; TERMINAL4WIRES
 
 ; ----------------------------------------------------------------------

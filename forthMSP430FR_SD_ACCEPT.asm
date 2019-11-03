@@ -56,17 +56,17 @@ SDA_InitSrcAddr                     ; <== SDA_GetFileNextSector
 ; ----------------------------------;
 SDA_YEMIT_RET                       ;
 ; ----------------------------------;
-    FORTHtoASM                      ;
+    .word   $+2                     ;
     SUB     #2,IP                   ; 1                 restore YEMIT return
 ; ----------------------------------;
 SDA_ComputeChar                     ; -- CIB cnt
 ; ----------------------------------;
     CMP     T,S                     ; 1 src_ptr >= src_len ?
-    JHS     SDA_GetFileNextSector   ; 2 yes
+    JC      SDA_GetFileNextSector   ; 2 yes
     MOV.B   SD_BUF(S),Y             ; 3 Y = char
     ADD     #1,S                    ; 1 increment input BufferPtr
     CMP.B   #32,Y                   ; 2 ascii printable char ?
-    JHS     SDA_MoveChar            ; 2 yes
+    JC      SDA_MoveChar            ; 2 yes
     CMP.B   #10,Y                   ; 2 control char = 'LF' ?
     JNZ     SDA_ComputeChar         ; 2 no
 ; ----------------------------------;

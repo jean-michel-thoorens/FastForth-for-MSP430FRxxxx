@@ -26,7 +26,7 @@
 MAX:        CMP     @PSP,TOS    ; n2-n1
             JL      SELn1       ; n2<n1
 SELn2:      ADD     #2,PSP
-            mNEXT
+            MOV @IP+,PC
 
 ;https://forth-standard.org/standard/core/MIN
 ;C MIN    n1 n2 -- n3       signed minimum
@@ -34,7 +34,7 @@ SELn2:      ADD     #2,PSP
 MIN:        CMP     @PSP,TOS    ; n2-n1
             JL      SELn2       ; n2<n1
 SELn1:      MOV     @PSP+,TOS
-            mNEXT
+            MOV @IP+,PC
 
     .ENDIF
 
@@ -55,14 +55,26 @@ SPACES      CMP #0,TOS
             PUSH IP
             MOV #SPACESNEXT,IP
             JMP SPACE               ;25~
-SPACESNEXT  FORTHtoASM
+SPACESNEXT  .word   $+2
             SUB #2,IP               ;1
             SUB #1,TOS              ;1
             JNZ SPACE               ;25~ ==> 27~ by space ==> 2.963 MBds @ 8 MHz
             MOV @RSP+,IP            ;
 SPACESNEXT2 MOV @PSP+,TOS           ; --         drop n
-            mNEXT                   ;
+            MOV @IP+,PC             ;
 
+    .ENDIF
+
+    .IFNDEF II
+; https://forth-standard.org/standard/core/I
+; I        -- n   R: sys1 sys2 -- sys1 sys2
+;                  get the innermost loop index
+            FORTHWORD "I"
+II          SUB #2,PSP              ;1 make room in TOS
+            MOV TOS,0(PSP)          ;3
+            MOV @RSP,TOS            ;2 index = loopctr - fudge
+            SUB 2(RSP),TOS          ;3
+            MOV @IP+,PC             ;4 13~
     .ENDIF
 
         .IFNDEF OVER
@@ -72,8 +84,17 @@ SPACESNEXT2 MOV @PSP+,TOS           ; --         drop n
 OVER        MOV TOS,-2(PSP)     ; 3 -- x1 (x2) x2
             MOV @PSP,TOS        ; 2 -- x1 (x2) x1
             SUB #2,PSP          ; 1 -- x1 x2 x1
-            mNEXT               ; 4
+            MOV @IP+,PC         ; 4
         .ENDIF
+
+    .IFNDEF TOR
+; https://forth-standard.org/standard/core/toR
+; >R    x --   R: -- x   push to return stack
+            FORTHWORD ">R"
+TOR         PUSH TOS
+            MOV @PSP+,TOS
+            MOV @IP+,PC
+    .ENDIF
 
     .IFNDEF UDOTR
 ;https://forth-standard.org/standard/core/UDotR
@@ -90,7 +111,7 @@ UDOTR       mDOCOL
 ;C C@     c-addr -- char   fetch char from memory
             FORTHWORD "C@"
 CFETCH      MOV.B @TOS,TOS      ;2
-            mNEXT               ;4
+            MOV @IP+,PC         ;4
         .ENDIF
 
     .IFNDEF PLUS
@@ -98,7 +119,7 @@ CFETCH      MOV.B @TOS,TOS      ;2
 ;C +       n1/u1 n2/u2 -- n3/u3     add n1+n2
             FORTHWORD "+"
 PLUS        ADD @PSP+,TOS
-            mNEXT
+            MOV @IP+,PC
     .ENDIF
 
     .IFNDEF DUMP
@@ -127,13 +148,13 @@ DUMP4       .word   II,CFETCH
             .word   lit,7Eh,MIN,FBLANK,MAX,EMIT
             .word   xloop,DUMP4             ; chars display loop
             .word   lit,10h,xploop,DUMP1    ; line loop
-            .word   RFROM,lit,BASE,STORE       ; restore current base
+            .word   RFROM,lit,BASE,STORE    ; restore current base
             .word   EXIT
 
     .ENDIF
 
     FORTHWORD "{SD_TOOLS}"
-    mNEXT
+    MOV @IP+,PC
 
 ; read logical sector and dump it 
 ; ----------------------------------;

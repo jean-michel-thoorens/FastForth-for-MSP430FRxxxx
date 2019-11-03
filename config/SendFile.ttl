@@ -1,12 +1,19 @@
 ;connect  param3
 testlink
-if result=0 connect  param3
+if result<1 connect  param3
 
 inputbox 'Send this file to the MSP430FR target:' ' ' param2
 
+
+uptime varstart
+
+
+
+
+
 strcompare param4 'NOECHO'
 if result = 0 then
-    sendln 'NOECHO PWR_STATE [DEFINED] STOP [IF] STOP [THEN]' ; set no echo from FastForth
+    send 'NOECHO [DEFINED] STOP [IF] STOP [THEN] ' ; set no echo from FastForth
     setecho 0       ; suppr. echo from Teraterm
     showtt 0
 ;    clearscreen 1
@@ -17,17 +24,19 @@ endif
 
 strcompare param4 'HALF'
 if result = 0 then
-    sendln 'NOECHO PWR_STATE [DEFINED] STOP [IF] STOP [THEN]' ; set no echo from FastForth
+    send 'NOECHO [DEFINED] STOP [IF] STOP [THEN] ' ; set no echo from FastForth
+    setecho 1
     showtt 0
 ;    clearscreen 1
     sendfile inputstr 0
     setecho 1
+    send #4
     showtt 1
     goto end
 endif
 
 ; default mode = ECHO
-    sendln 'ECHO PWR_STATE [DEFINED] STOP [IF] STOP [THEN]'
+    send 'ECHO [DEFINED] STOP [IF] STOP [THEN] '
     setecho 0       ; no echo from Teraterm
     showtt 0
 ;    clearscreen 1
@@ -35,10 +44,22 @@ endif
     showtt 1
 
 :end
-end
+
+
+; do something...
+
+uptime varend
+diff = varend - varstart
+sprintf2 str "download and execute time: %d msec" diff
+messagebox str "teraterm.exe"
+
+unlink
+;end
 
 
 ; param1 = this macro
 ; param2 = file to send
 ; param3 = "/C"
 ; param4 = "ECHO" or "NOECHO" or "HALF" or nothing
+
+

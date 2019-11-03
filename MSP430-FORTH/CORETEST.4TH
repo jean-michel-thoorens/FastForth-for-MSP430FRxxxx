@@ -1,27 +1,18 @@
 
 PWR_STATE
 
-: ESC #27 EMIT ;
-
-: PAGEUP
-ECHO
-41              \ number of terminal lines -1  
-0 DO CR LOOP    \ don't erase any line of source
-ESC ." [1J"     \ erase up (41 empty lines)
-ESC ." [H"      \ cursor home
-;
-
 : ANSCOMPNOTFOUND
-PAGEUP
-1 ABORT" {ANS_COMP} word set not found!"
+$0D EMIT   \ return to column 1
+1 ABORT" {CORE_COMP} word set not found!"
 ;
+
+[DEFINED] {CORE_COMP} [IF]
 
 : CORETESTSUCCESS
-PAGEUP
+$0A BASE !
+$0D EMIT   \ return to column 1
 1 ABORT" CORE tests success!"
 ;
-
-[DEFINED] {ANS_COMP} [IF]
 
 
 \ From: John Hayes S1I
@@ -1096,48 +1087,13 @@ T{ : GDX   123 ; : GDX   GDX 234 ; -> }T
 
 T{ GDX -> 123 234 }T
 
-CR .( End of Core word set tests) CR
-
-[DEFINED] COMPARE [IF]
-\ ------------------------------------------------------------------------
-TESTING COMPARE
-: CMOVE MOVE ;
-: s1 S" abcdefghijklmnopqrstuvwxyz" ;
-: s6 S" 123456" ;
-
-T{ s1        s1 COMPARE ->  0  }T 
-T{ s1  PAD SWAP CMOVE   ->     }T    \ Copy s1 to PAD 
-T{ s1  PAD OVER COMPARE ->  0  }T 
-T{ s1     PAD 6 COMPARE ->  1  }T 
-T{ PAD 10    s1 COMPARE -> -1  }T 
-T{ s1     PAD 0 COMPARE ->  1  }T 
-T{ PAD  0    s1 COMPARE -> -1  }T 
-T{ s1        s6 COMPARE ->  1  }T 
-T{ s6        s1 COMPARE -> -1  }T
-: "abdde" S" abdde" ; 
-: "abbde" S" abbde" ; 
-: "abcdf" S" abcdf" ; 
-: "abcdee" S" abcdee" ;
-
-T{ s1 "abdde"  COMPARE -> -1 }T 
-T{ s1 "abbde"  COMPARE ->  1 }T 
-T{ s1 "abcdf"  COMPARE -> -1 }T 
-T{ s1 "abcdee" COMPARE ->  1 }T
-
-: s11 S" 0abc" ; 
-: s12 S" 0aBc" ;
-
-T{ s11 s12 COMPARE ->  1 }T 
-T{ s12 s11 COMPARE -> -1 }T
-
-[THEN]      \ COMPARE
-
-$0A BASE !
+CR .( End of Core word set tests)
 
 CORETESTSUCCESS
 
 [ELSE]
 
-ANSCOMPNOTFOUND
+ECHO
+ANSCOMPNOTFOUND \               download CORECOMP.F before CORETEST.4TH
 
 [THEN]

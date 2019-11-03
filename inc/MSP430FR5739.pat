@@ -36,13 +36,34 @@ RAM_LEN=\$0400!
 ! FRAM
 ! ----------------------------------------------
 MAIN_ORG=\$C200!        Code space start
-xdodoes=\$C200!         restore rDODOES: MOV #xdodoes,rDODOES
-xdocon=\$C20E!          restore rDOCON: MOV #xdocon,rDOCON
-xdovar=\$C220!          restore rDOVAR: MOV #xdocon,rDOVAR  
-xdocol=\$C22A!          restore rDOCOL: MOV #xdocol,rDOCOL      only for DTC model = 1
+
+SLEEP=\$C200! 
+BODYSLEEP=\$C204!
+VECT_RESET=\$C20E! 
+LIT=\$C224! 
+NEXT_ADR=\$C22C!
+XSQUOTE=\$C22E! 
+QTBRAN=\$C242! 
+BRAN=\$C248! 
+QFBRAN=\$C24C! 
+SKIPBRAN=\$C252! 
+XDO=\$C256! 
+XPLOOP=\$C266! 
+XLOOP=\$C278! 
+MUSMOD=\$C27E!          unsigned 32/16 division
+SETIB=\$C2C4!           Set Input Buffer with org len values, reset >IN 
+REFILL=\$C2D4!          accept one line from input and leave org len of input buffer
+CIB_ADR=\$C2E4!         contents currently TIB_ORG; may be redirected to SDIB_ORG
+XDODOES=\$C2EC!         restore rDODOES: MOV #XDODOES,rDODOES
+XDOCON=\$C2FA!          restore rDOCON: MOV #XDOCON,rDOCON
+XDOVAR=\$C306!          restore rDOVAR: MOV #XDOCON,rDOVAR  
+RFROM=\$C306!           
+XDOCOL=\$C310!          restore rDOCOL: MOV #XDOCOL,rDOCOL      only for DTC model = 1
+
 DODOES=\$1284!          CALL rDODOES
 DOCON=\$1285!           CALL rDOCON
 DOVAR=\$1286!           CALL rDOVAR
+DOCOL=\$1287!
 
 ! to find DTC value, download \MSP430-FORTH\FastForthSpecs.4th
 ! if DTC = 1, restore rDOCOL as this : MOV #xdocol,rDOCOL

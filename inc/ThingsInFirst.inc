@@ -1,198 +1,54 @@
 ; ThingsInFirst.inc
 
-;    .listing OFF
     .cpu MSP430X
+
+;    macexp off      ; uncomment to hide macros development in forthMSP430FR.lst
+
+;    .listing OFF
 
 ; ----------------------------------------------
 ; MACROS FOR assembly instructions
 ; ----------------------------------------------
 
-;****************************************************************************
-;*                                                                          *
-;*   AS 1.41 - Datei REGMSP.INC von Alfred Arnold                           *
-;*   					 			            *
-;*   Sinn : enthält Makro- und Registerdefinitionen fu den MSP430          *
-;* 									    *
-;*   letzte underungen : 2002-01-11                                         *
-;*                       2010/2011/2012 erweitert von Matthias Koch         *
-;*                                                                          *
-;****************************************************************************
+NOP         .macro      ; 1 word, 1 cycle    
+            .word 4303h ; mov #0, r3         
+            .endm
 
-                ifndef  regmspinc      ; verhindert Mehrfacheinbindung
+NOP2        .macro      ; 1 Word, 2 cycles
+            .word 3C00h ; jmp $+2
+            .endm
 
-regmspinc       equ     1
+NOP3        .macro      ; 1 Word, 3 cycles
+            .word 4000h ; MOV PC,PC
+            .endm
 
-                if      (MOMCPUNAME<>"MSP430")&&(MOMCPUNAME<>"MSP430X")
-                 fatal  "Falscher Prozessortyp eingestellt: nur MSP430 erlaubt!"
-		endif
-
-                if      MOMPASS=1
-                 message "MSP430-Register+Befehlsdefinitionen (C) 1996 Alfred Arnold"
-		endif
-
-; Definitions for Instructions, Macros and Ports.
-
-;----------------------------------------------------------------------------
-; Arithmetik
-
-adc             macro   op
-                addc.attribute #0,op
-                endm
-
-dadc            macro   op
-                dadd.attribute #0,op
-                endm
-
-dec             macro   op
-                sub.attribute #1,op
-                endm
-
-decd            macro   op
-                sub.attribute #2,op
-                endm
-
-inc             macro   op
-                add.attribute #1,op
-                endm
-
-incd            macro   op
-                add.attribute #2,op
-                endm
-
-sbc             macro   op
-                subc.attribute #0,op
-                endm
+; SR bits : only SR(11:0) are PUSHed by calls and interrupts
+C           .equ 0001h
+Z           .equ 0002h
+N           .equ 0004h
+V           .equ 0100h
+GIE         .equ 0008h
+CPUOFF      .equ 0010h ; CPU Off.                  1=turn_off_CPU
+OSCOFF      .equ 0020h ; Oscillator Off.           1=turn_off_LFXT1CLK
+SCG0        .equ 0040h ; System Clock Generator 0. 1=turn_off_DCO
+SCG1        .equ 0080h ; System Clock Generator 1. 1=turn_off_SMCLK
+UF9         .equ 0200h ; = SR(9) User Flag 1
+UF10        .equ 0400h ; = SR(10) User Flag 2  
+UF11        .equ 0800h ; = SR(11) User Flag 3  
 
 ;----------------------------------------------------------------------------
-; Logik
-
-inv             macro   op
-                xor.attribute #-1,op
-                endm
-
-rla             macro   op
-                add.attribute op,op
-                endm
-
-rlc             macro   op
-                addc.attribute op,op
-                endm
-
-;----------------------------------------------------------------------------
-; Daten bewegen ;-)
-
-clr             macro   op
-                mov.attribute #0,op
-                endm
-
-clrc            macro
-                bic     #1,sr
-                endm
-
-clrn            macro
-                bic     #4,sr
-                endm
-
-clrz            macro
-                bic     #2,sr
-                endm
-
-pop             macro   op         ; Muss hier noch ein Atribut anbringen ! Kann auch Bytes zurückladen...
-                mov.attribute     @sp+,op
-                endm
-
-setc            macro
-                bis     #1,sr
-                endm
-
-setn            macro
-                bis     #4,sr
-                endm
-
-setz            macro
-                bis     #2,sr
-                endm
-
-tst             macro   op
-                cmp.attribute #0,op
-                endm
-
-;----------------------------------------------------------------------------
-; Sprungbefehle
-
-br              macro   op
-            mov     op,pc
-                endm
-
-dint            macro
-            bic     #8,sr
-                endm
-
-eint            macro
-            bis     #8,sr
-                endm
-
-nop             macro         
-            .word   04303h         ; mov #0, r3         
-                endm
-
-nop2            macro                  ; 1 Word, 2 Takte
-            jmp $+2
-                endm
-
-nop3            macro                  ; 1 Word, 3 Takte
-            MOV PC,PC
-                endm
-
-ret             macro
-            mov     @sp+,pc
-                endm
-
-jlo		macro	label   ; unsigned
-		jnc	label
-		endm
-
-jhs		macro	label   ; unsigned
-		jc	label
-		endm
-
-jeq		macro	label
-		jz	label
-		endm
-
-; Flags im Statusregister
-; SR bits : only SR(11:0) are PUSHed by interrupts
-C             equ 0001h
-Z             equ 0002h
-N             equ 0004h
-V             equ 0100h
-GIE           equ 0008h
-CPUOFF        equ 0010h ; CPU Off.                  1=turn_off_CPU
-OSCOFF        equ 0020h ; Oscillator Off.           1=turn_off_LFXT1CLK
-SCG0          equ 0040h ; System Clock Generator 0. 1=turn_off_DCO
-SCG1          equ 0080h ; System Clock Generator 1. 1=turn_off_SMCLK
-UF9           equ 0200h ; = SR(9) User Flag 1 used by ?NUMBER --> INTERPRET --> LITERAL to process double numbers, else free for use.  
-UF10          equ 0400h ; = SR(10) User Flag 2  
-UF11          equ 0800h ; = SR(11) User Flag 3  
-
-;----------------------------------------------------------------------------
-; Low-Power-Mode Bitmuster
-
-LPM0          equ CPUOFF
-LPM1          equ SCG0 + CPUOFF
-LPM2          equ SCG1 + CPUOFF
-LPM3          equ SCG1 + SCG0 + CPUOFF
-LPM4          equ SCG1 + SCG0 + OSCOFF + CPUOFF
-
-;----------------------------------------------------------------------------
-
-                endif                   ; von IFDEF...
+LPM0        .equ CPUOFF
+; LPM0        .equ SCG0 + CPUOFF  ; for devices with FLL, to disable FLL
+LPM1        .equ SCG0 + CPUOFF
+LPM2        .equ SCG1 + CPUOFF
+LPM3        .equ SCG1 + SCG0 + CPUOFF
+LPM4        .equ SCG1 + SCG0 + OSCOFF + CPUOFF
 
 ; ----------------------------------------------
 ; INIT VOCABULARY POINTERS and MACROS FOR HEADER
 ; ----------------------------------------------
 
-voclink     .set 0                      ; init vocabulary links
+voclink     .set 0  ; init vocabulary links
 forthlink   .set 0
 asmlink     .set 0
 
@@ -625,40 +481,10 @@ asmlink31 .set    $
 ; --------------------------
     .include "TERMINALBAUDRATE.inc"
 
-; -----------------------------
-; compute value of FORTHVERSION
-; -----------------------------
-VERSIO .equ VAL(SUBSTR(VER,1,0))
-
-; -------------------------------------
-; define FREQ  used in WARM message (6)
-; -------------------------------------
-    .IF     FREQUENCY = 0.25
-FREQ    .set " .2MHz"
-    .ELSEIF FREQUENCY = 0.5
-FREQ    .set " .5MHz"
-    .ELSEIF FREQUENCY = 1
-FREQ    .set "  1MHz"
-    .ELSEIF FREQUENCY = 2
-FREQ    .set "  2MHz"
-    .ELSEIF FREQUENCY = 4
-FREQ    .set "  4MHz"
-    .ELSEIF FREQUENCY = 8
-FREQ    .set "  8MHz"
-    .ELSEIF FREQUENCY = 12
-FREQ    .set " 12MHz"
-    .ELSEIF FREQUENCY = 16
-FREQ    .set " 16MHz"
-    .ELSEIF FREQUENCY = 20
-FREQ    .set " 20MHz"
-    .ELSEIF FREQUENCY = 24
-FREQ    .set " 24MHz"
-    .ENDIF
-
 ; -------------------------------------
 ; define MAIN max bound
 ; -------------------------------------
-FRAM_FULL   .equ SIGNATURES-50h ; set to protect JTAG and BSL signatures against overwrite.
+FRAM_FULL   .equ SIGNATURES-40h ; set to protect JTAG and BSL signatures against overwrite.
                                 ; 80 bytes are sufficient considering what can be compiled in one line + WORD use.
                                 ; take care with ALLOT : don't ALLOT more than 32 words by line!
 
@@ -788,7 +614,19 @@ UCA0_TERM
 ; COMPUTE SWITCHES
 ; --------------------------
 
-    .IFDEF EXTENDED_MEM
+    .IFDEF CORE_COMPLEMENT
+        .IFNDEF USE_MOVE
+USE_MOVE
+        .ENDIF
+    .ENDIF
+
+    .IFDEF UTILITY
+        .IFNDEF USE_MOVE
+USE_MOVE
+        .ENDIF
+    .ENDIF
+
+    .IFDEF FIXPOINT_INPUT
         .IFNDEF DOUBLE_INPUT
 DOUBLE_INPUT
         .ENDIF
@@ -802,6 +640,7 @@ DOUBLE_INPUT
         .IFNDEF DEFER_ACCEPT
 DEFER_ACCEPT
         .ENDIF
+
         .IFDEF BOOTLOADER
             .IFNDEF CONDCOMP
 CONDCOMP                    ; mandatory for Bootstrap
@@ -813,9 +652,6 @@ DEFER_QUIT
     .ENDIF
 
     .IFDEF EXTENDED_ASM
-;        .IFNDEF MSP430ASSEMBLER
-;MSP430ASSEMBLER
-;        .ENDIF
         .IFNDEF DOUBLE_INPUT
 DOUBLE_INPUT
         .ENDIF
@@ -825,7 +661,7 @@ DOUBLE_INPUT
 MSP430ASSEMBLER
             .ENDIF
             .IFNDEF DOUBLE_INPUT
-DOUBLE_INPUT ; for indirect extended indexed modes of MOVA ADDA CMPA SUBA instructions
+DOUBLE_INPUT
             .ENDIF
         .ENDIF
     .ENDIF

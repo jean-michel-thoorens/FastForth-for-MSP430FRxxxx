@@ -285,38 +285,38 @@ SD_CSDIR    .equ P2DIR
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 ; PORTx default wanted state : pins as input with pullup resistor
 
-            MOV #-1,&PBREN  ; all pins as input with resistor
-            MOV #-1,&PBOUT  ; all pins as input with resistor
-
 ; PORT3 usage
 ; P3.0 = RTS
 ; P3.1 = CTS
 ; P3.4 = TX1
 ; P3.5 = RX1
 
+RTS         .equ    1       ; P3.0
+CTS         .equ    2       ; P3.1
+HANDSHAKOUT .equ    P3OUT
+HANDSHAKIN  .equ    P3IN
+
     .IFDEF UCA1_TERM
-TXD         .equ 10h    ; P3.4 = TXD + FORTH Deep_RST pin
-RXD         .equ 20h    ; P3.4 = RXD
-TERM_BUS    .equ 30h    ; P3.5 = RX
-TERM_IN     .equ P3IN   ; TERMINAL TX  pin as FORTH Deep_RST 
-TERM_REN    .equ P3REN
-TERM_SEL    .equ P3SEL0
+TXD         .equ    10h    ; P3.4 = TXD + FORTH Deep_RST pin
+RXD         .equ    20h    ; P3.4 = RXD
+TERM_BUS    .equ    30h    ; P3.5 = RX
+TERM_IN     .equ    P3IN   ; TERMINAL TX  pin as FORTH Deep_RST 
+TERM_REN    .equ    P3REN
+TERM_SEL    .equ    P3SEL0
     .ENDIF ;UCA1_TERM
 
 ; PORT4 usage
 
+            MOV #-1,&PBREN  ; all pins as input with resistor
+            MOV #-1,&PBOUT  ; all pins as input with resistor
 
     .IFDEF TERMINAL4WIRES
 ; RTS output is wired to the CTS input of UART2USB bridge 
 ; configure RTS as output high to disable RX TERM during start FORTH
-HANDSHAKOUT .equ    P3OUT
-HANDSHAKIN  .equ    P3IN
-RTS         .equ    1           ; P3.0
             BIS.B #RTS,&P3DIR   ; RTS as output high
         .IFDEF TERMINAL5WIRES
 ; CTS input must be wired to the RTS output of UART2USB bridge 
 ; configure CTS as input low (true) to avoid lock when CTS is not wired
-CTS         .equ  2             ; P3.1
             BIC.B #CTS,&P3OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
     .ENDIF  ; TERMINAL4WIRES

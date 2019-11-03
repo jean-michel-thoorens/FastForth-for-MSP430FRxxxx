@@ -185,6 +185,11 @@ TERM_REN    .equ P2REN
 ; PORT3 usage
 ; P3.1 -           LED1
 
+CTS         .equ    1           ; P3.0
+RTS         .equ    4           ; P3.2
+HANDSHAKOUT .equ    P3OUT
+HANDSHAKIN  .equ    P3IN
+
 ; RTS output is wired to the CTS input of UART2USB bridge 
 ; CTS is not used by FORTH terminal
 ; configure RTS as output high to disable RX TERM during start FORTH
@@ -198,14 +203,10 @@ TERM_REN    .equ P2REN
     .IFDEF TERMINAL4WIRES
 ; RTS output is wired to the CTS input of UART2USB bridge 
 ; configure RTS as output high to disable RX TERM during start FORTH
-HANDSHAKOUT .equ    P3OUT
-HANDSHAKIN  .equ    P3IN
-RTS         .equ    4           ; P3.2
             BIS.B #RTS,&P3DIR   ; RTS as output high
         .IFDEF TERMINAL5WIRES
 ; CTS input must be wired to the RTS output of UART2USB bridge 
 ; configure CTS as input low (true) to avoid lock when CTS is not wired
-CTS         .equ    1           ; P3.0
             BIC.B #CTS,&P3OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
     .ENDIF  ; TERMINAL4WIRES

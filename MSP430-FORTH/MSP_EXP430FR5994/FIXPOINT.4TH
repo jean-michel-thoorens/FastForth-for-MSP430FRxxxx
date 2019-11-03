@@ -1,17 +1,88 @@
 
 ; -----------------------------------------------------
-; FIXPOINT.4th
+; FIXPOINT.4th 
 ; -----------------------------------------------------
+
+; -----------------------------------------------------------
+; requires FIXPOINT_INPUT kernel addon, see forthMSP430FR.asm
+; -----------------------------------------------------------
 
 PWR_STATE
 
+[DEFINED] {FIXPOINT} [IF]  {FIXPOINT} [THEN]
+
 [UNDEFINED] {FIXPOINT} [IF]
+
+[UNDEFINED] MARKER [IF]
+: MARKER
+CREATE
+HI2LO
+MOV &$1DC8,0(R10)
+SUB #2,R8
+MOV R8,2(R10)
+ADD #4,&$1DC6
+LO2HI
+DOES>
+HI2LO
+MOV @R1+,R13
+MOV @R14+,&$180E
+MOV @R14,&$180C
+MOV @R15+,R14
+MOV #RST_STATE,R0
+ENDCODE
+[THEN]
 
 MARKER {FIXPOINT}
 
-[UNDEFINED] PLUS [IF]
+[UNDEFINED] + [IF]
 CODE +
 ADD @R15+,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] @ [IF]
+CODE @
+MOV @R14,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] ! [IF]
+CODE !
+MOV @R15+,0(R14)
+MOV @R15+,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] R> [IF]
+CODE R>
+MOV R6,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] = [IF]
+CODE =
+SUB @R15+,R14
+0<> IF
+    AND #0,R14
+    MOV @R13+,R0
+THEN
+XOR #-1,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] U< [IF]
+CODE U<
+SUB @R15+,R14
+0<> IF
+    MOV #-1,R14
+    U< IF
+        AND #0,R14
+    THEN
+THEN
 MOV @R13+,R0
 ENDCODE
 [THEN]
@@ -33,9 +104,14 @@ ENDCODE
 
 [UNDEFINED] DABS [IF]
 CODE DABS
-MOV #1-,R9
-ADD #4,R9
-MOV R9,R0
+AND #-1,R14
+S< IF
+    XOR #-1,0(R15)
+    XOR #-1,R14
+    ADD #1,0(R15)
+    ADDC #0,R14
+THEN
+MOV @R13+,R0
 ENDCODE
 [THEN]
 
@@ -281,11 +357,6 @@ ENDCODE
 
 [THEN]
 
-[UNDEFINED] SPACE [IF]
-: SPACE
-$20 EMIT ;
-[THEN]
-
 [UNDEFINED] F. [IF]
 CODE F.
 MOV R14,R12
@@ -307,7 +378,7 @@ LO2HI
     $2C HOLD
     #S
     R> SIGN #>
-    TYPE SPACE
+    TYPE $20 EMIT
 ;
 
 CODE S>F
@@ -341,16 +412,15 @@ ECHO
 ; (volatile) tests
 ; -----------------------
 
-
 3,14159 2CONSTANT PI
 PI -1,0 F* 2CONSTANT -PI
 
 $10 $1DDC !  PI F. 
-           -PI F.
+            -PI F.
 %10 $1DDC !  PI F. 
-           -PI F.
+            -PI F.
 #10 $1DDC !  PI F. 
-           -PI F.
+            -PI F.
 
 PI 2,0 F* F.      
 PI -2,0 F* F.    
@@ -362,25 +432,26 @@ PI -2,0 F/ F.
 -PI 2,0 F/ F.    
 -PI -2,0 F/ F.    
 
-32767,99999 1,0 f* F. 
-32767,99999 1,0 f/ F. 
-32767,99999 2,0 f/ F. 
-32767,99999 4,0 f/ F. 
-32767,99999 8,0 f/ F. 
-32767,99999 16,0 f/ F.
+32767,99999 1,0 F* F. 
+32767,99999 1,0 F/ F. 
+32767,99999 2,0 F/ F. 
+32767,99999 4,0 F/ F. 
+32767,99999 8,0 F/ F. 
+32767,99999 16,0 F/ F.
 
--32767,0 -1,0 f* F.   
--32767,0 -1,0 f/ F.   
--32767,0 -2,0 f/ F.   
--32767,0 -4,0 f/ F.   
--32767,0 -8,0 f/ F.   
--32767,0 -16,0 f/ F.  
--32767,0 -32,0 f/ F.  
--32767,0 -64,0 f/ F.  
+-32767,0 -1,0 F* F.   
+-32767,0 -1,0 F/ F.   
+-32767,0 -2,0 F/ F.   
+-32767,0 -4,0 F/ F.   
+-32767,0 -8,0 F/ F.   
+-32767,0 -16,0 F/ F.  
+-32767,0 -32,0 F/ F.  
+-32767,0 -64,0 F/ F.  
 
-; sqrt(32768)^2 = 32768
-181,01933598375 181,01933598375 f* f.  
-181,01933598375 -181,01933598375 f* f.
--181,01933598375 181,01933598375 f* f.
--181,01933598375 -181,01933598375 f* f.
+; SQRT(32768)^2 = 32768
+181,01933598375 181,01933598375 F* F.  
+181,01933598375 -181,01933598375 F* F.
+-181,01933598375 181,01933598375 F* F.
+-181,01933598375 -181,01933598375 F* F.
+
 

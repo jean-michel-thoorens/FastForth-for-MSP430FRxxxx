@@ -38,7 +38,7 @@ OPEN_READ                           ;
 ; ----------------------------------;
     CMP     #0,S                    ; open file happy end ?
     JNZ     OPEN_Error              ; no
-    mNEXT                           ;
+    MOV @IP+,PC                           ;
 ; ----------------------------------;
 
 ;Z READ            -- f
@@ -56,7 +56,7 @@ READ
     CALL    #Read_File              ;SWX
 READ_END
     SUB     &CurrentHdl,TOS         ; -- fl     if fl <>0 (if Z=0) handle is closed
-    mNEXT                           ;
+    MOV @IP+,PC                           ;
 ; ----------------------------------;
 
 
@@ -139,7 +139,7 @@ SearchNewClusterEnd                 ;
 ; ----------------------------------;
     MOV     @RSP+,W                 ; W = FATsector
     MOV     W,&CurFATsector         ; refresh CurrentFATsector
-    RET                             ;
+    MOV @RSP+,PC                             ;
 ; ----------------------------------;
 
 
@@ -198,7 +198,7 @@ WaitRTC                             ; yes
     .ENDIF
     .ENDIF
 SD_RW_RET                           ;
-    RET                             ;
+    MOV @RSP+,PC                             ;
 ; ----------------------------------;
 
 
@@ -224,7 +224,7 @@ FillDIRentryName                    ;SWXY use
 ;    CMP     #0,W                    ; end of stringZ ?
 ;    JZ      OPWC_CompleteWithSpaces ;
     CMP     T,&EndOfPath            ; EOS < PTR ?
-    JLO     OPWC_CompleteWithSpaces ; yes
+    JNC     OPWC_CompleteWithSpaces ; yes
 ; ----------------------------------;
 SkipForbiddenChars                  ;
 ; ----------------------------------;
@@ -259,7 +259,7 @@ OPWC_CompleteWithSpaceloop          ;
     SUB     #1,X                    ; dec countdown of chars space
     JNZ OPWC_CompleteWithSpaceloop  ;
 OPWC_CWS_End                        ;
-    RET                             ;
+    MOV @RSP+,PC                             ;
 ; ----------------------------------;
 
 
@@ -370,7 +370,7 @@ OPWC_SetEntryAttribute              ; (cluster=DIRcluster!)
 ; ----------------------------------;
     CMP     #0,S                    ; no error ?
     JNZ     OPWC_NomoreHandle       ; ==> abort with error 16
-    mNEXT                           ; --
+    MOV @IP+,PC                           ; --
 ; ----------------------------------;
 
 ;-----------------------------------------------------------------------
@@ -399,7 +399,7 @@ OPWW_UpdateEntryFileSize            ;
 
 ; this subroutine is called by Write_File (bufferPtr=512) and CloseHandleT (0 =< BufferPtr =< 512)
 ; ==================================; 
-WriteBuffer                         ;SWXY input: T = CurrentHDL
+WriteBuffer                         ;STWXY input: T = CurrentHDL
 ; ==================================; 
     ADD &BufferPtr,HDLL_CurSize(T)  ; update handle CurrentSizeL
     ADDC    #0,HDLH_CurSize(T)      ;
@@ -464,10 +464,10 @@ Write_File_End
 ;Z WRITE            -- 
 ; sequentially write the entire SD_BUF in a file opened by WRITE"
 ; ----------------------------------;
-    FORTHWORD "WRITE"               ;
+    FORTHWORD "WRITE"               ; in assembly : CALL #WRITE,X   CALL 2(X)
 ; ----------------------------------;
-    CALL    #Write_File             ;
-    mNEXT                           ;
+    CALL #Write_File                ;
+    MOV @IP+,PC                     ;
 ; ----------------------------------;
 
 
@@ -528,12 +528,12 @@ DIVSECPERSPC2                       ;
 ; ----------------------------------;
 ; 3- load last sector in SD_BUF     ;
 ; ----------------------------------;
-    MOV     HDLL_CurSize(T),W       ; example : W = 1013
-    BIC     #01FFh,HDLL_CurSize(T)  ; substract 13 from HDLL_CurSize, because loaded in buffer
-    AND     #01FFh,W                ; W = 13
-    MOV     W,&BufferPtr            ; init Buffer Pointer with 13
-    CALL    #LoadHDLcurrentSector   ;SWX
-    mNEXT                           ; BufferPtr = first free byte offset
+    MOV HDLL_CurSize(T),W           ; example : W = 1013
+    BIC #01FFh,HDLL_CurSize(T)      ; substract 13 from HDLL_CurSize, because loaded in buffer
+    AND #01FFh,W                    ; W = 13
+    MOV W,&BufferPtr                ; init Buffer Pointer with 13
+    CALL #LoadHDLcurrentSector      ;SWX
+    MOV @IP+,PC                     ; BufferPtr = first free byte offset
 ; ----------------------------------;
 
 
@@ -564,7 +564,7 @@ OPEN_DEL                            ;
 SelectFreeEntry                     ; nothing to do: S = 0 ready for free entry!
 ; ----------------------------------;
     CMP     #BytsPerSec-32,Y        ; Entry >= last entry in DIRsector ?
-    JHS     SelectHideEntry         ; yes:  next DIR entry is out of sector
+    JC      SelectHideEntry         ; yes:  next DIR entry is out of sector
     CMP.B   #0,SD_BUF+32(Y)         ; no:   next DIR entry in DIRsector is free?
     JZ      WriteDelEntry           ;       yes
 ; ----------------------------------;
@@ -629,7 +629,7 @@ EndOfFileClusters                   ;
     CALL    #CloseHandleT           ;
 ; ----------------------------------;
 DEL_END                             ;
-    mNEXT                           ;4
+    MOV @IP+,PC                     ;4
 ; ----------------------------------;
 
 
@@ -645,7 +645,7 @@ DEL_END                             ;
     .word   lit,2                   ; -- open_type
     .word   HERE,COUNT              ; -- open_type addr cnt
     .word   PARENOPEN               ;                   reopen same filepath but as write
-    FORTHtoASM                      ;
+    .word   $+2                     ;
     MOV     @RSP+,IP                ;
     BIC     #UCRXIFG,&TERM_IFG      ;   clean up UCRX buffer  
 ; ----------------------------------;
@@ -664,7 +664,7 @@ T2S_FillBufferLoop                  ;
     MOV.B   X,SD_BUF(Y)             ;3
     ADD     #1,Y                    ;1
     CMP     #BytsPerSec-1,Y         ;2
-    JLO     T2S_FillBufferLoop      ;2 Y<511    21 cycles char loop
+    JNC     T2S_FillBufferLoop      ;2 Y<511    21 cycles char loop
     JZ      T2S_XOFF                ;2 Y=511    send XOFF after RX 511th char
 ; ----------------------------------;
 T2S_WriteFile                       ;2 Y>511
@@ -683,6 +683,6 @@ T2S_END                             ;
     MOV     Y,&BufferPtr            ;3
     CALL    #CloseHandleT           ;4
 TERM2SD_END                         ;
-    mNEXT                           ;4
+    MOV @IP+,PC                     ;4
 ; ----------------------------------;
 
