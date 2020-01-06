@@ -147,31 +147,31 @@
 ! ============================================
 ! FORTH I/O :
 ! ============================================
-TXD=1!              ; P2.0 = TX also FORTH Deep_RST pin
-RXD=2!              ; P2.1 = RX
-TERM_BUS=3!
-
 TERM_IN=\$201!
 TERM_REN=\$207!
-TERM_SEL=\$20D!
+TERM_SEL=\$20D!     ; SEL1
 TERM_IE=\$21B!
 TERM_IFG=\$21D!
+BUS_TERM=3!         ; P2.0 = TX, P2.1 = RX
 
-TERM_CTLW0=\$5C0!    \ eUSCI_A control word 0        
-TERM_CTLW1=\$5C2!    \ eUSCI_A control word 1        
+Deep_RST_IN=\$201!  ; TERMINAL TX  pin as FORTH Deep_RST
+Deep_RST=1!         ; P2.0 = TX
+
+TERM_CTLW0=\$5C0!    \ eUSCI_A0 control word 0        
+TERM_CTLW1=\$5C2!    \ eUSCI_A0 control word 1        
 TERM_BRW=\$5C6!         
-TERM_BR0=\$5C6!      \ eUSCI_A baud rate 0           
-TERM_BR1=\$5C7!      \ eUSCI_A baud rate 1           
-TERM_MCTLW=\$5C8!    \ eUSCI_A modulation control    
-TERM_STATW=\$5CA!     \ eUSCI_A status                
-TERM_RXBUF=\$5CC!    \ eUSCI_A receive buffer        
-TERM_TXBUF=\$5CE!    \ eUSCI_A transmit buffer       
-TERM_ABCTL=\$5D0!    \ eUSCI_A LIN control           
-TERM_IRTCTL=\$5D2!   \ eUSCI_A IrDA transmit control 
-TERM_IRRCTL=\$5D3!   \ eUSCI_A IrDA receive control  
-TERM_IE=\$5DA!       \ eUSCI_A interrupt enable      
-TERM_IFG=\$5DC!      \ eUSCI_A interrupt flags       
-TERM_IV=\$5DE!       \ eUSCI_A interrupt vector word 
+TERM_BR0=\$5C6!      \ eUSCI_A0 baud rate 0           
+TERM_BR1=\$5C7!      \ eUSCI_A0 baud rate 1           
+TERM_MCTLW=\$5C8!    \ eUSCI_A0 modulation control    
+TERM_STATW=\$5CA!    \ eUSCI_A0 status                
+TERM_RXBUF=\$5CC!    \ eUSCI_A0 receive buffer        
+TERM_TXBUF=\$5CE!    \ eUSCI_A0 transmit buffer       
+TERM_ABCTL=\$5D0!    \ eUSCI_A0 LIN control           
+TERM_IRTCTL=\$5D2!   \ eUSCI_A0 IrDA transmit control 
+TERM_IRRCTL=\$5D3!   \ eUSCI_A0 IrDA receive control  
+TERM_IE=\$5DA!       \ eUSCI_A0 interrupt enable      
+TERM_IFG=\$5DC!      \ eUSCI_A0 interrupt flags       
+TERM_IV=\$5DE!       \ eUSCI_A0 interrupt vector word 
 
 RTS=4!              ; P4.2
 CTS=2!              ; P4.1
@@ -187,28 +187,28 @@ SD_CSDIR=\$225!
 
 SD_SEL1=\$20C!      ; word access, to configure UCB0
 SD_REN=\$206!       ; word access, to configure pullup resistors
-SD_BUS=\$04C0!      ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
+BUS_SD=\$04C0!      ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
 
-SD_CTLW0=\$640!    \ eUSCI_B control word 0          
-SD_CTLW1=\$642!    \ eUSCI_B control word 1 
+SD_CTLW0=\$640!    \ eUSCI_B0 control word 0          
+SD_CTLW1=\$642!    \ eUSCI_B0 control word 1 
 SD_BRW=\$646!         
-SD_BR0=\$646!      \ eUSCI_B bit rate 0              
-SD_BR1=\$647!      \ eUSCI_B bit rate 1              
-SD_STATW=\$648!    \ eUSCI_B status word 
-SD_NT0=\$649!      \ eUSCI_B hardware count           
-SD_TBCNT=\$64A!    \ eUSCI_B byte counter threshold  
-SD_RXBUF=\$64C!    \ eUSCI_B receive buffer          
-SD_TXBUF=\$64E!    \ eUSCI_B transmit buffer         
-SD_I2COA0=\$654!   \ eUSCI_B I2C own address 0       
-SD_I2COA1=\$656!   \ eUSCI_B I2C own address 1       
-SD_I2COA2=\$658!   \ eUSCI_B I2C own address 2       
-SD_I2COA3=\$65A!   \ eUSCI_B I2C own address 3       
-SD_ADDRX=\$65C!    \ eUSCI_B received address        
-SD_ADDMASK=\$65E!  \ eUSCI_B address mask            
-SD_I2CSA=\$660!    \ eUSCI I2C slave address         
-SD_IE=\$66A!       \ eUSCI interrupt enable          
-SD_IFG=\$66C!      \ eUSCI interrupt flags           
-SD_IV=\$66E!       \ eUSCI interrupt vector word     
+SD_BR0=\$646!      \ eUSCI_B0 bit rate 0              
+SD_BR1=\$647!      \ eUSCI_B0 bit rate 1              
+SD_STATW=\$648!    \ eUSCI_B0 status word 
+SD_NT0=\$649!      \ eUSCI_B0 hardware count           
+SD_TBCNT=\$64A!    \ eUSCI_B0 byte counter threshold  
+SD_RXBUF=\$64C!    \ eUSCI_B0 receive buffer          
+SD_TXBUF=\$64E!    \ eUSCI_B0 transmit buffer         
+SD_I2COA0=\$654!   \ eUSCI_B0 I2C own address 0       
+SD_I2COA1=\$656!   \ eUSCI_B0 I2C own address 1       
+SD_I2COA2=\$658!   \ eUSCI_B0 I2C own address 2       
+SD_I2COA3=\$65A!   \ eUSCI_B0 I2C own address 3       
+SD_ADDRX=\$65C!    \ eUSCI_B0 received address        
+SD_ADDMASK=\$65E!  \ eUSCI_B0 address mask            
+SD_I2CSA=\$660!    \ eUSCI_B0 I2C slave address         
+SD_IE=\$66A!       \ eUSCI_B0 interrupt enable          
+SD_IFG=\$66C!      \ eUSCI_B0 interrupt flags           
+SD_IV=\$66E!       \ eUSCI_B0 interrupt vector word     
 
 
 ! ============================================
@@ -258,7 +258,7 @@ WDT_TIM_CTL=\$340!      TA0CTL
 WDT_TIM_CCTL0=\$342!    TA0CCTL0
 WDT_TIM_CCR0=\$352!     TA0CCR0
 WDT_TIM_EX0=\$360!      TA0EX0
-WDT_TIM_0_Vec=\$FFEA!   TA0_0_Vec
+WDT_TIM_0_VEC=\$FFEA!   TA0_0_VEC
 
 IR_IN=\$200!  
 IR_OUT=\$202! 
@@ -267,7 +267,7 @@ IR_REN=\$206!
 IR_IES=\$208!
 IR_IE=\$20A!
 IR_IFG=\$20C!
-IR_Vec=\$FFDE!          P1 int
+IR_VEC=\$FFDE!          P1 int
 RC5_=RC5_!
 RC5=4!                  P1.2
 !IR_RC5 timer
@@ -297,7 +297,7 @@ I2CMM_OUT=\$262!
 I2CMM_DIR=\$264!
 I2CMM_REN=\$266!
 I2CMM_SEL=\$26A!        SEL0
-I2CMM_Vec=\$FFBC!       UCB2_Vec
+I2CMM_VEC=\$FFBC!       UCB2_VEC
 MMSDA=1!                P7.0
 MMSCL=2!                P7.1
 MM_BUS=3!
@@ -307,7 +307,7 @@ I2CM_OUT=\$262!
 I2CM_DIR=\$264!
 I2CM_REN=\$266!
 I2CM_SEL=\$26A!        SEL0
-I2CM_Vec=\$FFBC!       UCB2_Vec
+I2CM_VEC=\$FFBC!       UCB2_VEC
 MSDA=1!                 P7.0
 MSCL=2!                 P7.1
 M_BUS=3!
@@ -317,7 +317,7 @@ I2CS_OUT=\$262!
 I2CS_DIR=\$264!
 I2CS_REN=\$266!
 I2CS_SEL=\$26A!        SEL0
-I2CS_Vec=\$FFBC!       UCB2_Vec
+I2CS_VEC=\$FFBC!       UCB2_VEC
 SSDA=1!                 P7.0
 SSCL=2!                 P7.1
 S_BUS=3!

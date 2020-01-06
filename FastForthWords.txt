@@ -15,14 +15,12 @@ MAX-UD              = 4294967295    largest usable unsigned double number
 
 FORTH vocabulary
 ----------------
-COLD            WARM            WIPE            RST_HERE        PWR_HERE        RST_STATE       PWR_STATE
-BEGIN           DOES>           CREATE          ;               :               IMMEDIATE       POSTPONE        
-]               [               \               [']             ABORT"          ABORT           QUIT            
-EVALUATE        COUNT           LITERAL         ALLOT           ,               >NUMBER         FIND            
-WORD            ."              S"              .               U.              SIGN            HOLD            
-#>              #S              #               <#              KEY             CR              TYPE            
-NOECHO          ECHO            EMIT            ACCEPT
-
+COLD            WARM            WIPE            RST_HERE        PWR_HERE        RST_STATE       PWR_STATE       CREATE          
+;               :               IMMEDIATE       POSTPONE        ]               [               \               '               
+[']             ABORT"          ABORT           QUIT            EVALUATE        COUNT           LITERAL         ALLOT           
+,               >NUMBER         FIND            WORD            ."              S"              .               U.              
+SIGN            HOLD            #>              #S              #               <#              CR              TYPE            
+NOECHO          ECHO            EMIT            KEY             ACCEPT
 
 COLD            Software reset
 
@@ -36,14 +34,12 @@ PWR_HERE        defines the bound of the program memory protected against ON/OFF
 
 RST_STATE       removes all words defined after RST_HERE (COLD or <reset> have same effet)
 
-PWR_STATE       removes all words defined after PWR_HERE (an occurring error has same effect)
+PWR_STATE       removes all words defined after PWR_HERE (an error has same effect)
 
 NOECHO          stop display on output 
 
 ECHO            start display on output
 
-BEGIN           https://forth-standard.org/standard/core/BEGIN
-DOES>           https://forth-standard.org/standard/core/DOES
 CREATE          https://forth-standard.org/standard/core/CREATE
 ;               https://forth-standard.org/standard/core/Semi
 :               https://forth-standard.org/standard/core/Colon
@@ -60,7 +56,6 @@ QUIT            https://forth-standard.org/standard/core/QUIT
 EVALUATE        https://forth-standard.org/standard/core/EVALUATE
 COUNT           https://forth-standard.org/standard/core/COUNT
 LITERAL         https://forth-standard.org/standard/core/LITERAL
-ALLOT           https://forth-standard.org/standard/core/ALLOT
 ,               https://forth-standard.org/standard/core/Comma
 >NUMBER         https://forth-standard.org/standard/core/toNUMBER
 FIND            https://forth-standard.org/standard/core/FIND
@@ -75,10 +70,10 @@ HOLD            https://forth-standard.org/standard/core/HOLD
 #S              https://forth-standard.org/standard/core/numS
 #               https://forth-standard.org/standard/core/num
 <#              https://forth-standard.org/standard/core/num-start
-KEY             DEFERed word, https://forth-standard.org/standard/core/KEY
-CR              DEFERed word, https://forth-standard.org/standard/core/CR
 TYPE            https://forth-standard.org/standard/core/TYPE
+CR              DEFERed word, https://forth-standard.org/standard/core/CR
 EMIT            DEFERed word, https://forth-standard.org/standard/core/EMIT
+KEY             DEFERed word, https://forth-standard.org/standard/core/KEY
 ACCEPT          DEFERed word, https://forth-standard.org/standard/core/ACCEPT
 
 
@@ -294,8 +289,10 @@ DO              REPEAT          WHILE           AGAIN           UNTIL           
 IF              >               <               U<              =               0<              0=              
 C,              C!              C@              R>              >R              NIP             DROP            
 SWAP            DEPTH           EXIT            ?DUP            DUP             !               @               
--               +               {CORE_COMP}
+-               +               DOES>           BEGIN           {CORE_COMP}
 
+BEGIN           https://forth-standard.org/standard/core/BEGIN
+DOES>           https://forth-standard.org/standard/core/DOES
 SPACES          https://forth-standard.org/standard/core/SPACES
 SPACE           https://forth-standard.org/standard/core/SPACE
 BL              https://forth-standard.org/standard/core/BL
@@ -313,6 +310,7 @@ EXECUTE         https://forth-standard.org/standard/core/EXECUTE
 (               https://forth-standard.org/standard/core/p
 DECIMAL         https://forth-standard.org/standard/core/DECIMAL
 HEX             https://forth-standard.org/standard/core/HEX
+ALLOT           https://forth-standard.org/standard/core/ALLOT
 HERE            https://forth-standard.org/standard/core/HERE
 FILL            https://forth-standard.org/standard/core/FILL
 MOVE            https://forth-standard.org/standard/core/MOVE

@@ -647,7 +647,7 @@ DEL_END                             ;
     .word   PARENOPEN               ;                   reopen same filepath but as write
     .word   $+2                     ;
     MOV     @RSP+,IP                ;
-    BIC     #UCRXIFG,&TERM_IFG      ;   clean up UCRX buffer  
+    BIC     #RX_TERM,&TERM_IFG      ;   clean up UCRX buffer  
 ; ----------------------------------;
 T2S_GetSliceLoop                    ;   tranfert by slices of 512 bytes terminal input to file on SD_CARD via SD_BUF 
 ; ----------------------------------;
@@ -656,7 +656,7 @@ T2S_GetSliceLoop                    ;   tranfert by slices of 512 bytes terminal
 ; ----------------------------------;
 T2S_FillBufferLoop                  ;
 ; ----------------------------------;
-    BIT     #UCRXIFG,&TERM_IFG      ;3 new char in TERMRXBUF ?
+    BIT     #RX_TERM,&TERM_IFG      ;3 new char in TERMRXBUF ?
     JZ      T2S_FillBufferLoop      ;2
     MOV.B   &TERM_RXBUF,X           ;3
     CMP.B   #4,X                    ;1 EOT sent by TERATERM ?
@@ -664,10 +664,10 @@ T2S_FillBufferLoop                  ;
     MOV.B   X,SD_BUF(Y)             ;3
     ADD     #1,Y                    ;1
     CMP     #BytsPerSec-1,Y         ;2
-    JNC     T2S_FillBufferLoop      ;2 Y<511    21 cycles char loop
-    JZ      T2S_XOFF                ;2 Y=511    send XOFF after RX 511th char
+    JNC     T2S_FillBufferLoop      ;2 Y < BytsPerSec-1    21 cycles char loop
+    JZ      T2S_XOFF                ;2 Y = BytsPerSec-1    send XOFF after RX 511th char
 ; ----------------------------------;
-T2S_WriteFile                       ;2 Y>511
+T2S_WriteFile                       ;2 Y = BytsPerSec
 ; ----------------------------------;
     CALL    #Write_File             ;TSWXY write all the buffer
     JMP     T2S_GetSliceLoop        ;2 
@@ -675,7 +675,7 @@ T2S_WriteFile                       ;2 Y>511
 T2S_XOFF                            ;  27 cycles between XON and XOFF
 ; ----------------------------------;
     CALL    #RXOFF                  ;4  use no registers
-    JMP     T2S_FillBufferLoop      ;2  loop back to get 512th char
+    JMP     T2S_FillBufferLoop      ;2  loop back once to get last char
 ; ----------------------------------;
 T2S_END                             ;
 ; ----------------------------------;

@@ -1,58 +1,5 @@
 !MSP430fr6989.pat
 
-! ============================================
-! SR bits :
-! ============================================
-\#C=\#1!        = SR(0) Carry flag
-\#Z=\#2!        = SR(1) Zero flag
-\#N=\#4!        = SR(2) Negative flag
-\#GIE=\#8!      = SR(3) Enable Int
-\#CPUOFF=\#\$10!= SR(4) CPUOFF
-\#OSCOFF=\#\$20!= SR(5) OSCOFF
-\#SCG0=\#\$40!  = SR(6) SCG0
-\#SCG1=\#\$80!  = SR(7) SCG1
-\#V=\#\$100!    = SR(8) oVerflow flag
-\#UF9=\#\$200!  = SR(9) User Flag 1 used by ?NUMBER --> INTERPRET --> LITERAL to process double numbers, else free for use.
-\#UF10=\#\$400! = SR(10) User Flag 2
-\#UF11=\#\$800! = SR(11) User Flag 3
-
-LPM4=\$F8! SR(LPM4+GIE)
-LPM3=\$D8! SR(LPM3+GIE)
-LPM2=\$98! SR(LPM2+GIE)
-LPM1=\$58! SR(LPM1+GIE)
-LPM0=\$18! SR(LPM0+GIE)
-
-! ============================================
-! PORTx, Reg  bits :
-! ============================================
-BIT0=1!
-BIT1=2!
-BIT2=4!
-BIT3=8!
-BIT4=\$10!
-BIT5=\$20!
-BIT6=\$40!
-BIT7=\$80!
-BIT8=\$100!
-BIT9=\$200!
-BIT10=\$400!
-BIT11=\$800!
-BIT12=\$1000!
-BIT13=\$2000!
-BIT14=\$4000!
-BIT15=\$8000!
-
-! ============================================
-! symbolic codes :
-! ============================================
-RET=MOV \@R1+,R0!   \ MOV @RSP+,PC
-RETA=MOVA \@R1+,R0!   \ MOV @RSP+,PC
-NOP=MOV \#0,R3!     \                one word one cycle
-NOP2=\$3C00 ,!      \ compile JMP 0  one word two cycles
-NOP3=MOV R0,R0!     \ MOV PC,PC      one word three cycles
-NEXT=MOV \@R13+,R0! \ MOV @IP+,PC
-SEMI=MOV \@R1+,R13\nMOV \@R13+,R0!
-
 ! ----------------------------------------------
 ! MSP430FR6989 MEMORY MAP
 ! ----------------------------------------------
@@ -106,6 +53,7 @@ RXON=\$1814!
 RXOFF=\$1816!
 ReadSectorWX=\$1818!    call with W = SectorLO  X = SectorHI
 WriteSectorWX=\$181A!   call with W = SectorLO  X = SectorHI
+TERMINAL_INT=\$181C!    value for TERMINAL vector
 
 ! ============================================
 ! FRAM TLV
@@ -291,34 +239,29 @@ SD_LEN=\$16E!
 ! FRAM
 ! ----------------------------------------------
 MAIN_ORG=\$4400!        Code space start
+MAIN_LEN=\$24000!       127 k FRAM
+! ----------------------------------------------
 
 SLEEP=\$4400! 
 BODYSLEEP=\$4404!
-VECT_RESET=\$440E! 
-LIT=\$4424! 
-NEXT_ADR=\$442C!
-XSQUOTE=\$442E! 
-QTBRAN=\$4442! 
-BRAN=\$4448! 
-QFBRAN=\$444C! 
-SKIPBRAN=\$4452! 
-XDO=\$4456! 
-XPLOOP=\$4466! 
-XLOOP=\$4478! 
-MUSMOD=\$447E!          unsigned 32/16 division
-SETIB=\$44C4!           Set Input Buffer with org len values, reset >IN 
-REFILL=\$44D4!          accept one line from input and leave org len of input buffer
-CIB_ADR=\$44E4!         contents currently TIB_ORG; may be redirected to SDIB_ORG
-XDODOES=\$44EC!         restore rDODOES: MOV #XDODOES,rDODOES
-XDOCON=\$44FA!          restore rDOCON: MOV #XDOCON,rDOCON
-XDOVAR=\$4506!          restore rDOVAR: MOV #XDOCON,rDOVAR  
-RFROM=\$4506!           
-XDOCOL=\$4510!          restore rDOCOL: MOV #XDOCOL,rDOCOL      only for DTC model = 1
-
-DODOES=\$1284!          CALL rDODOES
-DOCON=\$1285!           CALL rDOCON
-DOVAR=\$1286!           CALL rDOVAR
-DOCOL=\$1287!
+LIT=\$440E! 
+NEXT_ADR=\$4416!
+XSQUOTE=\$4418! 
+HEREADR=\$442C!
+QTBRAN=\$4438! 
+BRAN=\$443E! 
+QFBRAN=\$4442! 
+SKIPBRAN=\$4448! 
+XDO=\$444C! 
+XPLOOP=\$445C! 
+XLOOP=\$446E! 
+MUSMOD=\$4474!          unsigned 32/16 division
+SETIB=\$44BA!           Set Input Buffer with org len values, reset >IN 
+REFILL=\$44CA!          accept one line from input and leave org len of input buffer
+CIB_ADR=\$44D8!         contents currently TIB_ORG; may be redirected to SDIB_ORG
+XDODOES=\$44E2!         restore rDODOES: MOV #XDODOES,rDODOES
+XDOCON=\$44F0!          restore rDOCON: MOV #XDOCON,rDOCON
+XDOCOL=\$44FC!          restore rDOCOL: MOV #XDOCOL,rDOCOL      only for DTC model = 1
 
 ! to find DTC value, download \MSP430-FORTH\FastForthSpecs.4th
 ! if DTC = 1, restore rDOCOL as this : MOV #xdocol,rDOCOL
@@ -340,35 +283,35 @@ VECT_ORG=\$FFC6!        FFC6-FFFF
 VECT_LEN=\$3A!
 
 
-AES_Vec=\$FFC6!
-RTC_Vec=\$FFC8!
-LCD_Vec=\$FFCA!
-P4_Vec=\$FFCC!
-P3_Vec=\$FFCE!
-TA3_x_Vec=\$FFD0!
-TA3_0_Vec=\$FFD2!
-P2_Vec=\$FFD4!
-TA2_x_Vec=\$FFD6!
-TA2_0_Vec=\$FFD8!
-P1_Vec=\$FFDA!
-TA1_x_Vec=\$FFDC!
-TA1_0_Vec=\$FFDE!
-DMA_Vec=\$FFE0!
-eUSCI_B1_Vec=\$FFE2!
-eUSCI_A1_Vec=\$FFE4!
-TA0_x_Vec=\$FFE6!
-TA0_0_Vec=\$FFE8!
-ADC12_B_Vec=\$FFEA!
-eUSCI_B0_Vec=\$FFEC!
-eUSCI_A0_Vec=\$FFEE!
-ESI_Vec=\$FFF0!
-WDT_Vec=\$FFF2!
-TB0_x_Vec=\$FFF4!
-TB0_0_Vec=\$FFF6!
-COMP_E_Vec=\$FFF8!
-U_NMI_Vec=\$FFFA!
-S_NMI_Vec=\$FFFC!
-RST_Vec=\$FFFE!
+AES_VEC=\$FFC6!
+RTC_VEC=\$FFC8!
+LCD_VEC=\$FFCA!
+P4_VEC=\$FFCC!
+P3_VEC=\$FFCE!
+TA3_X_VEC=\$FFD0!
+TA3_0_VEC=\$FFD2!
+P2_VEC=\$FFD4!
+TA2_X_VEC=\$FFD6!
+TA2_0_VEC=\$FFD8!
+P1_VEC=\$FFDA!
+TA1_X_VEC=\$FFDC!
+TA1_0_VEC=\$FFDE!
+DMA_VEC=\$FFE0!
+EUSCI_B1_VEC=\$FFE2!
+EUSCI_A1_VEC=\$FFE4!
+TA0_X_VEC=\$FFE6!
+TA0_0_VEC=\$FFE8!
+ADC12_B_VEC=\$FFEA!
+EUSCI_B0_VEC=\$FFEC!
+EUSCI_A0_VEC=\$FFEE!
+ESI_VEC=\$FFF0!
+WDT_VEC=\$FFF2!
+TB0_X_VEC=\$FFF4!
+TB0_0_VEC=\$FFF6!
+COMP_E_VEC=\$FFF8!
+U_NMI_VEC=\$FFFA!
+S_NMI_VEC=\$FFFC!
+RST_VEC=\$FFFE!
 
 ! ============================================
 ! Special Fonction Registers (SFR)

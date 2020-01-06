@@ -193,7 +193,7 @@ TERM_REN=\$206!
 TERM_SEL=\$20A!      \ SEL0
 TERM_IE=\$21A!
 TERM_IFG=\$21C!
-TERM_Vec=\$FFE0!        UCA0
+TERM_VEC=\$FFE0!        UCA0
 
 TERM_CTLW0=\$500!    \ eUSCI_A0 control word 0
 TERM_CTLW1=\$502!    \ eUSCI_A0 control word 1
@@ -274,7 +274,7 @@ WDT_TIM_CTL=\$380!      TA0CTL
 WDT_TIM_CCTL0=\$382!    TA0CCTL0
 WDT_TIM_CCR0=\$392!     TA0CCR0
 WDT_TIM_EX0=\$3A0!      TA0EX0
-WDT_TIM_0_Vec=\$FFF8!   TA0_0_Vec
+WDT_TIM_0_VEC=\$FFF8!   TA0_0_VEC
 
 
 !IR_RC5
@@ -286,7 +286,7 @@ IR_REN=\$209!
 IR_IES=\$219!
 IR_IE=\$21B!
 IR_IFG=\$21D!
-IR_Vec=\$FFD4!          P2 int
+IR_VEC=\$FFD4!          P2 int
 RC5=4!                  P2.2
 !IR_RC5 timer
 RC5_TIM_CTL=\$3C0!       TA1CTL
@@ -317,7 +317,7 @@ I2CMM_OUT=\$223!
 I2CMM_DIR=\$225!
 I2CMM_REN=\$227!
 I2CMM_SEL=\$22B!        SEL0
-I2CMM_Vec=\$FFDA!       UCB1
+I2CMM_VEC=\$FFDA!       UCB1
 MMSCL=8!                P4.3
 MMSDA=\$10!             P4.4
 MM_BUS=\$18!
@@ -328,7 +328,7 @@ I2CM_OUT=\$223!
 I2CM_DIR=\$225!
 I2CM_REN=\$227!
 I2CM_SEL=\$22B!         SEL0
-I2CM_Vec=\$FFDA!        UCB1
+I2CM_VEC=\$FFDA!        UCB1
 MSCL=8!                 P4.3
 MSDA=\$10!              P4.4
 M_BUS=\$18!
@@ -339,7 +339,7 @@ I2CS_OUT=\$223!
 I2CS_DIR=\$225!
 I2CS_REN=\$227!
 I2CS_SEL=\$22B!         SEL0
-I2CS_Vec=\$FFDA!        UCB1
+I2CS_VEC=\$FFDA!        UCB1
 SSCL=8!                 P4.3
 SSDA=\$10!              P4.4
 S_BUS=\$18!

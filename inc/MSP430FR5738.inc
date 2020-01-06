@@ -2,7 +2,6 @@
 ; MSP430FR5738 minimal declarations for FastForth usage
 DEVICE = "MSP430FR5738"
 
-
 ; ----------------------------------------------
 ; MSP430FR5738 MEMORY MAP
 ; ----------------------------------------------
@@ -51,12 +50,9 @@ VECT_LEN        .equ 32h
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ; ----------------------------------------------
 
-
-
 ; ----------------------------------------------
 ; Interrupt Vectors and signatures - MSP430FR57xx
 ; ----------------------------------------------
-
 ;    .org    SIGNATURES
 ;;Start of JTAG and BSL signatures
 ;        .word   0           ; JTAG signature 1
@@ -128,6 +124,10 @@ COMP_D_SFR      .equ 08C0h
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : LOCK I/O as high impedance state
 ; ----------------------------------------------------------------------
+SFRIE1      .equ SFR_SFR
+SFRIFG1     .equ SFR_SFR + 2
+SFRRPCR     .equ SFR_SFR + 4
+
 PMMCTL0     .equ PMM_SFR
 PMMSWBOR    .equ 4
 
@@ -137,7 +137,6 @@ LOCKLPM5    .equ 1
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : WATCHDOG TIMER A
 ; ----------------------------------------------------------------------
-
 WDTCTL      .equ WDT_A_SFR + 00h    ; Watchdog Timer Control */
 
 ; WDTCTL Control Bits
@@ -148,7 +147,6 @@ WDTCNTCL    .equ 0008h  ; WDT timer counter clear
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : CLOCK SYSTEM
 ; ----------------------------------------------------------------------
-
 CSCTL0          .equ CS_SFR + 00h  	; CS Control Register 0
 CSCTL0_H        .equ CS_SFR + 01h  	; CS Control Register 0 high byte
 CSCTL1          .equ CS_SFR + 02h  	; CS Control Register 1
@@ -190,14 +188,11 @@ DIVM_32         .equ 0005h           ; MCLK Source Divider 0
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : SYS REGISTERS
 ; ----------------------------------------------------------------------
-
 SYSRSTIV    .equ SYS_SFR + 001Eh
-
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : REF
 ; ----------------------------------------------------------------------
-
 REFCTL      .equ REF_SFR + 00h       ; REF Shared Reference control register 0
 
 ; REFCTL0 Control Bits
@@ -207,7 +202,6 @@ REFTCOFF    .equ 0008h               ; REF Temp.Sensor off
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION PAIN=PORT2:PORT1
 ; ----------------------------------------------------------------------
-
 PAIN        .equ PA_SFR + 00h    ; Port A INput
 PAOUT       .equ PA_SFR + 02h    ; Port A OUTput
 PADIR       .equ PA_SFR + 04h    ; Port A DIRection
@@ -246,7 +240,6 @@ P2IV        .equ PA_SFR + 1Eh    ; Port 2 Interrupt Vector word
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORTJ
 ; ----------------------------------------------------------------------
-
 PJIN        .set PJ_SFR + 00h    ; Port B Input
 PJOUT       .set PJ_SFR + 02h    ; Port B Output
 PJDIR       .set PJ_SFR + 04h    ; Port B Direction
@@ -254,7 +247,6 @@ PJREN       .set PJ_SFR + 06h    ; Port B Resistor Enable
 PJSEL0      .set PJ_SFR + 0Ah    ; Port B Selection 0
 PJSEL1      .set PJ_SFR + 0Ch    ; Port B Selection 1
 PJSELC      .set PJ_SFR + 16h    ; Port B Complement Selection
-
 
 ; ----------------------------------------------------------------------
 RTC_B
@@ -277,7 +269,6 @@ RTCYEAR       .equ RTC_B_SFR + 16h
 
 RTCHOLD       .equ 40h
 RTCRDY        .equ 10h
-
 
 ; ----------------------------------------------------------------------
 MPY_32
@@ -307,25 +298,15 @@ RES2      .equ MPY_SFR + 28h    ; 32x32-bit result 2 */
 RES3      .equ MPY_SFR + 2Ah    ; 32x32-bit result 3 */
 MPY32CTL0 .equ MPY_SFR + 2Ch    ; MPY32 control register 0
 
-
 MPUCTL0     .equ MPU_SFR + 00h  ; MPU control 0             
 MPUCTL1     .equ MPU_SFR + 02h  ; MPU control 1             
 MPUSEG      .equ MPU_SFR + 04h  ; MPU Segmentation Register 
 MPUSAM      .equ MPU_SFR + 06h  ; MPU access management     
 
-
-UCSWRST         .equ 1  ; eUSCI Software Reset
-UCTXIE          .equ 2  ; eUSCI Transmit Interrupt Enable
-UCRXIE          .equ 1  ; eUSCI Receive Interrupt Enable
-UCTXIFG         .equ 2  ; eUSCI Transmit Interrupt Flag
-UCRXIFG         .equ 1  ; eUSCI Receive Interrupt Flag
-
-
+    .IFDEF UCA0_TERM
 ; ----------------------------------------------------------------------
 ; eUSCI_A0
 ; ----------------------------------------------------------------------
-
-    .IFDEF UCA0_TERM
 TERM_CTLW0       .equ eUSCI_A0_SFR + 00h    ; eUSCI_A0 Control Word Register 0
 TERM_BRW         .equ eUSCI_A0_SFR + 06h    ; eUSCI_A0 Baud Word Rate 0
 TERM_MCTLW       .equ eUSCI_A0_SFR + 08h    ; eUSCI_A0 Modulation Control
@@ -335,17 +316,54 @@ TERM_TXBUF       .equ eUSCI_A0_SFR + 0Eh    ; eUSCI_A0 Transmit Buffer
 TERM_IE          .equ eUSCI_A0_SFR + 1Ah    ; eUSCI_A0 Interrupt Enable Register
 TERM_IFG         .equ eUSCI_A0_SFR + 1Ch    ; eUSCI_A0 Interrupt Flags Register
 TERM_VEC         .equ 0FFF0h      ; interrupt vector for  eUSCI_A0
+RX_TERM         .equ 1
+TX_TERM         .equ 2
     .ENDIF ;UCA0_TERM
 
+    .IFDEF UCA0_SD
+; ----------------------------------------------------------------------
+; eUSCI_A0
+; ----------------------------------------------------------------------
+SD_CTLW0       .equ eUSCI_A0_SFR + 00h      ; USCI_A0 Control Word Register 0
+SD_BRW         .equ eUSCI_A0_SFR + 06h      ; USCI_A0 Baud Word Rate 0
+SD_RXBUF       .equ eUSCI_A0_SFR + 0Ch      ; USCI_A0 Receive Buffer 8
+SD_TXBUF       .equ eUSCI_A0_SFR + 0Eh      ; USCI_A0 Transmit Buffer 8
+SD_IFG         .equ eUSCI_A0_SFR + 1Ch      ; USCI_A0 Interrupt Flags Register
+RX_SD           .equ 1
+TX_SD           .equ 2
+    .ENDIF
+
+    .IFDEF UCB0_TERM
 ; ----------------------------------------------------------------------
 ; eUSCI_B0
 ; ----------------------------------------------------------------------
+TERM_CTLW0      .equ eUSCI_B0_SFR + 00h     ; USCI_B0 Control Word Register 0
+TERM_CTLW1      .equ eUSCI_B0_SFR + 02h     ; USCI_B0 Control Word Register 1
+TERM_BRW        .equ eUSCI_B0_SFR + 06h     ; USCI_B0 Baud Word Rate 0
+TERM_STATW      .equ eUSCI_B0_SFR + 08h     ; USCI_B0 Status Word
+TERM_RXBUF      .equ eUSCI_B0_SFR + 0Ch     ; USCI_B0 Receive Buffer 8
+TERM_TXBUF      .equ eUSCI_B0_SFR + 0Eh     ; USCI_B0 Transmit Buffer 8
+TERM_I2COA0     .equ eUSCI_B0_SFR + 14h     ; USCI_B0 I2C Own Address 0
+TERM_ADDRX      .equ eUSCI_B0_SFR + 1Ch     ; USCI_B0  Received Address Register 
+TERM_I2CSA      .equ eUSCI_B0_SFR + 20h     ; USCI_B0 I2C Slave Address
+TERM_IE         .equ eUSCI_B0_SFR + 2Ah     ; USCI_B0 Interrupt Enable
+TERM_IFG        .equ eUSCI_B0_SFR + 2Ch     ; USCI_B0 Interrupt Flags Register
+TERM_VEC        .equ 0FFEEh                 ; interrupt vector for eUSCI_B0
+RX_TERM         .equ 1
+TX_TERM         .equ 2
+    .ENDIF ;UCB0_TERM
+
     .IFDEF UCB0_SD
+; ----------------------------------------------------------------------
+; eUSCI_B0
+; ----------------------------------------------------------------------
 SD_CTLW0       .equ eUSCI_B0_SFR + 00h    ; USCI_B0 Control Word Register 0
 SD_BRW         .equ eUSCI_B0_SFR + 06h    ; USCI_B0 Baud Word Rate 0
 SD_RXBUF       .equ eUSCI_B0_SFR + 0Ch    ; USCI_B0 Receive Buffer 8
 SD_TXBUF       .equ eUSCI_B0_SFR + 0Eh    ; USCI_B0 Transmit Buffer 8
 SD_IFG         .equ eUSCI_B0_SFR + 2Ch    ; USCI_B0 Interrupt Flags Register
+RX_SD           .equ 1
+TX_SD           .equ 2
     .ENDIF ;UCB0_SD
 
 

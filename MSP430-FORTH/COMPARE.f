@@ -16,7 +16,7 @@
 \ You should have received a copy of the GNU General Public License
 \ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-[UNDEFINED] IF [IF]
+[UNDEFINED] IF [IF]     \ define IF THEN
 \ https://forth-standard.org/standard/core/IF
 \ IF       -- IFadr    initialize conditional forward branch
 CODE IF       \ immediate
@@ -28,9 +28,7 @@ MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
 ADD #2,TOS              \ -- HERE+2=IFadr
 MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] THEN [IF]
 \ https://forth-standard.org/standard/core/THEN
 \ THEN     IFadr --                resolve forward branch
 CODE THEN               \ immediate
@@ -40,15 +38,13 @@ MOV @IP+,PC
 ENDCODE IMMEDIATE
 [THEN]
 
-[UNDEFINED] BEGIN [IF]
+[UNDEFINED] BEGIN [IF]  \ define BEGIN UNTIL AGAIN WHILE REPEAT
 \ https://forth-standard.org/standard/core/BEGIN
 \ BEGIN    -- BEGINadr             initialize backward branch
-CODE BEGIN              \ immediate
-MOV #HERE,PC            \ BR HERE
+CODE BEGIN
+    MOV #HEREADR,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] UNTIL [IF]
 \ https://forth-standard.org/standard/core/UNTIL
 \ UNTIL    BEGINadr --             resolve conditional backward branch
 CODE UNTIL              \ immediate
@@ -60,6 +56,25 @@ BW1 ADD #4,&DP          \ compile two words
     MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE IMMEDIATE
+
+\ https://forth-standard.org/standard/core/AGAIN
+\ AGAIN    BEGINadr --             resolve uncondionnal backward branch
+CODE AGAIN     \ immediate
+MOV #BRAN,X
+GOTO BW1
+ENDCODE IMMEDIATE
+
+\ https://forth-standard.org/standard/core/WHILE
+\ WHILE    BEGINadr -- WHILEadr BEGINadr
+: WHILE     \ immediate
+POSTPONE IF SWAP
+; IMMEDIATE
+
+\ https://forth-standard.org/standard/core/REPEAT
+\ REPEAT   WHILEadr BEGINadr --     resolve WHILE loop
+: REPEAT
+POSTPONE AGAIN POSTPONE THEN
+; IMMEDIATE
 [THEN]
 
 \ COMPARE ( c-addr1 u1 c-addr2 u2 -- n )

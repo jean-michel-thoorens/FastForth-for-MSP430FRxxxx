@@ -111,6 +111,10 @@ ADC10_B_SFR     .equ 0700h
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : LOCK PMM_LOCKLPM5
 ; ----------------------------------------------------------------------
+SFRIE1      .equ SFR_SFR
+SFRIFG1     .equ SFR_SFR + 2
+SFRRPCR     .equ SFR_SFR + 4
+
 PMMCTL0     .equ PMM_SFR
 PMMSWBOR    .equ 4
 
@@ -258,21 +262,11 @@ RES3      .equ MPY_SFR + 2Ah    ; 32x32-bit result 3 */
 MPY32CTL0 .equ MPY_SFR + 2Ch    ; MPY32 control register 0
 
 
-
-
-UCSWRST         .equ 1  ; eUSCI Software Reset
-UCTXIE          .equ 2  ; eUSCI Transmit Interrupt Enable
-UCRXIE          .equ 1  ; eUSCI Receive Interrupt Enable
-UCTXIFG         .equ 2  ; eUSCI Transmit Interrupt Flag
-UCRXIFG         .equ 1  ; eUSCI Receive Interrupt Flag
-
-
-
-; ----------------------------------------------------------------------
-eUSCI_A0
-; ----------------------------------------------------------------------
-
     .IFDEF UCA0_TERM
+; ----------------------------------------------------------------------
+; eUSCI_A0 as UCA0_TERM
+; ----------------------------------------------------------------------
+
 TERM_CTLW0       .equ eUSCI_A0_SFR + 00h    ; eUSCI_A0 Control Word Register 0
 TERM_BRW         .equ eUSCI_A0_SFR + 06h    ; eUSCI_A0 Baud Word Rate 0
 TERM_MCTLW       .equ eUSCI_A0_SFR + 08h    ; eUSCI_A0 Modulation Control
@@ -281,73 +275,85 @@ TERM_RXBUF       .equ eUSCI_A0_SFR + 0Ch    ; eUSCI_A0 Receive Buffer
 TERM_TXBUF       .equ eUSCI_A0_SFR + 0Eh    ; eUSCI_A0 Transmit Buffer
 TERM_IE          .equ eUSCI_A0_SFR + 1Ah    ; eUSCI_A0 Interrupt Enable Register
 TERM_IFG         .equ eUSCI_A0_SFR + 1Ch    ; eUSCI_A0 Interrupt Flags Register
-TERM_VEC         .equ 0FFE4h      ;  interrupt vector for eUSCI_A0
-    .ENDIF ;UCA0_TERM
-
-
-; ----------------------------------------------------------------------
-eUSCI_A1
-; ----------------------------------------------------------------------
+TERM_VEC         .equ 0FFE4h                ;  interrupt vector for eUSCI_A0
+RX_TERM         .equ 1
+TX_TERM         .equ 2
+    .ENDIF
+    
     .IFDEF UCA1_TERM
-TERM_CTLW0       .equ eUSCI_A1_SFR + 00h    ; eUSCI_A1 Control Word Register 0
-TERM_BRW         .equ eUSCI_A1_SFR + 06h    ; eUSCI_A1 Baud Word Rate 0
-TERM_MCTLW       .equ eUSCI_A1_SFR + 08h    ; eUSCI_A1 Modulation Control
-TERM_STATW       .equ eUSCI_A1_SFR + 0Ah    ; eUSCI_A1 status Word Register
-TERM_RXBUF       .equ eUSCI_A1_SFR + 0Ch    ; eUSCI_A1 Receive Buffer
-TERM_TXBUF       .equ eUSCI_A1_SFR + 0Eh    ; eUSCI_A1 Transmit Buffer
-TERM_IE          .equ eUSCI_A1_SFR + 1Ah    ; eUSCI_A1 Interrupt Enable Register
-TERM_IFG         .equ eUSCI_A1_SFR + 1Ch    ; eUSCI_A1 Interrupt Flags Register
-TERM_VEC         .equ 0FFE2h      ;  interrupt vector for eUSCI_A1
-    .ENDIF ;UCA1_TERM
+; ----------------------------------------------------------------------
+; eUSCI_A1 as UCA1_TERM
+; ----------------------------------------------------------------------
+TERM_CTLW0      .equ eUSCI_A1_SFR + 00h     ; eUSCI_A1 Control Word Register 0
+TERM_BRW        .equ eUSCI_A1_SFR + 06h     ; eUSCI_A1 Baud Word Rate 0
+TERM_MCTLW      .equ eUSCI_A1_SFR + 08h     ; eUSCI_A1 Modulation Control
+TERM_STATW      .equ eUSCI_A1_SFR + 0Ah     ; eUSCI_A1 status Word Register
+TERM_RXBUF      .equ eUSCI_A1_SFR + 0Ch     ; eUSCI_A1 Receive Buffer
+TERM_TXBUF      .equ eUSCI_A1_SFR + 0Eh     ; eUSCI_A1 Transmit Buffer
+TERM_IE         .equ eUSCI_A1_SFR + 1Ah     ; eUSCI_A1 Interrupt Enable Register
+TERM_IFG        .equ eUSCI_A1_SFR + 1Ch     ; eUSCI_A1 Interrupt Flags Register
+TERM_VEC        .equ 0FFE2h                 ;  interrupt vector for eUSCI_A1
+RX_TERM         .equ 1
+TX_TERM         .equ 2
+    .ENDIF
 
     .IFDEF UCA1_SD
-SD_CTLW0       .equ eUSCI_A1_SFR + 00h    ; USCI_B0 Control Word Register 0
-SD_BRW         .equ eUSCI_A1_SFR + 06h    ; USCI_B0 Baud Word Rate 0
-SD_RXBUF       .equ eUSCI_A1_SFR + 0Ch    ; USCI_B0 Receive Buffer 8
-SD_TXBUF       .equ eUSCI_A1_SFR + 0Eh    ; USCI_B0 Transmit Buffer 8
-SD_IFG         .equ eUSCI_A1_SFR + 1Ch    ; USCI_B0 Interrupt Flags Register
-    .ENDIF ;UCA1_SD
+; ----------------------------------------------------------------------
+; eUSCI_A1 as UCA1_SD
+; ----------------------------------------------------------------------
+SD_CTLW0       .equ eUSCI_A1_SFR + 00h      ; USCI_A1 Control Word Register 0
+SD_BRW         .equ eUSCI_A1_SFR + 06h      ; USCI_A1 Baud Word Rate 0
+SD_RXBUF       .equ eUSCI_A1_SFR + 0Ch      ; USCI_A1 Receive Buffer 8
+SD_TXBUF       .equ eUSCI_A1_SFR + 0Eh      ; USCI_A1 Transmit Buffer 8
+SD_IFG         .equ eUSCI_A1_SFR + 1Ch      ; USCI_A1 Interrupt Flags Register
+RX_SD           .equ 1
+TX_SD           .equ 2
+    .ENDIF
 
-; ----------------------------------------------------------------------
-eUSCI_B0
-; ----------------------------------------------------------------------
     .IFDEF UCB0_TERM
-TERM_CTLW0       .equ eUSCI_B0_SFR + 00h    ; USCI_B0 Control Word Register 0
-TERM_CTLW1       .equ eUSCI_B0_SFR + 02h    ; USCI_B0 Control Word Register 1
-TERM_BRW         .equ eUSCI_B0_SFR + 06h    ; USCI_B0 Baud Word Rate 0
-TERM_STATW       .equ eUSCI_B0_SFR + 08h    ; USCI_B0 Status Word
-TERM_RXBUF       .equ eUSCI_B0_SFR + 0Ch    ; USCI_B0 Receive Buffer 8
-TERM_TXBUF       .equ eUSCI_B0_SFR + 0Eh    ; USCI_B0 Transmit Buffer 8
-TERM_I2COA0      .equ eUSCI_B0_SFR + 14h    ; USCI_B0 I2C Own Address 0
-TERM_ADDRX       .equ eUSCI_B0_SFR + 1Ch    ; USCI_B0  Received Address Register 
-TERM_I2CSA       .equ eUSCI_B0_SFR + 20h    ; USCI_B0 I2C Slave Address
-TERM_IE          .equ eUSCI_B0_SFR + 2Ah    ; USCI_B0 Interrupt Enable
-TERM_IFG         .equ eUSCI_B0_SFR + 2Ch    ; USCI_B0 Interrupt Flags Register
-TERM_VEC         .equ 0FFE0h      ; interrupt vector for eUSCI_B0
-    .ENDIF ;UCB0_TERM
-
-    .IFDEF UCB0_I2CM ; used by UART2MICC.asm 
-TERM2IIC_CTLW0       .equ eUSCI_B0_SFR + 00h    ; USCI_B0 Control Word Register 0
-TERM2IIC_CTLW1       .equ eUSCI_B0_SFR + 02h    ; USCI_B0 Control Word Register 1
-TERM2IIC_BRW         .equ eUSCI_B0_SFR + 06h    ; USCI_B0 Baud Word Rate 0
-TERM2IIC_STATW       .equ eUSCI_B0_SFR + 08h    ; USCI_B0 Status Word
-TERM2IIC_STAT        .equ eUSCI_B0_SFR + 08h    ; USCI_B0 Status Byte
-TERM2IIC_BCNT        .equ eUSCI_B0_SFR + 09h    ; USCI_B0 Byte Counter Register Byte
-TERM2IIC_TBCNT       .equ eUSCI_B0_SFR + 0Ah    ; USCI_B0 Byte Counter Threshold Register
-TERM2IIC_RXBUF       .equ eUSCI_B0_SFR + 0Ch    ; USCI_B0 Receive Buffer 8
-TERM2IIC_TXBUF       .equ eUSCI_B0_SFR + 0Eh    ; USCI_B0 Transmit Buffer 8
-TERM2IIC_I2COA0      .equ eUSCI_B0_SFR + 14h    ; USCI_B0 I2C Own Address 0
-TERM2IIC_I2CSA       .equ eUSCI_B0_SFR + 20h    ; USCI_B0 I2C Slave Address
-TERM2IIC_IE          .equ eUSCI_B0_SFR + 2Ah    ; USCI_B0 Interrupt Enable
-TERM2IIC_IFG         .equ eUSCI_B0_SFR + 2Ch    ; USCI_B0 Interrupt Flags Register
-    .ENDIF ;UCB0_I2CM
+; ----------------------------------------------------------------------
+; eUSCI_B0 as UCB0_TERM
+; ----------------------------------------------------------------------
+TERM_CTLW0      .equ eUSCI_B0_SFR + 00h     ; USCI_B0 Control Word Register 0
+TERM_CTLW1      .equ eUSCI_B0_SFR + 02h     ; USCI_B0 Control Word Register 1
+TERM_BRW        .equ eUSCI_B0_SFR + 06h     ; USCI_B0 Baud Word Rate 0
+TERM_STATW      .equ eUSCI_B0_SFR + 08h     ; USCI_B0 Status Word
+TERM_RXBUF      .equ eUSCI_B0_SFR + 0Ch     ; USCI_B0 Receive Buffer 8
+TERM_TXBUF      .equ eUSCI_B0_SFR + 0Eh     ; USCI_B0 Transmit Buffer 8
+TERM_I2COA0     .equ eUSCI_B0_SFR + 14h     ; USCI_B0 I2C Own Address 0
+TERM_ADDRX      .equ eUSCI_B0_SFR + 1Ch     ; USCI_B0  Received Address Register 
+TERM_I2CSA      .equ eUSCI_B0_SFR + 20h     ; USCI_B0 I2C Slave Address
+TERM_IE         .equ eUSCI_B0_SFR + 2Ah     ; USCI_B0 Interrupt Enable
+TERM_IFG        .equ eUSCI_B0_SFR + 2Ch     ; USCI_B0 Interrupt Flags Register
+TERM_VEC        .equ 0FFE0h                 ; interrupt vector for eUSCI_B0
+RX_TERM         .equ 1
+TX_TERM         .equ 2
+    .ENDIF
 
     .IFDEF UCB0_SD
-SD_CTLW0       .equ eUSCI_B0_SFR + 00h    ; USCI_B0 Control Word Register 0
-SD_BRW         .equ eUSCI_B0_SFR + 06h    ; USCI_B0 Baud Word Rate 0
-SD_RXBUF       .equ eUSCI_B0_SFR + 0Ch    ; USCI_B0 Receive Buffer 8
-SD_TXBUF       .equ eUSCI_B0_SFR + 0Eh    ; USCI_B0 Transmit Buffer 8
-SD_IFG         .equ eUSCI_B0_SFR + 2Ch    ; USCI_B0 Interrupt Flags Register
-    .ENDIF ;UCB0_SD
+; ----------------------------------------------------------------------
+; eUSCI_B0 as UCB0_SD
+; ----------------------------------------------------------------------
+SD_CTLW0        .equ eUSCI_B0_SFR + 00h     ; USCI_B0 Control Word Register 0
+SD_BRW          .equ eUSCI_B0_SFR + 06h     ; USCI_B0 Baud Word Rate 0
+SD_RXBUF        .equ eUSCI_B0_SFR + 0Ch     ; USCI_B0 Receive Buffer 8
+SD_TXBUF        .equ eUSCI_B0_SFR + 0Eh     ; USCI_B0 Transmit Buffer 8
+SD_IFG          .equ eUSCI_B0_SFR + 2Ch     ; USCI_B0 Interrupt Flags Register
+RX_SD           .equ 1
+TX_SD           .equ 2
+    .ENDIF
+
+    .IFDEF UCB0_I2CM
+; ----------------------------------------------------------------------
+; eUSCI_B0 as UCB0_I2CM
+; ----------------------------------------------------------------------
+SD_CTLW0        .equ eUSCI_B0_SFR + 00h     ; USCI_B0 Control Word Register 0
+SD_BRW          .equ eUSCI_B0_SFR + 06h     ; USCI_B0 Baud Word Rate 0
+SD_RXBUF        .equ eUSCI_B0_SFR + 0Ch     ; USCI_B0 Receive Buffer 8
+SD_TXBUF        .equ eUSCI_B0_SFR + 0Eh     ; USCI_B0 Transmit Buffer 8
+SD_IFG          .equ eUSCI_B0_SFR + 2Ch     ; USCI_B0 Interrupt Flags Register
+RX_SD           .equ 1
+TX_SD           .equ 2
+    .ENDIF
 
 

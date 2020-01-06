@@ -5,7 +5,7 @@ IF  /I "%~x1" == ".f" goto sendF
 
 :send4th
 
-start  SendSource.bat %1  NOECHO
+start  SendSource.bat %1  ECHO
 ::PAUSE > NUL
 exit
 
@@ -14,7 +14,7 @@ exit
 
 call  Select.bat SelectTemplate
 
-start  SendSource.bat %1 %~d1\inc\%template% NOECHO
+start  SendSource.bat %1 %~d1\inc\%template% ECHO
 
 ::PAUSE > NUL
 exit

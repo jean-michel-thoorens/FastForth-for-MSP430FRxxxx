@@ -42,8 +42,8 @@
 ; ------------------------
 ; P1 - 24 - 3V3
 ; P2 - 20 - P3.2
-; P3 -  4 - P1.5 UCA0 RXD
-; P4 -  3 - P1.4 UCA0 TXD
+; P3 -  4 - P1.5 UCA0 RX/SOMI
+; P4 -  3 - P1.4 UCA0 TX/SIMO
 ; P5 -  5 - P1.6 UCA0 CLK    
 ; P6 - 13 - P2.3 
 ; P7 - 12 - P3.0
@@ -111,23 +111,6 @@
 ; P1.0  - UCB0 STE    PL1.8  -  <---- TSSOP32236 (IR RC5) 
 
 ; ----------------------------------------------------------------------
-; INIT order : WDT, GPIOs, FRAM, Clock, UARTs...
-; ----------------------------------------------------------------------
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : LOCK PMM_LOCKLPM5
-; ----------------------------------------------------------------------
-
-;              BIS     #LOCKLPM5,&PM5CTL0 ; unlocked by WARM
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : WATCHDOG TIMER A
-; ----------------------------------------------------------------------
-
-; WDT code
-        MOV #WDTPW+WDTHOLD+WDTCNTCL,&WDTCTL    ; stop WDT
-
-; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : I/O
 ; ----------------------------------------------------------------------
 
@@ -143,38 +126,44 @@
             BIS #-1,&PAREN  ; all pins with pull resistors
           
 ; PORT1 usage
-    .IFDEF UCA0_TERM
-TXD         .equ 10h        ; P1.4 = TXD + FORTH Deep_RST pin
-RXD         .equ 20h        ; P1.5
-TERM_BUS    .equ 30h
-TERM_IN     .equ P1IN
-TERM_SEL    .equ P1SEL0
-TERM_REN    .equ P1REN
+
+    .IFDEF UCB0_TERM        ;
+TERM_SEL    .equ    P1SEL0
+TERM_REN    .equ    P1REN
+TERM_OUT    .equ    P1OUT
+BUS_TERM    .equ    0Ch     ; P1.2=SDA P1.3=SCL
     .ENDIF
 
-; PORT2 usage
     .IFDEF UCB0_SD
 SD_SEL      .equ PASEL0     ; to configure UCB0
 SD_REN      .equ PAREN      ; to configure pullup resistors
-SD_BUS      .equ 000Eh      ; pins P1.1 as UCB0CLK, P1.2 as UCB0SIMO & P1.3 as UCB0SOMI
+BUS_SD      .equ 000Eh      ; pins P1.1 as UCB0CLK, P1.2 as UCB0SIMO & P1.3 as UCB0SOMI
     .ENDIF
 
-SD_CD       .equ 8          ; P2.3 as SD_CD
-SD_CS       .equ 4          ; P2.2 as SD_CS     
+    .IFDEF UCA0_TERM
+TERM_IN     .equ P1IN
+TERM_SEL    .equ P1SEL0
+TERM_REN    .equ P1REN
+TXD         .equ 10h        ; P1.4 = TXD + FORTH Deep_RST pin
+RXD         .equ 20h        ; P1.5
+BUS_TERM    .equ 30h
+    .ENDIF
+
+WIPE_IN     .equ    P1IN
+IO_WIPE     .equ    10h     ; P1.4 = FORTH Deep_RST pin
+
+    .IFDEF UCA0_SD
+SD_SEL    .equ PASEL0
+SD_REN    .equ PAREN
+BUS_SD    .equ 0070h        ; pins P1.4,P1.5,P1.6
+    .ENDIF
+
+; PORT2 usage
 SD_CDIN     .equ P2IN
 SD_CSOUT    .equ P2OUT
 SD_CSDIR    .equ P2DIR
-
-
-    .IFDEF UCA1_TERM
-RXD         .equ 20h        ; P2.5
-TXD         .equ 40h        ; P2.6 = TXD + FORTH Deep_RST pin
-TERM_BUS    .equ 60h
-TERM_IN     .equ P2IN       ; TERMINAL TX  pin as FORTH Deep_RST 
-TERM_SEL    .equ P2SEL0
-TERM_REN    .equ P2REN
-    .ENDIF
-
+CD_SD       .equ 8          ; P2.3 as CD_SD
+CS_SD       .equ 4          ; P2.2 as CS_SD     
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3
@@ -185,10 +174,10 @@ TERM_REN    .equ P2REN
 ; PORT3 usage
 ; P3.1 -           LED1
 
-CTS         .equ    1           ; P3.0
-RTS         .equ    4           ; P3.2
 HANDSHAKOUT .equ    P3OUT
 HANDSHAKIN  .equ    P3IN
+CTS         .equ    1           ; P3.0
+RTS         .equ    4           ; P3.2
 
 ; RTS output is wired to the CTS input of UART2USB bridge 
 ; CTS is not used by FORTH terminal
@@ -371,9 +360,13 @@ HANDSHAKIN  .equ    P3IN
     .error "bad frequency setting, only 0.5,1,2,4,8,16 MHz"
     .ENDIF
 
+
     .IFDEF LF_XTAL
 ;           MOV     #0000h,&CSCTL3      ; FLL select XT1, FLLREFDIV=0 (default value)
             MOV     #0000h,&CSCTL4      ; ACLOCK select XT1, MCLK & SMCLK select DCOCLKDIV
+
+            BIS.B   #03,&P2SEL0         ; P2.0 as XOUT, P2.1 as XIN
+
     .ELSE
             BIS     #0010h,&CSCTL3      ; FLL select REFCLOCK
 ;           MOV     #0100h,&CSCTL4      ; ACLOCK select REFO, MCLK & SMCLK select DCOCLKDIV (default value)
@@ -383,7 +376,7 @@ HANDSHAKIN  .equ    P3IN
 ;            MOV &SAVE_SYSRSTIV,TOS  ;
 ;            CMP #2,TOS              ; POWER ON ?
 ;            JZ      ClockWaitX      ; yes
-;            RRUM    #2,X            ; wait only 125 ms
+;            RRUM    #1,X            ; wait only 250 ms
 ClockWaitX  MOV     #5209,Y         ; wait 0.5s before starting after POR
                                     ;       ...because FLL lock time = 280 ms
 ClockWaitY  SUB     #1,Y            ;1
@@ -391,5 +384,6 @@ ClockWaitY  SUB     #1,Y            ;1
             SUB     #1,X            ; x 32 @ 1 MHZ = 500ms
             JNZ     ClockWaitX      ; time to stabilize power source ( 500ms )
 
-;WAITFLL     BIT #300h,&CSCTL7         ; wait FLL lock
+;WAITFLL     BIT #300h,&CSCTL7       ; wait FLL lock
 ;            JNZ WAITFLL
+

@@ -1,10 +1,6 @@
 ; ThingsInFirst.inc
 
-    .cpu MSP430X
-
-;    macexp off      ; uncomment to hide macros development in forthMSP430FR.lst
-
-;    .listing OFF
+    .cpu MSP430X    ; define CPU
 
 ; ----------------------------------------------
 ; MACROS FOR assembly instructions
@@ -52,6 +48,8 @@ voclink     .set 0  ; init vocabulary links
 forthlink   .set 0
 asmlink     .set 0
 
+    .save
+    .listing off
 
     .IF THREADS = 1
 
@@ -142,12 +140,11 @@ asmlink30   .set 0
 asmlink31   .set 0
 
 ;-------------------------------------------
-FORTHWORD   .MACRO  name
-;-------------------------------------------
 ; (THREADS-1)*2 = AND mask to define CURRENT offset in vocabulary
-thread      .set    charfromstr(name,0) &  ((THREADS-1)*2)
-
-    .SWITCH thread
+;-------------------------------------------
+FORTHWORD   .MACRO  name
+CONTEXTofst .set    charfromstr(name,0) & ((THREADS-1)*2)
+    .SWITCH CONTEXTofst
     .case 0
             .word   forthlink
 forthlink   .set    $
@@ -244,22 +241,16 @@ forthlink30 .set    $
     .case 62
             .word   forthlink31
 forthlink31 .set    $
-
     .endcase
-
             .byte   STRLEN(name),name
-;            .align  2
             .ENDM
 
+;-------------------------------------------
+; (THREADS-1)*2 = AND mask to define CURRENT offset in vocabulary
 ;-------------------------------------------
 FORTHWORDIMM .MACRO  name
-;-------------------------------------------
-
-; (THREADS-1)*2 = AND mask to define CURRENT offset in vocabulary
-thread      .set    charfromstr(name,0) &  ((THREADS-1)*2)
-
-
-    .SWITCH thread
+CONTEXTofst .set    charfromstr(name,0) &  ((THREADS-1)*2)
+    .SWITCH CONTEXTofst
     .case 0
             .word   forthlink
 forthlink   .set    $
@@ -356,21 +347,16 @@ forthlink30 .set    $
     .case 62
             .word   forthlink31
 forthlink31 .set    $
-
     .endcase
-
-            .byte   STRLEN(name)+128,name
-;            .align  2
+            .byte   80h+STRLEN(name),name
             .ENDM
 
 ;-------------------------------------------
-asmword     .MACRO  name
-;-------------------------------------------
-
 ; (THREADS-1)*2 = AND mask to define CURRENT offset in vocabulary
-thread      .set    charfromstr(name,0) &  ((THREADS-1)*2)
-
-    .SWITCH thread
+;-------------------------------------------
+asmword     .MACRO  name
+CONTEXTofst .set    charfromstr(name,0) &  ((THREADS-1)*2)
+    .SWITCH CONTEXTofst
     .case 0
             .word   asmlink
 asmlink   .set    $
@@ -467,25 +453,25 @@ asmlink30 .set    $
     .case 62
             .word   asmlink31
 asmlink31 .set    $
-
     .endcase ; asmlink
-
             .byte   STRLEN(name),name
-;            .align  2
             .ENDM
 
     .endif ; thread case
 
+    .restore
 ; --------------------------
 ; COMPUTE BAUDRATE registers = fn(FREQUENCY,BAUDS)
 ; --------------------------
-    .include "TERMINALBAUDRATE.inc"
+    .IFNDEF TERMINAL_I2C
+        .include "TERMINALBAUDRATE.inc"
+    .ENDIF
 
 ; -------------------------------------
 ; define MAIN max bound
 ; -------------------------------------
 FRAM_FULL   .equ SIGNATURES-40h ; set to protect JTAG and BSL signatures against overwrite.
-                                ; 80 bytes are sufficient considering what can be compiled in one line + WORD use.
+                                ; 64 bytes are sufficient considering what can be compiled in one line + WORD use.
                                 ; take care with ALLOT : don't ALLOT more than 32 words by line!
 
 ;-----------------------------------------------------------------------
@@ -493,67 +479,106 @@ FRAM_FULL   .equ SIGNATURES-40h ; set to protect JTAG and BSL signatures against
 ;-----------------------------------------------------------------------
     .IFDEF MSP_EXP430FR5739
 LF_XTAL
+        .IFDEF TERMINAL_I2C
+UCB0_TERM
+        .ELSE
 UCA0_TERM
-UCB0_SD
+        .ENDIF
+UCA1_SD
     .include "MSP430FR5739.inc"
     .ENDIF
 
     .IFDEF MSP_EXP430FR5969
 LF_XTAL
+        .IFDEF TERMINAL_I2C
+UCB0_TERM
+        .ELSE
 UCA0_TERM
+        .ENDIF
 UCA1_SD
     .include "MSP430FR5969.inc"
     .ENDIF
 
     .IFDEF MSP_EXP430FR5994
 LF_XTAL
+        .IFDEF TERMINAL_I2C
+UCB2_TERM
+        .ELSE
 UCA0_TERM
+        .ENDIF
 UCB0_SD
     .include "MSP430FR5994.inc"
     .ENDIF
 
     .IFDEF MSP_EXP430FR6989
 LF_XTAL
+        .IFDEF TERMINAL_I2C
+UCB0_TERM
+        .ELSE
 UCA1_TERM
+        .ENDIF
 UCA0_SD
     .INCLUDE "MSP430FR6989.inc"
     .ENDIF
 
     .IFDEF MSP_EXP430FR4133
 LF_XTAL
+        .IFDEF TERMINAL_I2C
+UCB0_TERM
+        .ELSE
 UCA0_TERM
 UCB0_SD
+        .ENDIF
     .INCLUDE "MSP430FR4133.inc"
     .ENDIF
 
     .IFDEF MSP_EXP430FR2433
 LF_XTAL
+        .IFDEF TERMINAL_I2C
+UCB0_TERM
+        .ELSE
 UCA0_TERM
+        .ENDIF
 UCA1_SD
     .include "MSP430FR2433.inc"
     .ENDIF
 
     .IFDEF CHIPSTICK_FR2433
 ; no LF_XTAL to select ACLK = REFOCLK
-UCA0_TERM 
+        .IFDEF TERMINAL_I2C
+UCB0_TERM
+UCA0_SD
+        .ELSE
+UCA0_TERM
 UCB0_SD
+        .ENDIF
     .include "MSP430FR2433.inc"
     .ENDIF
 
     .IFDEF MSP_EXP430FR2355
 LF_XTAL
+        .IFDEF TERMINAL_I2C
+UCB0_TERM
+        .ELSE
 UCA1_TERM
+        .ENDIF
 UCB1_SD
     .include "MSP430FR2355.inc"
     .ENDIF
 
     .IFDEF LP_MSP430FR2476
-; LF_XTAL
+; LF_XTAL       ; connect resistors R2=0k, R3=0k before uncomment this line
+        .IFDEF TERMINAL_I2C
+UCB1_TERM
+        .ELSE
 UCA0_TERM
+        .ENDIF
 UCA1_SD
     .include "MSP430FR2476.inc"
     .ENDIF
 
+    .save
+    .listing off
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 ; add here your device.inc item:
 ;     .IFDEF MY_MSP430FR5738_1
@@ -563,52 +588,6 @@ UCA1_SD
 ;     .include "MSP430FR5738.inc"  ; include device declarations
 ;     .ENDIF
 ;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-    .IFDEF MSP_EXP430FR2433_I2C
-LF_XTAL
-UCA1_SD
-UCB0_TERM
-    .include "MSP430FR2433.inc"
-    .ENDIF
-
-    .IFDEF MY_MSP430FR5738
-LF_XTAL
-UCA0_TERM
-UCB0_SD
-    .include "MSP430FR5738.inc"
-    .ENDIF
-
-    .IFDEF MY_MSP430FR5734
-LF_XTAL
-UCA0_TERM
-UCB0_SD
-    .include "MSP430FR5734.inc"
-    .ENDIF
-
-    .IFDEF MY_MSP430FR5948
-LF_XTAL
-UCA0_TERM
-UCA1_SD
-    .include "MSP430FR5948.inc"
-    .ENDIF
-
-    .IFDEF JMJ_BOX
-UCA0_TERM
-; no LF_XTAL to select ACLK = VLOCLK
-    .include "MSP430FR5738.inc"
-    .ENDIF
-
-    .IFDEF PA_PA_MSP430
-UCA0_TERM
-; no LF_XTAL to select ACLK = VLOCLK
-    .include "MSP430FR5738.inc"
-    .ENDIF
-
-    .IFDEF PA_Core_MSP430
-LF_XTAL
-UCA0_TERM
-    .include "MSP430FR5948.inc"
-    .ENDIF
 
 ; --------------------------
 ; COMPUTE SWITCHES
@@ -685,13 +664,6 @@ DOUBLE_NUMBERS              ; to process double numbers
     .ENDIF
     .ENDIF
 
-; define if Terminal half duplex
-    .IFDEF UARTtoI2C
-        .IFNDEF HALFDUPLEX
-HALFDUPLEX
-        .ENDIF
-    .ENDIF
-
 ; ---------------------------
 ; compute value of FORTHADDON
 ; ---------------------------
@@ -705,7 +677,7 @@ FADDON .SET FADDON | 02h
     .IFDEF EXTENDED_ASM
 FADDON .SET FADDON | 04h
     .ENDIF
-    .IFDEF NONAME
+    .IFDEF DEFERRED
 FADDON .SET FADDON | 08h
     .ENDIF
     .IFDEF VOCABULARY_SET
@@ -747,5 +719,4 @@ FADDON .SET FADDON | 4000h
 FADDON .SET FADDON | 8000h
     .ENDIF
 
-
-    .listing ON
+    .restore

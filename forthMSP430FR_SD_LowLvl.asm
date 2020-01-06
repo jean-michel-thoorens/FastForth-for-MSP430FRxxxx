@@ -30,8 +30,8 @@ sendCommandIdleRet                  ; <=== CMD0, CMD8, CMD55: W = 1 = R1 expecte
 ; ==================================;
 RW_Sector_CMD                       ;WX <=== CMD17 or CMD24 (read or write Sector CMD)
 ; ==================================;
-    BIC.B   #SD_CS,&SD_CSOUT        ; set SD_CS low
-    BIT.B   #SD_CD,&SD_CDIN         ; test CD: memory card present ?
+    BIC.B   #CS_SD,&SD_CSOUT        ; set Chip Select low
+    BIT.B   #CD_SD,&SD_CDIN         ; test Card Detect: memory card present ?
     JZ      ComputePhysicalSector   ; yes
     MOV     #COLD,PC                ; no: force COLD
 ; ----------------------------------;
@@ -79,7 +79,7 @@ Send_CMD_PUT                        ; performs little endian --> big endian conv
     CMP     #0,&SD_BRW              ;3 full speed ?
     JZ      FullSpeedSend           ;2 yes
 Send_CMD_Loop                       ;
-    BIT     #UCRXIFG,&SD_IFG        ;3 no: case of low speed during memCardInit
+    BIT     #RX_SD,&SD_IFG          ;3 no: case of low speed during memCardInit
     JZ      Send_CMD_Loop           ;2
     CMP.B   #0,&SD_RXBUF            ;3 to clear UCRXIFG
 FullSpeedSend                       ;
@@ -103,7 +103,7 @@ Wait_Command_Response               ; expect W = return value during X = 255 tim
     CMP     #0,&SD_BRW              ;3 full speed ?
     JZ      FullSpeedGET            ;2 yes
 cardResp_Getloop                    ;  no: case of low speed during memCardInit (CMD0,CMD8,ACMD41,CMD16)
-    BIT     #UCRXIFG,&SD_IFG        ;3
+    BIT     #RX_SD,&SD_IFG          ;3
     JZ      cardResp_Getloop        ;2
 FullSpeedGET                        ;
 ;    NOP                            ;  NOPx adjusted to avoid SD_error
@@ -132,7 +132,7 @@ SPI_PUT                             ; PUT(W) X time, output : W = last received 
             MOV.B W,&SD_TXBUF       ;3 put W high byte then W low byte and so forth, that performs little to big endian conversion
             CMP #0,&SD_BRW          ;3 full speed ?
             JZ FullSpeedPut         ;2 
-SPI_PUTWAIT BIT #UCRXIFG,&SD_IFG    ;3
+SPI_PUTWAIT BIT #RX_SD,&SD_IFG      ;3
             JZ SPI_PUTWAIT          ;2
             CMP.B #0,&SD_RXBUF      ;3 reset RX flag
 FullSpeedPut
@@ -181,7 +181,7 @@ ReadSectorFirstByte                 ;
 ReadWriteHappyEnd                   ; <==== WriteSector
 ; ----------------------------------;
     BIC     #3,S                    ; reset read and write errors
-    BIS.B   #SD_CS,&SD_CSOUT        ; SD_CS = high  
+    BIS.B   #CS_SD,&SD_CSOUT        ; Chip Select high
     MOV @RSP+,PC                    ; 
 ; ----------------------------------;
 
@@ -258,7 +258,7 @@ SD_CARD_ERROR                       ; <=== SD_INIT errors 4,8,$10
     SWPB S                          ; High Level error in High byte
     ADD &SD_RXBUF,S                 ; add SPI(GET) return value as low byte error
 SD_CARD_ID_ERROR                    ; <=== SD_INIT error $20 from forthMSP430FR_SD_LowLvl.asm
-    BIS.B #SD_CS,&SD_CSOUT          ; SD_CS = high
+    BIS.B #CS_SD,&SD_CSOUT          ; Chip Select high
     mDOCOL                          ;
     .word   XSQUOTE                 ; don't use S register
     .byte   11,"< SD Error!"        ;

@@ -48,6 +48,67 @@
 
 PWR_STATE
 
+[DEFINED] {RTC} [IF]  {RTC} [THEN]
+
+MARKER {RTC}
+
+[UNDEFINED] IF [IF]     \ define IF THEN
+\ https://forth-standard.org/standard/core/IF
+\ IF       -- IFadr    initialize conditional forward branch
+CODE IF       \ immediate
+SUB #2,PSP              \
+MOV TOS,0(PSP)          \
+MOV &DP,TOS             \ -- HERE
+ADD #4,&DP            \           compile one word, reserve one word
+MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
+ADD #2,TOS              \ -- HERE+2=IFadr
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+
+\ https://forth-standard.org/standard/core/THEN
+\ THEN     IFadr --                resolve forward branch
+CODE THEN               \ immediate
+MOV &DP,0(TOS)          \ -- IFadr
+MOV @PSP+,TOS           \ --
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+[THEN]
+
+: NORTC
+IF
+    {RTC}           \ remove MARKER
+    ECHO $0D EMIT   \ return to column 0
+    ABORT" no RTC on this device !"
+THEN
+;
+
+[UNDEFINED] AND [IF]
+\ https://forth-standard.org/standard/core/AND
+\ C AND    x1 x2 -- x3           logical AND
+CODE AND
+AND @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] OR [IF]
+\ https://forth-standard.org/standard/core/OR
+\ C OR     x1 x2 -- x3           logical OR
+CODE OR
+BIS @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] @ [IF]
+\ https://forth-standard.org/standard/core/Fetch
+\ @     c-addr -- char   fetch char from memory
+CODE @
+MOV @TOS,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
 [UNDEFINED] U< [IF]
 CODE U<
 SUB @PSP+,TOS   \ 2 u2-u1
@@ -60,6 +121,14 @@ THEN
 MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
+
+                        ; search devide ID:
+$81EF DEVICEID @ U<        ; MSP430FR2433 or...
+DEVICEID @ $8241 U<        ; ...MSP430FR4133
+AND
+$830B DEVICEID @ U<        ; MSP430FR21xx/23xx/24xx/25xx/26xx
+OR                      ; -- flag       0 ==> RTC, -1 ==> no RTC
+NORTC                   \
 
 [UNDEFINED] = [IF]
 \ https://forth-standard.org/standard/core/Equal
@@ -75,95 +144,39 @@ MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
-[UNDEFINED] AND [IF]
-\ https://forth-standard.org/standard/core/AND
-\ C AND    x1 x2 -- x3           logical AND
-CODE AND
-AND @PSP+,TOS
+[UNDEFINED] SWAP [IF]
+\ https://forth-standard.org/standard/core/SWAP
+\ SWAP     x1 x2 -- x2 x1    swap top two items
+CODE SWAP
+MOV @PSP,W      \ 2
+MOV TOS,0(PSP)  \ 3
+MOV W,TOS       \ 1
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+[UNDEFINED] OVER [IF]
+\ https://forth-standard.org/standard/core/OVER
+\ OVER    x1 x2 -- x1 x2 x1
+CODE OVER
+MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
+MOV @PSP,TOS        \ 2 -- x1 (x2) x1
+SUB #2,PSP          \ 1 -- x1 x2 x1
 MOV @IP+,PC
 ENDCODE
 [THEN]
 
-[UNDEFINED] @ [IF]
-\ https://forth-standard.org/standard/core/Fetch
-\ @     c-addr -- char   fetch char from memory
-CODE @
-MOV @TOS,TOS
-MOV @IP+,PC
+[UNDEFINED] EXECUTE [IF] \ "
+\ https://forth-standard.org/standard/core/EXECUTE
+\ EXECUTE   i*x xt -- j*x   execute Forth word at 'xt'
+CODE EXECUTE
+MOV TOS,W               \ 1 put word address into W
+MOV @PSP+,TOS           \ 2 fetch new TOS
+MOV W,PC                \ 3 fetch code address into PC
 ENDCODE
 [THEN]
 
-: RTCNOTFOUND
-ECHO \ return to column 1
-1 ABORT" no RTC found!"
-;
-
-DEVICEID @ $831D SWAP U< [IF] RTCNOTFOUND [THEN] \ MSP430FR21xx/23xx
-DEVICEID @ $823C OVER U<
-           $8241 U< AND [IF] RTCNOTFOUND [THEN] \ MSP430FR25xx/26xx
-DEVICEID @ $81F0 OVER U< 
-           $81F3 U< AND [IF] RTCNOTFOUND [THEN] \ MSP430FR41xx
-
-[DEFINED] {RTC} [IF]  {RTC} [THEN]
-
-[UNDEFINED] MARKER [IF]
-\  https://forth-standard.org/standard/core/MARKER
-\  MARKER
-\ ( "<spaces>name" -- )
-\ Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
-\ with the execution semantics defined below.
-\ 
-\ name Execution: ( -- )
-\ Restore all dictionary allocation and search order pointers to the state they had just prior to the
-\ definition of name. Remove the definition of name and all subsequent definitions. Restoration
-\ of any structures still existing that could refer to deleted definitions or deallocated data space is
-\ not necessarily provided. No other contextual information such as numeric base is affected
-\
-: MARKER
-CREATE
-HI2LO
-MOV &LASTVOC,0(W)   \ [BODY] = LASTVOC
-SUB #2,Y            \ 1 Y = LFA
-MOV Y,2(W)          \ 3 [BODY+2] = LFA = DP to be restored
-ADD #4,&DP          \ 3 add 2 cells
-LO2HI
-DOES>
-HI2LO
-MOV @RSP+,IP        \ -- PFA
-MOV @TOS+,&INIVOC   \       set VOC_LINK value for RST_STATE
-MOV @TOS,&INIDP     \       set DP value for RST_STATE
-MOV @PSP+,TOS       \ --
-MOV #RST_STATE,PC   \       execute RST_STATE, PWR_STATE then STATE_DOES
-ENDCODE
-[THEN]
-
-MARKER {RTC}
-
-[UNDEFINED] IF [IF]
-\ https://forth-standard.org/standard/core/IF
-\ IF       -- IFadr    initialize conditional forward branch
-CODE IF       \ immediate
-SUB #2,PSP              \
-MOV TOS,0(PSP)          \
-MOV &DP,TOS             \ -- HERE
-ADD #4,&DP            \           compile one word, reserve one word
-MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
-ADD #2,TOS              \ -- HERE+2=IFadr
-MOV @IP+,PC
-ENDCODE IMMEDIATE
-[THEN]
-
-[UNDEFINED] THEN [IF]
-\ https://forth-standard.org/standard/core/THEN
-\ THEN     IFadr --                resolve forward branch
-CODE THEN               \ immediate
-MOV &DP,0(TOS)          \ -- IFadr
-MOV @PSP+,TOS           \ --
-MOV @IP+,PC
-ENDCODE IMMEDIATE
-[THEN]
-
-[UNDEFINED] DO [IF]
+[UNDEFINED] DO [IF]     \ define DO LOOP +LOOP
 \ https://forth-standard.org/standard/core/DO
 \ DO       -- DOadr   L: -- 0
 CODE DO                 \ immediate
@@ -177,9 +190,7 @@ MOV &LEAVEPTR,W         \
 MOV #0,0(W)             \ -- HERE+2     L-- 0
 MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] LOOP [IF]
 \ https://forth-standard.org/standard/core/LOOP
 \ LOOP    DOadr --         L-- an an-1 .. a1 0
 CODE LOOP               \ immediate
@@ -199,6 +210,13 @@ REPEAT
     MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE IMMEDIATE
+
+\ https://forth-standard.org/standard/core/PlusLOOP
+\ +LOOP   adrs --   L-- an an-1 .. a1 0
+CODE +LOOP
+MOV #XPLOOP,X
+GOTO BW1        \ goto BW1 LOOP
+ENDCODE IMMEDIATE
 [THEN]
 
 [UNDEFINED] - [IF]
@@ -212,7 +230,7 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
-[UNDEFINED] MAX [IF]
+[UNDEFINED] MAX [IF]    \define MAX and MIN
 
 CODE MAX    \    n1 n2 -- n3       signed maximum
     CMP @PSP,TOS    \ n2-n1
@@ -251,24 +269,21 @@ NEXT
 ENDCODE
 [THEN]
 
-[UNDEFINED] OVER [IF]
-\ https://forth-standard.org/standard/core/OVER
-\ OVER    x1 x2 -- x1 x2 x1
-CODE OVER
-MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
-MOV @PSP,TOS        \ 2 -- x1 (x2) x1
-SUB #2,PSP          \ 1 -- x1 x2 x1
-MOV @IP+,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] DUP [IF]
+[UNDEFINED] DUP [IF]    \define DUP and DUP?
 \ https://forth-standard.org/standard/core/DUP
 \ DUP      x -- x x      duplicate top of stack
 CODE DUP
 BW1 SUB #2,PSP      \ 2  push old TOS..
     MOV TOS,0(PSP)  \ 3  ..onto stack
     MOV @IP+,PC     \ 4
+ENDCODE
+
+\ https://forth-standard.org/standard/core/qDUP
+\ ?DUP     x -- 0 | x x    DUP if nonzero
+CODE ?DUP
+CMP #0,TOS      \ 2  test for TOS nonzero
+0<> ?GOTO BW1   \ 2
+MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
@@ -391,30 +406,62 @@ THEN
 
 PWR_HERE
 
-[UNDEFINED] ESC" [IF]
-\ ESC" <string>" --    send an escape sequence
-: ESC" $1B POSTPONE LITERAL POSTPONE EMIT POSTPONE S" POSTPONE TYPE ; IMMEDIATE \ "
+
+[UNDEFINED] S_ [IF]
+CODE S_             \           Squote alias with blank instead quote separator
+MOV #0,&CAPS        \           turn CAPS OFF
+COLON
+XSQUOTE ,           \           compile run-time code
+$20 WORD            \ -- c-addr (= HERE)
+HI2LO
+MOV.B @TOS,TOS      \ -- len    compile string
+ADD #1,TOS          \ -- len+1
+BIT #1,TOS          \           C = ~Z
+ADDC TOS,&DP        \           store aligned DP
+MOV @PSP+,TOS       \ --
+MOV @RSP+,IP        \           pop paired with push COLON
+MOV #$20,&CAPS      \           turn CAPS ON (default state)
+MOV @IP+,PC         \ NEXT
+ENDCODE IMMEDIATE
 [THEN]
 
-CREATE ABUF 20 ALLOT
+[UNDEFINED] ESC [IF]
+CODE ESC
+CMP #0,&STATEADR
+0= IF MOV @IP+,PC   \ interpret time usage disallowed
+THEN
+COLON          
+$1B                 \ -- char escape
+POSTPONE LITERAL    \ compile-time code : lit $1B  
+POSTPONE EMIT       \ compile-time code : EMIT
+POSTPONE S_         \ compile-time code : S_ <escape_sequence>
+POSTPONE TYPE       \ compile-time code : TYPE
+; IMMEDIATE
+[THEN]
+
+: PAD_ACCEPT    \ -- org len
+PAD_ORG
+DUP PAD_LEN     \ -- org org len
+    ['] ACCEPT DUP @
+        $4030 =             \ if CFA content = $4030 (MOV @PC+,PC), ACCEPT is deferred
+        IF >BODY            \ find default part address of deferred ACCEPT
+        THEN
+    EXECUTE     \ -- org len'
+;
 
 : GET_TIME
-PWR_STATE       \ all after PWR_HERE marker will be lost
+PWR_STATE       \ all words after PWR_HERE marker will be lost
 42              \ number of terminal lines   
 0 DO CR LOOP    \ don't erase any line of source
-
-ESC" [1J"       \ erase up (42 empty lines)
-ESC" [H"        \ cursor home
+ESC [H          \ cursor home
 
 CR ." DATE (DMY): "
-ABUF
-DUP 20 ['] ACCEPT >BODY EXECUTE    \   execute default part of ACCEPT
-    EVALUATE CR DATE!
-CR CR ." TIME (HMS): "
-ABUF
-DUP 20 ['] ACCEPT >BODY EXECUTE    \   execute default part of ACCEPT
-    EVALUATE CR TIME!
-CR
+PAD_ACCEPT
+EVALUATE CR DATE!
+
+CR ." TIME (HMS): "
+PAD_ACCEPT
+EVALUATE CR TIME!
 ;
 
 ECHO GET_TIME

@@ -1,6 +1,7 @@
 ; -*- coding: utf-8 -*-
 ; forthMSP430FR_SD_INIT.asm
-
+    .save
+    .listing off
 ; http://patorjk.com/software/taag/#p=display&f=Banner&t=Fast Forth
 
 ; Fast Forth For Texas Instrument MSP430FRxxxx FRAM devices
@@ -139,11 +140,11 @@
 ; ===========================================================
 ; Init SD_Card
 ; ===========================================================
-
+    .restore
 SD_POWER_ON
     MOV     #8,X                    ; send 64 clk on SD_clk
     CALL    #SPI_X_GET              ;
-    BIC.B   #SD_CS,&SD_CSOUT        ; preset SD_CS output low to switch in SPI mode
+    BIC.B   #CS_SD,&SD_CSOUT        ; preset Chip Select output low to switch in SPI mode
     MOV     #4,S                    ; preset error 4R1
 ; ----------------------------------;
 INIT_CMD0                           ; all SD area is 0 filled
@@ -272,5 +273,3 @@ FATxx_SetFileSystemNext             ;
     MOV     X,&OrgClusters          ; X = virtual cluster 0 address (clusters 0 and 1 don't exist)
     MOV     &FATtype,&DIRClusterL   ; init DIRcluster as RootDIR
 ; ----------------------------------;
-
-

@@ -706,10 +706,3 @@ OPEN_Error                          ; S= error
     .byte   11,"< OpenError"        ;
     .word   BRAN,SD_QABORTYES       ; to insert S error as flag, no return
 ; ----------------------------------;
-
-
-
-
-
-
-

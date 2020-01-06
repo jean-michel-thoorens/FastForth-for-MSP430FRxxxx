@@ -1,9 +1,4 @@
 ; -*- coding: utf-8 -*-
-; ThingsInLast.inc
-
-;-------------------------------------------------------------------------------
-; IT'S FINISH : RESOLVE ASSEMBLY PTR
-;-------------------------------------------------------------------------------
 
 ROMDICT         ; init DDP with this current address
 lastvoclink     .equ voclink
@@ -78,5 +73,47 @@ lastasmword31   .equ asmlink31
 
     .ENDIF
 
-    .org 0FFFEh
-    .word reset
+    .ORG 0FFB0h ; 39 vectors value <== word COLD by default
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4       ; USER NMI vestor, don't change this value !
+    .word RESET-4       ; SYS NMI vector
+    .word RESET         ; RST vector
+
+    .org TERM_VEC       ; TERMINAL vector (UART or I2C_Slave)
+    .word TERMINAL_INT  ; will generate overlap warning, don't care

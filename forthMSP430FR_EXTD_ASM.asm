@@ -607,6 +607,10 @@ ASM_ELSE    MOV     &DDP,W          ; --        W=HERE
             MOV     W,0(PSP)        ; -- @OPCODE2 @OPCODE1
             JMP     ASM_THEN        ; -- @OPCODE2
 
+; BEGIN     -- BEGINadr             initialize backward branch
+            asmword "BEGIN"
+            MOV #HERE,PC
+
 ;C UNTIL    @BEGIN OPCODE --   resolve conditional backward branch
             asmword "UNTIL"
 ASM_UNTIL   MOV     @PSP+,W         ;  -- OPCODE                        W=@BEGIN

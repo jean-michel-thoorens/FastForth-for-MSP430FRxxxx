@@ -91,10 +91,10 @@
 ; P8.1                          <--> SCL I2C SOFTWARE MASTER
 ;
 ; SD_CARD
-; P7.2/UCB2CLK                        <--- SD_CD
+; P7.2/UCB2CLK                        <--- CD_SD
 ; P1.6/TB0.3/UCB0SIMO/UCB0SDA/TA0.0   ---> SD_MOSI
 ; P1.7/TB0.4/UCB0SOMI/UCB0SCL/TA1.0   <--- SD_MISO
-; P4.0/A8                             ---> SD_CS
+; P4.0/A8                             ---> CS_SD
 ; P2.2/TB0.2/UCB0CLK                  ---> SD_CLK
 ;
 ; XTAL LF 32768 Hz
@@ -127,27 +127,13 @@
 ;       <------------------------> 13 LCD_DB5
 ;       <------------------------> 14 LCD_DB7
 
-
-
-; ----------------------------------------------------------------------
-; INIT order : WDT, GPIOs, FRAM, Clock, RTC, REF
-; ----------------------------------------------------------------------
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : WATCHDOG TIMER A
-; ----------------------------------------------------------------------
-
-            MOV #WDTPW+WDTHOLD+WDTCNTCL,&WDTCTL    ; stop WDT
-
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : I/O
 ; ----------------------------------------------------------------------
-
+; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT1/2
 ; ----------------------------------------------------------------------
-
-; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
 ; PORT1 FastForth usage
 ; P1.0    - led1 red
@@ -162,35 +148,33 @@
             BIS #-1,&PAREN       ; all pins 1 with pull up/down resistors
             MOV #0FFFCh,&PAOUT   ; all pins high  else LEDs
 
-
 ; PORT2 FastForth usage
-
     .IFDEF UCB0_SD ; see device.inc
 SD_SEL      .equ PASEL1 ; to configure UCB0
 SD_REN      .equ PAREN  ; to configure pullup resistors
-SD_BUS      .equ 04C0h  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
+BUS_SD      .equ 04C0h  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
     .ENDIF
 
     .IFDEF UCA0_TERM ; see device.inc
 ; P2.0  UCA0-TXD    --> USB2UART RXD    
 ; P2.1  UCA0-RXD    <-- USB2UART TXD 
-TXD         .equ 1      ; P2.0 = TXD + FORTH Deep_RST pin
-RXD         .equ 2      ; P2.1 = RXD
-TERM_BUS    .equ 3
 TERM_IN     .equ P2IN
 TERM_SEL    .equ P2SEL1
 TERM_REN    .equ P2REN
+TXD         .equ 1      ; P2.0 = TXD + FORTH Deep_RST pin
+RXD         .equ 2      ; P2.1 = RXD
+BUS_TERM    .equ 3
     .ENDIF
 
     .IFDEF UCA1_TERM ; see device.inc
-; P2.5  UCA0-TXD    --> USB2UART RXD    
-; P2.6  UCA0-RXD    <-- USB2UART TXD 
-TXD         .equ 20h   ; P2.5 = TXD + FORTH Deep_RST pin
-RXD         .equ 40h   ; P2.6 = RXD
-TERM_BUS    .equ 60h
+; P2.5  UCA1-TXD    --> USB2UART RXD    
+; P2.6  UCA1-RXD    <-- USB2UART TXD 
 TERM_IN     .equ P2IN
 TERM_SEL    .equ P2SEL1
 TERM_REN    .equ P2REN
+TXD         .equ 20h   ; P2.5 = TXD
+RXD         .equ 40h   ; P2.6 = RXD
+BUS_TERM    .equ 60h
     .ENDIF
 
 
@@ -198,19 +182,17 @@ TERM_REN    .equ P2REN
 ; POWER ON RESET AND INITIALIZATION : PORT3/4
 ; ----------------------------------------------------------------------
 
-; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
-
 ; PORT3 FastForth usage
 
 ; PORT4 FastForth usage
-SD_CS       .equ    1              ; P4.0 as SD_CS     
 SD_CSOUT    .equ    P4OUT
 SD_CSDIR    .equ    P4DIR
+CS_SD       .equ    1           ; P4.0 Chip Select    
 
-RTS         .equ    4           ; P4.2
-CTS         .equ    2           ; P4.1
 HANDSHAKIN  .equ    P4IN
 HANDSHAKOUT .equ    P4OUT
+RTS         .equ    4           ; P4.2
+CTS         .equ    2           ; P4.1
 
             MOV #-1,&PBREN      ; REN1 all pullup resistors
             BIS #-1,&PBOUT
@@ -230,19 +212,15 @@ HANDSHAKOUT .equ    P4OUT
 ; POWER ON RESET AND INITIALIZATION : PORT5/6
 ; ----------------------------------------------------------------------
 
-; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
-
 ; PORT5 FastForth usage
 ; P5.6 Switch S1
 ; P5.5 Switch S2
 SWITCHIN    .set P5IN    ; port
-s1          .set 020h    ; P5.5 bit position
+S1          .set 040h    ; P5.6 bit position
+S2          .set 020h    ; P5.5 bit position
 
-    .IFDEF UCB1_SD ; see device.inc
-SD_SEL      .equ PCSEL1 ; to configure UCB0
-SD_REN      .equ PCREN  ; to configure pullup resistors
-SD_BUS      .equ 0007h  ; pins P5.2 as UCB1CLK, P5.0 as UCB1SIMO & P5.1 as UCB1SOMI
-    .ENDIF
+WIPE_IN     .equ    P5IN
+IO_WIPE     .equ    40h ; P5.6 = S1 = FORTH Deep_RST pin
 
 ; PORT6 FastForth usage
 
@@ -256,12 +234,20 @@ SD_BUS      .equ 0007h  ; pins P5.2 as UCB1CLK, P5.0 as UCB1SIMO & P5.1 as UCB1S
 ; POWER ON RESET AND INITIALIZATION : PORT7/8
 ; ----------------------------------------------------------------------
 
-; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
-
 ; PORT7 FastForth usage
-SD_CD       .equ 4        ; P7.2 as SD_CD
-SD_CDIN     .equ P7IN
+    .IFDEF UCB2_TERM ; see device.inc
+; P7.1/UCB2SOMI/UCB2SCL        ---> SCL I2C MASTER/SLAVE
+; P7.0/UCB2SIMO/UCB2SDA        <--> SDA I2C MASTER/SLAVE
+TERM_IN     .equ P7IN
+TERM_SEL    .equ P7SEL0
+TERM_REN    .equ P7REN
+SDA         .equ 1      ; P7.0
+SCL         .equ 2      ; P7.1
+BUS_TERM    .equ 3
+    .ENDIF
 
+CD_SD       .equ 4        ; P7.2 Card Detect
+SD_CDIN     .equ P7IN
 
 ; PORT8 FastForth usage
 
@@ -271,12 +257,9 @@ SD_CDIN     .equ P7IN
             MOV #-1,&PDOUT    ; all pins output high
             BIS #-1,&PDREN    ; all pins with pull resistors
 
-
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORTJ
 ; ----------------------------------------------------------------------
-
-; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
 ; PORTJ FastForth usage
 
@@ -285,23 +268,19 @@ SD_CDIN     .equ P7IN
             MOV.B #-1,&PJREN    ; enable pullup/pulldown resistors
             BIS.B #-1,&PJOUT    ; pullup resistors
 
-
 ; ----------------------------------------------------------------------
 ; FRAM config
 ; ----------------------------------------------------------------------
-
     .IF  FREQUENCY > 8
             MOV.B   #0A5h, &FRCTL0_H    ; enable FRCTL0 access
             MOV.B   #10h, &FRCTL0       ; 1 waitstate @ 16 MHz
             MOV.B   #01h, &FRCTL0_H     ; disable FRCTL0 access
     .ENDIF
-
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : CLOCK SYSTEM
 ; ----------------------------------------------------------------------
 
 ; DCOCLK: Internal digitally controlled oscillator (DCO).
-
 
 ; CS code for MSP430FR5948
             MOV.B   #CSKEY,&CSCTL0_H ;  Unlock CS registers
@@ -310,37 +289,30 @@ SD_CDIN     .equ P7IN
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_32 + DIVM_32,&CSCTL3
             MOV     #4,X
-
     .ELSEIF FREQUENCY = 0.5
             MOV     #0,&CSCTL1                  ; Set 1MHZ DCO setting
             MOV     #DIVA_0 + DIVS_2 + DIVM_2,&CSCTL3             ; set all dividers as 2
             MOV     #8,X
-
     .ELSEIF FREQUENCY = 1
             MOV     #0,&CSCTL1                  ; Set 1MHZ DCO setting
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3             ; set all dividers as 0
             MOV     #16,X
-
     .ELSEIF FREQUENCY = 2
             MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1  ; Set 4MHZ DCO setting
             MOV     #DIVA_0 + DIVS_2 + DIVM_2,&CSCTL3
             MOV     #32,X
-
     .ELSEIF FREQUENCY = 4
             MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1  ; Set 4MHZ DCO setting
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3             ; set all dividers as 0
             MOV     #64,X
-
     .ELSEIF FREQUENCY = 8
 ;            MOV     #DCOFSEL2+DCOFSEL1,&CSCTL1  ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3             ; set all dividers as 0
             MOV     #128,X
-
     .ELSEIF FREQUENCY = 16
             MOV     #DCORSEL+DCOFSEL2,&CSCTL1   ; Set 16MHZ DCO setting
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3             ; set all dividers as 0
             MOV     #256,X
-
     .ELSEIF
     .error "bad frequency setting, only 0.5,1,2,4,8,16 MHz"
     .ENDIF
@@ -366,20 +338,17 @@ ClockWaitY  SUB     #1,Y            ;1
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : RTC_C REGISTERS
 ; ----------------------------------------------------------------------
-
     .IFDEF LF_XTAL ; see device.inc
 ; LFXIN : PJ.4, LFXOUT : PJ.5
             BIS.B   #010h,&PJSEL0       ; SEL0 for only LFXIN
             MOV.B   #0A5h,&RTCCTL0_H    ; unlock RTC_C
             BIC.B   #RTCHOLD,&RTCCTL1   ; Clear RTCHOLD = start RTC_C
     .ENDIF
-
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : REF
 ; ----------------------------------------------------------------------
-
             MOV   #8, &REFCTL
-
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION next : see RESET in forthMSP430.asm
 ; ----------------------------------------------------------------------
+

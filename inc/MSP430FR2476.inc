@@ -68,34 +68,34 @@ VECT_LEN        .equ 38h
 
 ;   .org    INTVECT         ; FFDA-FFFF 27 vectors + reset
 ;
-;           .word  reset        ; FFC8h - CapTivate       
-;           .word  reset        ; FFCAh - eCOMP0       
-;           .word  reset        ; FFCCh - P6       
-;           .word  reset        ; FFCEh - P5       
-;           .word  reset        ; FFD0h - P4       
-;           .word  reset        ; FFD2h - P3       
-;           .word  reset        ; FFD4h - P2       
-;           .word  reset        ; FFD6h - P1       
-;           .word  reset        ; FFD8h - ADC10    
-;           .word  reset        ; FFDAh - eUSCI_B1 
-;           .word  reset        ; FFDCh - eUSCI_B0 
-;           .word  reset        ; FFDEh - eUSCI_A1 
-;           .word  reset        ; FFE0h - eUSCI_A0 
-;           .word  reset        ; FFE2h - WDT      
-;           .word  reset        ; FFE4h - RTC      
-;           .word  reset        ; FFE6h - TB0_x    
-;           .word  reset        ; FFE8h - TB0_0    
-;           .word  reset        ; FFEAh - TA3_x    
-;           .word  reset        ; FFECh - TA3_0    
-;           .word  reset        ; FFEEh - TA2_x    
-;           .word  reset        ; FFF0h - TA2_0    
-;           .word  reset        ; FFF2h - TA1_x    
-;           .word  reset        ; FFF4h - TA1_0    
-;           .word  reset        ; FFF6h - TA0_x    
-;           .word  reset        ; FFF8h - TA0_0    
-;           .word  reset        ; FFFAh - UserNMI  
-;           .word  reset        ; FFFCh - SysNMI   
-;           .word  reset        ; FFFEh - Reset    
+;           .word  reset        ; 0FFC8h - CapTivate       
+;           .word  reset        ; 0FFCAh - eCOMP0       
+;           .word  reset        ; 0FFCCh - P6       
+;           .word  reset        ; 0FFCEh - P5       
+;           .word  reset        ; 0FFD0h - P4       
+;           .word  reset        ; 0FFD2h - P3       
+;           .word  reset        ; 0FFD4h - P2       
+;           .word  reset        ; 0FFD6h - P1       
+;           .word  reset        ; 0FFD8h - ADC10    
+;           .word  reset        ; 0FFDAh - eUSCI_B1 
+;           .word  reset        ; 0FFDCh - eUSCI_B0 
+;           .word  reset        ; 0FFDEh - eUSCI_A1 
+;           .word  reset        ; 0FFE0h - eUSCI_A0 
+;           .word  reset        ; 0FFE2h - WDT      
+;           .word  reset        ; 0FFE4h - RTC      
+;           .word  reset        ; 0FFE6h - TB0_x    
+;           .word  reset        ; 0FFE8h - TB0_0    
+;           .word  reset        ; 0FFEAh - TA3_x    
+;           .word  reset        ; 0FFECh - TA3_0    
+;           .word  reset        ; 0FFEEh - TA2_x    
+;           .word  reset        ; 0FFF0h - TA2_0    
+;           .word  reset        ; 0FFF2h - TA1_x    
+;           .word  reset        ; 0FFF4h - TA1_0    
+;           .word  reset        ; 0FFF6h - TA0_x    
+;           .word  reset        ; 0FFF8h - TA0_0    
+;           .word  reset        ; 0FFFAh - UserNMI  
+;           .word  reset        ; 0FFFCh - SysNMI   
+;           .word  reset        ; 0FFFEh - Reset    
 
 ; ----------------------------------------------------------------------
 ; MSP430FR2476 Peripheral File Map
@@ -128,6 +128,10 @@ eCOMP_SFR       .equ 08F0h
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : LOCK PMM_LOCKLPM5
 ; ----------------------------------------------------------------------
+SFRIE1      .equ SFR_SFR
+SFRIFG1     .equ SFR_SFR + 2
+SFRRPCR     .equ SFR_SFR + 4
+
 PMMCTL0     .equ PMM_SFR
 PMMSWBOR    .equ 4
 
@@ -341,16 +345,6 @@ RES3      .equ MPY_SFR + 2Ah    ; 32x32-bit result 3 */
 MPY32CTL0 .equ MPY_SFR + 2Ch    ; MPY32 control register 0
 
 
-
-
-UCSWRST         .equ 1  ; eUSCI Software Reset
-UCTXIE          .equ 2  ; eUSCI Transmit Interrupt Enable
-UCRXIE          .equ 1  ; eUSCI Receive Interrupt Enable
-UCTXIFG         .equ 2  ; eUSCI Transmit Interrupt Flag
-UCRXIFG         .equ 1  ; eUSCI Receive Interrupt Flag
-
-
-
 ; ----------------------------------------------------------------------
 eUSCI_A0
 ; ----------------------------------------------------------------------
@@ -365,23 +359,61 @@ TERM_TXBUF       .equ eUSCI_A0_SFR + 0Eh    ; eUSCI_A0 Transmit Buffer
 TERM_IE          .equ eUSCI_A0_SFR + 1Ah    ; eUSCI_A0 Interrupt Enable Register
 TERM_IFG         .equ eUSCI_A0_SFR + 1Ch    ; eUSCI_A0 Interrupt Flags Register
 TERM_VEC         .equ 0FFE0h      ;  interrupt vector for eUSCI_A0
+RX_TERM         .equ 1
+TX_TERM         .equ 2
     .ENDIF ;UCA0_TERM
 
 
 ; ----------------------------------------------------------------------
 eUSCI_A1
 ; ----------------------------------------------------------------------
+    .IFDEF UCA1_TERM
+TERM_CTLW0       .equ eUSCI_A1_SFR + 00h    ; eUSCI_A1 Control Word Register 0
+TERM_BRW         .equ eUSCI_A1_SFR + 06h    ; eUSCI_A1 Baud Word Rate 0
+TERM_MCTLW       .equ eUSCI_A1_SFR + 08h    ; eUSCI_A1 Modulation Control
+TERM_STATW       .equ eUSCI_A1_SFR + 0Ah    ; eUSCI_A1 status Word Register
+TERM_RXBUF       .equ eUSCI_A1_SFR + 0Ch    ; eUSCI_A1 Receive Buffer
+TERM_TXBUF       .equ eUSCI_A1_SFR + 0Eh    ; eUSCI_A1 Transmit Buffer
+TERM_IE          .equ eUSCI_A1_SFR + 1Ah    ; eUSCI_A1 Interrupt Enable Register
+TERM_IFG         .equ eUSCI_A1_SFR + 1Ch    ; eUSCI_A1 Interrupt Flags Register
+TERM_VEC         .equ 0FFDEh      ;  int vector for eUSCI_A1
+RX_TERM         .equ 1
+TX_TERM         .equ 2
+    .ENDIF ;UCA1_TERM
+
     .IFDEF UCA1_SD
 SD_CTLW0       .equ eUSCI_A1_SFR + 00h    ; USCI_A1 Control Word Register 0
 SD_BRW         .equ eUSCI_A1_SFR + 06h    ; USCI_A1 Baud Word Rate 0
 SD_RXBUF       .equ eUSCI_A1_SFR + 0Ch    ; USCI_A1 Receive Buffer 8
 SD_TXBUF       .equ eUSCI_A1_SFR + 0Eh    ; USCI_A1 Transmit Buffer 8
 SD_IFG         .equ eUSCI_A1_SFR + 1Ch    ; USCI_A1 Interrupt Flags Register
+RX_SD           .equ 1
+TX_SD           .equ 2
     .ENDIF ;UCA1_SD
 
 ; ----------------------------------------------------------------------
 eUSCI_B0
 ; ----------------------------------------------------------------------
+; ----------------------------------------------------------------------
+eUSCI_B1
+; ----------------------------------------------------------------------
+    .IFDEF UCB1_TERM
+TERM_CTLW0      .equ eUSCI_B1_SFR + 00h     ; USCI_B1 Control Word Register 0
+TERM_CTLW1      .equ eUSCI_B1_SFR + 02h     ; USCI_B1 Control Word Register 1
+TERM_BRW        .equ eUSCI_B1_SFR + 06h     ; USCI_B1 Baud Word Rate 0
+TERM_STATW      .equ eUSCI_B1_SFR + 08h     ; USCI_B1 Status Word
+TERM_RXBUF      .equ eUSCI_B1_SFR + 0Ch     ; USCI_B1 Receive Buffer 8
+TERM_TXBUF      .equ eUSCI_B1_SFR + 0Eh     ; USCI_B1 Transmit Buffer 8
+TERM_I2COA0     .equ eUSCI_B1_SFR + 14h     ; USCI_B1 I2C Own Address 0
+TERM_ADDRX      .equ eUSCI_B1_SFR + 1Ch     ; USCI_B1  Received Address Register 
+TERM_I2CSA      .equ eUSCI_B1_SFR + 20h     ; USCI_B1 I2C Slave Address
+TERM_IE         .equ eUSCI_B1_SFR + 2Ah     ; USCI_B1 Interrupt Enable
+TERM_IFG        .equ eUSCI_B1_SFR + 2Ch     ; USCI_B1 Interrupt Flags Register
+TERM_VEC        .equ 0FFDAh                 ; interrupt vector for eUSCI_B0
+RX_TERM         .equ 1
+TX_TERM         .equ 2
+    .ENDIF ;UCB1_TERM
+
 
 
 

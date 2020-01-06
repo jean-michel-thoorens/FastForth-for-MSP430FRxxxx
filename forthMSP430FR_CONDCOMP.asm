@@ -1,9 +1,31 @@
+; -*- coding: utf-8 -*-
 
+; Fast Forth For Texas Instrument MSP430FRxxxx FRAM devices with UART TERMINAL
+; Copyright (C) <2019>  <J.M. THOORENS>
+;
+; This program is free software: you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation, either version 3 of the License, or
+; (at your option) any later version.
+;
+; This program is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+; ------------------------------------------------------------------------------
+; forthMSP430FR :  CONDITIONNAL COMPILATION
+; ------------------------------------------------------------------------------
+
+            FORTHWORDIMM "[THEN]"   ; do nothing
 ; https://forth-standard.org/standard/tools/BracketTHEN
 ; [THEN]
-        FORTHWORDIMM "[THEN]"   ; do nothing
-        MOV @IP+,PC
+            MOV @IP+,PC
+    .save
+    .listing off
 
 ; ; https://forth-standard.org/standard/string/COMPARE
 ; ; COMPARE ( c-addr1 u1 c-addr2 u2 -- n )
@@ -96,33 +118,35 @@
 ;         .word   SETIB                   ; SET Input Buffer pointers SOURCE_LEN, SOURCE_ORG and clear >IN
 ;         .word   BRAN,BRACKETELSE1       ; then loop back   54 words without options
 
-BADCOMPBR               ; branch if string compare is false; [COMPARE,QTBRAN] replacement
-        MOV TOS,S       ;1 S = u2
-        MOV @PSP+,Y     ;2 Y = addr2
-        MOV @PSP+,T     ;2 T = u1     
-        MOV @PSP+,X     ;2 X = addr1
-COMPAR1 MOV T,TOS       ;1
-        ADD S,TOS       ;1 TOS = u1+u2
-        JZ  COMPEQU     ;2 u1=u2=0, Z=1,  end of all successfull comparisons
-        SUB #1,T        ;1
-        JN COMPDIF      ;2 u1<u2 if u1 < 0
-        SUB #1,S        ;1
-        JN COMPDIF      ;2 u1>u2 if u2 < 0
-        ADD #1,X        ;1 
-        CMP.B @Y+,-1(X) ;4 char1-char2
-        JZ COMPAR1      ;2 char1=char2  17~ loop
-COMPDIF MOV @IP,IP      ; take branch
-CMPEND  MOV @PSP+,TOS
-        MOV @IP+,PC     ;4
+    .restore
+BADCOMPBR                   ; branch if string compare is false; [COMPARE,QTBRAN] replacement
+            MOV TOS,S       ;1 S = u2
+            MOV @PSP+,Y     ;2 Y = addr2
+            MOV @PSP+,T     ;2 T = u1     
+            MOV @PSP+,X     ;2 X = addr1
+COMPAR1     MOV T,TOS       ;1
+            ADD S,TOS       ;1 TOS = u1+u2
+            JZ  COMPEQU     ;2 u1=u2=0, Z=1,  end of all successfull comparisons
+            SUB #1,T        ;1
+            JN COMPDIF      ;2 u1<u2 if u1 < 0
+            SUB #1,S        ;1
+            JN COMPDIF      ;2 u1>u2 if u2 < 0
+            ADD #1,X        ;1 
+            CMP.B @Y+,-1(X) ;4 char1-char2
+            JZ COMPAR1      ;2 char1=char2  17~ loop
+COMPDIF     MOV @IP,IP      ; take branch
+CMPEND      MOV @PSP+,TOS
+            MOV @IP+,PC     ;4
 
-TOQTB                   ; [TWODROP,ONEMINUS,?DUP,QTBRAN] replacement
-        ADD #2,PSP      ;1   -- savedTOS TOS
-        SUB #1,0(PSP)   ;3   -- savedTOS-1 TOS
-        JNZ COMPDIF     ;2   -- cnt     take branch
-        ADD #2,PSP      ;1   --
-COMPEQU ADD #2,IP       ;               skip branch
-        JMP CMPEND      ; 25 words
+TOQTB                       ; [TWODROP,ONEMINUS,?DUP,QTBRAN] replacement
+            ADD #2,PSP      ;1   -- savedTOS TOS
+            SUB #1,0(PSP)   ;3   -- savedTOS-1 TOS
+            JNZ COMPDIF     ;2   -- cnt     take branch
+            ADD #2,PSP      ;1   --
+COMPEQU     ADD #2,IP       ;               skip branch
+            JMP CMPEND      ; 25 words
 
+            FORTHWORDIMM  "[ELSE]"          ; or [IF] if isnogood...
 ; https://forth-standard.org/standard/tools/BracketELSE
 ; [ELSE]      a few (smaller and faster) definition
 ;Compilation:
@@ -133,46 +157,46 @@ COMPEQU ADD #2,IP       ;               skip branch
 ;including nested occurrences of [IF] ... [THEN] and [IF] ... [ELSE] ... [THEN], 
 ;until the word [THEN] has been parsed and discarded. 
 ;If the parse area becomes exhausted, it is refilled as with REFILL. 
-        FORTHWORDIMM  "[ELSE]"          ; or [IF] if isnogood...
 BRACKETELSE
-        mDOCOL
-        .word   lit,0                   
+            mDOCOL
+            .word   lit,0                   
 BRACKETELSE0
-        .word   ONEPLUS                 ; 
-BRACKETELSE1                            ;
-        .word   FBLANK,WORDD,COUNT      ; -- addr u
-        .word   DUP,QFBRAN,BRACKETELSE5 ;       u = 0 if end of line --> refill buffer then loop back
-        .word   TWODUP                  ;
-        .word   XSQUOTE                 ;
-        .byte   6,"[THEN]"              ;
-        .word   BADCOMPBR,BRACKETELSE2  ; if bad string comparaison, jump for next comparaison
-        .word   TOQTB,BRACKETELSE1      ; 2DROP,  count-1, loop back if count <> 0, else DROP
-        .word   EXIT                    ; then exit
-BRACKETELSE2                            ;
-        .word   TWODUP                  ;
-        .word   XSQUOTE                 ;
-        .byte   6,"[ELSE]"              ;
-        .word   BADCOMPBR,BRACKETELSE3  ; if bad string comparaison, jump for next comparaison
-        .word   TOQTB,BRACKETELSE0      ; 2DROP, count-1, loop back with count+1 if count <> 0, else DROP
-        .word   EXIT                    ; then exit
-BRACKETELSE3                            ;
-        .word   XSQUOTE                 ;
-        .byte   4,"[IF]"                ;
-        .word   BADCOMPBR,BRACKETELSE1  ; if bad string comparaison, loop back
-        .word   BRAN,BRACKETELSE0       ; else loop back with count+1
-BRACKETELSE5                            ;
-        .word   TWODROP                 ;
-;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
-; OPTION                                ; plus 5 words option
-;vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
-        .word   XSQUOTE                 ;
-        .byte   5,13,10,"ko "           ;
-        .word   TYPE                    ; CR+LF ." ko "     to show false branch of conditionnal compilation
-;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
-        .word   REFILL                  ; REFILL Input Buffer with next line
-        .word   SETIB                   ; SET Input Buffer pointers SOURCE_LEN, SOURCE_ORG and clear >IN
-        .word   BRAN,BRACKETELSE1       ; then loop back   44 words without options
+            .word   ONEPLUS                 ; 
+BRACKETELSE1                                ;
+            .word   FBLANK,WORDD,COUNT      ; -- addr u
+            .word   DUP,QFBRAN,BRACKETELSE5 ;       u = 0 if end of line --> refill buffer then loop back
+            .word   TWODUP                  ;
+            .word   XSQUOTE                 ;
+            .byte   6,"[THEN]"              ;
+            .word   BADCOMPBR,BRACKETELSE2  ; if bad string comparaison, jump for next comparaison
+            .word   TOQTB,BRACKETELSE1      ; 2DROP,  count-1, loop back if count <> 0, else DROP
+            .word   EXIT                    ; then exit
+BRACKETELSE2                                ;
+            .word   TWODUP                  ;
+            .word   XSQUOTE                 ;
+            .byte   6,"[ELSE]"              ;
+            .word   BADCOMPBR,BRACKETELSE3  ; if bad string comparaison, jump for next comparaison
+            .word   TOQTB,BRACKETELSE0      ; 2DROP, count-1, loop back with count+1 if count <> 0, else DROP
+            .word   EXIT                    ; then exit
+BRACKETELSE3                                ;
+            .word   XSQUOTE                 ;
+            .byte   4,"[IF]"                ;
+            .word   BADCOMPBR,BRACKETELSE1  ; if bad string comparaison, loop back
+            .word   BRAN,BRACKETELSE0       ; else loop back with count+1
+BRACKETELSE5                                ;
+            .word   TWODROP                 ;
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
+; OPTION                                    ; plus 5 words option
+;vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
+            .word   XSQUOTE                 ;
+            .byte   5,13,10,"ko "           ;
+            .word   TYPE                    ; CR+LF ." ko "     to show false branch of conditionnal compilation
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
+            .word   REFILL                  ; REFILL Input Buffer with next line
+            .word   SETIB                   ; SET Input Buffer pointers SOURCE_LEN, SOURCE_ORG and clear >IN
+            .word   BRAN,BRACKETELSE1       ; then loop back   44 words without options
 
+            FORTHWORDIMM "[IF]" ; flag -- 
 ; https://forth-standard.org/standard/tools/BracketIF
 ; [IF]
 ;Compilation:
@@ -185,20 +209,20 @@ BRACKETELSE5                            ;
 ;If the parse area becomes exhausted, it is refilled as with REFILL. [IF] is an immediate word.
 ;An ambiguous condition exists if [IF] is POSTPONEd, 
 ;   or if the end of the input buffer is reached and cannot be refilled before the terminating [ELSE] or [THEN] is parsed.
-        FORTHWORDIMM "[IF]" ; flag -- 
-BRACKETIF
-        CMP #0,TOS
-        MOV @PSP+,TOS
-        JZ BRACKETELSE
-        MOV @IP+,PC
+BRACKETIF   CMP #0,TOS
+            MOV @PSP+,TOS
+            JZ BRACKETELSE
+            MOV @IP+,PC
 
+    .IFNDEF NIP
 ; https://forth-standard.org/standard/core/NIP
 ; NIP      x1 x2 -- x2         Drop the first item below the top of stack
-    .IFNDEF NIP
 NIP         ADD #2,PSP      ; 1
             MOV @IP+,PC     ; 4
     .ENDIF
 
+
+            FORTHWORDIMM  "[DEFINED]"
 ; https://forth-standard.org/standard/tools/BracketDEFINED
 ; [DEFINED]
 ;Compilation:
@@ -208,11 +232,10 @@ NIP         ADD #2,PSP      ; 1
 ;Skip leading space delimiters. Parse name delimited by a space. 
 ;Return a true flag if name is the name of a word that can be found,
 ;otherwise return a false flag. [DEFINED] is an immediate word.
+DEFINED     mDOCOL
+            .word   FBLANK,WORDD,FIND,NIP,EXIT
 
-        FORTHWORDIMM  "[DEFINED]"
-DEFINED mDOCOL
-        .word   FBLANK,WORDD,FIND,NIP,EXIT
-
+            FORTHWORDIMM  "[UNDEFINED]"
 ; https://forth-standard.org/standard/tools/BracketUNDEFINED
 ; [UNDEFINED]
 ;Compilation:
@@ -221,9 +244,38 @@ DEFINED mDOCOL
 ;Skip leading space delimiters. Parse name delimited by a space. 
 ;Return a false flag if name is the name of a word that can be found,
 ;otherwise return a true flag.
-        FORTHWORDIMM  "[UNDEFINED]"
-        mDOCOL
-        .word   DEFINED
-        .word   $+2
-        MOV @RSP+,IP
-        MOV #ZEROEQUAL,PC
+            mDOCOL
+            .word   DEFINED,ZEROEQUAL,EXIT
+;            .word   $+2
+;            MOV @RSP+,IP
+;            MOV #ZEROEQUAL,PC
+;            .word   FBLANK,WORDD,FIND,NIP,ZEROEQUAL,EXIT
+
+
+; https://forth-standard.org/standard/core/MARKER
+; MARKER
+;name Execution: ( -- )
+;Restore all dictionary allocation and search order pointers to the state they had just prior to the
+;definition of name. Remove the definition of name and all subsequent definitions. Restoration
+;of any structures still existing that could refer to deleted definitions or deallocated data space is
+;not necessarily provided. No other contextual information such as numeric base is affected
+MARKER_DOES .word   $+2                 ; execution part
+            MOV @RSP+,IP            ; -- PFA
+            MOV @TOS+,&INIVOC       ;       set VOC_LINK value for RST_STATE
+            MOV @TOS,&INIDP         ;       set DP value for RST_STATE
+            MOV @PSP+,TOS           ; --
+            JMP RST_STATE           ;       execute RST_STATE, PWR_STATE then STATE_DOES
+
+            FORTHWORD "MARKER"      ; definition part
+;( "<spaces>name" -- )
+;Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
+;with the execution semantics defined below.
+
+            CALL #HEADER            ;4 W = DP+4
+            MOV #DODOES,-4(W)       ;4 CFA = DODOES
+            MOV #MARKER_DOES,-2(W)  ;4 PFA = MARKER_DOES
+            MOV &LASTVOC,0(W)       ;5 [BODY] = VOCLINK to be restored
+            SUB #2,Y                ;1 Y = LFA
+            MOV Y,2(W)              ;3 [BODY+2] = LFA = DP to be restored
+            ADD #4,&DDP             ;3
+            JMP GOOD_CSP            ;

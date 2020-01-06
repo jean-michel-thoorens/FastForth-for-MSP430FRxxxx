@@ -15,162 +15,17 @@
 ! C200-FF7F = code memory (FRAM 15743 B)
 ! FF80-FFFF = interrupt vectors (FRAM 127 B)
 ! ----------------------------------------------
-! ----------------------------------------------
-! FRAM                          ! INFO B, TLV
-! ----------------------------------------------
+
+! ============================================
+! BSL
+! ============================================
+BSL1=\$1000!
+
+! ============================================
+! FRAM INFO
+! ============================================
 INFO_ORG=\$1800!
 INFO_LEN=\$0100!
-INFOB_ORG=\$1800!
-INFOB_LEN=\$0080!
-INFOA_ORG=\$1880!
-INFOA_LEN=\$0080!
-TLV_ORG=\$1A00!         Device Descriptor Info (Tag-Lenght-Value)
-TLV_LEN=\$0080!
-DEVICEID=\$1A04!
-! ----------------------------------------------
-! RAM
-! ----------------------------------------------
-RAM_ORG=\$1C00!
-RAM_LEN=\$0400!
-! ----------------------------------------------
-! FRAM
-! ----------------------------------------------
-MAIN_ORG=\$C200!        Code space start
-
-SLEEP=\$C200! 
-BODYSLEEP=\$C204!
-VECT_RESET=\$C20E! 
-LIT=\$C224! 
-NEXT_ADR=\$C22C!
-XSQUOTE=\$C22E! 
-QTBRAN=\$C242! 
-BRAN=\$C248! 
-QFBRAN=\$C24C! 
-SKIPBRAN=\$C252! 
-XDO=\$C256! 
-XPLOOP=\$C266! 
-XLOOP=\$C278! 
-MUSMOD=\$C27E!          unsigned 32/16 division
-SETIB=\$C2C4!           Set Input Buffer with org len values, reset >IN 
-REFILL=\$C2D4!          accept one line from input and leave org len of input buffer
-CIB_ADR=\$C2E4!         contents currently TIB_ORG; may be redirected to SDIB_ORG
-XDODOES=\$C2EC!         restore rDODOES: MOV #XDODOES,rDODOES
-XDOCON=\$C2FA!          restore rDOCON: MOV #XDOCON,rDOCON
-XDOVAR=\$C306!          restore rDOVAR: MOV #XDOCON,rDOVAR  
-RFROM=\$C306!           
-XDOCOL=\$C310!          restore rDOCOL: MOV #XDOCOL,rDOCOL      only for DTC model = 1
-
-DODOES=\$1284!          CALL rDODOES
-DOCON=\$1285!           CALL rDOCON
-DOVAR=\$1286!           CALL rDOVAR
-DOCOL=\$1287!
-
-! to find DTC value, download \MSP430-FORTH\FastForthSpecs.4th
-! if DTC = 1, restore rDOCOL as this : MOV #xdocol,rDOCOL
-! if DTC = 2, restore rDOCOL as this : MOV #EXIT,rDOCOL
-! if DTC = 3, nothing to do, R7 is free for use.
-! ----------------------------------------------
-! Interrupt Vectors and signatures - MSP430FR5739
-! ----------------------------------------------
-FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
-SIGNATURES=\$FF80!      JTAG/BSL signatures
-JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW; must be reset by wipe.
-JTAG_SIG2=\$FF82!       if JTAG_SIG1=\$AAAA, length of password string @ JTAG_PASSWORD
-BSL_SIG1=\$FF84!
-BSL_SIG2=\$FF86!
-JTAG_PASSWORD=\$FF88!   256 bits
-BSL_PASSWORD=\$FFE0!    256 bits
-VECT_ORG=\$FFCE!        FFCE-FFFF
-VECT_LEN=\$32!
-
-
-RTC_Vec=\$FFCE!
-P4_Vec=\$FFD0!
-P3_Vec=\$FFD2!
-TB2_x_Vec=\$FFD4!
-TB2_0_Vec=\$FFD6!
-P2_Vec=\$FFD8!
-TB1_x_Vec=\$FFDA!
-TB1_0_Vec=\$FFDC!
-P1_Vec=\$FFDE!
-TA1_x_Vec=\$FFE0!
-TA1_0_Vec=\$FFE2!
-DMA_Vec=\$FFE4!
-eUSCI_A1_Vec=\$FFE6!
-TA0_x_Vec=\$FFE8!
-TA0_0_Vec=\$FFEA!
-ADC10_B_Vec=\$FFEC!
-eUSCI_B0_Vec=\$FFEE!
-eUSCI_A0_Vec=\$FFF0!
-WDT_Vec=\$FFF2!
-TB0_x_Vec=\$FFF4!
-TB0_0_Vec=\$FFF6!
-COMP_D_Vec=\$FFF8!
-U_NMI_Vec=\$FFFA!
-S_NMI_Vec=\$FFFC!
-RST_Vec=\$FFFE!
-
-
-
-
-LPM4=\$F8! SR(LPM4+GIE)
-LPM3=\$D8! SR(LPM3+GIE)
-LPM2=\$98! SR(LPM2+GIE)
-LPM1=\$58! SR(LPM1+GIE)
-LPM0=\$18! SR(LPM0+GIE)
-
-
-! ============================================
-! SR bits :
-! ============================================
-\#C=\#1!        = SR(0) Carry flag
-\#Z=\#2!        = SR(1) Zero flag
-\#N=\#4!        = SR(2) Negative flag
-\#GIE=\#8!      = SR(3) Enable Int
-\#CPUOFF=\#\$10!= SR(4) CPUOFF    
-\#OSCOFF=\#\$20!= SR(5) OSCOFF
-\#SCG0=\#\$40!  = SR(6) SCG0     
-\#SCG1=\#\$80!  = SR(7) SCG1
-\#V=\#\$100!    = SR(8) oVerflow flag
-\#UF9=\#\$200!  = SR(9) User Flag 1 used by ?NUMBER --> INTERPRET --> LITERAL to process double numbers, else free for use.  
-\#UF10=\#\$400! = SR(10) User Flag 2  
-\#UF11=\#\$800! = SR(11) User Flag 3  
-
-! ============================================
-! PORTx, Reg  bits :
-! ============================================
-BIT0=1!
-BIT1=2!
-BIT2=4!
-BIT3=8!
-BIT4=\$10!
-BIT5=\$20!
-BIT6=\$40!
-BIT7=\$80!
-BIT8=\$100!
-BIT9=\$200!
-BIT10=\$400!
-BIT11=\$800!
-BIT12=\$1000!
-BIT13=\$2000!
-BIT14=\$4000!
-BIT15=\$8000!
-
-! ============================================
-! symbolic codes :
-! ============================================
-RET=MOV \@R1+,R0!   \ MOV @RSP+,PC
-NOP=MOV \#0,R3!     \                one word one cycle
-NOP2=\$3C00 ,!      \ compile JMP 0  one word two cycles
-NOP3=MOV R0,R0!     \ MOV PC,PC      one word three cycles
-NEXT=MOV \@R13+,R0! \ MOV @IP+,PC   
-SEMI=MOV \@R1+,R13\nMOV \@R13+,R0!
-
-! =================================================
-! MSP430FR57xx DEVICES HAVE SPECIFIC RAM ADDRESSES!
-! =================================================
-
-
 
 ! You can check the addresses below by comparing their values in DTCforthMSP430FRxxxx.lst
 ! those addresses are usable with the symbolic assembler
@@ -194,6 +49,7 @@ RXON=\$1814!
 RXOFF=\$1816!
 ReadSectorWX=\$1818!    call with W = SectorLO  X = SectorHI
 WriteSectorWX=\$181A!   call with W = SectorLO  X = SectorHI
+TERMINAL_INT=\$181C!    value for TERMINAL vector
 
 ! ---------------------------------------
 ! FAT16 FileSystemInfos 
@@ -280,7 +136,6 @@ HDLW_BUFofst=22!    BUFFER offset ; used by LOAD" and by WRITE"
 HDLW_PrevLEN=24!    previous LEN
 HDLW_PrevORG=26!    previous ORG
 
-
 !OpenedFirstFile     ; "openedFile" structure 
 HandleMax=5!
 HandleLenght=28!
@@ -290,16 +145,22 @@ HandleEnd=\$18EE!
 SD_END=\$18EE!
 SD_LEN=\$C2!
 
-!SD_card Input Buffer = PAD
-SDIB_I2CADR=\$1CE0!
-SDIB_I2CCNT=\$1CE2!
-SDIB_ORG=\$1CE4!
-SDIB_LEN=\$54!
-
+! ============================================
+! FRAM TLV
+! ============================================
+TLV_ORG=\$1A00!         Device Descriptor Info (Tag-Lenght-Value)
+TLV_LEN=\$0080!
+DEVICEID=\$1A04!
 
 ! ============================================
+! RAM
+! ============================================
+RAM_ORG=\$1C00!
+RAM_LEN=\$0400!
+
+! ---------------------------------------
 ! FORTH RAM areas :
-! ============================================
+! ---------------------------------------
 LSTACK_SIZE=\#16! words
 PSTACK_SIZE=\#48! words
 RSTACK_SIZE=\#48! words
@@ -307,10 +168,15 @@ PAD_LEN=\#84! bytes
 TIB_LEN=\#84! bytes
 HOLD_SIZE=\#34! bytes
 
-! ============================================
-! FastForth RAM memory map (= 1k):
-! ============================================
+!SD_card Input Buffer = PAD
+SDIB_I2CADR=\$1CE0!
+SDIB_I2CCNT=\$1CE2!
+SDIB_ORG=\$1CE4!
+SDIB_LEN=\$54!
 
+! ----------------------------------------------
+! FastForth RAM memory map (= 1k):
+! ----------------------------------------------
 LEAVEPTR=\$1C00!    \ Leave-stack pointer, init by QUIT
 LSATCK=\$1C00!      \ leave stack,      grow up
 PSTACK=\$1C80!      \ parameter stack,  grow down
@@ -363,6 +229,78 @@ SD_BUF_I2CNT=\$1DFE!
 SD_BUF=\$1E00!      \ SD_Card buffer
 BUFEND=\$2000!
 
+! ============================================
+! FRAM MAIN
+! ============================================
+MAIN_ORG=\$C200!        Code space start
+MAIN_LEN=\$3E00!        15.5 k FRAM
+! ----------------------------------------------
+
+SLEEP=\$C200! 
+BODYSLEEP=\$C204!
+LIT=\$C20E! 
+NEXT_ADR=\$C216!
+XSQUOTE=\$C218! 
+HEREADR=\$C22C!
+QTBRAN=\$C238! 
+BRAN=\$C23E! 
+QFBRAN=\$C242! 
+SKIPBRAN=\$C248! 
+XDO=\$C24C! 
+XPLOOP=\$C25C! 
+XLOOP=\$C26E! 
+MUSMOD=\$C274!          unsigned 32/16 division
+SETIB=\$C2BA!           Set Input Buffer with org len values, reset >IN 
+REFILL=\$C2CA!          accept one line from input and leave org len of input buffer
+CIB_ADR=\$C2D8!         contents currently TIB_ORG; may be redirected to SDIB_ORG
+XDODOES=\$C2E2!         restore rDODOES: MOV #XDODOES,rDODOES
+XDOCON=\$C2F0!          restore rDOCON: MOV #XDOCON,rDOCON
+XDOCOL=\$C2FC!          restore rDOCOL: MOV #XDOCOL,rDOCOL      only for DTC model = 1
+
+! to find DTC value, download \MSP430-FORTH\FastForthSpecs.4th
+! if DTC = 1, restore rDOCOL as this : MOV #xdocol,rDOCOL
+! if DTC = 2, restore rDOCOL as this : MOV #EXIT,rDOCOL
+! if DTC = 3, nothing to do, R7 is free for use.
+! ----------------------------------------------
+! Interrupt Vectors and signatures - MSP430FR5739
+! ----------------------------------------------
+FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
+SIGNATURES=\$FF80!      JTAG/BSL signatures
+JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW; must be reset by wipe.
+JTAG_SIG2=\$FF82!       if JTAG_SIG1=\$AAAA, length of password string @ JTAG_PASSWORD
+BSL_SIG1=\$FF84!
+BSL_SIG2=\$FF86!
+JTAG_PASSWORD=\$FF88!   256 bits
+BSL_PASSWORD=\$FFE0!    256 bits
+VECT_ORG=\$FFCE!        FFCE-FFFF
+VECT_LEN=\$32!
+
+
+RTC_Vec=\$FFCE!
+P4_Vec=\$FFD0!
+P3_Vec=\$FFD2!
+TB2_x_Vec=\$FFD4!
+TB2_0_Vec=\$FFD6!
+P2_Vec=\$FFD8!
+TB1_x_Vec=\$FFDA!
+TB1_0_Vec=\$FFDC!
+P1_Vec=\$FFDE!
+TA1_x_Vec=\$FFE0!
+TA1_0_Vec=\$FFE2!
+DMA_Vec=\$FFE4!
+eUSCI_A1_Vec=\$FFE6!
+TA0_x_Vec=\$FFE8!
+TA0_0_Vec=\$FFEA!
+ADC10_B_Vec=\$FFEC!
+eUSCI_B0_Vec=\$FFEE!
+eUSCI_A0_Vec=\$FFF0!
+WDT_Vec=\$FFF2!
+TB0_x_Vec=\$FFF4!
+TB0_0_Vec=\$FFF6!
+COMP_D_Vec=\$FFF8!
+U_NMI_Vec=\$FFFA!
+S_NMI_Vec=\$FFFC!
+RST_Vec=\$FFFE!
 
 ! ============================================
 ! Special Fonction Registers (SFR)

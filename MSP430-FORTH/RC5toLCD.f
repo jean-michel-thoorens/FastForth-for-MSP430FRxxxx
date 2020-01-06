@@ -73,38 +73,9 @@
 \ rc5   <--- OUT IR_Receiver (1 TSOP32236)
 
 
-[DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]     \ remove application
+PWR_STATE
 
-[UNDEFINED] MARKER [IF]
-\  https://forth-standard.org/standard/core/MARKER
-\  MARKER
-\ ( "<spaces>name" -- )
-\ Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
-\ with the execution semantics defined below.
-\ 
-\ name Execution: ( -- )
-\ Restore all dictionary allocation and search order pointers to the state they had just prior to the
-\ definition of name. Remove the definition of name and all subsequent definitions. Restoration
-\ of any structures still existing that could refer to deleted definitions or deallocated data space is
-\ not necessarily provided. No other contextual information such as numeric base is affected
-\
-: MARKER
-CREATE
-HI2LO
-MOV &LASTVOC,0(W)   \ [BODY] = LASTVOC
-SUB #2,Y            \ 1 Y = LFA
-MOV Y,2(W)          \ 3 [BODY+2] = LFA = DP to be restored
-ADD #4,&DP          \ 3 add 2 cells
-LO2HI
-DOES>
-HI2LO
-MOV @RSP+,IP        \ -- PFA
-MOV @TOS+,&INIVOC   \       set VOC_LINK value for RST_STATE
-MOV @TOS,&INIDP     \       set DP value for RST_STATE
-MOV @PSP+,TOS       \ --
-MOV #RST_STATE,PC   \       execute RST_STATE, PWR_STATE then STATE_DOES
-ENDCODE
-[THEN]
+[DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]     \ remove application
 
 MARKER {RC5TOLCD}
 
@@ -150,7 +121,7 @@ MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
-[UNDEFINED] IF [IF]
+[UNDEFINED] IF [IF]     \ define IF and THEN
 \ https://forth-standard.org/standard/core/IF
 \ IF       -- IFadr    initialize conditional forward branch
 CODE IF       \ immediate
@@ -162,9 +133,7 @@ MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
 ADD #2,TOS              \ -- HERE+2=IFadr
 MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] THEN [IF]
 \ https://forth-standard.org/standard/core/THEN
 \ THEN     IFadr --                resolve forward branch
 CODE THEN               \ immediate
@@ -188,26 +157,8 @@ MOV @IP+,PC
 ENDCODE IMMEDIATE
 [THEN]
 
-[UNDEFINED] DEFER [IF]
-\ https://forth-standard.org/standard/core/DEFER
-\ DEFER "<spaces>name"   --
-\ Skip leading space delimiters. Parse name delimited by a space.
-\ Create a definition for name with the execution semantics defined below.
+[UNDEFINED] IS [IF]     \ define DEFER! and IS
 
-\ name Execution:   --
-\ Execute the xt that name is set to execute, i.e. NEXT (nothing),
-\ until the phrase ' word IS name is executed, causing a new value of xt to be assigned to name.
-: DEFER
-CREATE
-HI2LO
-MOV #$4030,-4(W)        \ CFA = MOV @PC+,PC = BR MOV @IP+,PC
-MOV #NEXT_ADR,-2(W)     \ PFA = address of MOV @IP+,PC to do nothing.
-MOV @RSP+,IP
-MOV @IP+,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] DEFER! [IF]
 \ https://forth-standard.org/standard/core/DEFERStore
 \ Set the word xt1 to execute xt2. An ambiguous condition exists if xt1 is not for a word defined by DEFER.
 CODE DEFER!             \ xt2 xt1 --
@@ -215,9 +166,7 @@ MOV @PSP+,2(TOS)        \ -- xt1=CFA_DEFER          xt2 --> [CFA_DEFER+2]
 MOV @PSP+,TOS           \ --
 MOV @IP+,PC
 ENDCODE
-[THEN]
 
-[UNDEFINED] IS [IF]
 \ https://forth-standard.org/standard/core/IS
 \ IS <name>        xt --
 \ used as is :
@@ -227,6 +176,7 @@ ENDCODE
 \ KEY, EMIT, CR, ACCEPT and WARM are examples of DEFERred words
 \
 \ as IS replaces the PFA value of any word, it's a TO alias for VARIABLE and CONSTANT words...
+
 : IS
 STATE @
 IF  POSTPONE ['] POSTPONE DEFER! 
@@ -521,7 +471,9 @@ BW1 MOV #SLEEP,X                \ the ASM word SLEEP is only visible in mode ass
     MOV #0,&LCD_TIM_CTL         \ stop LCD_TIMER
     MOV #0,&WDT_TIM_CTL         \ stop WDT_TIMER
     MOV #0,&WDT_TIM_CCTL0       \ clear CCIFG0 disable CCIE0
-    CALL #INIT_VECT             \ reset all vectors other than TERMINAL_int
+    MOV #COLD,X                 \ X = COLD adr = default vectors value
+    MOV X,&IR_VEC               \ 
+    MOV X,&WDT_TIM_0_VEC        \
 COLON                           \ restore default action of primary DEFERred word WARM (FORTH version)
 ECHO                            \
 ." RC5toLCD is removed,"
@@ -590,7 +542,7 @@ MOV #%0110_0000,&LCD_TIM_CCTLn  \ output mode = set/reset \ clear CCIFG
 \ ******************************\
     BIS.B #RC5,&IR_IE           \ enable RC5_Int
     BIC.B #RC5,&IR_IFG          \ reset RC5_Int flag
-    MOV #RC5_INT,&IR_Vec        \ init interrupt vector
+    MOV #RC5_INT,&IR_VEC        \ init interrupt vector
 \ ******************************\
 \ init WatchDog WDT_TIM_        \ eUSCI_A0 (FORTH terminal) has higher priority than WDT_TIM_
 \ ******************************\
@@ -616,7 +568,7 @@ MOV #%01_0001_0100,&WDT_TIM_CTL \ start WDT_TIM_, ACLK, up mode, disable int,
 \                             - \ CCIFGn
     MOV #%10000,&WDT_TIM_CCTL0  \ enable compare interrupt, clear CCIFG0
 \ ------------------------------\
-    MOV #WDT_INT,&WDT_TIM_0_Vec \ for only CCIFG0 int, this interrupt clears automatically CCIFG0
+    MOV #WDT_INT,&WDT_TIM_0_VEC \ for only CCIFG0 int, this interrupt clears automatically CCIFG0
 \ ------------------------------\
 \ define LPM mode for ACCEPT    \
 \ ------------------------------\
@@ -627,7 +579,7 @@ MOV #%01_0001_0100,&WDT_TIM_CTL \ start WDT_TIM_, ACLK, up mode, disable int,
 \ activate I/O                  \
 \ ------------------------------\
 BIC #1,&PM5CTL0                 \ activate all previous I/O settings; if not activated, nothing works after reset !
-BIS.B #TERM_BUS,&TERM_SEL       \ Configure pins TXD & RXD for TERM_UART use, otherwise no TERMINAL !
+BIS.B #BUS_TERM,&TERM_SEL       \ Configure pins TXD & RXD for TERM_UART use, otherwise no TERMINAL !
 \ ------------------------------\
 \ RESET events handling         \ search "SYSRSTIV" in your MSP430FRxxxx datasheet
 \ ------------------------------\

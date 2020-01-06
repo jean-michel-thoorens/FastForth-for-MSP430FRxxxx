@@ -18,7 +18,7 @@
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-    FORTHWORD "{CORE_COMP}"
+    FORTHWORD "{CORE_ANS}"
     MOV @IP+,PC
 
 ;https://forth-standard.org/standard/core/SPACE
@@ -160,7 +160,7 @@ FMSLASHMODEND
 ;https://forth-standard.org/standard/core/ABS
 ;C ABS     n1 -- +n2     absolute value
             FORTHWORD "ABS"
-ABBS        CMP #0,TOS           ; 1
+            CMP #0,TOS           ; 1
             JN NEGAT      
             MOV @IP+,PC
 
@@ -454,7 +454,7 @@ DECIMAL     MOV #10,&BASE
 ; https://forth-standard.org/standard/core/HERE
 ; HERE    -- addr      returns memory ptr
             FORTHWORD "HERE"
-            MOV #BEGIN,PC
+            MOV #HERE,PC
 
 ;https://forth-standard.org/standard/core/p
 ;C (                \  --     paren ; skip input until )
@@ -524,6 +524,12 @@ TOBODY      ADD #4,TOS
             MOV &SOURCE_ORG,0(PSP)
             MOV @IP+,PC
 
+;https://forth-standard.org/standard/core/STATE
+;C STATE   -- a-addr       holds compiler state
+            FORTHWORD "STATE"
+            CALL rDOCON
+            .word   STATE   ; VARIABLE address in RAM space
+
 ;https://forth-standard.org/standard/core/BASE
 ;C BASE    -- a-addr       holds conversion radix
             FORTHWORD "BASE"
@@ -541,33 +547,4 @@ FTOIN       CALL rDOCON
             FORTHWORD "PAD"
 PAD         CALL rDOCON
             .WORD    PAD_ORG
-
-; https://forth-standard.org/standard/core/MARKER
-; MARKER
-;( "<spaces>name" -- )
-;Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
-;with the execution semantics defined below.
-
-;name Execution: ( -- )
-;Restore all dictionary allocation and search order pointers to the state they had just prior to the
-;definition of name. Remove the definition of name and all subsequent definitions. Restoration
-;of any structures still existing that could refer to deleted definitions or deallocated data space is
-;not necessarily provided. No other contextual information such as numeric base is affected
-
-MARKER_DOES .word   $+2                 ; execution part
-            MOV     @RSP+,IP            ; -- PFA
-            MOV     @TOS+,&INIVOC       ;       set VOC_LINK value for RST_STATE
-            MOV     @TOS,&INIDP         ;       set DP value for RST_STATE
-            MOV     @PSP+,TOS           ; --
-            MOV     #RST_STATE,PC       ;       execute RST_STATE, PWR_STATE then STATE_DOES
-
-            FORTHWORD "MARKER"          ; definition part
-            CALL    #HEADER             ;4 W = DP+4
-            MOV     #DODOES,-4(W)       ;4 CFA = DODOES
-            MOV     #MARKER_DOES,-2(W)  ;4 PFA = MARKER_DOES
-            MOV     &LASTVOC,0(W)       ;5 [BODY] = VOCLINK to be restored
-            SUB     #2,Y                ;1 Y = LFA
-            MOV     Y,2(W)              ;3 [BODY+2] = LFA = DP to be restored
-            ADD     #4,&DDP             ;3
-            MOV     #GOOD_CSP,PC
 

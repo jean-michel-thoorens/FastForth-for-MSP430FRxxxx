@@ -3,8 +3,6 @@
 ; TESTXASM.4th
 ; -----------------------------------------------------------------------
 
-ECHO
-
 PWR_STATE
 
 [UNDEFINED] + [IF]
@@ -123,7 +121,10 @@ ENDCODE
 
 [UNDEFINED] R> [IF]
 CODE R>
-MOV R6,R0
+SUB #2,R15
+MOV R14,0(R15)
+MOV @R1+,R14
+MOV @R13+,R0
 ENDCODE
 [THEN]
 
@@ -155,17 +156,15 @@ SUB #2,R15
 MOV R14,0(R15)
 ADD #2,&$1DC6
 MOV &$1DC6,R14
-MOV #$4056,-2(R14)
+MOV #$404C,-2(R14)
 ADD #2,&$1C00
 MOV &$1C00,R10
 MOV #0,0(R10)
 MOV @R13+,R0
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] LOOP [IF]
 CODE LOOP
-    MOV #$4078,R9
+    MOV #$406E,R9
 BW1 ADD #4,&$1DC6
     MOV &$1DC6,R10
     MOV R9,-4(R10)
@@ -181,11 +180,9 @@ REPEAT
     MOV @R15+,R14
     MOV @R13+,R0
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] +LOOP [IF]
 CODE +LOOP
-MOV #$4066,R9
+MOV #$405C,R9
 GOTO BW1
 ENDCODE IMMEDIATE
 [THEN]
@@ -223,8 +220,16 @@ LO2HI
 ;
 [THEN]
 
+[UNDEFINED] HERE [IF]
+CODE HERE
+MOV #$402C,R0
+ENDCODE
+[THEN]
+
 PWR_HERE
 
+
+ECHO
 ; --------------------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER, OPCODES IV : Adda|Cmpa|Mova|Suba (without extended word)
 ; --------------------------------------------------------------------------------

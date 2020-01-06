@@ -78,19 +78,19 @@ SearchARG                           ; separator -- n|d or abort" not found"
             .word   QTBRAN,ARGWORD  ; -- addr           if Word found
             .word   QNUMBER         ;
             .word   QFBRAN,NotFound ; -- addr           ABORT if not found
-FSearchEnd  .word   SearchEnd       ; -- value          goto SearchEnd if number found
-ARGWORD     .word   $+2             ; -- xt             xt = CFA
-            MOV     @TOS+,X         ; -- PFA
-QDOVAR      SUB     #DOVAR,X        ;                   DOVAR = 1286h
-ISDOVAR     JZ      SearchEnd       ;
-QDOCON      ADD     #1,X            ; -- PFA            DOCON = 1285h
+            .word   SearchEnd       ; -- value          goto SearchEnd if number found
+ARGWORD     .word   $+2             ; -- CFA
+            MOV     @TOS+,S         ; -- PFA            S=DOxxx
+QDOVAR      SUB     #DOVAR,S        ;                   DOVAR = 1287h
+ISDOVAR     JZ      SearchEnd       ; -- adr
+QDOCON      ADD     #1,S            ;                   DOCON = 1286h
 ISNOTDOCON  JNZ     QDODOES         ;
 ISDOCON     MOV     @TOS,TOS        ; -- cte
             JMP     SearchEnd       ;
-QDODOES     ADD     #2,TOS          ; -- BODY           leave BODY address for DOES words
-            ADD     #1,X            ;                   DODOES = 1284h
-ISDODOES    JZ      SearchEnd       ;        
-ISOTHER     SUB     #4,TOS          ; -- CFA
+QDODOES     ADD     #2,TOS          ;
+            ADD     #1,S            ;                   DODOES = 1285h
+ISDODOES    JZ      SearchEnd       ; -- BODY           leave BODY address for DOES words        
+ISOTHER     SUB     #4,TOS          ; -- CFA            leave execute adr
 SearchEnd   POPM    #2,S            ;                   POPM T,S
             MOV     @RSP+,PC        ; RET
 
@@ -567,7 +567,7 @@ ASM_THEN1   MOV     @PSP+,TOS       ; --
             BIS     W,0(Y)          ; --       [@OPCODE]=OPCODE completed
             MOV     @IP+,PC
 
-;C ELSE     @OPCODE1 -- @OPCODE2    branch for IF..ELSE
+; ELSE      @OPCODE1 -- @OPCODE2    branch for IF..ELSE
             asmword "ELSE"
 ASM_ELSE    MOV     &DDP,W          ; --        W=HERE
             MOV     #3C00h,0(W)     ;           compile unconditionnal branch
@@ -576,7 +576,11 @@ ASM_ELSE    MOV     &DDP,W          ; --        W=HERE
             MOV     W,0(PSP)        ; -- @OPCODE2 @OPCODE1
             JMP     ASM_THEN        ; -- @OPCODE2
 
-;C UNTIL    @BEGIN OPCODE --   resolve conditional backward branch
+; BEGIN     -- BEGINadr             initialize backward branch
+            asmword "BEGIN"
+            MOV #HERE,PC
+
+; UNTIL     @BEGIN OPCODE --   resolve conditional backward branch
             asmword "UNTIL"
 ASM_UNTIL   MOV     @PSP+,W         ;  -- OPCODE                        W=@BEGIN
 ASM_UNTIL1  MOV     TOS,Y           ;               Y=OPCODE            W=@BEGIN
@@ -593,19 +597,19 @@ ASM_UNTIL2  MOV     @PSP+,TOS       ;  --
             ADD     #2,&DDP
             MOV     @IP+,PC
 
-;X AGAIN    @BEGIN --      uncond'l backward branch
+;  AGAIN    @BEGIN --      uncond'l backward branch
 ;   unconditional backward branch
             asmword "AGAIN"
 ASM_AGAIN   MOV TOS,W               ;               W=@BEGIN
             MOV #3C00h,Y            ;               Y = asmcode JMP
             JMP ASM_UNTIL2          ;
 
-;C WHILE    @BEGIN OPCODE -- @WHILE @BEGIN
+; WHILE     @BEGIN OPCODE -- @WHILE @BEGIN
             asmword "WHILE"
 ASM_WHILE   mDOCOL                  ; -- @BEGIN OPCODE
             .word   ASM_IF,SWAP,EXIT
 
-;C REPEAT   @WHILE @BEGIN --     resolve WHILE loop
+; REPEAT    @WHILE @BEGIN --     resolve WHILE loop
             asmword "REPEAT"
 ASM_REPEAT  mDOCOL                  ; -- @WHILE @BEGIN
             .word   ASM_AGAIN,ASM_THEN,EXIT
@@ -661,24 +665,24 @@ BACKWSET    MOV &DDP,0(Y)           ;               no, set LABEL = DP
             .word BACKWDOES
             .word 0
 
-;FORWDOES    FORTHtoASM
+;FORWDOES    .word   $+2
 ;            MOV @RSP+,IP
 ;            MOV &DDP,W              ;
 ;            MOV @TOS,TOS
-;            MOV @TOS,Y              ;               Y=[ASMFWx]
+;            MOV @TOS,Y              ; -- PFA        Y= ASMFWx
 ;            CMP #8,&TOIN            ;               are we colon 8 or more ?
-;FORWUSE     JLO ASM_THEN1           ;               no: resolve FWx with W=DDP, Y=ASMFWx
-;FORWSET     MOV @PSP+,0(W)          ; -- PFA        compile incomplete opcode
-;            ADD #2,&DDP             ;               increment DDP
-;            MOV W,0(TOS)            ;               store @OPCODE into ASMFWx
+;FORWUSE     JNC ASM_THEN1           ;               no: resolve FWx with W=DDP, Y=ASMFWx
+;FORWSET     MOV @PSP+,0(W)          ;               yes compile incomplete opcode
+;            ADD #2,&DDP             ;                   increment DDP
+;            MOV W,0(TOS)            ;                   store @OPCODE into ASMFWx
 ;            MOV @PSP+,TOS           ;   --
-;            mNEXT
-
+;            MOV @IP+,PC
+;
 ;; forward label 1
 ;            asmword "FW1"
-;            mdodoes
-;            .word FORWARDDOES
-;            .word ASMFW1            ; in RAM
+;            CALL rDODOES            ; CFA
+;            .word FORWDOES          ; 
+;            .word ASMFW1            ; in RAM 
 
 FORWDOES    .word   $+2
             MOV @RSP+,IP
@@ -727,11 +731,11 @@ INVJMP      CMP #3000h,TOS          ; invert code jump process
             XOR #0800h,TOS          ; complementary action for JL<-->JGE
             JMP GOTONEXT
 
+    .IFDEF EXTENDED_MEM
+
 ; ===============================================================
 ; to allow data access beyond $FFFF
 ; ===============================================================
-
-    .IFDEF EXTENDED_MEM
 
 ; MOVA (#$x.xxxx|&$x.xxxx|$.xxxx(Rs)|Rs|@Rs|@Rs+ , &|Rd|$.xxxx(Rd)) 
 ; ADDA (#$x.xxxx|Rs , Rd) 

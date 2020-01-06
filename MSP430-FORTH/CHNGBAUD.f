@@ -62,9 +62,7 @@ MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
 ADD #2,TOS              \ -- HERE+2=IFadr
 MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] THEN [IF]
 \ https://forth-standard.org/standard/core/THEN
 \ THEN     IFadr --                resolve forward branch
 CODE THEN               \ immediate
@@ -88,32 +86,38 @@ MOV @IP+,PC
 ENDCODE IMMEDIATE
 [THEN]
 
-[UNDEFINED] BEGIN [IF]
+[UNDEFINED] BEGIN [IF]  \ define BEGIN UNTIL AGAIN WHILE REPEAT
 \ https://forth-standard.org/standard/core/BEGIN
 \ BEGIN    -- BEGINadr             initialize backward branch
-CODE BEGIN              \ immediate
-MOV #HERE,PC            \ BR HERE
+CODE BEGIN
+    MOV #HEREADR,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] AGAIN [IF]
+\ https://forth-standard.org/standard/core/UNTIL
+\ UNTIL    BEGINadr --             resolve conditional backward branch
+CODE UNTIL              \ immediate
+    MOV #QFBRAN,X
+BW1 ADD #4,&DP          \ compile two words
+    MOV &DP,W           \ W = HERE
+    MOV X,-4(W)         \ compile Bran or QFBRAN at HERE
+    MOV TOS,-2(W)       \ compile bakcward adr at HERE+2
+    MOV @PSP+,TOS
+    MOV @IP+,PC
+ENDCODE IMMEDIATE
+
 \ https://forth-standard.org/standard/core/AGAIN
 \ AGAIN    BEGINadr --             resolve uncondionnal backward branch
 CODE AGAIN     \ immediate
 MOV #BRAN,X
 GOTO BW1
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] WHILE [IF]
 \ https://forth-standard.org/standard/core/WHILE
 \ WHILE    BEGINadr -- WHILEadr BEGINadr
 : WHILE     \ immediate
 POSTPONE IF SWAP
 ; IMMEDIATE
-[THEN]
 
-[UNDEFINED] REPEAT [IF]
 \ https://forth-standard.org/standard/core/REPEAT
 \ REPEAT   WHILEadr BEGINadr --     resolve WHILE loop
 : REPEAT
@@ -121,7 +125,7 @@ POSTPONE AGAIN POSTPONE THEN
 ; IMMEDIATE
 [THEN]
 
-[UNDEFINED] DO [IF]
+[UNDEFINED] DO [IF]     \ define DO LOOP +LOOP
 \ https://forth-standard.org/standard/core/DO
 \ DO       -- DOadr   L: -- 0
 CODE DO                 \ immediate
@@ -135,9 +139,7 @@ MOV &LEAVEPTR,W         \
 MOV #0,0(W)             \ -- HERE+2     L-- 0
 MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] LOOP [IF]
 \ https://forth-standard.org/standard/core/LOOP
 \ LOOP    DOadr --         L-- an an-1 .. a1 0
 CODE LOOP               \ immediate
@@ -157,6 +159,13 @@ REPEAT
     MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE IMMEDIATE
+
+\ https://forth-standard.org/standard/core/PlusLOOP
+\ +LOOP   adrs --   L-- an an-1 .. a1 0
+CODE +LOOP              \ immediate
+MOV #XPLOOP,X
+GOTO BW1
+ENDCODE IMMEDIATE
 [THEN]
 
 [UNDEFINED] >R [IF]
@@ -173,7 +182,10 @@ ENDCODE
 \ https://forth-standard.org/standard/core/Rfrom
 \ R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
 CODE R>
-MOV rDOVAR,PC     \ 4
+SUB #2,PSP      \ 1
+MOV TOS,0(PSP)  \ 3
+MOV @RSP+,TOS   \ 2
+MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 

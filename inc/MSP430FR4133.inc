@@ -56,51 +56,55 @@ BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ;
 ;    .org    INTVECT         ; FFE2-FFFF 14 vectors + reset
 ;
-;            .word  reset        ; FFE2h - LCD      
-;            .word  reset        ; FFE4h - P2       
-;            .word  reset        ; FFE6h - P1       
-;            .word  reset        ; FFE8h - ADC10    
-;            .word  reset        ; FFEAh - eUSCI_B0 
-;            .word  reset        ; FFECh - eUSCI_A0 
-;            .word  reset        ; FFEEh - WDT      
-;            .word  reset        ; FFF0h - RTC      
-;            .word  reset        ; FFF2h - TA1_x    
-;            .word  reset        ; FFF4h - TA1_0    
-;            .word  reset        ; FFF6h - TA0_x    
-;            .word  reset        ; FFF8h - TA0_0    
-;            .word  reset        ; FFFAh - UserNMI  
-;            .word  reset        ; FFFCh - SysNMI   
-;            .word  reset        ; FFFEh - Reset    
+;            .word  reset        ; 0FFE2h - LCD      
+;            .word  reset        ; 0FFE4h - P2       
+;            .word  reset        ; 0FFE6h - P1       
+;            .word  reset        ; 0FFE8h - ADC10    
+;            .word  reset        ; 0FFEAh - eUSCI_B0 
+;            .word  reset        ; 0FFECh - eUSCI_A0 
+;            .word  reset        ; 0FFEEh - WDT      
+;            .word  reset        ; 0FFF0h - RTC      
+;            .word  reset        ; 0FFF2h - TA1_x    
+;            .word  reset        ; 0FFF4h - TA1_0    
+;            .word  reset        ; 0FFF6h - TA0_x    
+;            .word  reset        ; 0FFF8h - TA0_0    
+;            .word  reset        ; 0FFFAh - UserNMI  
+;            .word  reset        ; 0FFFCh - SysNMI   
+;            .word  reset        ; 0FFFEh - Reset    
 
 
 ; ----------------------------------------------------------------------
 ; EXP430FR4133 Peripheral File Map
 ; ----------------------------------------------------------------------
-SFR_SFR         .set 0100h           ; Special function
-PMM_SFR         .set 0120h           ; PMM
-SYS_SFR         .set 0140h           ; SYS
-CS_SFR          .set 0180h           ; Clock System
-FRAM_SFR        .set 01A0h           ; FRAM control
-CRC16_SFR       .set 01C0h
-WDT_A_SFR       .set 01CCh           ; Watchdog
-PA_SFR          .set 0200h           ; PORT1/2
-PB_SFR          .set 0220h           ; PORT3/4
-PC_SFR          .set 0240h           ; PORT5/6
-PD_SFR          .set 0260h           ; PORT7/8
-CTIO0_SFR       .set 02E0h           ; Capacitive Touch IO
-TA0_SFR         .set 0300h
-TA1_SFR         .set 0340h
-RTC_SFR         .set 03C0h
-eUSCI_A0_SFR    .set 0500h           ; eUSCI_A0
-eUSCI_B0_SFR    .set 0540h           ; eUSCI_B0
-LCD_SFR         .set 0600h
-BACK_MEM_SFR    .set 0660h
+SFR_SFR         .equ 0100h           ; Special function
+PMM_SFR         .equ 0120h           ; PMM
+SYS_SFR         .equ 0140h           ; SYS
+CS_SFR          .equ 0180h           ; Clock System
+FRAM_SFR        .equ 01A0h           ; FRAM control
+CRC16_SFR       .equ 01C0h
+WDT_A_SFR       .equ 01CCh           ; Watchdog
+PA_SFR          .equ 0200h           ; PORT1/2
+PB_SFR          .equ 0220h           ; PORT3/4
+PC_SFR          .equ 0240h           ; PORT5/6
+PD_SFR          .equ 0260h           ; PORT7/8
+CTIO0_SFR       .equ 02E0h           ; Capacitive Touch IO
+TA0_SFR         .equ 0300h
+TA1_SFR         .equ 0340h
+RTC_SFR         .equ 03C0h
+eUSCI_A0_SFR    .equ 0500h           ; eUSCI_A0
+eUSCI_B0_SFR    .equ 0540h           ; eUSCI_B0
+LCD_SFR         .equ 0600h
+BACK_MEM_SFR    .equ 0660h
 ADC10_B_SFR     .equ 0700h
 
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : LOCK PMM_LOCKLPM5
 ; ----------------------------------------------------------------------
+SFRIE1      .equ SFR_SFR
+SFRIFG1     .equ SFR_SFR + 2
+SFRRPCR     .equ SFR_SFR + 4
+
 PMMCTL0     .equ PMM_SFR
 PMMSWBOR    .equ 4
 
@@ -285,14 +289,6 @@ RTCIV       .equ RTC_SFR + 04h  ; Real-Time Clock Interrupt Vector
 RTCMOD      .equ RTC_SFR + 08h  ; Real-Timer Clock Modulo 
 RTCCNT      .equ RTC_SFR + 0Ch  ; Real-Time Clock Counter 
 
-
-
-UCSWRST         .equ 1  ; eUSCI Software Reset
-UCTXIE          .equ 2  ; eUSCI Transmit Interrupt Enable
-UCRXIE          .equ 1  ; eUSCI Receive Interrupt Enable
-UCTXIFG         .equ 2  ; eUSCI Transmit Interrupt Flag
-UCRXIFG         .equ 1  ; eUSCI Receive Interrupt Flag
-
 ; ----------------------------------------------------------------------
 eUSCI_A0
 ; ----------------------------------------------------------------------
@@ -307,11 +303,43 @@ TERM_TXBUF       .equ eUSCI_A0_SFR + 0Eh    ; eUSCI_A0 Transmit Buffer
 TERM_IE          .equ eUSCI_A0_SFR + 1Ah    ; eUSCI_A0 Interrupt Enable Register
 TERM_IFG         .equ eUSCI_A0_SFR + 1Ch    ; eUSCI_A0 Interrupt Flags Register
 TERM_VEC         .equ 0FFECh      ;  interrupt vector for eUSCI_A0
+RX_TERM         .equ 1
+TX_TERM         .equ 2
     .ENDIF ;UCA0_TERM
+
+    .IFDEF UCA0_SD
+; ----------------------------------------------------------------------
+; eUSCI_A0 as UCA0_SD
+; ----------------------------------------------------------------------
+SD_CTLW0       .equ eUSCI_A0_SFR + 00h      ; USCI_A0 Control Word Register 0
+SD_BRW         .equ eUSCI_A0_SFR + 06h      ; USCI_A0 Baud Word Rate 0
+SD_RXBUF       .equ eUSCI_A0_SFR + 0Ch      ; USCI_A0 Receive Buffer 8
+SD_TXBUF       .equ eUSCI_A0_SFR + 0Eh      ; USCI_A0 Transmit Buffer 8
+SD_IFG         .equ eUSCI_A0_SFR + 1Ch      ; USCI_A0 Interrupt Flags Register
+RX_SD           .equ 1
+TX_SD           .equ 2
+    .ENDIF
 
 ; ----------------------------------------------------------------------
 ; eUSCI_B0
 ; ----------------------------------------------------------------------
+
+    .IFDEF UCB0_TERM
+TERM_CTLW0      .equ eUSCI_B0_SFR + 00h     ; USCI_B0 Control Word Register 0
+TERM_CTLW1      .equ eUSCI_B0_SFR + 02h     ; USCI_B0 Control Word Register 1
+TERM_BRW        .equ eUSCI_B0_SFR + 06h     ; USCI_B0 Baud Word Rate 0
+TERM_STATW      .equ eUSCI_B0_SFR + 08h     ; USCI_B0 Status Word
+TERM_RXBUF      .equ eUSCI_B0_SFR + 0Ch     ; USCI_B0 Receive Buffer 8
+TERM_TXBUF      .equ eUSCI_B0_SFR + 0Eh     ; USCI_B0 Transmit Buffer 8
+TERM_I2COA0     .equ eUSCI_B0_SFR + 14h     ; USCI_B0 I2C Own Address 0
+TERM_ADDRX      .equ eUSCI_B0_SFR + 1Ch     ; USCI_B0  Received Address Register 
+TERM_I2CSA      .equ eUSCI_B0_SFR + 20h     ; USCI_B0 I2C Slave Address
+TERM_IE         .equ eUSCI_B0_SFR + 2Ah     ; USCI_B0 Interrupt Enable
+TERM_IFG        .equ eUSCI_B0_SFR + 2Ch     ; USCI_B0 Interrupt Flags Register
+TERM_VEC        .equ 0FFEAh                 ; interrupt vector for eUSCI_B0
+RX_TERM         .equ 1
+TX_TERM         .equ 2
+    .ENDIF ;UCB0_TERM
 
     .IFDEF UCB0_SD
 SD_CTLW0       .equ eUSCI_B0_SFR + 00h    ; USCI_B0 Control Word Register 0
@@ -319,5 +347,7 @@ SD_BRW         .equ eUSCI_B0_SFR + 06h    ; USCI_B0 Baud Word Rate 0
 SD_RXBUF       .equ eUSCI_B0_SFR + 0Ch    ; USCI_B0 Receive Buffer 8
 SD_TXBUF       .equ eUSCI_B0_SFR + 0Eh    ; USCI_B0 Transmit Buffer 8
 SD_IFG         .equ eUSCI_B0_SFR + 2Ch    ; USCI_B0 Interrupt Flags Register
+RX_SD           .equ 1
+TX_SD           .equ 2
     .ENDIF ;UCB0_SD
 

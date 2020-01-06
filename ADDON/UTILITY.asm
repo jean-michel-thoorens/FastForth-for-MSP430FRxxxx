@@ -18,8 +18,8 @@
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-    FORTHWORD "{TOOLS}"
-    MOV @IP+,PC
+            FORTHWORD "{TOOLS}"
+            MOV @IP+,PC
 
     .IFNDEF TOR
 ; https://forth-standard.org/standard/core/toR
@@ -87,16 +87,16 @@ II          SUB #2,PSP              ;1 make room in TOS
 
 ;https://forth-standard.org/standard/tools/DotS
             FORTHWORD ".S"      ; --            print <depth> of Param Stack and stack contents if not empty
-DOTS        MOV     TOS,-2(PSP) ; -- TOS ( tos x x )
-            MOV     PSP,TOS
-            SUB     #2,TOS      ; to take count that TOS is first cell
-            MOV     TOS,-6(PSP) ; -- TOS ( tos x  PSP )
-            MOV     #PSTACK,TOS ; -- P0  ( tos x  PSP )
-            SUB     #2,TOS      ; to take count that TOS is first cell
-DOTS1       MOV     TOS,-4(PSP) ; -- S0  ( tos S0 SP )
-            SUB     #6,PSP      ; -- S0 SP S0
-            SUB     @PSP,TOS    ; -- S0 SP S0-SP
-            RRA     TOS         ; -- S0 SP #cells
+DOTS        MOV TOS,-2(PSP)     ; -- TOS ( tos x x )
+            MOV PSP,TOS 
+            SUB #2,TOS          ; to take count that TOS is first cell
+            MOV TOS,-6(PSP)     ; -- TOS ( tos x  PSP )
+            MOV #PSTACK,TOS     ; -- P0  ( tos x  PSP )
+            SUB #2,TOS          ; to take count that TOS is first cell
+DOTS1       MOV TOS,-4(PSP)     ; -- S0  ( tos S0 SP )
+            SUB #6,PSP          ; -- S0 SP S0
+            SUB @PSP,TOS        ; -- S0 SP S0-SP
+            RRA TOS             ; -- S0 SP #cells
             mDOCOL
             .word   lit,'<',EMIT
             .word   DOT                 ; display #cells
@@ -112,16 +112,16 @@ STKDISPL2   .word   II,FETCH,UDOT
 
 
             FORTHWORD ".RS"     ; --           print <depth> of Return Stack and stack contents if not empty
-DOTRS       MOV     TOS,-2(PSP) ; -- TOS ( tos x x ) 
-            MOV     RSP,-6(PSP) ; -- TOS ( tos x  RSP )
-            MOV     #RSTACK,TOS ; -- R0  ( tos x  RSP )
-            JMP     DOTS1
+DOTRS       MOV TOS,-2(PSP)     ; -- TOS ( tos x x ) 
+            MOV RSP,-6(PSP)     ; -- TOS ( tos x  RSP )
+            MOV #RSTACK,TOS     ; -- R0  ( tos x  RSP )
+            JMP DOTS1
 
 ;https://forth-standard.org/standard/tools/q
 ;Z  ?       adr --             display the content of adr
             FORTHWORD "?"
-QUESTION    MOV     @TOS,TOS
-            MOV     #UDOT,PC
+QUESTION    MOV @TOS,TOS
+            MOV #UDOT,PC
 
     .SWITCH THREADS
     .CASE   1
@@ -144,7 +144,6 @@ WORDS1      .word   FETCH               ; -- NFA
             .word   BRAN,WORDS1
 WORDS2      .word   EXIT                ; --
 
-
     .ELSECASE
 
         .IFNDEF PAD
@@ -152,7 +151,7 @@ WORDS2      .word   EXIT                ; --
 ; PAD           --  pad address
             FORTHWORD "PAD"
 PAD         CALL rDOCON
-            .WORD    PAD_ORG
+            .WORD PAD_ORG
         .ENDIF
 
         .IFNDEF ROT
@@ -206,17 +205,17 @@ WORDS5      .word   DROP
 ;https://forth-standard.org/standard/core/MAX
 ;C MAX    n1 n2 -- n3       signed maximum
             FORTHWORD "MAX"
-MAX         CMP     @PSP,TOS    ; n2-n1
-            JL      SELn1       ; n2<n1
-SELn2       ADD     #2,PSP
+MAX         CMP @PSP,TOS        ; n2-n1
+            JL SELn1            ; n2<n1
+SELn2       ADD #2,PSP
             MOV @IP+,PC
 
 ;https://forth-standard.org/standard/core/MIN
 ;C MIN    n1 n2 -- n3       signed minimum
             FORTHWORD "MIN"
-MIN         CMP     @PSP,TOS    ; n2-n1
-            JL      SELn2       ; n2<n1
-SELn1       MOV     @PSP+,TOS
+MIN         CMP @PSP,TOS        ; n2-n1
+            JL SELn2            ; n2<n1
+SELn1       MOV @PSP+,TOS
             MOV @IP+,PC
 
     .ENDIF
@@ -251,10 +250,10 @@ UDOTR       mDOCOL
 
 ;https://forth-standard.org/standard/tools/DUMP
             FORTHWORD "DUMP"
-DUMP        PUSH    IP
-            PUSH    &BASE                   ; save current base
-            MOV     #10h,&BASE              ; HEX base
-            ADD     @PSP,TOS                ; -- ORG END
+DUMP        PUSH IP
+            PUSH &BASE                      ; save current base
+            MOV #10h,&BASE                  ; HEX base
+            ADD @PSP,TOS                    ; -- ORG END
             ASMtoFORTH
             .word   SWAP                    ; -- END ORG
             .word   xdo                     ; --

@@ -161,7 +161,8 @@ TERM_BUS=\$0C!
 TERM_IN=\$221!          P4
 TERM_REN=\$227!
 TERM_SEL=\$22B!     \ SEL0
-TERM_Vec=\$FFE2!        UCA1
+TERM_VEC=\$FFE2!    \ UCA1
+IE_TERM=1!          \ RX int
 
 TERM_CTLW0=\$580!   \ eUSCI_A1 control word 0
 TERM_CTLW1=\$582!   \ eUSCI_A1 control word 1
@@ -188,10 +189,12 @@ HANDSHAKOUT=\$203!
 ! APPLICATION I/O :
 ! ============================================
 LED1_OUT=\$202!
+LED1_DIR=\$204!
 LED1=1!                 P1.0
 
 LED2_OUT=\$243!
-LED2=2!                 P6.6
+LED2_DIR=\$245!
+LED2=\$40!              P6.6
 
 SW1_IN=\$221!
 SW1=2!                  P4.1    
@@ -232,7 +235,7 @@ WDT_TIM_CTL=\$3C2!      TB1CTL
 WDT_TIM_CCTL0=\$3C2!    TB1CCTL0
 WDT_TIM_CCR0=\$3D2!     TB1CCR0
 WDT_TIM_EX0=\$3E0!      TB1EX0
-WDT_TIM_0_Vec=\$FFF4!   TB1_0_Vec
+WDT_TIM_0_VEC=\$FFF4!   TB1_0_VEC
 
 
 !IR_RC5
@@ -244,7 +247,7 @@ IR_REN=\$209!
 IR_IES=\$219!
 IR_IE=\$21B!
 IR_IFG=\$21D!
-IR_Vec=\$FFD2!          P2 int
+IR_VEC=\$FFD2!          P2 int
 RC5=4!                  P2.2
 !IR_RC5 timer
 RC5_TIM_CTL=\$400!       TB2CTL
@@ -275,7 +278,7 @@ I2CMM_OUT=\$202!
 I2CMM_DIR=\$204!
 I2CMM_REN=\$206!
 I2CMM_SEL=\$20A!        SEL0
-I2CMM_Vec=\$FFE0!       UCB0
+I2CMM_VEC=\$FFE0!       UCB0
 MMSDA=4!                P1.2
 MMSCL=8!                P1.3
 MM_BUS=\$0C!
@@ -286,7 +289,7 @@ I2CM_OUT=\$202!
 I2CM_DIR=\$204!
 I2CM_REN=\$206!
 I2CM_SEL=\$20A!         SEL0
-I2CM_Vec=\$FFE0!        UCB0
+I2CM_VEC=\$FFE0!        UCB0
 MSDA=4!                 P1.2
 MSCL=8!                 P1.3
 M_BUS=\$0C!
@@ -297,10 +300,11 @@ I2CS_OUT=\$202!
 I2CS_DIR=\$204!
 I2CS_REN=\$206!
 I2CS_SEL=\$20A!         SEL0
-I2CS_Vec=\$FFE0!        UCB0
+I2CS_VEC=\$FFE0!        UCB0
 SSDA=4!                 P1.2
 SSCL=8!                 P1.3
 S_BUS=\$0C!
+I2CMM_VEC=\$FFE0!       UCB0
 
 UCSWRST=1!          eUSCI Software Reset
 UCTXIE=2!           eUSCI Transmit Interrupt Enable

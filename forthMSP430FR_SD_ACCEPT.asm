@@ -92,5 +92,3 @@ SDA_GetFileNextSector               ; CIB cnt --
     POPM    #2,W                    ; restore dst_ptr, dst_len
     JMP     SDA_InitSrcAddr         ; loopback to end the line
 ; ----------------------------------;
-
-

@@ -2,7 +2,6 @@
 ; TERM alias eUSCI_Ax : select baudrate versus frequency
     .IF FREQUENCY = 0.25
         .SWITCH TERMINALBAUDRATE
-
         .CASE 9600
 ; Configure UART_TERM @ 38400 bauds / 1MHz
 ; N=1000000/38400=26.04166... ==> UCOS16=1, UCBR0=int(N/16)=1, UCBRF0=int(frac(N/16)*16)=10, UCBRS0= fn(frac(N))=fn(0.04166)=0x00
@@ -37,12 +36,9 @@ TERMMCTLW_INI   .equ 0AA00h
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 04900h
-
         .ELSECASE
             .error "UART_TERM / 250 kHz : baudrate not implemented"
         .ENDCASE
-
-
     .ELSEIF FREQUENCY = 0.5
         .SWITCH TERMINALBAUDRATE
         .CASE 9600
@@ -107,11 +103,9 @@ TERMMCTLW_INI   .equ 0BB00h
 ;; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 ;TERMBRW_INI     .equ 3
 ;TERMMCTLW_INI   .equ 01100h
-
         .ELSECASE
             .error "UART_TERM / 500 kHz : baudrate not implemented"
         .ENDCASE
-
 
     .ELSEIF FREQUENCY = 1
         .SWITCH TERMINALBAUDRATE
@@ -153,6 +147,7 @@ TERMMCTLW_INI   .equ 04A00h
         .CASE 100000
 ; Configure UCBx_TERM for I2C @ 100kHZ / 1MHz
 TERMBRW_INI     .equ 10
+TERMMCTLW_INI   .equ 0
 
         .CASE 100800  ; PL2303TA baudrate
 ; Configure UART_TERM @ 100800 bauds / 1MHz
@@ -216,12 +211,9 @@ TERMMCTLW_INI   .equ 0BB00h
 ;; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 ;TERMBRW_INI     .equ 2
 ;TERMMCTLW_INI   .equ 05500h
-
-
         .ELSECASE
             .error "UART_TERM / 1 MHz : baudrate not implemented"
         .ENDCASE
-
     .ELSEIF FREQUENCY = 2
         .SWITCH TERMINALBAUDRATE
         .CASE 9600
@@ -262,6 +254,7 @@ TERMMCTLW_INI   .equ 0BB21h
         .CASE 100000
 ; Configure UCBx_TERM for I2C @ 100kHZ / 2MHz
 TERMBRW_INI     .equ 20
+TERMMCTLW_INI   .equ 0
 
         .CASE 115200
 ; Configure UART_TERM @ 57600 bauds / 1MHz
@@ -290,25 +283,18 @@ TERMMCTLW_INI   .equ 0000h
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 7
 TERMMCTLW_INI   .equ 05500h
-
-        .CASE 400000
-; Configure UCBx_TERM for I2C @ 400kHZ / 2MHz
-TERMBRW_INI     .equ 5
-
         .CASE 403200  ; PL2303TA baudrate
 ; Configure UART_TERM @ 201600 bauds / 1MHz
 ; N=1000000/201600=4.955401 ==> UCOS16=0, UCBR0=int(N)=4, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.200396)=0xFE
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 0FE00h
-
         .CASE 460800 ; CP2102 baudrate
 ; Configure UART_TERM @ 921600 bauds / 4MHz
 ; N = 4000000/460800 = 4.34027... ==> {UCOS16=0, UCBR1=int(N)=4, UCBRF1=dont_care=0  UCBRS1=fn(frac(N))=fn(0.34027)=0x49
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 04900h
-
         .CASE 614400 ; PL2303TA baudrate
 ; Configure UART_TERM @ 2457600 bauds / 8MHz
 ; N = 8000000/2457600 = 3.25521... ==> {UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.25521)=0x44
@@ -330,12 +316,9 @@ TERMMCTLW_INI   .equ 05500h
 ;; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 ;TERMBRW_INI     .equ 2
 ;TERMMCTLW_INI   .equ 01100h
-
-
         .ELSECASE
             .error "UART_TERM / 2 MHz : baudrate not implemented"
         .ENDCASE
-
     .ELSEIF FREQUENCY = 4
         .SWITCH TERMINALBAUDRATE
         .CASE 9600
@@ -376,6 +359,7 @@ TERMMCTLW_INI   .equ 5551h
         .CASE 100000
 ; Configure UCBx_TERM for I2C @ 100kHZ / 4MHz
 TERMBRW_INI     .equ 40
+TERMMCTLW_INI   .equ 0
 
         .CASE 115200
 ; Configure UART_TERM @ 115200 bauds / 4MHz
@@ -396,10 +380,6 @@ TERMMCTLW_INI   .equ 04A00h
 ; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 1
 TERMMCTLW_INI   .equ 0001h
-
-        .CASE 400000
-; Configure UCBx_TERM for I2C @ 400kHZ / 4MHz
-TERMBRW_INI     .equ 10
 
         .CASE 460800
 ; Configure UART_TERM @ 460800 bauds / 4MHz
@@ -429,13 +409,9 @@ TERMMCTLW_INI   .equ 04900h
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 3
 TERMMCTLW_INI   .equ 04400h
-
-
         .ELSECASE
             .error "UART_TERM / 4 MHz : baudrate not implemented"
         .ENDCASE ; UART_TERM / 4 MHz baudrates
-
-
     .ELSEIF FREQUENCY = 8
         .SWITCH TERMINALBAUDRATE
         .CASE 9600
@@ -475,6 +451,7 @@ TERMMCTLW_INI   .equ 0F7A1h
         .CASE 100000
 ; Configure UCBx_TERM for I2C @ 100kHZ / 8MHz
 TERMBRW_INI     .equ 80
+TERMMCTLW_INI   .equ 0
 
         .CASE 115200
 ; Configure UART_TERM @ 115200 bauds / 8MHz
@@ -496,10 +473,6 @@ TERMMCTLW_INI   .equ 0BB21h
 ; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 2
 TERMMCTLW_INI   .equ 0001h
-
-        .CASE 400000
-; Configure UCBx_TERM for I2C @ 400kHZ / 8MHz
-TERMBRW_INI     .equ 20
 
         .CASE 460800
 ; Configure UART_TERM @ 460800 bauds / 8MHz
@@ -570,13 +543,9 @@ TERMMCTLW_INI   .equ 04400h
 ; N = 16000000/6000000 = 2.6666.. ==> {UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.6666)=0xB6
 TERMBRW_INI     .equ 2
 TERMMCTLW_INI   .equ 0B600h
-
         .ELSECASE
             .error "UART_TERM / 8 MHz : baudrate not implemented"
         .ENDCASE ; UART_TERM / 8 MHz baudrates
-
-
-
     .ELSEIF FREQUENCY = 10
         .SWITCH TERMINALBAUDRATE
         .CASE 9600
@@ -620,6 +589,7 @@ TERMMCTLW_INI   .equ 0AD01h
         .CASE 100000
 ; Configure UCBx_TERM for I2C @ 100kHZ / 10MHz
 TERMBRW_INI     .equ 100
+TERMMCTLW_INI   .equ 0
 
         .CASE 115200
 ; Configure UART_TERM @ 115200 bauds / 10MHz
@@ -644,10 +614,6 @@ TERMMCTLW_INI   .equ 92B1h
 ; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 2
 TERMMCTLW_INI   .equ 0081h
-
-        .CASE 400000
-; Configure UCBx_TERM for I2C @ 400kHZ / 10MHz
-TERMBRW_INI     .equ 25
 
         .CASE 460800
 ; Configure UART_TERM @ 460800 bauds / 10MHz
@@ -767,6 +733,7 @@ TERMMCTLW_INI   .equ 04901h
         .CASE 100000
 ; Configure UCBx_TERM for I2C @ 100kHZ / 12MHz
 TERMBRW_INI     .equ 120
+TERMMCTLW_INI   .equ 0
 
         .CASE 115200
 ; Configure UART_TERM @ 115200 bauds / 12MHz
@@ -791,10 +758,6 @@ TERMMCTLW_INI   .equ 0241h
 ; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 ;TERMBRW_INI     .equ 3
 ;TERMMCTLW_INI   .equ 0001h
-
-        .CASE 400000
-; Configure UCBx_TERM for I2C @ 400kHZ / 12MHz
-TERMBRW_INI     .equ 30
 
         .CASE 460800
 ; Configure UART_TERM @ 460800 bauds / 12MHz
@@ -881,9 +844,6 @@ TERMMCTLW_INI   .equ 0
         .ENDCASE ; UART_TERM / 12 MHz baudrates
 
 
-
-
-
     .ELSEIF FREQUENCY = 16
         .SWITCH TERMINALBAUDRATE
         .CASE 9600
@@ -924,6 +884,7 @@ TERMMCTLW_INI   .equ 0DD51h
         .CASE 100000
 ; Configure UCBx_TERM for I2C @ 100kHZ / 16MHz
 TERMBRW_INI     .equ 160
+TERMMCTLW_INI   .equ 0
 
         .CASE 115200
 ; Configure UART_TERM @ 115200 bauds / 16MHz
@@ -946,10 +907,6 @@ TERMMCTLW_INI   .equ 5551h
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 0001h
 
-        .CASE 400000
-; Configure UCBx_TERM for I2C @ 400kHZ / 16MHz
-TERMBRW_INI     .equ 40
-
         .CASE 460800
 ; Configure UART_TERM @ 460800 bauds / 16MHz
 ; N=16000000/460800=34.7222... ==> UCOS16=1, UCBR0=int(N/16)=2, UCBRF0=int(frac(N/16)*16)=2, UCBRS0= fn(frac(N))=fn(0.72222)=0xBB
@@ -965,16 +922,11 @@ TERMMCTLW_INI   .equ 0BB21h
 ;TERMMCTLW_INI   .equ 00001h
 
         .CASE 921600
-;; Configure UART_TERM @ 921600 bauds / 16MHz
-; N = 1600000/921600 = 17.3611... ==> {UCOS16=0, UCBR0=int(N)=14, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.3611)=0x4A
-; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+; Configure UART_TERM @ 921600 bauds / 16MHz
+; Configure UART_TERM @ 460800 bauds / 8MHz
+; see table "Recommended Settings for Typical Crystals and Baudrates"
 TERMBRW_INI     .equ 17
 TERMMCTLW_INI   .equ 04A00h
-; Configure UART_TERM @ 921600 bauds / 16MHz
-; N = 16000000/921600 = 17.3611 ==> {UCOS16=1, UCBR0=int(N/16)=1, UCBRF0=int(frac(N/16)*16)=1  UCBRS0=fn(frac(N))=fn(0.3611)=0x4A
-; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
-;TERMBRW_INI     .equ 1
-;TERMMCTLW_INI   .equ 04A11h
 
         .CASE 1000000
 ; Configure UART_TERM @ 1000000 bauds / 16MHz
@@ -1094,6 +1046,7 @@ TERMMCTLW_INI   .equ 000A1h
         .CASE 100000
 ; Configure UCBx_TERM for I2C @ 100kHZ / 20MHz
 TERMBRW_INI     .equ 200
+TERMMCTLW_INI   .equ 0
 
         .CASE 115200
 ; Configure UART_TERM @ 115200 bauds / 20MHz
@@ -1115,10 +1068,6 @@ TERMMCTLW_INI   .equ 0EE61h
 ; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 5
 TERMMCTLW_INI   .equ 0001h
-
-        .CASE 400000
-; Configure UCBx_TERM for I2C @ 400kHZ / 20MHz
-TERMBRW_INI     .equ 50
 
         .CASE 460800
 ; Configure UART_TERM @ 460800 bauds / 20MHz
@@ -1244,6 +1193,7 @@ TERMMCTLW_INI   .equ 0D601h
         .CASE 100000
 ; Configure UCBx_TERM for I2C @ 100kHZ / 24MHz
 TERMBRW_INI     .equ 240
+TERMMCTLW_INI   .equ 0
 
         .CASE 115200
 ; Configure UART_TERM @ 115200 bauds / 24MHz
@@ -1265,10 +1215,6 @@ TERMMCTLW_INI   .equ 2081h
 ; TERMBRW=UCBR1, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 6
 TERMMCTLW_INI   .equ 0001h
-
-        .CASE 400000
-; Configure UCBx_TERM for I2C @ 400kHZ / 24MHz
-TERMBRW_INI     .equ 60
 
         .CASE 460800
 ; Configure UART_TERM @ 460800 bauds / 24MHz
@@ -1353,8 +1299,6 @@ TERMMCTLW_INI   .equ 0
         .ELSECASE
             .error "UART_TERM / 24 MHz : baudrate not implemented"
         .ENDCASE ; UART_TERM / 24MHz baudrates
-
     .ELSEIF 
         .error "UART_TERM frequency not implemented"
     .ENDIF ; frequency
-

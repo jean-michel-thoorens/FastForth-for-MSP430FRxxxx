@@ -165,8 +165,8 @@
 ;
 ; P2.7 -                 RF.9   <---- OUT IR_Receiver (1 TSOP32236)
 ;
-; P1.7 - UCB0 SCL/SOMI   SV2.1  <---> SCL I2C MASTER/SLAVE
 ; P1.6 - UCB0 SDA/SIMO   SV2.2  <---> SDA I2C MASTER/SLAVE
+; P1.7 - UCB0 SCL/SOMI   SV2.1  <---> SCL I2C MASTER/SLAVE
 
 
 ; Clocks:
@@ -181,13 +181,6 @@
     BIS #LOCKLPM5,&PM5CTL0 ; unlocked by WARM
 
 ; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : WATCHDOG TIMER A
-; ----------------------------------------------------------------------
-
-; WDT code
-    MOV #WDTPW+WDTHOLD+WDTCNTCL,&WDTCTL    ; stop WDT
-
-; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION PAIN=PORT2:PORT1
 ; ----------------------------------------------------------------------
 
@@ -196,30 +189,43 @@
 ; PORT 1  usage
 ; P1.4 is used as analog input from NTC voltage divider
 
-    .IFDEF UCA0_TERM
-TERM_IN     .equ    P2IN
-TXD         .equ    1          ; P2.0 = TXD + FORTH Deep_RST pin
-RXD         .equ    2          ; P2.1 = RXD
-TERM_BUS    .equ    3
-TERM_SEL    .equ    P2SEL1
-TERM_REN    .equ    P2REN
+    .IFDEF UCB0_TERM
+TERM_IN     .equ    P1IN
+TERM_SEL    .equ    P1SEL1
+TERM_REN    .equ    P1REN
+SDA         .equ    40h        ; P1.6 = SDA
+SCL         .equ    80h        ; P1.7 = SCL
+BUS_TERM    .equ    0C0h
     .ENDIF
 
-    .IFDEF UCB0_SD
+    .IFDEF UCA0_TERM
+TERM_IN     .equ    P2IN
+TERM_SEL    .equ    P2SEL1
+TERM_REN    .equ    P2REN
+TXD         .equ    1          ; P2.0 = TXD
+RXD         .equ    2          ; P2.1 = RXD
+BUS_TERM    .equ    3
+    .ENDIF
+
+WIPE_IN     .equ    P4IN
+IO_WIPE     .equ    1           ; P4.0 = FORTH Deep_RST pin
+
+    .IFDEF UCA1_SD
 SD_SEL      .equ    PASEL1     ; to configure UCB0
 SD_REN      .equ    PAREN      ; to configure pullup resistors
-SD_BUS      .equ    7000h      ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
-SD_CD       .equ    4          ; P2.2 as SD_CD
-SD_CS       .equ    8          ; P2.3 as SD_CS     
+BUS_SD      .equ    7000h      ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
+    .ENDIF
+
 SD_CDIN     .equ    P2IN
 SD_CSOUT    .equ    P2OUT
 SD_CSDIR    .equ    P2DIR
-    .ENDIF
+CD_SD       .equ    4          ; P2.2
+CS_SD       .equ    8          ; P2.3   
 
-RTS         .equ    4           ; P2.2
-CTS         .equ    8           ; P2.3
 HANDSHAKOUT .equ    P2OUT
 HANDSHAKIN  .equ    P2IN
+RTS         .equ    4           ; P2.2
+CTS         .equ    8           ; P2.3
 
 ; RTS output is wired to the CTS input of UART2USB bridge 
 ; configure RTS as output high to disable RX TERM during start FORTH

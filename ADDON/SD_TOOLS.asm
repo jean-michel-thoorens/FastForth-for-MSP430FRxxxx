@@ -23,17 +23,17 @@
 ;https://forth-standard.org/standard/core/MAX
 ;C MAX    n1 n2 -- n3       signed maximum
             FORTHWORD "MAX"
-MAX:        CMP     @PSP,TOS    ; n2-n1
-            JL      SELn1       ; n2<n1
-SELn2:      ADD     #2,PSP
+MAX:        CMP @PSP,TOS        ; n2-n1
+            JL SELn1            ; n2<n1
+SELn2:      ADD #2,PSP
             MOV @IP+,PC
 
 ;https://forth-standard.org/standard/core/MIN
 ;C MIN    n1 n2 -- n3       signed minimum
             FORTHWORD "MIN"
-MIN:        CMP     @PSP,TOS    ; n2-n1
-            JL      SELn2       ; n2<n1
-SELn1:      MOV     @PSP+,TOS
+MIN:        CMP @PSP,TOS        ; n2-n1
+            JL SELn2            ; n2<n1
+SELn1:      MOV @PSP+,TOS
             MOV @IP+,PC
 
     .ENDIF
@@ -81,10 +81,10 @@ II          SUB #2,PSP              ;1 make room in TOS
 ;https://forth-standard.org/standard/core/OVER
 ;C OVER    x1 x2 -- x1 x2 x1
             FORTHWORD "OVER"
-OVER        MOV TOS,-2(PSP)     ; 3 -- x1 (x2) x2
-            MOV @PSP,TOS        ; 2 -- x1 (x2) x1
-            SUB #2,PSP          ; 1 -- x1 x2 x1
-            MOV @IP+,PC         ; 4
+OVER        MOV TOS,-2(PSP)         ; 3 -- x1 (x2) x2
+            MOV @PSP,TOS            ; 2 -- x1 (x2) x1
+            SUB #2,PSP              ; 1 -- x1 x2 x1
+            MOV @IP+,PC             ; 4
         .ENDIF
 
     .IFNDEF TOR
@@ -110,8 +110,8 @@ UDOTR       mDOCOL
 ;https://forth-standard.org/standard/core/CFetch
 ;C C@     c-addr -- char   fetch char from memory
             FORTHWORD "C@"
-CFETCH      MOV.B @TOS,TOS      ;2
-            MOV @IP+,PC         ;4
+CFETCH      MOV.B @TOS,TOS          ;2
+            MOV @IP+,PC             ;4
         .ENDIF
 
     .IFNDEF PLUS
@@ -125,10 +125,10 @@ PLUS        ADD @PSP+,TOS
     .IFNDEF DUMP
 ;https://forth-standard.org/standard/tools/DUMP
             FORTHWORD "DUMP"
-DUMP        PUSH    IP
-            PUSH    &BASE                   ; save current base
-            MOV     #10h,&BASE              ; HEX base
-            ADD     @PSP,TOS                ; -- ORG END
+DUMP        PUSH IP
+            PUSH &BASE                      ; save current base
+            MOV #10h,&BASE                  ; HEX base
+            ADD @PSP,TOS                    ; -- ORG END
             ASMtoFORTH
             .word   SWAP                    ; -- END ORG
             .word   xdo                     ; --
@@ -158,18 +158,19 @@ DUMP4       .word   II,CFETCH
 
 ; read logical sector and dump it 
 ; ----------------------------------;
-    FORTHWORD "SECTOR"              ; sector. --            don't forget to add decimal point to your sector number (if < 65536)
+            FORTHWORD "SECTOR"      ; sector. --            don't forget to add decimal point to your sector number (if < 65536)
 ; ----------------------------------;
-SECTOR
-    MOV     TOS,X                   ; X = SectorH
-    MOV     @PSP,W                  ; W = sectorL
-    CALL    #readSectorWX           ; W = SectorLO  X = SectorHI
+SECTOR      MOV TOS,X               ; X = SectorH
+            MOV @PSP,W              ; W = sectorL
+            CALL #readSectorWX      ; W = SectorLO  X = SectorHI
 DisplaySector
-    mDOCOL                          ;
-    .word   LESSNUM,NUMS,NUMGREATER ; ud --            display the double number
-    .word   TYPE,SPACE              ;
-    .word   lit,SD_BUF,lit,200h,DUMP;    
-    .word   EXIT                    ;
+            mDOCOL                  ;
+            .word   LESSNUM,NUMS
+            .word   NUMGREATER      ; ud --            display the double number
+            .word   TYPE,SPACE      ;
+            .word   lit,SD_BUF
+            .word   lit,200h,DUMP   ;    
+            .word   EXIT            ;
 ; ----------------------------------;
 
 ; ----------------------------------;
@@ -178,30 +179,30 @@ DisplaySector
             FORTHWORD "CLUSTER"     ; cluster.  --         don't forget to add decimal point to your sector number (if < 65536)
 ; ----------------------------------;
 CLUSTER
-    MOV.B   &SecPerClus,W           ; SecPerClus(54321) = multiplicator
-    MOV     @PSP,X                  ; X = ClusterL
-    JMP     CLUSTER1                ;
-CLUSTERLOOP
-    ADD     X,X                     ; (RLA) shift one left MULTIPLICANDlo16
-    ADDC    TOS,TOS                 ; (RLC) shift one left MULTIPLICANDhi8
-CLUSTER1
-    RRA     W                       ; shift one right multiplicator
-    JNC     CLUSTERLOOP             ; if not carry
-    ADD     &OrgClusters,X          ; add OrgClusters = sector of virtual cluster 0 (word size)
-    MOV     X,0(PSP)      
-    ADDC    #0,TOS                  ; don't forget carry
-    JMP     SECTOR                  ; jump to a defined word
+            MOV.B &SecPerClus,W     ; SecPerClus(54321) = multiplicator
+            MOV @PSP,X              ; X = ClusterL
+            JMP CLUSTER1            ;
+CLUSTERLOOP     
+            ADD X,X                 ; (RLA) shift one left MULTIPLICANDlo16
+            ADDC TOS,TOS            ; (RLC) shift one left MULTIPLICANDhi8
+CLUSTER1        
+            RRA W                   ; shift one right multiplicator
+            JNC CLUSTERLOOP         ; if not carry
+            ADD &OrgClusters,X      ; add OrgClusters = sector of virtual cluster 0 (word size)
+            MOV X,0(PSP)            
+            ADDC #0,TOS             ; don't forget carry
+            JMP SECTOR              ; jump to a defined word
 ; ----------------------------------;
 
 ; dump FAT1 first sector
 ; ----------------------------------;
             FORTHWORD "FAT"         ;VWXY Display first FATsector
 ; ----------------------------------;
-    SUB     #4,PSP                  ;
-    MOV     TOS,2(PSP)              ;
-    MOV     &OrgFAT1,0(PSP)         ;
-    MOV     #0,TOS                  ; FATsectorHI = 0
-    JMP     SECTOR                  ;
+            SUB #4,PSP              ;
+            MOV TOS,2(PSP)          ;
+            MOV &OrgFAT1,0(PSP)     ;
+            MOV #0,TOS              ; FATsectorHI = 0
+            JMP SECTOR              ;
 ; ----------------------------------;
 
 
@@ -209,15 +210,15 @@ CLUSTER1
 ; ----------------------------------;
             FORTHWORD "DIR"         ;
 ; ----------------------------------;
-    SUB     #4,PSP                  ;
-    MOV     TOS,2(PSP)              ;           save TOS
-    MOV     &DIRclusterL,0(PSP)     ;
-    MOV     &DIRclusterH,TOS        ;
-    CMP     #0,TOS
-    JNZ     CLUSTER
-    CMP     #1,0(PSP)               ; cluster 1 ?
-    JNZ     CLUSTER       
-    MOV     &OrgRootDir,0(PSP)      ; if yes, special case of FAT16 OrgRootDir        
-    JMP     SECTOR
+            SUB #4,PSP              ;
+            MOV TOS,2(PSP)          ;           save TOS
+            MOV &DIRclusterL,0(PSP) ;
+            MOV &DIRclusterH,TOS    ;
+            CMP #0,TOS
+            JNZ CLUSTER
+            CMP #1,0(PSP)           ; cluster 1 ?
+            JNZ CLUSTER       
+            MOV &OrgRootDir,0(PSP)  ; if yes, special case of FAT16 OrgRootDir        
+            JMP SECTOR
 ; ----------------------------------;
 

@@ -193,22 +193,6 @@
 
 
 ; ----------------------------------------------------------------------
-; INIT order : LOCK I/O, WDT, GPIOs, FRAM, Clock, UARTs
-; ----------------------------------------------------------------------
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : LOCK PMM_LOCKLPM5
-; ----------------------------------------------------------------------
-
-;              BIS     #LOCKLPM5,&PM5CTL0 ; unlocked by WARM
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : WATCHDOG TIMER A
-; ----------------------------------------------------------------------
-
-        MOV #WDTPW+WDTHOLD+WDTCNTCL,&WDTCTL    ; stop WDT
-
-; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : I/O
 ; ----------------------------------------------------------------------
 ; ----------------------------------------------------------------------
@@ -227,40 +211,31 @@
             MOV     #0FFFEh,&PAOUT  ; all pins high  else P1.0 (LED2)
             BIS     #-1,&PAREN  ; all pins 1 with pull resistors else P1.0 (LED2)
 
+    .IFDEF UCB0_TERM
+TERM_IN     .equ    P1IN
+TERM_SEL    .equ    P1SEL1
+TERM_REN    .equ    P1REN
+SDA         .equ    40h        ; P1.6 = SDA
+SCL         .equ    80h        ; P1.7 = SCL
+BUS_TERM    .equ    0C0h
+    .ENDIF
+
     .IFDEF UCA0_TERM
 ; P2.0  UCA0-TXD    --> USB2UART RXD    
 ; P2.1  UCA0-RXD    <-- USB2UART TXD 
-TXD         .equ 1      ; P2.0 = TX + FORTH Deep_RST pin
+TERM_IN     .equ P2IN
+TERM_SEL    .equ P2SEL1
+TERM_REN    .equ P2REN
+TXD         .equ 1      ; P2.0 = TX
 RXD         .equ 2      ; P2.1 = RX
-TERM_BUS    .equ 3
-TERM_IN     .equ P2IN
-TERM_SEL    .equ P2SEL1
-TERM_REN    .equ P2REN
-    .ENDIF
-
-    .IFDEF UCA1_TERM
-; P2.5  UCA0-TXD    --> USB2UART RXD    
-; P2.6  UCA0-RXD    <-- USB2UART TXD 
-TXD         .equ 20h   ; P2.5 = TXD + FORTH Deep_RST pin
-RXD         .equ 40h   ; P2.6 = RXD
-TERM_BUS    .equ 60h
-TERM_IN     .equ P2IN
-TERM_SEL    .equ P2SEL1
-TERM_REN    .equ P2REN
+BUS_TERM    .equ 3
     .ENDIF
 
     .IFDEF UCA1_SD
 SD_SEL      .equ PASEL1 ; to configure UCA1
 SD_REN      .equ PAREN  ; to configure pullup resistors
-SD_BUS      .equ 7000h  ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
+BUS_SD      .equ 7000h  ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
     .ENDIF
-
-    .IFDEF UCB0_SD
-SD_SEL      .equ PASEL1 ; to configure UCB0
-SD_REN      .equ PAREN  ; to configure pullup resistors
-SD_BUS      .equ 04C0h  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
-    .ENDIF
-
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4
@@ -273,16 +248,19 @@ SD_BUS      .equ 04C0h  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0S
 ; P4.5 - switch S1
 ; P4.6 - LED1 red
 
-CTS         .equ    1       ; P4.0
-RTS         .equ    2       ; P4.1
 HANDSHAKOUT .equ    P4OUT
 HANDSHAKIN  .equ    P4IN
+CTS         .equ    1       ; P4.0
+RTS         .equ    2       ; P4.1
 
-SD_CD       .equ    4       ; P4.2 as SD_CD
-SD_CS       .equ    8       ; P4.3 as SD_CS     
 SD_CDIN     .equ    P4IN
 SD_CSOUT    .equ    P4OUT
 SD_CSDIR    .equ    P4DIR
+CD_SD       .equ    4       ; P4.2 as Card Detect
+CS_SD       .equ    8       ; P4.3 as Chip Select    
+
+WIPE_IN     .equ    P4IN
+IO_WIPE     .equ    20h     ; P4.5 = S1 = FORTH Deep_RST pin
 
             BIS #-1,&PBREN  ; all pins as input with resistor
             MOV #0BFFFh,&PBOUT  ; all pins as input with pull up resistor else P4.6
@@ -401,11 +379,4 @@ ClockWaitY  SUB     #1,Y            ;1
     BIS.B   #010h,&PJSEL0   ; SEL0 for only LFXIN
     BIC.B   #RTCHOLD,&RTCCTL1 ; Clear RTCHOLD = start RTC_B
     .ENDIF
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : SYS REGISTERS
-; ----------------------------------------------------------------------
-
-; SYS code                                  
-; see COLD word
 

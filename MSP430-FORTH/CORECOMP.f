@@ -30,42 +30,11 @@
 
 PWR_STATE
 
-[DEFINED] {CORE_COMP} [IF]  {CORE_COMP} [THEN] \ remove it if defined out of kernel 
+[DEFINED] {CORE_ANS} [IF]  {CORE_ANS} [THEN] \ remove it if defined out of kernel 
 
-[UNDEFINED] {CORE_COMP} [IF] \
+[UNDEFINED] {CORE_ANS} [IF] \
 
-[UNDEFINED] MARKER [IF]
-\  https://forth-standard.org/standard/core/MARKER
-\  MARKER
-\ ( "<spaces>name" -- )
-\ Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
-\ with the execution semantics defined below.
-\ 
-\ name Execution: ( -- )
-\ Restore all dictionary allocation and search order pointers to the state they had just prior to the
-\ definition of name. Remove the definition of name and all subsequent definitions. Restoration
-\ of any structures still existing that could refer to deleted definitions or deallocated data space is
-\ not necessarily provided. No other contextual information such as numeric base is affected
-\
-: MARKER
-CREATE
-HI2LO
-MOV &LASTVOC,0(W)   \ [BODY] = LASTVOC
-SUB #2,Y            \ 1 Y = LFA
-MOV Y,2(W)          \ 3 [BODY+2] = LFA = DP to be restored
-ADD #4,&DP          \ 3 add 2 cells
-LO2HI
-DOES>
-HI2LO
-MOV @RSP+,IP        \ -- PFA
-MOV @TOS+,&INIVOC   \       set VOC_LINK value for RST_STATE
-MOV @TOS,&INIDP     \       set DP value for RST_STATE
-MOV @PSP+,TOS       \ --
-MOV #RST_STATE,PC   \       execute RST_STATE, PWR_STATE then STATE_DOES
-ENDCODE
-[THEN]
-
-MARKER {CORE_COMP}
+MARKER {CORE_ANS}
 
 [UNDEFINED] + [IF]
 \ https://forth-standard.org/standard/core/Plus
@@ -298,7 +267,7 @@ MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
-[UNDEFINED] < [IF]
+[UNDEFINED] < [IF]      \ define < and >
 \ https://forth-standard.org/standard/core/less
 \ <      n1 n2 -- flag        test n1<n2, signed
 CODE <
@@ -328,7 +297,7 @@ ENDCODE
 \ IF, ELSE, AGAIN, UNTIL, WHILE, REPEAT, LOOP & +LOOP compile two words
 \ LEAVE compile three words
 \
-[UNDEFINED] IF [IF]
+[UNDEFINED] IF [IF]     \ define IF THEN
 \ https://forth-standard.org/standard/core/IF
 \ IF       -- IFadr    initialize conditional forward branch
 CODE IF       \ immediate
@@ -340,9 +309,7 @@ MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
 ADD #2,TOS              \ -- HERE+2=IFadr
 MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] THEN [IF]
 \ https://forth-standard.org/standard/core/THEN
 \ THEN     IFadr --                resolve forward branch
 CODE THEN               \ immediate
@@ -366,15 +333,13 @@ MOV @IP+,PC
 ENDCODE IMMEDIATE
 [THEN]
 
-[UNDEFINED] BEGIN [IF]
+[UNDEFINED] BEGIN [IF]  \ define BEGIN UNTIL AGAIN WHILE REPEAT
 \ https://forth-standard.org/standard/core/BEGIN
 \ BEGIN    -- BEGINadr             initialize backward branch
-CODE BEGIN              \ immediate
-MOV #HERE,PC            \ BR HERE
+CODE BEGIN
+    MOV #HEREADR,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] UNTIL [IF]
 \ https://forth-standard.org/standard/core/UNTIL
 \ UNTIL    BEGINadr --             resolve conditional backward branch
 CODE UNTIL              \ immediate
@@ -386,26 +351,20 @@ BW1 ADD #4,&DP          \ compile two words
     MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] AGAIN [IF]
 \ https://forth-standard.org/standard/core/AGAIN
 \ AGAIN    BEGINadr --             resolve uncondionnal backward branch
 CODE AGAIN     \ immediate
 MOV #BRAN,X
 GOTO BW1
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] WHILE [IF]
 \ https://forth-standard.org/standard/core/WHILE
 \ WHILE    BEGINadr -- WHILEadr BEGINadr
 : WHILE     \ immediate
 POSTPONE IF SWAP
 ; IMMEDIATE
-[THEN]
 
-[UNDEFINED] REPEAT [IF]
 \ https://forth-standard.org/standard/core/REPEAT
 \ REPEAT   WHILEadr BEGINadr --     resolve WHILE loop
 : REPEAT
@@ -413,7 +372,7 @@ POSTPONE AGAIN POSTPONE THEN
 ; IMMEDIATE
 [THEN]
 
-[UNDEFINED] DO [IF]
+[UNDEFINED] DO [IF]     \ define DO LOOP +LOOP
 \ https://forth-standard.org/standard/core/DO
 \ DO       -- DOadr   L: -- 0
 CODE DO                 \ immediate
@@ -427,9 +386,7 @@ MOV &LEAVEPTR,W         \
 MOV #0,0(W)             \ -- HERE+2     L-- 0
 MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] LOOP [IF]
 \ https://forth-standard.org/standard/core/LOOP
 \ LOOP    DOadr --         L-- an an-1 .. a1 0
 CODE LOOP               \ immediate
@@ -449,9 +406,7 @@ REPEAT
     MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] +LOOP [IF]
 \ https://forth-standard.org/standard/core/PlusLOOP
 \ +LOOP   adrs --   L-- an an-1 .. a1 0
 CODE +LOOP              \ immediate
@@ -1121,7 +1076,17 @@ ENDCODE
 
 [UNDEFINED] HERE [IF]
 CODE HERE
-MOV #BEGIN,PC
+MOV #HEREADR,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] ALLOT [IF]
+\ https://forth-standard.org/standard/core/ALLOT
+\ ALLOT   n --         allocate n bytes
+CODE ALLOT
+ADD TOS,&DP
+MOV @PSP+,TOS
+MOV @IP+,PC
 ENDCODE
 [THEN]
 
@@ -1178,15 +1143,15 @@ ENDCODE
 \ https://forth-standard.org/standard/core/EXECUTE
 \ EXECUTE   i*x xt -- j*x   execute Forth word at 'xt'
 CODE EXECUTE
-MOV TOS,W               \ 1 put word address into W
-MOV @PSP+,TOS           \ 2 fetch new TOS
-MOV W,PC                \ 3 fetch code address into PC
+PUSH TOS                \ 3 push xt
+MOV @PSP+,TOS           \ 2 
+MOV @RSP+,PC            \ 4 xt --> PC
 ENDCODE
 [THEN]
 
 [UNDEFINED] RECURSE [IF]
 \ https://forth-standard.org/standard/core/RECURSE
-\ C RECURSE  --      recurse to current definition (compile current definition)
+\ C RECURSE  --      recurse to current definition
 CODE RECURSE
 MOV &DP,X
 MOV &LAST_CFA,0(X)
@@ -1207,25 +1172,28 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
-\ [UNDEFINED] VARIABLE [IF]
-\ \ https://forth-standard.org/standard/core/VARIABLE
-\ \ VARIABLE <name>       --                      define a Forth VARIABLE
-\ : VARIABLE 
-\ CREATE
-\ HI2LO
-\ MOV #DOVAR,-4(W)        \   CFA = DOVAR
-\ MOV @RSP+,IP
-\ MOV @IP+,PC
-\ ENDCODE
-\ [THEN]
+[UNDEFINED] DOES> [IF]
+\ https://forth-standard.org/standard/core/DOES
+\ DOES>    --          set action for the latest CREATEd definition
+CODE DOES> 
+MOV &LAST_CFA,W         \ W = CFA of CREATEd word
+MOV #DODOES,0(W)        \ replace CFA (DOCON) by new CFA (DODOES)
+MOV IP,2(W)             \ replace PFA by the address after DOES> as execution address
+MOV @RSP+,IP
+MOV @IP+,PC
+ENDCODE
+[THEN]
 
 [UNDEFINED] VARIABLE [IF]
 \ https://forth-standard.org/standard/core/VARIABLE
 \ VARIABLE <name>       --                      define a Forth VARIABLE
 : VARIABLE 
 CREATE
-2 ALLOT
-;
+HI2LO
+MOV #DOVAR,-4(W)        \   CFA = DOVAR
+MOV @RSP+,IP
+MOV @IP+,PC
+ENDCODE
 [THEN]
 
 [UNDEFINED] CONSTANT [IF]

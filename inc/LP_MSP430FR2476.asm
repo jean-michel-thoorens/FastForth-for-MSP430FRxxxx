@@ -109,21 +109,6 @@
 ;
 ;
 ; ----------------------------------------------------------------------
-; INIT order : LOCK I/O, WDT, GPIOs, FRAM, Clock, UARTs
-; ----------------------------------------------------------------------
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : LOCK PMM_LOCKLPM5
-; ----------------------------------------------------------------------
-;              BIS     #LOCKLPM5,&PM5CTL0 ; unlocked by WARM
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : WATCHDOG TIMER A
-; ----------------------------------------------------------------------
-
-        MOV #WDTPW+WDTHOLD+WDTCNTCL,&WDTCTL    ; stop WDT
-
-; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : I/O
 ; ----------------------------------------------------------------------
 ; ----------------------------------------------------------------------
@@ -140,28 +125,31 @@
             BIS     #-1,&PAREN      ; all pins with pull up/down resistors
             MOV     #0FFFEh,&PAOUT  ; all pins with pull up resistors  else P1.0 (LED2)
 
+WIPE_IN     .equ    P4IN
+IO_WIPE     .equ    1       ; P4.0 = S1 = FORTH Deep_RST pin
+
     .IFDEF UCA0_TERM
 ; P1.4  UCA0-TXD    --> USB2UART RXD    
 ; P1.5  UCA0-RXD    <-- USB2UART TXD 
-TXD         .equ 10h      ; P1.4 = TX + FORTH Deep_RST pin
-RXD         .equ 20h      ; P1.5 = RX
-TERM_BUS    .equ 30h
 TERM_IN     .equ P1IN
 TERM_SEL    .equ P1SEL0
 TERM_REN    .equ P1REN
+TXD         .equ 10h      ; P1.4 = TX
+RXD         .equ 20h      ; P1.5 = RX
+BUS_TERM    .equ 30h
     .ENDIF
+
+SD_CDIN     .equ P1IN
+SD_CSOUT    .equ P1OUT
+SD_CSDIR    .equ P1DIR
+CD_SD       .equ 080h   ; P1.7 as CD_SD
+CS_SD       .equ 040h   ; P1.6 as CS_SD     
 
     .IFDEF UCA1_SD
 SD_SEL      .equ PASEL0 ; to configure UCA1
 SD_REN      .equ PAREN  ; to configure pullup resistors
-SD_BUS      .equ 7000h  ; pins P2.4 as UCA1CLK, P2.6 as UCA1SIMO & P2.5 as UCA1SOMI
+BUS_SD      .equ 7000h  ; pins P2.4 as UCA1CLK, P2.6 as UCA1SIMO & P2.5 as UCA1SOMI
     .ENDIF
-
-SD_CD       .equ 080h   ; P1.7 as SD_CD
-SD_CS       .equ 040h   ; P1.6 as SD_CS     
-SD_CDIN     .equ P1IN
-SD_CSOUT    .equ P1OUT
-SD_CSDIR    .equ P1DIR
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4
@@ -172,6 +160,13 @@ SD_CSDIR    .equ P1DIR
             MOV     #07FFFh,&PBOUT  ; all pins with pull up resistors else P4.7 (LED2B)
 
 ; PORT3 usage
+
+    .IFDEF UCB1_TERM        ;
+TERM_SEL    .equ    P3SEL0
+TERM_REN    .equ    P3REN
+TERM_OUT    .equ    P3OUT
+BUS_TERM    .equ    0Ch     ; P3.2=SDA P3.3=SCL
+    .ENDIF
 
 ; PORT4 usage
 
@@ -191,10 +186,10 @@ SD_CSDIR    .equ P1DIR
 
 ; PORT6 usage
 
-RTS         .equ    2           ; P6.1
-CTS         .equ    4           ; P6.2
 HANDSHAKOUT .equ    P6OUT
 HANDSHAKIN  .equ    P6IN
+RTS         .equ    2           ; P6.1
+CTS         .equ    4           ; P6.2
 
 ;            BIS     #00003h,&PCDIR  ; all pins 0 as input else P5.0 (LED2G) P5.1 (LED2R)
 ;            MOV     #0FFFCh,&PCOUT  ; all pins high  else P5.0 (LED2G) P5.1 (LED2R)
@@ -242,18 +237,6 @@ HANDSHAKIN  .equ    P6IN
 ;    BIS.B #4,&P2SEL1
 ;    BIS.B #4,&P2DIR
 ; result : REFO = xx.xx kHz
-
-
-    .IFDEF LF_XTAL
-;            MOV     #0000h,&CSCTL3      ; FLL select XT1, FLLREFDIV=0 (default value)
-            MOV     #0000h,&CSCTL4      ; ACLOCK select XT1, MCLK & SMCLK select DCOCLKDIV
-    .ELSE
-            BIS     #0010h,&CSCTL3      ; FLL select REFCLOCK
-;            MOV     #0100h,&CSCTL4      ; ACLOCK select REFO, MCLK & SMCLK select DCOCLKDIV (default value)
-
-            BIS.B   #03,&P2SEL0         ; P2.0 as XOUT, P2.1 as XIN
-
-    .ENDIF
 
     .IF FREQUENCY = 0.5
 
@@ -384,12 +367,31 @@ HANDSHAKIN  .equ    P6IN
     .error "bad frequency setting, only 0.5,1,2,4,8,12,16 MHz"
     .ENDIF
 
+
+    .IFDEF LF_XTAL
+;            MOV     #0000h,&CSCTL3      ; FLL select XT1, FLLREFDIV=0 (default value)
+            MOV     #0000h,&CSCTL4      ; ACLOCK select XT1, MCLK & SMCLK select DCOCLKDIV
+
+            BIS.B   #03,&P2SEL0         ; P2.0 as XOUT, P2.1 as XIN
+
+    .ELSE
+            BIS     #0010h,&CSCTL3      ; FLL select REFCLOCK
+;            MOV     #0100h,&CSCTL4      ; ACLOCK select REFO, MCLK & SMCLK select DCOCLKDIV (default value)
+
+    .ENDIF
+
             BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV preserving a pending request for DEEP_RST
+;            MOV &SAVE_SYSRSTIV,TOS  ;
+;            CMP #2,TOS              ; POWER ON ?
+;            JZ      ClockWaitX      ; yes
+;            RRUM    #1,X            ; wait only 250 ms
+ClockWaitX  MOV     #5209,Y         ; wait 0.5s before starting after POR
+                                    ;       ...because FLL lock time = 280 ms
+ClockWaitY  SUB     #1,Y            ;1
+            JNZ     ClockWaitY      ;2 5209x3 = 15625 cycles delay = 15.625ms @ 1MHz
+            SUB     #1,X            ; x 32 @ 1 MHZ = 500ms
+            JNZ     ClockWaitX      ; time to stabilize power source ( 500ms )
 
-ClockWaitX  MOV     #5209,Y             ; wait 0.5s before starting after POR
-
-ClockWaitY  SUB     #1,Y                ;1
-            JNZ     ClockWaitY          ;2 5209x3 = 15627 cycles delay = 15.627ms @ 1MHz
-            SUB     #1,X                ; x 16 @ 1 MHZ = 250ms
-            JNZ     ClockWaitX          ; time to stabilize power source ( 500ms )
+;WAITFLL     BIT #300h,&CSCTL7       ; wait FLL lock
+;            JNZ WAITFLL
 

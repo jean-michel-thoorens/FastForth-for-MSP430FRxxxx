@@ -226,22 +226,6 @@
   
 
 ; ----------------------------------------------------------------------
-; INIT order : WDT, GPIOs, FRAM, Clock, UARTs...
-; ----------------------------------------------------------------------
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : LOCK PMM_LOCKLPM5
-; ----------------------------------------------------------------------
-
-;              BIS     #LOCKLPM5,&PM5CTL0 ; unlocked by WARM
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : WATCHDOG TIMER A
-; ----------------------------------------------------------------------
-
-        MOV #WDTPW+WDTHOLD+WDTCNTCL,&WDTCTL    ; stop WDT
-
-; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : I/O
 ; ----------------------------------------------------------------------
 
@@ -255,28 +239,44 @@
     .IFDEF UCA0_SD
 SD_SEL      .equ PASEL0 ; to configure UCB0
 SD_REN      .equ PAREN  ; to configure pullup resistors
-SD_BUS      .equ 0700h  ; pins P2.2 as UCA0CLK, P2.0 as UCA0SIMO & P2.1 as UCA0SOMI
+BUS_SD      .equ 0700h  ; pins P2.2 as UCA0CLK, P2.0 as UCA0SIMO & P2.1 as UCA0SOMI
     .ENDIF ;UCA0_SD
 
 ; PORT1 usage
 ; P1.0 - LED1 red   output low
 ; P1.1 - Switch S1
 ; P1.2 - Switch S2
-SWITCHIN    .set P1IN   ; port
-S1          .set 2      ; P1.1 bit position
+SWITCHIN    .set P1IN       ; port
+S1          .set 2          ; P1.1 bit position
+
+WIPE_IN     .equ    P1IN
+IO_WIPE     .equ    2       ; P1.1 = S1 = FORTH Deep_RST pin
+
+; P1.6 -UCB0 SDA/SIMO   J2.15   <---> SDA hardware I2C Master or Slave
+; P1.7 -UCB0 SCL/SOMI   J2.14   ----> SCL hardware I2C Master or Slave
+    .IFDEF UCB0_TERM
+TERM_IN     .equ    P1IN
+TERM_SEL    .equ    P1SEL1
+TERM_REN    .equ    P1REN
+SDA         .equ    40h        ; P1.6 = SDA
+SCL         .equ    80h        ; P1.7 = SCL
+BUS_TERM    .equ    0C0h
+    .ENDIF
+
+
 
 ; PORT2 usage
 
-SD_CS       .equ 40h    ; P2.6 as SD_CS     
-SD_CD       .equ 80h    ; P2.7 as SD_CD
 SD_CDIN     .equ P2IN
 SD_CSOUT    .equ P2OUT
 SD_CSDIR    .equ P2DIR
+CS_SD       .equ 40h    ; P2.6 Chip Select  
+CD_SD       .equ 80h    ; P2.7 Card Detect
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
-            MOV     #-2,&PAOUT    ; all pins with pullup resistors else P1.0
             BIS     #-1,&PAREN     ; all pins with pull up/down resistor
+            MOV     #-2,&PAOUT    ; all pins with pullup resistors else P1.0
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4
@@ -291,18 +291,18 @@ SD_CSDIR    .equ P2DIR
 ; P3.4 = TX1
 ; P3.5 = RX1
 
-RTS         .equ    1       ; P3.0
-CTS         .equ    2       ; P3.1
 HANDSHAKOUT .equ    P3OUT
 HANDSHAKIN  .equ    P3IN
+RTS         .equ    1       ; P3.0
+CTS         .equ    2       ; P3.1
 
     .IFDEF UCA1_TERM
-TXD         .equ    10h    ; P3.4 = TXD + FORTH Deep_RST pin
-RXD         .equ    20h    ; P3.4 = RXD
-TERM_BUS    .equ    30h    ; P3.5 = RX
-TERM_IN     .equ    P3IN   ; TERMINAL TX  pin as FORTH Deep_RST 
+TERM_IN     .equ    P3IN   ;
 TERM_REN    .equ    P3REN
 TERM_SEL    .equ    P3SEL0
+TXD         .equ    10h    ; P3.4 = TXD
+RXD         .equ    20h    ; P3.4 = RXD
+BUS_TERM    .equ    30h    ; P3.5 = RX
     .ENDIF ;UCA1_TERM
 
 ; PORT4 usage
@@ -333,8 +333,8 @@ TERM_SEL    .equ    P3SEL0
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
-            MOV     #-1,&PCOUT    ; all pins 1
             MOV     #-1,&PCREN    ; all pins with pull resistors
+            MOV     #-1,&PCOUT    ; all pins 1
 
 
 ; ----------------------------------------------------------------------
@@ -349,8 +349,8 @@ TERM_SEL    .equ    P3SEL0
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
-            MOV     #-1,&PDOUT    ; all pins 1
             MOV     #-1,&PDREN    ; all pins with pull resistors
+            MOV     #-1,&PDOUT    ; all pins 1
 
 
 
@@ -367,8 +367,8 @@ TERM_SEL    .equ    P3SEL0
     
 ; PORTx default wanted state : pins as input with pullup resistor
 
-            MOV     #0FF7Fh,&PEOUT    ; all pins high else P9.7
             MOV     #-1,&PEREN    ; all pins with pull resistors else P9.7
+            MOV     #0FF7Fh,&PEOUT    ; all pins high else P9.7
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORTJ
@@ -380,8 +380,8 @@ TERM_SEL    .equ    P3SEL0
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
-            MOV.B   #-1,&PJOUT    ; pullup resistors
             MOV.B   #-1,&PJREN    ; enable pullup/pulldown resistors
+            MOV.B   #-1,&PJOUT    ; pullup resistors
 
 ; ----------------------------------------------------------------------
 ; FRAM config
@@ -466,7 +466,6 @@ ClockWaitY  SUB     #1,Y            ;1
 
             MOV   #REFTCOFF, &REFCTL
 
-
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : RTC_C REGISTERS
 ; ----------------------------------------------------------------------
@@ -476,12 +475,4 @@ ClockWaitY  SUB     #1,Y            ;1
     BIS.B   #010h,&PJSEL0   ; SEL0 for only LXIN
     BIC.B   #RTCHOLD,&RTCCTL1 ; Clear RTCHOLD = start RTC_B
     .ENDIF
-
-; ----------------------------------------------------------------------
-; POWER ON RESET AND INITIALIZATION : SYS REGISTERS
-; ----------------------------------------------------------------------
-
-; SYS code                                  
-; see COLD word
-
 

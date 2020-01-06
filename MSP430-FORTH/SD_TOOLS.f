@@ -32,42 +32,11 @@
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
+PWR_STATE
+
 [DEFINED] {SD_TOOLS} [IF]  {SD_TOOLS} [THEN]
 
 [UNDEFINED] {SD_TOOLS} [IF]
-
-PWR_STATE
-
-[UNDEFINED] MARKER [IF]
-\  https://forth-standard.org/standard/core/MARKER
-\  MARKER
-\ ( "<spaces>name" -- )
-\ Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
-\ with the execution semantics defined below.
-\ 
-\ name Execution: ( -- )
-\ Restore all dictionary allocation and search order pointers to the state they had just prior to the
-\ definition of name. Remove the definition of name and all subsequent definitions. Restoration
-\ of any structures still existing that could refer to deleted definitions or deallocated data space is
-\ not necessarily provided. No other contextual information such as numeric base is affected
-\
-: MARKER
-CREATE
-HI2LO
-MOV &LASTVOC,0(W)   \ [BODY] = LASTVOC
-SUB #2,Y            \ 1 Y = LFA
-MOV Y,2(W)          \ 3 [BODY+2] = LFA = DP to be restored
-ADD #4,&DP          \ 3 add 2 cells
-LO2HI
-DOES>
-HI2LO
-MOV @RSP+,IP        \ -- PFA
-MOV @TOS+,&INIVOC   \       set VOC_LINK value for RST_STATE
-MOV @TOS,&INIDP     \       set DP value for RST_STATE
-MOV @PSP+,TOS       \ --
-MOV #RST_STATE,PC   \       execute RST_STATE, PWR_STATE then STATE_DOES
-ENDCODE
-[THEN]
 
 MARKER {SD_TOOLS}
 
@@ -80,7 +49,7 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
-[UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {UTILITY}
+[UNDEFINED] MAX [IF]    \ define MAX and MIN
 
 CODE MAX    \    n1 n2 -- n3       signed maximum
     CMP @PSP,TOS    \ n2-n1
@@ -181,7 +150,10 @@ ENDCODE
 \ https://forth-standard.org/standard/core/Rfrom
 \ R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
 CODE R>
-MOV rDOVAR,PC
+SUB #2,PSP      \ 1
+MOV TOS,0(PSP)  \ 3
+MOV @RSP+,TOS   \ 2
+MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
@@ -203,10 +175,10 @@ ENDCODE
 ;
 [THEN]
 
-[UNDEFINED] DO [IF]
+[UNDEFINED] DO [IF]     \ define DO LOOP +LOOP
 \ https://forth-standard.org/standard/core/DO
 \ DO       -- DOadr   L: -- 0
-CODE DO                 \ immediate
+CODE DO
 SUB #2,PSP              \
 MOV TOS,0(PSP)          \
 ADD #2,&DP              \   make room to compile xdo
@@ -217,12 +189,10 @@ MOV &LEAVEPTR,W         \
 MOV #0,0(W)             \ -- HERE+2     L-- 0
 MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] LOOP [IF]
 \ https://forth-standard.org/standard/core/LOOP
 \ LOOP    DOadr --         L-- an an-1 .. a1 0
-CODE LOOP               \ immediate
+CODE LOOP
     MOV #XLOOP,X
 BW1 ADD #4,&DP          \ make room to compile two words
     MOV &DP,W
@@ -239,14 +209,12 @@ REPEAT
     MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] +LOOP [IF]
 \ https://forth-standard.org/standard/core/PlusLOOP
 \ +LOOP   adrs --   L-- an an-1 .. a1 0
-CODE +LOOP              \ immediate
+CODE +LOOP
 MOV #XPLOOP,X
-GOTO BW1
+GOTO BW1        \ goto BW1 LOOP
 ENDCODE IMMEDIATE
 [THEN]
 

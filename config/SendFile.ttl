@@ -4,11 +4,7 @@ if result<1 connect  param3
 
 inputbox 'Send this file to the MSP430FR target:' ' ' param2
 
-
-uptime varstart
-
-
-
+uptime timestart
 
 
 strcompare param4 'NOECHO'
@@ -16,7 +12,7 @@ if result = 0 then
     send 'NOECHO [DEFINED] STOP [IF] STOP [THEN] ' ; set no echo from FastForth
     setecho 0       ; suppr. echo from Teraterm
     showtt 0
-;    clearscreen 1
+    clearscreen 1
     sendfile inputstr 0
     showtt 1
     goto end
@@ -27,7 +23,7 @@ if result = 0 then
     send 'NOECHO [DEFINED] STOP [IF] STOP [THEN] ' ; set no echo from FastForth
     setecho 1
     showtt 0
-;    clearscreen 1
+    clearscreen 1
     sendfile inputstr 0
     setecho 1
     send #4
@@ -39,7 +35,7 @@ endif
     send 'ECHO [DEFINED] STOP [IF] STOP [THEN] '
     setecho 0       ; no echo from Teraterm
     showtt 0
-;    clearscreen 1
+    clearscreen 1
     sendfile inputstr 0
     showtt 1
 
@@ -48,10 +44,10 @@ endif
 
 ; do something...
 
-uptime varend
-diff = varend - varstart
-sprintf2 str "download and execute time: %d msec" diff
-messagebox str "teraterm.exe"
+uptime timeend
+diff = timeend - timestart
+sprintf2 resultat " %s download and execute: %d msec" param2 diff
+messagebox resultat "teraterm.exe"
 
 unlink
 ;end

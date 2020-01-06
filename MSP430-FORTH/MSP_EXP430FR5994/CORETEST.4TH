@@ -3,17 +3,16 @@ PWR_STATE
 
 : ANSCOMPNOTFOUND
 $0D EMIT   \ return to column 1
-1 ABORT" {CORE_COMP} word set not found!"
+1 ABORT" {CORE_ANS} word set not found!"
 ;
 
-[DEFINED] {CORE_COMP} [IF]
+[DEFINED] {CORE_ANS} [IF]
 
 : CORETESTSUCCESS
 $0A BASE !
 $0D EMIT   \ return to column 1
 1 ABORT" CORE tests success!"
 ;
-
 
 \ From: John Hayes S1I
 \ Subject: tester.fr
@@ -29,8 +28,6 @@ $0D EMIT   \ return to column 1
 
 
 \ 13/05/14 jmt. added colorised error messages.
-
-
 
  0 CONSTANT FALSE
 -1 CONSTANT TRUE
@@ -52,7 +49,7 @@ VARIABLE VERBOSE
 \         \ THE LINE THAT HAD THE ERROR.
 \     TYPE SOURCE TYPE CR          \ DISPLAY LINE CORRESPONDING TO ERROR
 \     EMPTY-STACK              \ THROW AWAY EVERY THING ELSE
-\     QUIT  \ *** Uncomment this line to QUIT on an error
+\ \    QUIT  \ *** Uncomment this line to QUIT on an error
 \ ;
 
 VARIABLE ACTUAL-DEPTH           \ STACK RECORD
@@ -73,19 +70,20 @@ CREATE ACTUAL-RESULTS 20 CELLS ALLOT
         DEPTH ?DUP IF           \ IF THERE IS SOMETHING ON THE STACK
         0 DO                    \ FOR EACH STACK ITEM
             ACTUAL-RESULTS I CELLS + @  \ COMPARE ACTUAL WITH EXPECTED
-\           = 0= IF S" INCORRECT RESULT: " ERROR LEAVE THEN   \ jmt
-            = 0= IF ABORT" INCORRECT RESULT: " THEN           \ jmt : colorised message
+\           = 0= IF S" INCORRECT RESULT: " ERROR LEAVE THEN \ jmt
+            = 0= IF TRUE ABORT" INCORRECT RESULT" THEN      \ jmt : abort with colorised message
         LOOP
         THEN
     ELSE                 \ DEPTH MISMATCH
-\       S" WRONG NUMBER OF RESULTS: " ERROR \ jmt
-        ABORT" WRONG NUMBER OF RESULTS: "   \ jmt : colorised message
+\       S" WRONG NUMBER OF RESULTS: " ERROR     \ jmt
+        TRUE ABORT" WRONG NUMBER OF RESULTS"    \ jmt : abort with colorised message
     THEN ;
 
 : TESTING   \ ( -- ) TALKING COMMENT.
     SOURCE VERBOSE @
     IF DUP >R TYPE CR R> >IN !
-    ELSE >IN ! DROP [CHAR] * EMIT
+\    ELSE >IN ! DROP [CHAR] * EMIT
+    ELSE >IN ! DROP \ [CHAR] * EMIT
     THEN ;
 
 ECHO HEX
@@ -1074,7 +1072,7 @@ ABUF 80 \ ACCEPT            \ JMT
 ['] ACCEPT DUP @ $4030 =    \ JMT: if CFA content = $4030 (MOV @PC+,PC), ACCEPT is deferred
 IF      >BODY               \ JMT: find default part of deferred ACCEPT
 THEN    EXECUTE             \ execute ACCEPT
-    CR ." RECEIVED: " [CHAR] " EMIT
+    CR CR ." RECEIVED: " [CHAR] " EMIT
     ABUF SWAP TYPE [CHAR] " EMIT CR
 ;
 
@@ -1094,6 +1092,6 @@ CORETESTSUCCESS
 [ELSE]
 
 ECHO
-ANSCOMPNOTFOUND \               download CORECOMP.F before CORETEST.4TH
+ANSCOMPNOTFOUND \               download CORECOMP.f before CORETEST.4TH
 
 [THEN]

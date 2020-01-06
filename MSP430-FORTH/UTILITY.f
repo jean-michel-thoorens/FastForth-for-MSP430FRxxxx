@@ -34,58 +34,13 @@
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
 
-PWR_STATE
+PWR_HERE
 
 [DEFINED] {TOOLS} [IF]  {TOOLS} [THEN]
 
 [UNDEFINED] {TOOLS} [IF]
 
-[UNDEFINED] MARKER [IF]
-\  https://forth-standard.org/standard/core/MARKER
-\  MARKER
-\ ( "<spaces>name" -- )
-\ Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
-\ with the execution semantics defined below.
-\ 
-\ name Execution: ( -- )
-\ Restore all dictionary allocation and search order pointers to the state they had just prior to the
-\ definition of name. Remove the definition of name and all subsequent definitions. Restoration
-\ of any structures still existing that could refer to deleted definitions or deallocated data space is
-\ not necessarily provided. No other contextual information such as numeric base is affected
-\
-\ : MARKER
-\ CREATE
-\ HI2LO
-\ MOV &LASTVOC,0(W)   \ [BODY] = LASTVOC
-\ SUB #2,Y            \ 1 Y = LFA
-\ MOV Y,2(W)          \ 3 [BODY+2] = LFA = DP to be restored
-\ ADD #4,&DP          \ 3 add 2 cells
-\ LO2HI
-\ DOES>
-\ HI2LO
-\ MOV @RSP+,IP        \ -- PFA
-\ MOV @TOS+,&INIVOC   \       set VOC_LINK value for RST_STATE
-\ MOV @TOS,&INIDP     \       set DP value for RST_STATE
-\ MOV @PSP+,TOS       \ --
-\ MOV #RST_STATE,PC   \       execute RST_STATE, PWR_STATE then STATE_DOES
-\ ENDCODE
-\ [THEN]
-
-: MARKER
-CREATE
-LAST_CFA @ >BODY >R
-LASTVOC @ R@ !
-LAST_NFA @ 2 - R> 2 + !  \ [BODY] = LASTVOC
-DOES>
-DUP @ INIVOC !    \       set VOC_LINK value for RST_STATE
-2 + @ INIDP !     \       set DP value for RST_STATE
-RST_STATE
-;                   \       execute RST_STATE, PWR_STATE then STATE_DOES
-[THEN]
-
 MARKER {TOOLS} 
-
-PWR_HERE
 
 [UNDEFINED] EXIT [IF]
 \ https://forth-standard.org/standard/core/EXIT
@@ -124,7 +79,7 @@ MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
-[UNDEFINED] IF [IF]
+[UNDEFINED] IF [IF]     \ define IF and THEN
 \ https://forth-standard.org/standard/core/IF
 \ IF       -- IFadr    initialize conditional forward branch
 CODE IF       \ immediate
@@ -136,9 +91,7 @@ MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
 ADD #2,TOS              \ -- HERE+2=IFadr
 MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] THEN [IF]
 \ https://forth-standard.org/standard/core/THEN
 \ THEN     IFadr --                resolve forward branch
 CODE THEN               \ immediate
@@ -148,18 +101,16 @@ MOV @IP+,PC
 ENDCODE IMMEDIATE
 [THEN]
 
-[UNDEFINED] BEGIN [IF]
+[UNDEFINED] BEGIN [IF]  \ define BEGIN UNTIL AGAIN WHILE REPEAT
 \ https://forth-standard.org/standard/core/BEGIN
 \ BEGIN    -- BEGINadr             initialize backward branch
-CODE BEGIN              \ immediate
-MOV #HERE,PC            \ BR HERE
+CODE BEGIN
+    MOV #HEREADR,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] UNTIL [IF]
 \ https://forth-standard.org/standard/core/UNTIL
 \ UNTIL    BEGINadr --             resolve conditional backward branch
-CODE UNTIL              \ immediate
+CODE UNTIL
     MOV #QFBRAN,X
 BW1 ADD #4,&DP          \ compile two words
     MOV &DP,W           \ W = HERE
@@ -168,26 +119,20 @@ BW1 ADD #4,&DP          \ compile two words
     MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] AGAIN [IF]
 \ https://forth-standard.org/standard/core/AGAIN
 \ AGAIN    BEGINadr --             resolve uncondionnal backward branch
-CODE AGAIN     \ immediate
+CODE AGAIN
 MOV #BRAN,X
 GOTO BW1
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] WHILE [IF]
 \ https://forth-standard.org/standard/core/WHILE
 \ WHILE    BEGINadr -- WHILEadr BEGINadr
-: WHILE     \ immediate
+: WHILE
 POSTPONE IF SWAP
 ; IMMEDIATE
-[THEN]
 
-[UNDEFINED] REPEAT [IF]
 \ https://forth-standard.org/standard/core/REPEAT
 \ REPEAT   WHILEadr BEGINadr --     resolve WHILE loop
 : REPEAT
@@ -195,7 +140,7 @@ POSTPONE AGAIN POSTPONE THEN
 ; IMMEDIATE
 [THEN]
 
-[UNDEFINED] DO [IF]
+[UNDEFINED] DO [IF]     \ define DO LOOP +LOOP
 \ https://forth-standard.org/standard/core/DO
 \ DO       -- DOadr   L: -- 0
 CODE DO                 \ immediate
@@ -209,9 +154,7 @@ MOV &LEAVEPTR,W         \
 MOV #0,0(W)             \ -- HERE+2     L-- 0
 MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] LOOP [IF]
 \ https://forth-standard.org/standard/core/LOOP
 \ LOOP    DOadr --         L-- an an-1 .. a1 0
 CODE LOOP               \ immediate
@@ -231,14 +174,12 @@ REPEAT
     MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] +LOOP [IF]
 \ https://forth-standard.org/standard/core/PlusLOOP
 \ +LOOP   adrs --   L-- an an-1 .. a1 0
-CODE +LOOP              \ immediate
+CODE +LOOP
 MOV #XPLOOP,X
-GOTO BW1
+GOTO BW1        \ goto BW1 LOOP
 ENDCODE IMMEDIATE
 [THEN]
 
@@ -255,7 +196,7 @@ MOV @IP+,PC             \ 4 13~
 ENDCODE
 [THEN]
 
-[UNDEFINED] DUP [IF]
+[UNDEFINED] DUP [IF]    \ define DUP and ?DUP
 \ https://forth-standard.org/standard/core/DUP
 \ DUP      x -- x x      duplicate top of stack
 CODE DUP
@@ -432,7 +373,7 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
-[UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {ANS_COMP}
+[UNDEFINED] MAX [IF]    \ define MAX and MIN
     CODE MAX    \    n1 n2 -- n3       signed maximum
         CMP @PSP,TOS    \ n2-n1
         S< ?GOTO FW1    \ n2<n1
@@ -591,8 +532,8 @@ R> OVER - 0 MAX SPACES TYPE
 \ https://forth-standard.org/standard/tools/DUMP
 CODE DUMP                   \ adr n  --   dump memory
 PUSH IP
-PUSH &BASEADR                  \ save current base
-MOV #$10,&BASEADR              \ HEX base
+PUSH &BASEADR               \ save current base
+MOV #$10,&BASEADR           \ HEX base
 ADD @PSP,TOS                \ -- ORG END
 LO2HI
   SWAP 2DUP                 \ -- END ORG END ORG 

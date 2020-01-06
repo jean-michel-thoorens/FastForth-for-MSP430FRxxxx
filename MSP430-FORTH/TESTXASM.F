@@ -22,8 +22,6 @@
 \
 \ FORTH conditionnal    : 0= 0< = < > U<
 
-ECHO
-
 PWR_STATE
 
 [UNDEFINED] + [IF]
@@ -46,7 +44,7 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
-[UNDEFINED] MAX [IF]    \ MAX and MIN are defined in {UTILITY}
+[UNDEFINED] MAX [IF]    \ define MAX and MIN
 
 CODE MAX    \    n1 n2 -- n3       signed maximum
     CMP @PSP,TOS    \ n2-n1
@@ -166,7 +164,10 @@ ENDCODE
 \ https://forth-standard.org/standard/core/Rfrom
 \ R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
 CODE R>
-MOV rDOVAR,PC
+SUB #2,PSP      \ 1
+MOV TOS,0(PSP)  \ 3
+MOV @RSP+,TOS   \ 2
+MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
@@ -196,10 +197,10 @@ ENDCODE
 ;
 [THEN]
 
-[UNDEFINED] DO [IF]
+[UNDEFINED] DO [IF]     \ define DO LOOP +LOOP
 \ https://forth-standard.org/standard/core/DO
 \ DO       -- DOadr   L: -- 0
-CODE DO                 \ immediate
+CODE DO
 SUB #2,PSP              \
 MOV TOS,0(PSP)          \
 ADD #2,&DP              \   make room to compile xdo
@@ -210,12 +211,10 @@ MOV &LEAVEPTR,W         \
 MOV #0,0(W)             \ -- HERE+2     L-- 0
 MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] LOOP [IF]
 \ https://forth-standard.org/standard/core/LOOP
 \ LOOP    DOadr --         L-- an an-1 .. a1 0
-CODE LOOP               \ immediate
+CODE LOOP
     MOV #XLOOP,X
 BW1 ADD #4,&DP          \ make room to compile two words
     MOV &DP,W
@@ -232,14 +231,12 @@ REPEAT
     MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] +LOOP [IF]
 \ https://forth-standard.org/standard/core/PlusLOOP
 \ +LOOP   adrs --   L-- an an-1 .. a1 0
-CODE +LOOP              \ immediate
+CODE +LOOP
 MOV #XPLOOP,X
-GOTO BW1
+GOTO BW1        \ goto BW1 LOOP
 ENDCODE IMMEDIATE
 [THEN]
 
@@ -280,8 +277,16 @@ LO2HI
 ;
 [THEN]
 
+[UNDEFINED] HERE [IF]
+CODE HERE
+MOV #HEREADR,PC
+ENDCODE
+[THEN]
+
 PWR_HERE
 
+
+ECHO
 ; --------------------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER, OPCODES IV : Adda|Cmpa|Mova|Suba (without extended word)
 ; --------------------------------------------------------------------------------

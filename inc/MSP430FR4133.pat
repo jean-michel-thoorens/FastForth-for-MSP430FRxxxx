@@ -1,57 +1,5 @@
 !MSP430FR4133.pat
 
-! ============================================
-! SR bits :
-! ============================================
-\#C=\#1!        = SR(0) Carry flag
-\#Z=\#2!        = SR(1) Zero flag
-\#N=\#4!        = SR(2) Negative flag
-\#GIE=\#8!      = SR(3) Enable Int
-\#CPUOFF=\#\$10!= SR(4) CPUOFF    
-\#OSCOFF=\#\$20!= SR(5) OSCOFF
-\#SCG0=\#\$40!  = SR(6) SCG0     
-\#SCG1=\#\$80!  = SR(7) SCG1
-\#V=\#\$100!    = SR(8) oVerflow flag
-\#UF9=\#\$200!  = SR(9) User Flag 1 used by ?NUMBER --> INTERPRET --> LITERAL to process double numbers, else free for use.  
-\#UF10=\#\$400! = SR(10) User Flag 2  
-\#UF11=\#\$800! = SR(11) User Flag 3  
-
-LPM4=\$F8! SR(LPM4+GIE)
-LPM3=\$D8! SR(LPM3+GIE)
-LPM2=\$98! SR(LPM2+GIE)
-LPM1=\$58! SR(LPM1+GIE)
-LPM0=\$18! SR(LPM0+GIE)
-
-! ============================================
-! PORTx, Reg  bits :
-! ============================================
-BIT0=1!
-BIT1=2!
-BIT2=4!
-BIT3=8!
-BIT4=\$10!
-BIT5=\$20!
-BIT6=\$40!
-BIT7=\$80!
-BIT8=\$100!
-BIT9=\$200!
-BIT10=\$400!
-BIT11=\$800!
-BIT12=\$1000!
-BIT13=\$2000!
-BIT14=\$4000!
-BIT15=\$8000!
-
-! ============================================
-! symbolic codes :
-! ============================================
-RET=MOV \@R1+,R0!   \ MOV @RSP+,PC
-NOP=MOV \#0,R3!     \                one word one cycle
-NOP2=\$3C00 ,!      \ compile JMP 0  one word two cycles
-NOP3=MOV R0,R0!     \ MOV PC,PC      one word three cycles
-NEXT=MOV \@R13+,R0! \ MOV @IP+,PC   
-SEMI=MOV \@R1+,R13\nMOV \@R13+,R0!
-
 ! ----------------------------------------------
 ! MSP430FR4133 MEMORY MAP
 ! ----------------------------------------------
@@ -95,6 +43,7 @@ RXON=\$1814!
 RXOFF=\$1816!
 ReadSectorWX=\$1818!    call with W = SectorLO  X = SectorHI
 WriteSectorWX=\$181A!   call with W = SectorLO  X = SectorHI
+TERMINAL_INT=\$181C!    value for TERMINAL vector
 
 ! ============================================
 ! FRAM TLV
@@ -280,31 +229,24 @@ MAIN_ORG=\$C400!        Code space start
 
 SLEEP=\$C400! 
 BODYSLEEP=\$C404!
-VECT_RESET=\$C40E! 
-LIT=\$C424! 
-NEXT_ADR=\$C42C!
-XSQUOTE=\$C42E! 
-QTBRAN=\$C442! 
-BRAN=\$C448! 
-QFBRAN=\$C44C! 
-SKIPBRAN=\$C452! 
-XDO=\$C456! 
-XPLOOP=\$C466! 
-XLOOP=\$C478! 
-MUSMOD=\$C47E!          unsigned 32/16 division
-SETIB=\$C4C4!           Set Input Buffer with org len values, reset >IN 
-REFILL=\$C4D4!          accept one line from input and leave org len of input buffer
-CIB_ADR=\$C4E4!         contents currently TIB_ORG; may be redirected to SDIB_ORG
-XDODOES=\$C4EC!         restore rDODOES: MOV #XDODOES,rDODOES
-XDOCON=\$C4FA!          restore rDOCON: MOV #XDOCON,rDOCON
-XDOVAR=\$C506!          restore rDOVAR: MOV #XDOCON,rDOVAR  
-RFROM=\$C506!           
-XDOCOL=\$C510!          restore rDOCOL: MOV #XDOCOL,rDOCOL      only for DTC model = 1
-
-DODOES=\$1284!          code of CALL rDODOES
-DOCON=\$1285!           code of CALL rDOCON
-DOVAR=\$1286!           code of CALL rDOVAR
-DOCOL=\$1287!
+LIT=\$C40E! 
+NEXT_ADR=\$C416!
+XSQUOTE=\$C418! 
+HEREADR=\$C42C!
+QTBRAN=\$C438! 
+BRAN=\$C43E! 
+QFBRAN=\$C442! 
+SKIPBRAN=\$C448! 
+XDO=\$C44C! 
+XPLOOP=\$C45C! 
+XLOOP=\$C46E! 
+MUSMOD=\$C474!          unsigned 32/16 division
+SETIB=\$C4BA!           Set Input Buffer with org len values, reset >IN 
+REFILL=\$C4CA!          accept one line from input and leave org len of input buffer
+CIB_ADR=\$C4D8!         contents currently TIB_ORG; may be redirected to SDIB_ORG
+XDODOES=\$C4E2!         restore rDODOES: MOV #XDODOES,rDODOES
+XDOCON=\$C4F0!          restore rDOCON: MOV #XDOCON,rDOCON
+XDOCOL=\$C4FC!          restore rDOCOL: MOV #XDOCOL,rDOCOL      only for DTC model = 1
 
 ! to find DTC value, download \MSP430-FORTH\FastForthSpecs.4th
 ! if DTC = 1, restore rDOCOL as this : MOV #xdocol,rDOCOL

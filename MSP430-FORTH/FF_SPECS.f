@@ -3,13 +3,16 @@
 ; ------------------
 ; FF_SPECS.f
 ; ------------------
-\
+ 
 ; displays all FastForth specifications
-\
+
+\ from scite editor :
 \ TARGET SELECTION : copy your target in (shift+F8) parameter 1: 
 \ LP_MSP430FR2476
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133  CHIPSTICK_FR2433    MSP_EXP430FR2433    MSP_EXP430FR2355
+\
+\ OR
 \
 \ drag and drop this file onto SendSourceFileToTarget.bat
 \ then select your TARGET when asked.
@@ -25,7 +28,7 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
-[UNDEFINED] DUP [IF]
+[UNDEFINED] DUP [IF]    \ define DUP and DUP?
 \ https://forth-standard.org/standard/core/DUP
 \ DUP      x -- x x      duplicate top of stack
 CODE DUP
@@ -107,6 +110,16 @@ MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
+[UNDEFINED] 0= [IF]
+\ https://forth-standard.org/standard/core/ZeroEqual
+\ 0=     n/u -- flag    return true if TOS=0
+CODE 0=
+SUB #1,TOS      \ borrow (clear cy) if TOS was 0
+SUBC TOS,TOS    \ TOS=-1 if borrow was set
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
 [UNDEFINED] 0< [IF]
 \ https://forth-standard.org/standard/core/Zeroless
 \ 0<     n -- flag      true if TOS negative
@@ -147,7 +160,7 @@ MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
-[UNDEFINED] IF [IF]
+[UNDEFINED] IF [IF]     \ define IF and THEN
 \ https://forth-standard.org/standard/core/IF
 \ IF       -- IFadr    initialize conditional forward branch
 CODE IF
@@ -157,6 +170,14 @@ MOV &DP,TOS             \ -- HERE
 ADD #4,&DP            \           compile one word, reserve one word
 MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
 ADD #2,TOS              \ -- HERE+2=IFadr
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+
+\ https://forth-standard.org/standard/core/THEN
+\ THEN     IFadr --                resolve forward branch
+CODE THEN
+MOV &DP,0(TOS)          \ -- IFadr
+MOV @PSP+,TOS           \ --
 MOV @IP+,PC
 ENDCODE IMMEDIATE
 [THEN]
@@ -175,17 +196,13 @@ MOV @IP+,PC
 ENDCODE IMMEDIATE
 [THEN]
 
-[UNDEFINED] THEN [IF]
-\ https://forth-standard.org/standard/core/THEN
-\ THEN     IFadr --                resolve forward branch
-CODE THEN
-MOV &DP,0(TOS)          \ -- IFadr
-MOV @PSP+,TOS           \ --
-MOV @IP+,PC
+[UNDEFINED] BEGIN [IF]  \ define BEGIN UNTIL AGAIN WHILE REPEAT
+\ https://forth-standard.org/standard/core/BEGIN
+\ BEGIN    -- BEGINadr             initialize backward branch
+CODE BEGIN
+    MOV #HEREADR,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] UNTIL [IF]
 \ https://forth-standard.org/standard/core/UNTIL
 \ UNTIL    BEGINadr --             resolve conditional backward branch
 CODE UNTIL
@@ -197,26 +214,20 @@ BW1 ADD #4,&DP          \ compile two words
     MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] AGAIN [IF]
 \ https://forth-standard.org/standard/core/AGAIN
 \ AGAIN    BEGINadr --             resolve uncondionnal backward branch
 CODE AGAIN
 MOV #BRAN,X
 GOTO BW1
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] WHILE [IF]
 \ https://forth-standard.org/standard/core/WHILE
 \ WHILE    BEGINadr -- WHILEadr BEGINadr
 : WHILE
 POSTPONE IF SWAP
 ; IMMEDIATE
-[THEN]
 
-[UNDEFINED] REPEAT [IF]
 \ https://forth-standard.org/standard/core/REPEAT
 \ REPEAT   WHILEadr BEGINadr --     resolve WHILE loop
 : REPEAT
@@ -224,7 +235,7 @@ POSTPONE AGAIN POSTPONE THEN
 ; IMMEDIATE
 [THEN]
 
-[UNDEFINED] DO [IF]
+[UNDEFINED] DO [IF]     \ define DO LOOP +LOOP
 \ https://forth-standard.org/standard/core/DO
 \ DO       -- DOadr   L: -- 0
 CODE DO
@@ -238,22 +249,7 @@ MOV &LEAVEPTR,W         \
 MOV #0,0(W)             \ -- HERE+2     L-- 0
 MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] I [IF]
-\ https://forth-standard.org/standard/core/I
-\ I        -- n   R: sys1 sys2 -- sys1 sys2
-\                  get the innermost loop index
-CODE I
-SUB #2,PSP              \ 1 make room in TOS
-MOV TOS,0(PSP)          \ 3
-MOV @RSP,TOS            \ 2 index = loopctr - fudge
-SUB 2(RSP),TOS          \ 3
-MOV @IP+,PC             \ 4 13~
-ENDCODE
-[THEN]
-
-[UNDEFINED] LOOP [IF]
 \ https://forth-standard.org/standard/core/LOOP
 \ LOOP    DOadr --         L-- an an-1 .. a1 0
 CODE LOOP
@@ -273,9 +269,7 @@ REPEAT
     MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE IMMEDIATE
-[THEN]
 
-[UNDEFINED] +LOOP [IF]
 \ https://forth-standard.org/standard/core/PlusLOOP
 \ +LOOP   adrs --   L-- an an-1 .. a1 0
 CODE +LOOP
@@ -284,9 +278,22 @@ GOTO BW1        \ goto BW1 LOOP
 ENDCODE IMMEDIATE
 [THEN]
 
+[UNDEFINED] I [IF]
+\ https://forth-standard.org/standard/core/I
+\ I        -- n   R: sys1 sys2 -- sys1 sys2
+\                  get the innermost loop index
+CODE I
+SUB #2,PSP              \ 1 make room in TOS
+MOV TOS,0(PSP)          \ 3
+MOV @RSP,TOS            \ 2 index = loopctr - fudge
+SUB 2(RSP),TOS          \ 3
+MOV @IP+,PC             \ 4 13~
+ENDCODE
+[THEN]
+
 [UNDEFINED] HERE [IF]
 CODE HERE
-MOV #BEGIN,PC
+MOV #HEREADR,PC
 ENDCODE
 [THEN]
 
@@ -459,9 +466,7 @@ DROP                            \ ptr --
 [UNDEFINED] CASE [IF]
 \ https://forth-standard.org/standard/core/CASE
 : CASE 0 ; IMMEDIATE \ -- #of-1 
-[THEN]
 
-[UNDEFINED] OF [IF]
 \ https://forth-standard.org/standard/core/OF
 : OF \ #of-1 -- orgOF #of 
 1+	                    \ count OFs 
@@ -471,18 +476,14 @@ POSTPONE IF	            \ add orig to control flow stack
 POSTPONE DROP	        \ discards case value if = 
 R>	                    \ we can bring count back now 
 ; IMMEDIATE 
-[THEN]
 
-[UNDEFINED] ENDOF [IF]
 \ https://forth-standard.org/standard/core/ENDOF
 : ENDOF \ orgOF #of -- orgENDOF #of 
 >R	                    \ move off the stack in case the control-flow stack is the data stack. 
 POSTPONE ELSE 
 R>	                    \ we can bring count back now 
 ; IMMEDIATE 
-[THEN]
 
-[UNDEFINED] ENDCASE [IF]
 \ https://forth-standard.org/standard/core/ENDCASE
 : ENDCASE \ orgENDOF1..orgENDOFn #of -- 
 POSTPONE DROP
@@ -492,123 +493,158 @@ LOOP
 ; IMMEDIATE 
 [THEN]
 
-[UNDEFINED] ESC" [IF]
-\ ESC" <escape sequence>" --    type an escape sequence
-: ESC"
-$1B             \ ESC char
-POSTPONE LITERAL
-POSTPONE EMIT
-POSTPONE S"
-POSTPONE TYPE
-; IMMEDIATE \ "
+[UNDEFINED] S_ [IF]
+CODE S_             \           Squote alias with blank instead quote separator
+MOV #0,&CAPS        \           turn CAPS OFF
+COLON
+XSQUOTE ,           \           compile run-time code
+$20 WORD            \ -- c-addr (= HERE)
+HI2LO
+MOV.B @TOS,TOS      \ -- len    compile string
+ADD #1,TOS          \ -- len+1
+BIT #1,TOS          \           C = ~Z
+ADDC TOS,&DP        \           store aligned DP
+MOV @PSP+,TOS       \ --
+MOV @RSP+,IP        \           pop paired with push COLON
+MOV #$20,&CAPS      \           turn CAPS ON (default state)
+MOV @IP+,PC         \ NEXT
+ENDCODE IMMEDIATE
 [THEN]
 
-: SPECS         \ to see Fast Forth specifications
-PWR_STATE       \ before free bytes computing, remove all created words 
-HERE            \ to compute bytes
+[UNDEFINED] ESC [IF]
+CODE ESC
+CMP #0,&STATEADR
+0= IF MOV @IP+,PC   \ interpret time usage disallowed
+THEN
+COLON          
+$1B                 \ -- char escape
+POSTPONE LITERAL    \ compile-time code : lit $1B  
+POSTPONE EMIT       \ compile-time code : EMIT
+POSTPONE S_         \ compile-time code : S_ <escape_sequence>
+POSTPONE TYPE       \ compile-time code : TYPE
+; IMMEDIATE
+[THEN]
+
+: SPECS             \ to see Fast Forth specifications
+PWR_STATE           \ before free bytes computing, remove all created words 
 ECHO
 
-42 0 DO CR LOOP \ don't erase any line of source, create 42 empty lines
-ESC" [H"        \ then cursor home
+42 0 DO CR LOOP     \ to avoid erasing any line of source, create 42 empty lines
+ESC [H              \ then cursor home
 
-ESC" [7m"                   \ set reverse video
-CR ." FastForth V"          \ title line in reverse video 
+ESC [7m             \ Turn reverse video on
+CR ." FastForth V"  \ title line in reverse video 
 VERSION @         
 0 <# #  8 HOLD # 46 HOLD #S #> TYPE
 ."  for MSP430FR"
-DEVICEID @      \ value kept in TLV area
+HERE                \ HERE - MAIN_ORG = bytes code
+DEVICEID @          \ value kept in TLV area
 CASE
-    $8102     OF      ." 5738,"   $C200   ENDOF
+\ device_ID   OF      ." xxxx," $MAIN_ORG ENDOF \ <-- add here your device
+    $8102     OF      ." 5738,"   $C200   ENDOF 
     $8103     OF      ." 5739,"   $C200   ENDOF
     $8160     OF      ." 5948,"   $4400   ENDOF
     $8169     OF      ." 5969,"   $4400   ENDOF
     $81A8     OF      ." 6989,"   $4400   ENDOF
+\   $810D     OF      ." 5986,"   $4400   ENDOF
+\
     $81F0     OF      ." 4133,"   $C400   ENDOF
     $8240     OF      ." 2433,"   $C400   ENDOF
+\
     $82A1     OF      ." 5994,"   $4000   ENDOF
+\   $82A6     OF      ." 5962,"   $4000   ENDOF
+\ 
     $830C     OF      ." 2355,"   $8000   ENDOF
-    $8328     OF      ." 2476,"   $8000   ENDOF
-\ device_ID   OF      ." xxxx,"   $MAIN   ENDOF \ <-- add here your device
+\   $830D     OF      ." 2353,"   $C000   ENDOF
+\   $831E     OF      ." 2155,"   $8000   ENDOF
+\   $831D     OF      ." 2153,"   $C000   ENDOF
+    $832A     OF      ." 2476,"   $8000   ENDOF
+\   $832B     OF      ." 2475,"   $8000   ENDOF
+\   $833C     OF      ." 2633,"   $C400   ENDOF
+\   $833D     OF      ." 2533,"   $C400   ENDOF
     ABORT" xxxx <-- unrecognized device!"
-ENDCASE
-$20 EMIT 
-['] ['] DUP @ DOCOL =       \ DOCOL = CALL rDOCOL opcode
-IF ." DTC=1," DROP          \ [CFA] = CALL rDOCOL
-ELSE 2 + @ DOCOL =          \ 
-    IF ." DTC=2,"           \ [CFA] = PUSH IP, [CFA+2] = CALL rDOCOL 
-    ELSE ." DTC=3,"         \ [CFA] = PUSH IP, [CFA+2] = MOV PC,IP
+ENDCASE                     \ -- HERE MAIN_ORG
+
+['] ['] DUP @ $1284 =       \ DOCOL = CALL rDOCOL opcode
+IF ."  DTC=1," DROP         \ [CFA] = CALL rDOCOL
+ELSE 2 + @ $1284 =          \ 
+    IF ."  DTC=2,"          \ [CFA] = PUSH IP, [CFA+2] = CALL rDOCOL 
+    ELSE ."  DTC=3,"        \ [CFA] = PUSH IP, [CFA+2] = MOV PC,IP
     THEN
 THEN
 $20 EMIT 
 INI_THREAD @ U. #8 EMIT ." -Entry word sets, "  \ number of Entry word sets,
 FREQ_KHZ @ 0 1000 UM/MOD U.                     \ frequency,
-?DUP IF #8 EMIT ." ," U.    \ if remainder
+?DUP IF #8 EMIT #44 EMIT U. \ if remainder
 THEN ." MHz, "              \ MCLK
 - U. ." bytes"              \ HERE - MAIN_ORG = number of bytes code,
-ESC" [0m"                 \ clear reverse video
+ESC [0m                     \ Turn off character attributes
+CR
+." /COUNTED-STRING   = 255" CR 
+." /HOLD             = 34" CR
+." /PAD              = 84" CR
+." ADDRESS-UNIT-BITS = 16" CR
+." FLOORED           = true" CR
+." MAX-CHAR          = 255" CR
+." MAX-N             = 32767" CR
+." MAX-U             = 65535" CR
+." MAX-D             = 2147483647" CR
+." MAX-UD            = 4294967295" CR
+." STACK-CELLS       = 48" CR
+." RETURN-STACK-CELLS= 48" CR
 
-CR ." /COUNTED-STRING   = 255"
-CR ." /HOLD             = 34"
-CR ." /PAD              = 84"
-CR ." ADDRESS-UNIT-BITS = 16"
-CR ." FLOORED           = true"
-CR ." MAX-CHAR          = 255"
-CR ." MAX-N             = 32767"
-CR ." MAX-U             = 65535"
-CR ." MAX-D             = 2147483647"
-CR ." MAX-UD            = 4294967295"
-CR ." STACK-CELLS       = 48"
-CR ." RETURN-STACK-CELLS= 48"
+CR 
+ESC [7m ." KERNEL ADDONS" ESC [0m   \ subtitle in reverse video
+CR
 
-CR CR 
-
-ESC" [7m"                 \ set reverse video
-." KERNEL ADDONS"         \ subtitle in reverse video
-ESC" [0m"                 \ clear reverse video
 KERNEL_ADDON @
-    DUP 0< IF CR ." 32.768kHz XTAL" THEN
-2*  DUP 0< IF 2* CR ." 5 WIRES (RTS/CTS) UART TERMINAL"
+    DUP 0< IF ." 32.768kHz XTAL" CR THEN
+2*  DUP 0< IF 2* ." 5 WIRES (RTS/CTS) UART TERMINAL" CR
         ELSE 2* DUP
-            0< IF CR ." 4 WIRES (RTS) UART TERMINAL" 
+            0< IF ." 4 WIRES (RTS) UART TERMINAL" CR
             THEN
         THEN
-2*  DUP 0< IF CR ." 3 WIRES (XON/XOFF) UART TERMINAL" THEN
-2*  DUP 0< IF CR ." HALF-DUPLEX TERMINAL" THEN
-2*  DUP 0< IF CR ." ASM DATA ACCESS BEYOND $FFFF" THEN
-2*  DUP 0< IF CR ." BOOTLOADER" THEN
-2*  DUP 0< IF CR ." SD_CARD READ/WRITE" THEN
-2*  DUP 0< IF CR ." SD_CARD LOADER" THEN
-2*  DUP 0< IF CR ." FIXPOINT INPUT" THEN
-2*  DUP 0< IF CR ." DOUBLE INPUT" THEN
-2*  DUP 0< IF CR ." VOCABULARY SET" THEN
-2*  DUP 0< IF CR ." NONAME" THEN
-2*  DUP 0< IF CR ." EXTENDED ASSEMBLER" THEN
-2*  DUP 0< IF CR ." ASSEMBLER" THEN
-2*  DUP 0< IF CR ." CONDITIONNAL COMPILATION" THEN
-0< IF                       \ true if CONDCOMP add-on
-    CR CR ESC" [7m" 
-    ." OPTIONS"             \ subtitle in reverse video
-    ESC" [0m" CR
-    [DEFINED] {CORE_COMP} [IF] ." CORE COMPLEMENT" CR [THEN]
+2*  DUP 0< IF ." 3 WIRES (XON/XOFF) UART TERMINAL" CR
+        ELSE  ." I2C SLAVE TERMINAL INPUT" CR
+        THEN
+2*  DUP 0< IF ." HALF-DUPLEX TERMINAL" CR THEN
+2*  DUP 0< IF ." ASM DATA ACCESS BEYOND $FFFF" CR THEN
+2*  DUP 0< IF ." BOOTLOADER" CR THEN
+2*  DUP 0< IF ." SD_CARD READ/WRITE" CR THEN
+2*  DUP 0< IF ." SD_CARD LOADER" CR THEN
+2*  DUP 0< IF ." FIXPOINT INPUT" CR THEN
+2*  DUP 0< IF ." DOUBLE INPUT" CR THEN
+2*  DUP 0< IF ." VOCABULARY SET" CR THEN
+2*  DUP 0< IF ." DEFERRED words" CR THEN
+2*  DUP 0< IF ." EXTENDED ASSEMBLER" CR THEN
+2*  DUP 0< IF ." ASSEMBLER" CR THEN
+2*  DUP 0< IF ." CONDITIONNAL COMPILATION" CR THEN
+        0< IF                   \ true if CONDCOMP add-on
+    CR 
+    ESC [7m ." OPTIONS" ESC [0m \ subtitle in reverse video
+    CR
+    [DEFINED] {CORE_ANS}  [IF] ." ANS94 CORE COMPLIANT" CR [THEN]
     [DEFINED] {TOOLS}     [IF] ." UTILITY" CR [THEN]
     [DEFINED] {FIXPOINT}  [IF] ." FIXPOINT" CR [THEN]
     [DEFINED] {CORDIC}    [IF] ." CORDIC engine" CR [THEN]
     [DEFINED] {SD_TOOLS}  [IF] ." SD_TOOLS" CR [THEN]
-    [DEFINED] {RTC}       [IF] ." RTC utilities" CR [THEN]
-    CR
-    [DEFINED] VOCABULARY [IF]
-    ESC" [7m"
-    ." ASSEMBLER word set"  \ subtitle in reverse video 
-    ESC" [0m"
-    ALSO ASSEMBLER WORDS PREVIOUS CR
-    [THEN]
-THEN
-    ESC" [7m"
-    ." FORTH word set"      \ subtitle in reverse video 
-    ESC" [0m"
-    WORDS
+    [DEFINED] {RTC}       [IF] ." RTC utility" CR [THEN]
 
-CR WARM
+    [DEFINED] VOCABULARY  [IF] 
+        CR 
+        ESC [7m ." ASSEMBLER word set" ESC [0m  \ subtitle in reverse video 
+        ALSO ASSEMBLER WORDS PREVIOUS           \ type ASSEMBLER word set
+        CR
+    [THEN]
+
+THEN
+   
+CR
+ESC [7m ." FORTH word set"  ESC [0m \ subtitle in reverse video 
+WORDS                               \ type FORTH word set 
+CR
+
+WARM    \ type bytes free
 ;
 
 SPECS \ here FastForth types a (volatile) message with some informations
