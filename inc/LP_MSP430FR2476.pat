@@ -216,27 +216,32 @@ CTS=4!                  P6.2
 HANDSHAKIN=\$241!
 HANDSHAKOUT=\$243!
 
-SD_CD=\$80!             P1.7 as SD_CD
+CD_SD=\$80!             P1.7 as Card Detect
 SD_CDIN=\$200!
-SD_CS=\$40!             P1.6 as SD_CS     
+
+CS_SD=\$40!             P1.6 as Card Select     
 SD_CSOUT=\$202!
 SD_CSDIR=\$204!
 
+BUS_SD=\$7000!          pins P2.4 as UCA1CLK, P2.6 as UCA1SIMO & P2.5 as UCA1SOMI
 SD_SEL=\$20A!           PASEL0 to configure UCA1
 SD_REN=\$206!           PAREN to configure pullup resistors
-SD_BUS=\$7000!          pins P2.4 as UCA1CLK, P2.6 as UCA1SIMO & P2.5 as UCA1SOMI
 
 ! ============================================
 ! APPLICATION I/O :
 ! ============================================
-LED1_OUT=\$202!
-LED1=1!                 P1.0 green led
+LED2_OUT=\$202!
+LED2_DIR=\$204!
+LED2=1!                 P1.0 green led
 
-LED2_OUT=\$242!
-LED2=2!                 P5.1 red led
+LED1_OUT=\$242!
+LED1_DIR=\$244!
+LED1=2!                 P5.1 red led
 
 SW1_IN=\$221!
-SW1=1!                  P4.0 S1 
+SW1=1!                  P4.0 = S1 
+WIPE_IN\$221!
+IO_WIPE=1!              P4.0 = S1 = FORTH Deep_RST pin
 
 SW2_IN=\$201!
 SW2=8!                  P2.3 S2

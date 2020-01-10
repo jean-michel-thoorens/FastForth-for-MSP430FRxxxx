@@ -271,7 +271,11 @@ COLON                               \
 \ ----------------------------------\
 CODE CLUSTER                        \ cluster.  --        don't forget to add decimal point to your cluster number
 \ ----------------------------------\
-BW2 MOV.B &SecPerClus,W             \ SecPerClus(54321) = multiplicator
+BW2 BIT.B   #CD_SD,&SD_CDIN         \ test Card Detect: memory card present ?
+    0<> IF
+        MOV #COLD,PC                \ no: force COLD
+    THEN
+    MOV.B &SecPerClus,W             \ SecPerClus(54321) = multiplicator
     MOV @PSP,X                      \ X = ClusterL
     GOTO FW1                        \
     BEGIN

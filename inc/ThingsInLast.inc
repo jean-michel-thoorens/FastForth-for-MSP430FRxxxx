@@ -73,6 +73,15 @@ lastasmword31   .equ asmlink31
 
     .ENDIF
 
+    .IFDEF TERMINAL_I2C
+    .org 0FFA0h ; MSP430FR2355/2476 BSL I2C Address, a good idea for I2C_SLAVE_ADR(s) area, isn't it?
+;    .word 10h  ; --> BSL I2C
+;    .word 10h  ; --> UCBxI2COA0
+;    .word 20h  ; --> UCBxI2COA1
+;    .word 30h  ; --> UCBxI2COA2
+;    .word 40h  ; --> UCBxI2COA3
+    .ENDIF
+
     .ORG 0FFB0h ; 39 vectors value <== word COLD by default
     .word RESET-4
     .word RESET-4
@@ -115,5 +124,5 @@ lastasmword31   .equ asmlink31
     .word RESET-4       ; SYS NMI vector
     .word RESET         ; RST vector
 
-    .org TERM_VEC       ; TERMINAL vector (UART or I2C_Slave)
-    .word TERMINAL_INT  ; will generate overlap warning, don't care
+    .org TERM_VEC       ; will generate overlap warning, don't care
+    .word TERMINAL_INT  ; TERMINAL vector (UART or I2C_Slave)

@@ -1,7 +1,7 @@
 \ -*- coding: utf-8 -*-
 
 ; -----------------------------------------------------
-; CORECOMP.f    words complement to pass CORETEST.4TH
+; CORE_ANS.f    words complement to pass CORETEST.4TH
 ; -----------------------------------------------------
 \
 \ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP
@@ -29,6 +29,7 @@
 \ ASSEMBLER conditionnal usage with ?GOTO           S<  S>=  U<   U>=  0=  0<>  0<
 
 PWR_STATE
+
 
 [DEFINED] {CORE_ANS} [IF]  {CORE_ANS} [THEN] \ remove it if defined out of kernel 
 
@@ -1269,6 +1270,6 @@ ENDCODE
 
 RST_HERE
 
-[THEN]              \ end of [UNDEFINED] {CORE_COMP}
+[THEN]              \ end of [UNDEFINED] {CORE_ANS}
 
 ECHO

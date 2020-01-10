@@ -128,9 +128,8 @@ RXON_LOOP   BIT #TX_TERM,&TERM_IFG  ;3      wait the sending of last char, usele
 
 
 ; ----------------------------------;
-COLD                                ;
+COLD        MOV #5A4Fh,&WDTCTL      ; start Watchdog Reset : XDTPW, WDTSSEL=VLOCLK, WDTCNTCL=1, WDTIS=2^6 (8ms)
 ; ----------------------------------;
-            MOV #5A4Fh,&WDTCTL      ; start Watchdog Reset : XDTPW, WDTSSEL=VLOCLK, WDTCNTCL=1, WDTIS=2^6 (8ms)
 COLD_TERM   BIT #1,&TERM_STATW      ;3 to stop correctly TX to TERMINAL in progress
             JNZ COLD_TERM           ;2 loop back while TERM_UART is busy
             MOV #0A504h,&PMMCTL0    ; performs BOR

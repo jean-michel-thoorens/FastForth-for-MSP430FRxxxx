@@ -276,31 +276,31 @@ VECT_ORG=\$FFCE!        FFCE-FFFF
 VECT_LEN=\$32!
 
 
-RTC_Vec=\$FFCE!
-P4_Vec=\$FFD0!
-P3_Vec=\$FFD2!
-TB2_x_Vec=\$FFD4!
-TB2_0_Vec=\$FFD6!
-P2_Vec=\$FFD8!
-TB1_x_Vec=\$FFDA!
-TB1_0_Vec=\$FFDC!
-P1_Vec=\$FFDE!
-TA1_x_Vec=\$FFE0!
-TA1_0_Vec=\$FFE2!
-DMA_Vec=\$FFE4!
-eUSCI_A1_Vec=\$FFE6!
-TA0_x_Vec=\$FFE8!
-TA0_0_Vec=\$FFEA!
-ADC10_B_Vec=\$FFEC!
-eUSCI_B0_Vec=\$FFEE!
-eUSCI_A0_Vec=\$FFF0!
-WDT_Vec=\$FFF2!
-TB0_x_Vec=\$FFF4!
-TB0_0_Vec=\$FFF6!
-COMP_D_Vec=\$FFF8!
-U_NMI_Vec=\$FFFA!
-S_NMI_Vec=\$FFFC!
-RST_Vec=\$FFFE!
+RTC_VEC=\$FFCE!
+P4_VEC=\$FFD0!
+P3_VEC=\$FFD2!
+TB2_X_VEC=\$FFD4!
+TB2_0_VEC=\$FFD6!
+P2_VEC=\$FFD8!
+TB1_X_VEC=\$FFDA!
+TB1_0_VEC=\$FFDC!
+P1_VEC=\$FFDE!
+TA1_X_VEC=\$FFE0!
+TA1_0_VEC=\$FFE2!
+DMA_VEC=\$FFE4!
+EUSCI_A1_VEC=\$FFE6!
+TA0_X_VEC=\$FFE8!
+TA0_0_VEC=\$FFEA!
+ADC10_B_VEC=\$FFEC!
+EUSCI_B0_VEC=\$FFEE!
+EUSCI_A0_VEC=\$FFF0!
+WDT_VEC=\$FFF2!
+TB0_X_VEC=\$FFF4!
+TB0_0_VEC=\$FFF6!
+COMP_D_VEC=\$FFF8!
+U_NMI_VEC=\$FFFA!
+S_NMI_VEC=\$FFFC!
+RST_VEC=\$FFFE!
 
 ! ============================================
 ! Special Fonction Registers (SFR)

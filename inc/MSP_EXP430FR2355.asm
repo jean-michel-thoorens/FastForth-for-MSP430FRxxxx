@@ -129,7 +129,7 @@
 
 LED1_OUT    .equ    P1OUT
 LED1_DIR    .equ    P1DIR
-LED1        .equ    1           ;  P1.0
+LED1        .equ    1           ;  P1.0 LED1 red
 
     .IFDEF UCB0_TERM            ;
 TERM_SEL    .equ    P1SEL0
@@ -163,6 +163,9 @@ CTS         .equ    2           ; P2.1
     .ENDIF  ; TERMINAL4WIRES
 
 
+SW2_IN      .equ P2IN
+SW2         .equ 8              ; P2.3 = S2 
+
 SD_CDIN     .equ  P2IN
 CD_SD       .equ  20h           ; P2.5
 
@@ -184,6 +187,9 @@ CD_SD       .equ  20h           ; P2.5
 
             BIS #-1,&PBREN  ; all pins with pull resistors
             MOV #-1,&PBOUT  ; pullup resistors for all pins
+
+SW1_IN      .equ P4IN
+SW1         .equ 2      ; P4.1 = S1 
 
 WIPE_IN     .equ P4IN
 IO_WIPE     .equ 2      ; P4.1 = S1 = FORTH Deep_RST pin 
@@ -217,10 +223,7 @@ BUS_SD      .equ 0E000h ; pins P4.5 as UCA1CLK, P4.6 as UCA1SIMO & P4.7 as UCA1S
 ; PORT6 usage
 LED2_OUT    .equ    P6OUT
 LED2_DIR    .equ    P6DIR
-LED2        .equ    40h         ;  P6.6
-
-
-;           P6.6    -   LED2 green
+LED2        .equ    40h         ;  P6.6 LED2 green
 
             BIS.B #-1,&P6REN    ; all pins with pull up/down resistors
             MOV.B #0BFh,&P6OUT  ; all pins with pull up resistors else P6.6

@@ -137,15 +137,16 @@ HANDSHAKIN=\$220!
 HANDSHAKOUT=\$222!
 
 
-SD_CS=\$40!        ; P2.6 as SD_CS     
-SD_CD=\$80!        ; P2.7 as SD_CD
+CD_SD=\$80!        ; P2.7 as Card Detect
 SD_CDIN=\$201!
+
+CS_SD=\$40!        ; P2.6 as Card Select 
 SD_CSOUT=\$203!
 SD_CSDIR=\$205!
 
+BUS_SD=\$07!    ; pins P2.2 as UCB0CLK, P2.0 as UCB0SIMO & P2.1 as UCB0SOMI
 SD_SEL=\$20C!   ; to configure UCB0
 SD_REN=\$206!   ; to configure pullup resistors
-SD_BUS=\$07!    ; pins P2.2 as UCB0CLK, P2.0 as UCB0SIMO & P2.1 as UCB0SOMI
 
 
 ! ============================================

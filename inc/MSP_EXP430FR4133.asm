@@ -175,6 +175,9 @@
 ; P1.0 - TX0 --> JP1 --> red LED1 --> GND
 ; P1.1 - RX0
 
+SW1_IN      .equ    P1IN
+SW1         .equ    4       ; P1.2 = S1
+
 WIPE_IN     .equ    P1IN
 IO_WIPE     .equ    4       ; P1.2 = S1 = FORTH Deep_RST pin
 
@@ -201,6 +204,9 @@ CTS         .set    10h         ; P2.4 bit position
         .ENDIF  ; TERMINAL5WIRES
     .ENDIF  ; TERMINAL4WIRES
 
+SW2_IN      .equ    P2IN
+SW2         .equ    40h     ; P2.6 = S2
+
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4
 ; ----------------------------------------------------------------------
@@ -217,6 +223,10 @@ CTS         .set    10h         ; P2.4 bit position
 ; P4.1 - LFXI 32768Hz quartz  
 ; P4.2 - LFXO 32768Hz quartz  
   
+LED2_OUT    .equ    P4OUT
+LED2_DIR    .equ    P4IN
+LED2        .equ    1           ;  P4.0 LED2 green
+
 ; PORTx default wanted state : pins as input with pullup resistor
 
 ; ----------------------------------------------------------------------

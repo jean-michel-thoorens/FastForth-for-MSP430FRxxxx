@@ -227,15 +227,16 @@ CTS=1!              ; P4.0
 HANDSHAKIN=\$221!
 HANDSHAKOUT=\$223!
 
-SD_CD=4!        ; P4.2 as SD_CD
-SD_CS=8!        ; P4.3 as SD_CS     
+CD_SD=4!            P4.2 as Card Detect
 SD_CDIN=\$221!
+
+CS_SD=8!            P4.3 as Card Select     
 SD_CSOUT=\$223!
 SD_CSDIR=\$225!
 
+BUS_SD=\$70!    ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
 SD_SEL=\$20D!   ; to configure UCB0
 SD_REN=\$207!   ; to configure pullup resistors
-SD_BUS=\$70!    ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
 
 
 ! ============================================
@@ -243,19 +244,24 @@ SD_BUS=\$70!    ; pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
 ! ============================================
 ! init state : output low
 LED1_OUT=\$223
+LED1_DIR=\$225
 LED1=\$40!          P4.6
 
 ! init state : output low
 LED2_OUT=\$202
+LED2_DIR=\$204
 LED2=\$01!          P1.0
 
 ! init state : input with pullup resistor
 SW1_IN=\$221
-SW1=\$20!           P4.5
+SW1=\$20!           P4.5 = S1 
+
+WIPE_IN=\$221
+IO_WIPE=\$20!       P4.5 = S1 = FORTH Deep_RST pin  
 
 ! init state : input with pullup resistor
 SW2_IN=\$200
-SW2=\$02!           P1.1
+SW2=\$02!           P1.1 = S2
 
 LCDVo_DIR=\$205!    P2
 LCDVo_SEL=\$20B!    SEL0

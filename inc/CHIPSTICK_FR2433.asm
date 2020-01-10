@@ -153,17 +153,18 @@ WIPE_IN     .equ    P1IN
 IO_WIPE     .equ    10h     ; P1.4 = FORTH Deep_RST pin
 
     .IFDEF UCA0_SD
+BUS_SD    .equ 0070h        ; pins P1.4,P1.5,P1.6
 SD_SEL    .equ PASEL0
 SD_REN    .equ PAREN
-BUS_SD    .equ 0070h        ; pins P1.4,P1.5,P1.6
     .ENDIF
 
 ; PORT2 usage
+CD_SD       .equ 8          ; P2.3 as Card Detect
 SD_CDIN     .equ P2IN
+
+CS_SD       .equ 4          ; P2.2 as Card Select   
 SD_CSOUT    .equ P2OUT
 SD_CSDIR    .equ P2DIR
-CD_SD       .equ 8          ; P2.3 as CD_SD
-CS_SD       .equ 4          ; P2.2 as CS_SD     
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3

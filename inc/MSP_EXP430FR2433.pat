@@ -134,8 +134,8 @@ TERM_IE=\$51A!       \ eUSCI_A interrupt enable
 TERM_IFG=\$51C!      \ eUSCI_A interrupt flags       
 TERM_IV=\$51E!       \ eUSCI_A interrupt vector word 
 
-RTS=1!              ; P1.0
-CTS=2!              ; P1.1
+RTS=1!              P1.0
+CTS=2!              P1.1
 HANDSHAKIN=\$200!
 HANDSHAKOUT=\$202!
 
@@ -144,16 +144,20 @@ HANDSHAKOUT=\$202!
 ! ============================================
 LED1_OUT=\$202!
 LED1_DIR=\$204!
-LED1=1!          P1.0
+LED1=1!             P1.0 LED1 red
 
 LED2_OUT=\$202!
-LED2=2!          P1.1
+LED2_DIR=\$204!
+LED2=2!             P1.1 LED2 green
 
 SW1_IN=\$201!
-SW1=8!           P2.3    
+SW1=8!              P2.3 = S1    
+
+WIPE_IN=\$201!
+IO_WIPE=8!          P2.3 = S1 = FORTH Deep_RST pin    
 
 SW2_IN=\$201!
-SW2=\$80!        P2.7
+SW2=\$80!           P2.7
 
 
 !IR_RC5
@@ -255,13 +259,14 @@ I2CS_I2CSA=\$560!   USCI_B0 I2C Slave Address
 I2CS_IE=\$56A!      USCI_B0 Interrupt Enable
 I2CS_IFG=\$56C!     USCI_B0 Interrupt Flags Register
 
-SD_CD=2!        ; P2.1 as SD_CD
-SD_CS=1!        ; P2.0 as SD_CS     
+CD_SD=2!        ; P2.1 as Card Detect
 SD_CDIN=\$201!
+
+CS_SD=1!        ; P2.0 as Card Select    
 SD_CSOUT=\$203!
 SD_CSDIR=\$205!
 
+BUS_SD=\$7000!  ; pins P2.4 as UCB0CLK, P2.6 as UCB0SIMO & P25 as UCB0SOMI
 SD_SEL=\$20A!   ; PASEL0 to configure UCB0
 SD_REN=\$206!   ; PAREN to configure pullup resistors
-SD_BUS=\$7000!  ; pins P2.4 as UCB0CLK, P2.6 as UCB0SIMO & P25 as UCB0SOMI
 

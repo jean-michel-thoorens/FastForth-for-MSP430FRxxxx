@@ -37,7 +37,7 @@
     MACEXP_DFT noif     ; reduce macro listing to true part
 ;-------------------------------------------------------------------------------
 
-VER .equ "V303"     ; FORTH version
+VER .equ "V304"     ; FORTH version
 
 ;===============================================================================
 ; before assembling or programming you must set TARGET in scite param1 (SHIFT+F8)
@@ -51,13 +51,12 @@ VER .equ "V303"     ; FORTH version
 ;    TARGET        ;                                        ;INFO+VECTORS+ MAIN bytes
 ;MSP_EXP430FR5739  ; compile for MSP-EXP430FR5739 launchpad ; 30 +  80   + 2820 bytes
 ;MSP_EXP430FR5969  ; compile for MSP-EXP430FR5969 launchpad ; 30 +  80   + 2810 bytes
- MSP_EXP430FR5994  ; compile for MSP-EXP430FR5994 launchpad ; 30 +  80   + 2830 bytes
+;MSP_EXP430FR5994  ; compile for MSP-EXP430FR5994 launchpad ; 30 +  80   + 2830 bytes
 ;MSP_EXP430FR6989  ; compile for MSP-EXP430FR6989 launchpad ; 30 +  80   + 2836 bytes
-;MSP_EXP430FR4133  ; compile for MSP-EXP430FR4133 launchpad ; 30 +  80   + 2874 bytes
+;MSP_EXP430FR4133  ; compile for MSP-EXP430FR4133 launchpad ; 30 +  80   + 2876 bytes
 ;MSP_EXP430FR2355  ; compile for MSP-EXP430FR2355 launchpad ; 30 +  80   + 2808 bytes
 ;MSP_EXP430FR2433  ; compile for MSP-EXP430FR2433 launchpad ; 30 +  80   + 2800 bytes
-;LP_MSP430FR2476   ; compile for LP_MSP430FR2476  launchpad ; 30 +  80   + 2808 bytes
-;CHIPSTICK_FR2433  ; compile for "CHIPSTICK" of M. Ken BOAK ; 30 +  80   + 2800 bytes
+LP_MSP430FR2476   ; compile for LP_MSP430FR2476  launchpad ; 30 +  80   + 2808 bytes
 
 ; choose DTC (Direct Threaded Code) model, if you don't know, choose 2, for DOxxx routines without scratch register use
 DTC .equ 2  ; DTC model 1 : DOCOL = CALL rDOCOL           14 cycles 1 word      shortest DTC model
@@ -68,13 +67,13 @@ THREADS     .equ 16 ;  1,  2 ,  4 ,  8 ,  16,  32  search entries in dictionnary
                     ; +0, +28, +48, +56, +90, +154 bytes, usefull to speed up compilation;
                     ; the FORTH interpreter speeds up by about a square root factor of THREADS.
 
-FREQUENCY   .equ 16 ; fully tested at 1,2,4,8,16 MHz (+ 24 MHz for MSP430FR57xx,MSP430FR2355)
+FREQUENCY   .equ 1 ; fully tested at 1,2,4,8,16 MHz (+ 24 MHz for MSP430FR57xx,MSP430FR2355)
 
 ;===============================================================================
-TERMINAL_I2C        ; uncomment to select I2C Slave TERMINAL input, + 12 bytes
+TERMINAL_I2C        ; uncomment to select I2C Slave TERMINAL input
 ;===============================================================================
 
-    .IFNDEF TERMINAL_I2C
+    .IFNDEF TERMINAL_I2C ;
 TERMINALBAUDRATE    .equ 115200 ; choose value considering the frequency and the UART2USB bridge, see explanations below.
 TERMINAL3WIRES      ; + 18 bytes    enable 3 wires (GND,TX,RX) with XON/XOFF software flow control (PL2303TA/HXD, CP2102)
 TERMINAL4WIRES      ; + 12 bytes    enable 4 wires with hardware flow control on RX with RTS (PL2303TA/HXD, FT232RL)
@@ -97,11 +96,11 @@ CONDCOMP            ; +  302 bytes : adds conditionnal compilation [IF] [ELSE] [
 DOUBLE_INPUT        ; +   58 bytes : adds the interpretation engine for double numbers (numbers with dot)
 FIXPOINT_INPUT      ; +  128 bytes : adds the interpretation engine for Q15.16 numbers (numbers with comma)
 DEFERRED            ; +  122 bytes : adds :NONAME CODENNM (CODE_No_NaMe) DEFER IS.
-EXTENDED_MEM        ; +  318 bytes : allows MSP430ASSEMBLER to read/write datas beyond $FFFF.
-EXTENDED_ASM        ; + 1488 bytes : adds extended assembler for programming beyond $FFFF.
-SD_CARD_LOADER      ; + 1766 bytes : to load source files from SD_card
-SD_CARD_READ_WRITE  ; + 1148 bytes : to read, create, write and del files + copy text files from PC to target SD_Card
-BOOTLOADER          ; +  128 bytes : includes in WARM the bootloader SD_CARD\BOOT.4TH.
+;EXTENDED_MEM        ; +  318 bytes : allows MSP430ASSEMBLER to read/write datas beyond $FFFF.
+;EXTENDED_ASM        ; + 1488 bytes : adds extended assembler for programming beyond $FFFF.
+;SD_CARD_LOADER      ; + 1766 bytes : to load source files from SD_card
+;SD_CARD_READ_WRITE  ; + 1148 bytes : to read, create, write and del files + copy text files from PC to target SD_Card
+;BOOTLOADER          ; +  128 bytes : includes in WARM the bootloader SD_CARD\BOOT.4TH.
 VOCABULARY_SET      ; +  106 bytes : adds words: VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83)
 ;PROMPT              ; +   22 bytes : to display prompt "ok "
 ;------------------------------------------------------------------------------- 
@@ -113,7 +112,7 @@ VOCABULARY_SET      ; +  106 bytes : adds words: VOCABULARY FORTH ASSEMBLER ALSO
 ;CORE_COMPLEMENT     ; + 1872 bytes : MINIMAL OPTIONS if you want a conventional FORTH              CORECOMP.f
 ;FIXPOINT            ; +  422/528 bytes add HOLDS F+ F- F/ F* F#S F. S>F                            FIXPOINT.f
 ;UTILITY             ; +  434/524 bytes (1/16threads) : add .S .RS WORDS U.R DUMP ?                 UTILITY.f
-SD_TOOLS            ; +  142 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, (adds UTILITY)   SD_TOOLS.f
+;SD_TOOLS            ; +  142 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, (adds UTILITY)   SD_TOOLS.f
 
     .save
     .listing off
@@ -361,7 +360,7 @@ SD_BUF_END      .equ SD_BUF + 200h   ; 512bytes
 ; --------------------------
 INI_THREAD      .word THREADS           ; used by ADDON_UTILITY.f
     .IFDEF TERMINAL_I2C
-I2CSLAVEADR     .word 010h
+I2CSLAVEADR     .word 010h              ; on MSP430FR2xxx devices with BSL I2C, Slave address is FFA0h
 I2CSLAVEADR1    .word 0
     .ELSE ; TERMINAL_UART
 TERMBRW_RST     .word TERMBRW_INI       ; set by TERMINALBAUDRATE.inc
@@ -1141,9 +1140,7 @@ ULESSEND    MOV @IP+,PC     ;4
             JL TOSFALSE     ;2 signed
 TOSTRUE     MOV #-1,TOS     ;1 flag Z = 0
 LESSEND     MOV @IP+,PC     ;4
-    .ENDIF
 
-    .IFDEF CORE_COMPLEMENT
             FORTHWORD ">"
 ;https://forth-standard.org/standard/core/more
 ;C >     n1 n2 -- flag         test n1>n2, signed
@@ -1157,7 +1154,7 @@ TOSFALSE    AND #0,TOS      ;1 flag Z = 1
 ;-------------------------------------------------------------------------------
 ; CORE ANS94 complement OPTION
 ;-------------------------------------------------------------------------------
-    .include "ADDON/CORECOMP.asm"
+    .include "ADDON/CORE_ANS.asm"
     .ENDIF ; CORE_COMPLEMENT
 
 ;-------------------------------------------------------------------------------
@@ -1966,11 +1963,9 @@ THREEDROP   ADD #4,PSP              ;
 QABORTYES   CALL #QAB_DEFER         ; init some variables, common part with WIPE, see WIPE
 ; ----------------------------------;
     .IFDEF TERMINAL_I2C
-            BIT #10h,&TERM_CTLW0    ;4          test UCTR
-            JZ TERMISQUIET          ;2          UCTR=0, IC2_Slave RX mode or I2C_Slave unplugged, 16~
 QABI2C      BIT #TX_TERM,&TERM_IFG  ;3          UCTR=1, IC2_Slave TX mode
-            JZ QABI2C               ;2          wait complete send of char
-            MOV.B #2,&TERM_TXBUF    ;           send ctrl_char $02 to I2C_Master which will execute QABORT_TERM
+            JZ QABI2C               ;2          wait TX buf empty
+            MOV.B #2,&TERM_TXBUF    ;           send ctrl_char $02 to I2C_Master which will execute on its side QABORT_TERM
 ; ----------------------------------;
     .ELSE ; TERMINAL_UART
 QABORT_TERM CALL #RXON              ; resume downloading source file then wait the end of downloading.
@@ -1990,7 +1985,7 @@ QABUSBLOOPI SUB #1,X                ; 1~        <---+   |
             JNZ QABORTLOOP          ; 2 yes, the input stream is still active: loop back
 ; ----------------------------------;
     .ENDIF ; TERMINAL
-TERMISQUIET mDOCOL                  ;
+            mDOCOL                  ;
             .word   PWR_STATE       ; remove all words beyond PWR_HERE, including the definition leading to an error
             .word   lit,LINE,FETCH  ; -- c-addr line            fetch line number before set ECHO !
             .word   ECHO            ;                           to see abort message
@@ -2136,7 +2131,7 @@ GOOD_CSP    MOV &LAST_NFA,Y         ; GOOD_CSP is the end of word MARKER
             MOV &LAST_THREAD,X      ;
 REVEAL      MOV @X,-2(Y)            ; [LAST_THREAD] --> LFA         (for NONAME: [LAST_THREAD] --> unused PA reg)
             MOV Y,0(X)              ; LAST_NFA --> [LAST_THREAD]    (for NONAME: LAST_NFA --> unused PA reg) 
-            MOV @IP+,PC
+NEXTADR     MOV @IP+,PC
 
 BAD_CSP     mDOCOL
             .word   XSQUOTE
@@ -2203,15 +2198,10 @@ HEADERLESS  SUB #2,PSP              ; common part of :NONAME and CODENNM
             MOV TOS,W               ;  W=CFA
             MOV #210h,X             ;2 MOV Y,0(X) will write to a unused PA register = first lure for semicolon REVEAL...
             MOV X,Y                 ;1
-            ADD #2,Y                ;1 MOV @X,-2(Y) also writes to same register = 2th lure for semicolon REVEAL...
+            ADD #2,Y                ;1 MOV @X,-2(Y) also will write to same register = 2th lure for semicolon REVEAL...
             JMP HEADEREND           ; ...because we don't want to write a preamble in dictionnary!
 
-DEFERSTORE  MOV @PSP+,2(TOS)        ; -- CFA_DEFER          xt --> [CFA_DEFER+2]
-            MOV @PSP+,TOS           ; --
-DEFEREND    MOV @IP+,PC             ;
-
 ; https://forth-standard.org/standard/core/DEFER
-; DEFER "<spaces>name"   --
 ; Skip leading space delimiters. Parse name delimited by a space.
 ; Create a definition for name with the execution semantics defined below.
 ;
@@ -2221,10 +2211,15 @@ DEFEREND    MOV @IP+,PC             ;
             FORTHWORD "DEFER"
             CALL #HEADER   
             MOV #4030h,-4(W)        ;4 first CELL = MOV @PC+,PC = BR...
-            MOV #DEFEREND,-2(W)     ;3 second CELL              =   ...mNEXT : do nothing by default
+            MOV #NEXTADR,-2(W)      ;3 second CELL              =   ...mNEXT : do nothing by default
             JMP REVEAL              ; to link created word in vocabulary
 
-; https://forth-standard.org/standard/core/IS
+; DEFER! ( xt CFA_DEFERed_WORD -- ) 
+;            FORTHWORD "DEFER!"
+DEFERSTORE  MOV @PSP+,2(TOS)        ; -- CFA_DEFERed_WORD          xt --> [CFA_DEFERed_WORD+2]
+            MOV @PSP+,TOS           ; --
+            MOV @IP+,PC             ;
+
 ; IS <name>        xt --
 ; used as is :
 ; DEFER DISPLAY                         create a "do nothing" definition (2 CELLS)
@@ -2241,6 +2236,7 @@ IS_COMPILE  mDOCOL
 IS_EXEC     mDOCOL
             .word   TICK,DEFERSTORE     ; find the word, leave its CFA on the stack and execute DEFERSTORE
             .word   EXIT
+
     .ENDIF ; DEFERRED
 
     .IFDEF MSP430ASSEMBLER
@@ -2254,15 +2250,15 @@ ASMCODE2
             mDOCOL
             .word   ALSO,ASSEMBLER,EXIT
 
-            asmword "ENDCODE"       ; test PSP balancing then restore previous context
-ENDCODE     mDOCOL
-            .word   QREVEAL,PREVIOUS,EXIT
-
         .IFDEF DEFERRED
             FORTHWORD "CODENNM"     ; CODENoNaMe is the assembly counterpart of :NONAME
 CODENNM     PUSH #ASMCODE1          ; define HEADERLESS return
             JMP HEADERLESS          ; that makes room for CFA and PFA
         .ENDIF
+
+            asmword "ENDCODE"       ; test PSP balancing then restore previous context
+ENDCODE     mDOCOL
+            .word   QREVEAL,PREVIOUS,EXIT
 
 ; ASM and ENDASM are used to define an assembler word which is not executable by FORTH interpreter
 ; i.e. typically an assembler word called by CALL and ended by RET, or an interrupt routine ended by RETI.
@@ -2769,14 +2765,10 @@ RST_HERE    MOV &LASTVOC,&INIVOC
             MOV &DDP,&INIDP
             JMP PWR_HERE            ; and obviously the same for POWER_ON...
 
-        FORTHWORD "WIPE"            ; restore the kernel as defined by forthMSP430FR.txt program file
-WIPE                                ;; reset JTAG and BSL signatures; unlock JTAG, SBW and BSL
-                                    ; WARNING ! WIPE doesn't stop pending interrupts,
-                                    ;           stops interrupts properly before executing WIPE!
-;-----------------------------------;
-             MOV #BODYSLEEP,&PFASLEEP;4 restore default background task
+        FORTHWORD "WIPE"            ; restore the word set as defined by forthMSP430FR.txt program file
+WIPE         MOV #BODYSLEEP,&PFASLEEP;4 restore default background task
              MOV #BODYWARM,&PFAWARM  ;4 restore default WARM
-     .IFDEF DEFER_QUIT               ;  true if BOOTLOADER
+     .IFDEF DEFER_QUIT               ;
              MOV #BODYQUIT,&PFAQUIT  ;4 restore QUIT
      .ENDIF
             MOV #lastvoclink,&INIVOC; reinit this 2 factory values
@@ -2806,7 +2798,11 @@ QAB_CLOSEND                         ;
 ; WIPE, QABORT, COLD common subrouti; <--- COLD, reset and PUC calls here
 ;-----------------------------------; 
 RST_INIT
-            MOV #LPM0+GIE,&LPM_MODE ; set LPM0
+    .IFDEF TERMINAL_I2C
+            MOV #LPM4+GIE,&LPM_MODE ; I2C Slave START interrupt works down to LPM4
+    .ELSE
+            MOV #LPM0+GIE,&LPM_MODE ; UART RX interrupt works down to LPM0
+    .ENDIF
     .SWITCH DTC
     .CASE 1
             MOV #xdocol,rDOCOL
@@ -2819,6 +2815,7 @@ RST_INIT
             MOV #32,&CAPS           ; init CAPS ON
             MOV #10,&BASE           ; init decimal base
             MOV @RSP+,PC            ; RET
+;-----------------------------------; 
 
 ; --------------------------------------------------------------------------------
 ; forthMSP430FR : WARM

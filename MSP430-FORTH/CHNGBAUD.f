@@ -26,146 +26,79 @@ MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
-[UNDEFINED] = [IF]
-\ https://forth-standard.org/standard/core/Equal
-\ =      x1 x2 -- flag         test x1=x2
-CODE =
-SUB @PSP+,TOS   \ 2
-0<> IF          \ 2
-    AND #0,TOS  \ 1
-ELSE            \ 2
-    XOR #-1,TOS \ 1 flag Z = 1
-THEN
+[UNDEFINED] DUP [IF]    \ define DUP and DUP?
+\ https://forth-standard.org/standard/core/DUP
+\ DUP      x -- x x      duplicate top of stack
+CODE DUP
+BW1 SUB #2,PSP      \ 2  push old TOS..
+    MOV TOS,0(PSP)  \ 3  ..onto stack
+    MOV @IP+,PC     \ 4
+ENDCODE
+
+\ https://forth-standard.org/standard/core/qDUP
+\ ?DUP     x -- 0 | x x    DUP if nonzero
+CODE ?DUP
+CMP #0,TOS      \ 2  test for TOS nonzero
+0<> ?GOTO BW1   \ 2
 MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
-[UNDEFINED] 0= [IF]
-\ https://forth-standard.org/standard/core/ZeroEqual
-\ 0=     n/u -- flag    return true if TOS=0
-CODE 0=
-SUB #1,TOS      \ borrow (clear cy) if TOS was 0
-SUBC TOS,TOS    \ TOS=-1 if borrow was set
+[UNDEFINED] DROP [IF]
+\ https://forth-standard.org/standard/core/DROP
+\ DROP     x --          drop top of stack
+CODE DROP
+MOV @PSP+,TOS   \ 2
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
+[UNDEFINED] OVER [IF]
+\ https://forth-standard.org/standard/core/OVER
+\ OVER    x1 x2 -- x1 x2 x1
+CODE OVER
+MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
+MOV @PSP,TOS        \ 2 -- x1 (x2) x1
+SUB #2,PSP          \ 1 -- x1 x2 x1
 MOV @IP+,PC
 ENDCODE
 [THEN]
 
-[UNDEFINED] IF [IF]
-\ https://forth-standard.org/standard/core/IF
-\ IF       -- IFadr    initialize conditional forward branch
-CODE IF       \ immediate
-SUB #2,PSP              \
-MOV TOS,0(PSP)          \
-MOV &DP,TOS             \ -- HERE
-ADD #4,&DP            \           compile one word, reserve one word
-MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
-ADD #2,TOS              \ -- HERE+2=IFadr
+[UNDEFINED] @ [IF]
+\ https://forth-standard.org/standard/core/Fetch
+\ @     c-addr -- char   fetch char from memory
+CODE @
+MOV @TOS,TOS
 MOV @IP+,PC
-ENDCODE IMMEDIATE
-
-\ https://forth-standard.org/standard/core/THEN
-\ THEN     IFadr --                resolve forward branch
-CODE THEN               \ immediate
-MOV &DP,0(TOS)          \ -- IFadr
-MOV @PSP+,TOS           \ --
-MOV @IP+,PC
-ENDCODE IMMEDIATE
+ENDCODE
 [THEN]
 
-[UNDEFINED] ELSE [IF]
-\ https://forth-standard.org/standard/core/ELSE
-\ ELSE     IFadr -- ELSEadr        resolve forward IF branch, leave ELSEadr on stack
-CODE ELSE     \ immediate
-ADD #4,&DP              \ make room to compile two words
-MOV &DP,W               \ W=HERE+4
-MOV #BRAN,-4(W)
-MOV W,0(TOS)            \ HERE+4 ==> [IFadr]
-SUB #2,W                \ HERE+2
-MOV W,TOS               \ -- ELSEadr
-MOV @IP+,PC
-ENDCODE IMMEDIATE
+[UNDEFINED] ! [IF]
+\ https://forth-standard.org/standard/core/Store
+\ !        x a-addr --   store cell in memory
+CODE !
+MOV @PSP+,0(TOS)    \ 4
+MOV @PSP+,TOS       \ 2
+MOV @IP+,PC         \ 4
+ENDCODE
 [THEN]
 
-[UNDEFINED] BEGIN [IF]  \ define BEGIN UNTIL AGAIN WHILE REPEAT
-\ https://forth-standard.org/standard/core/BEGIN
-\ BEGIN    -- BEGINadr             initialize backward branch
-CODE BEGIN
-    MOV #HEREADR,PC
-ENDCODE IMMEDIATE
-
-\ https://forth-standard.org/standard/core/UNTIL
-\ UNTIL    BEGINadr --             resolve conditional backward branch
-CODE UNTIL              \ immediate
-    MOV #QFBRAN,X
-BW1 ADD #4,&DP          \ compile two words
-    MOV &DP,W           \ W = HERE
-    MOV X,-4(W)         \ compile Bran or QFBRAN at HERE
-    MOV TOS,-2(W)       \ compile bakcward adr at HERE+2
-    MOV @PSP+,TOS
-    MOV @IP+,PC
-ENDCODE IMMEDIATE
-
-\ https://forth-standard.org/standard/core/AGAIN
-\ AGAIN    BEGINadr --             resolve uncondionnal backward branch
-CODE AGAIN     \ immediate
-MOV #BRAN,X
-GOTO BW1
-ENDCODE IMMEDIATE
-
-\ https://forth-standard.org/standard/core/WHILE
-\ WHILE    BEGINadr -- WHILEadr BEGINadr
-: WHILE     \ immediate
-POSTPONE IF SWAP
-; IMMEDIATE
-
-\ https://forth-standard.org/standard/core/REPEAT
-\ REPEAT   WHILEadr BEGINadr --     resolve WHILE loop
-: REPEAT
-POSTPONE AGAIN POSTPONE THEN
-; IMMEDIATE
+[UNDEFINED] 1+ [IF]
+\ https://forth-standard.org/standard/core/OnePlus
+\ 1+      n1/u1 -- n2/u2       add 1 to TOS
+CODE 1+
+ADD #1,TOS
+MOV @IP+,PC
+ENDCODE
 [THEN]
 
-[UNDEFINED] DO [IF]     \ define DO LOOP +LOOP
-\ https://forth-standard.org/standard/core/DO
-\ DO       -- DOadr   L: -- 0
-CODE DO                 \ immediate
-SUB #2,PSP              \
-MOV TOS,0(PSP)          \
-ADD #2,&DP              \   make room to compile xdo
-MOV &DP,TOS             \ -- HERE+2
-MOV #XDO,-2(TOS)        \   compile xdo
-ADD #2,&LEAVEPTR        \ -- HERE+2     LEAVEPTR+2
-MOV &LEAVEPTR,W         \
-MOV #0,0(W)             \ -- HERE+2     L-- 0
-MOV @IP+,PC
-ENDCODE IMMEDIATE
-
-\ https://forth-standard.org/standard/core/LOOP
-\ LOOP    DOadr --         L-- an an-1 .. a1 0
-CODE LOOP               \ immediate
-    MOV #XLOOP,X
-BW1 ADD #4,&DP          \ make room to compile two words
-    MOV &DP,W
-    MOV X,-4(W)         \ xloop --> HERE
-    MOV TOS,-2(W)       \ DOadr --> HERE+2
-BEGIN                   \ resolve all "leave" adr
-    MOV &LEAVEPTR,TOS   \ -- Adr of top LeaveStack cell
-    SUB #2,&LEAVEPTR    \ --
-    MOV @TOS,TOS        \ -- first LeaveStack value
-    CMP #0,TOS          \ -- = value left by DO ?
-0<> WHILE
-    MOV W,0(TOS)        \ move adr after loop as UNLOOP adr
-REPEAT
-    MOV @PSP+,TOS
-    MOV @IP+,PC
-ENDCODE IMMEDIATE
-
-\ https://forth-standard.org/standard/core/PlusLOOP
-\ +LOOP   adrs --   L-- an an-1 .. a1 0
-CODE +LOOP              \ immediate
-MOV #XPLOOP,X
-GOTO BW1
-ENDCODE IMMEDIATE
+[UNDEFINED] UM/MOD [IF]
+\ https://forth-standard.org/standard/core/UMDivMOD
+\ UM/MOD   udlo|udhi u1 -- r q   unsigned 32/16->r16 q16
+CODE UM/MOD
+    PUSH #DROP      \
+    MOV #MUSMOD,PC  \ execute MUSMOD then return to DROP
+ENDCODE
 [THEN]
 
 [UNDEFINED] >R [IF]
@@ -200,54 +133,27 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
-[UNDEFINED] DROP [IF]
-\ https://forth-standard.org/standard/core/DROP
-\ DROP     x --          drop top of stack
-CODE DROP
-MOV @PSP+,TOS   \ 2
-MOV @IP+,PC     \ 4
-ENDCODE
-[THEN]
-
-[UNDEFINED] ?DUP [IF]
-\ https://forth-standard.org/standard/core/qDUP
-\ ?DUP     x -- 0 | x x    DUP if nonzero
-CODE ?DUP
-CMP #0,TOS      \ 2  test for TOS nonzero
-0<> IF
-    SUB #2,PSP      \ 2  push old TOS..
-    MOV TOS,0(PSP)  \ 3  ..onto stack
+[UNDEFINED] = [IF]
+\ https://forth-standard.org/standard/core/Equal
+\ =      x1 x2 -- flag         test x1=x2
+CODE =
+SUB @PSP+,TOS   \ 2
+0<> IF          \ 2
+    AND #0,TOS  \ 1 flag Z = 1
+ELSE            \ 2
+    XOR #-1,TOS \ 1
 THEN
 MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
-[UNDEFINED] @ [IF]
-\ https://forth-standard.org/standard/core/Fetch
-\ @     c-addr -- char   fetch char from memory
-CODE @
-MOV @TOS,TOS
-MOV @IP+,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] ! [IF]
-\ https://forth-standard.org/standard/core/Store
-\ !        x a-addr --   store cell in memory
-CODE !
-MOV @PSP+,0(TOS)    \ 4
-MOV @PSP+,TOS       \ 2
-MOV @IP+,PC         \ 4
-ENDCODE
-[THEN]
-
-[UNDEFINED] < [IF]
+[UNDEFINED] < [IF]  \ define < and >
 \ https://forth-standard.org/standard/core/less
 \ <      n1 n2 -- flag        test n1<n2, signed
 CODE <
     SUB @PSP+,TOS   \ 1 TOS=n2-n1
     S< ?GOTO FW1    \ 2 signed
-    0<> IF          \
+    0<> IF          \ 2
 BW1     MOV #-1,TOS \ 1 flag Z = 0
     THEN
     MOV @IP+,PC
@@ -263,51 +169,165 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
 ENDCODE
 [THEN]
 
-[UNDEFINED] - [IF]
-\ https://forth-standard.org/standard/core/Minus
-\ -      n1/u1 n2/u2 -- n3/u3      n3 = n1-n2
-CODE -
-SUB @PSP+,TOS   \ 2  -- n2-n1
-XOR #-1,TOS     \ 1
-ADD #1,TOS      \ 1  -- n3 = -(n2-n1) = n1-n2
+[UNDEFINED] IF [IF]
+\ https://forth-standard.org/standard/core/IF
+\ IF       -- IFadr    initialize conditional forward branch
+CODE IF
+SUB #2,PSP          \
+MOV TOS,0(PSP)      \
+MOV &DP,TOS         \ -- HERE
+ADD #4,&DP          \           compile one word, reserve one word
+MOV #QFBRAN,0(TOS)  \ -- HERE   compile QFBRAN
+ADD #2,TOS          \ -- HERE+2=IFadr
 MOV @IP+,PC
-ENDCODE
+ENDCODE IMMEDIATE
+
+\ https://forth-standard.org/standard/core/THEN
+\ THEN     IFadr --                resolve forward branch
+CODE THEN
+MOV &DP,0(TOS)          \ -- IFadr
+MOV @PSP+,TOS           \ --
+MOV @IP+,PC
+ENDCODE IMMEDIATE
 [THEN]
 
-[UNDEFINED] UM/MOD [IF]
-\ https://forth-standard.org/standard/core/UMDivMOD
-\ UM/MOD   udlo|udhi u1 -- r q   unsigned 32/16->r16 q16
-CODE UM/MOD
-    PUSH #DROP      \
-    MOV #MUSMOD,PC  \ execute MUSMOD then return to DROP
-ENDCODE
+[UNDEFINED] ELSE [IF]
+\ https://forth-standard.org/standard/core/ELSE
+\ ELSE     IFadr -- ELSEadr        resolve forward IF branch, leave ELSEadr on stack
+CODE ELSE
+ADD #4,&DP              \ make room to compile two words
+MOV &DP,W               \ W=HERE+4
+MOV #BRAN,-4(W)
+MOV W,0(TOS)            \ HERE+4 ==> [IFadr]
+SUB #2,W                \ HERE+2
+MOV W,TOS               \ -- ELSEadr
+MOV @IP+,PC
+ENDCODE IMMEDIATE
 [THEN]
 
-[UNDEFINED] ESC" [IF]
-\ ESC" <escape sequence>" --    type an escape sequence
-: ESC" $1B POSTPONE LITERAL POSTPONE EMIT POSTPONE S" POSTPONE TYPE ; IMMEDIATE \ "
+[UNDEFINED] DO [IF]     \ define DO LOOP +LOOP
+\ https://forth-standard.org/standard/core/DO
+\ DO       -- DOadr   L: -- 0
+CODE DO
+SUB #2,PSP              \
+MOV TOS,0(PSP)          \
+ADD #2,&DP              \   make room to compile xdo
+MOV &DP,TOS             \ -- HERE+2
+MOV #XDO,-2(TOS)        \   compile xdo
+ADD #2,&LEAVEPTR        \ -- HERE+2     LEAVEPTR+2
+MOV &LEAVEPTR,W         \
+MOV #0,0(W)             \ -- HERE+2     L-- 0
+MOV @IP+,PC
+ENDCODE IMMEDIATE
+
+\ https://forth-standard.org/standard/core/LOOP
+\ LOOP    DOadr --         L-- an an-1 .. a1 0
+CODE LOOP
+    MOV #XLOOP,X
+BW1 ADD #4,&DP          \ make room to compile two words
+    MOV &DP,W
+    MOV X,-4(W)         \ xloop --> HERE
+    MOV TOS,-2(W)       \ DOadr --> HERE+2
+BEGIN                   \ resolve all "leave" adr
+    MOV &LEAVEPTR,TOS   \ -- Adr of top LeaveStack cell
+    SUB #2,&LEAVEPTR    \ --
+    MOV @TOS,TOS        \ -- first LeaveStack value
+    CMP #0,TOS          \ -- = value left by DO ?
+0<> WHILE
+    MOV W,0(TOS)        \ move adr after loop as UNLOOP adr
+REPEAT
+    MOV @PSP+,TOS
+    MOV @IP+,PC
+ENDCODE IMMEDIATE
+
+\ https://forth-standard.org/standard/core/PlusLOOP
+\ +LOOP   adrs --   L-- an an-1 .. a1 0
+CODE +LOOP
+MOV #XPLOOP,X
+GOTO BW1
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] CASE [IF]
+\ https://forth-standard.org/standard/core/CASE
+: CASE 0 ; IMMEDIATE \ -- #of-1 
+
+\ https://forth-standard.org/standard/core/OF
+: OF \ #of-1 -- orgOF #of 
+1+	                    \ count OFs 
+>R	                    \ move off the stack in case the control-flow stack is the data stack. 
+POSTPONE OVER POSTPONE = \ copy and test case value
+POSTPONE IF	            \ add orig to control flow stack 
+POSTPONE DROP	        \ discards case value if = 
+R>	                    \ we can bring count back now 
+; IMMEDIATE 
+
+\ https://forth-standard.org/standard/core/ENDOF
+: ENDOF \ orgOF #of -- orgENDOF #of 
+>R	                    \ move off the stack in case the control-flow stack is the data stack. 
+POSTPONE ELSE 
+R>	                    \ we can bring count back now 
+; IMMEDIATE 
+
+\ https://forth-standard.org/standard/core/ENDCASE
+: ENDCASE \ orgENDOF1..orgENDOFn #of -- 
+POSTPONE DROP
+0 DO 
+    POSTPONE THEN 
+LOOP 
+; IMMEDIATE 
+[THEN]
+
+
+[UNDEFINED] S_ [IF]
+CODE S_             \           Squote alias with blank separator instead quote
+MOV #0,&CAPS        \           turn CAPS OFF
+COLON
+XSQUOTE ,           \           compile run-time code
+$20 WORD            \ -- c-addr (= HERE)
+HI2LO
+MOV.B @TOS,TOS      \ -- len    compile string
+ADD #1,TOS          \ -- len+1
+BIT #1,TOS          \           C = ~Z
+ADDC TOS,&DP        \           store aligned DP
+MOV @PSP+,TOS       \ --
+MOV @RSP+,IP        \           pop paired with push COLON
+MOV #$20,&CAPS      \           turn CAPS ON (default state)
+MOV @IP+,PC         \ NEXT
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] ESC [IF]
+CODE ESC
+CMP #0,&STATEADR
+0= IF MOV @IP+,PC   \ interpret time use is disallowed
+THEN
+COLON          
+$1B                 \ -- char escape
+POSTPONE LITERAL    \ compile-time code : lit $1B  
+POSTPONE EMIT       \ compile-time code : EMIT
+POSTPONE S_         \ compile-time code : S_ <escape_sequence>
+POSTPONE TYPE       \ compile-time code : TYPE
+; IMMEDIATE
 [THEN]
 
 : BAD_MHz
-$20 EMIT 1 ABORT" only for 1,4,8,16,24 MHz MCLK!"
+$20 DUP EMIT 
+        ABORT" only for 1,4,8,16,24 MHz MCLK!"
 ;
 
 : OVR_BAUDS
-$20 EMIT ESC" [7m"   \ set reverse video
-." with MCLK = " FREQ_KHZ @ 0 1000 UM/MOD . DROP
-1 ABORT" MHz? don't dream!"
+$20 DUP EMIT ESC [7m    \ set reverse video
+        ." with MCLK = " FREQ_KHZ @ 0 1000 UM/MOD . DROP
+        ABORT" MHz? don't dream!"
 ;
 
-: <> = 0= ;
-
-: CHNGBAUD                  \ only for 8, 16, 24 MHz
-PWR_STATE                   \ to remove this created word (garbage collector)
+: CHNGBAUD                  \ only for 1, 4, 8, 16, 24 MHz
+PWR_STATE                   \ removes this created word (garbage collector)
 ECHO
 42              \ number of terminal lines   
 0 DO CR LOOP    \ don't erase any line of source
-
-ESC" [1J"     \ erase up (42 empty lines)
-ESC" [H"      \ cursor home
+ESC [H          \ cursor home
 
 FREQ_KHZ @ >R               \ r-- target MCLCK frequency in MHz
 ." target MCLK = " R@ 0 1000 UM/MOD . ." MHz" DROP CR
@@ -327,185 +347,127 @@ FREQ_KHZ @ >R               \ r-- target MCLCK frequency in MHz
 ." your choice: "
 KEY
 
-#48 - ?DUP 0=               \ select 6MBds ?
-IF  ." 6 MBds"              \ add this to the current line
-    R@ #24000 <             \ < 24MHz ?
-    IF  OVR_BAUDS THEN
-    R@ #24000 <>            \ > 24 MHz ?
-    IF  BAD_MHz  THEN       \ yes --> abort
-    $4                      \ TERM_BRW
-    $0                      \ TERM_MCTLW
-ELSE 1 - ?DUP 0=            \ select 5MBds ?
-    IF  ." 5 MBds"
-        R@ #16000 <         \ < 16MHz ?
-        IF  OVR_BAUDS THEN
-        R@ #16000 =         \ 16 MHz ?
-        IF  $3              \ TERM_BRW
-            $2100           \ TERM_MCTLW
-        ELSE R@ #24000 <>
-            IF  BAD_MHz  THEN
-            $4              \ TERM_BRW
-            $EE00           \ TERM_MCTLW
-        THEN
-    ELSE 1 - ?DUP 0=        \ 4MBds ?
-        IF  ." 4 MBds"
-            R@ #16000 <
-            IF  OVR_BAUDS THEN
-            R@ #16000 =
-                IF  $4 $0
-                ELSE R@ #24000 <>
-                    IF  BAD_MHz  THEN
-                    $6 $0
-                THEN
-        ELSE 1 - ?DUP 0=            \ 2457600 ?
-            IF  ." 2457600 Bds"
-                R@ #8000 <           \ < 8MHz ?
-                IF  OVR_BAUDS THEN
-                R@ #8000 =
-                IF  $3 $4400
-                ELSE R@ #16000 =
-                    IF  $6 $AA00
-                    ELSE R@ #24000 <>
-                        IF  BAD_MHz  THEN
-                        $9 $DD00
-                    THEN
-                THEN
-            ELSE 1 - ?DUP 0=                \ 921600 ?
-                IF  ." 921600 Bds"
-                    R@ #4000 <              \ < 4MHz ?
-                    IF  OVR_BAUDS THEN
-                    R@ #4000 =
-                    IF  4 $4900
-                    ELSE R@ #8000 =
-                        IF  8 $D600
-                        ELSE R@ #16000 =
-                            IF  $11 $4A00
-                            ELSE R@ #24000 <>
-                                IF  BAD_MHz  THEN
-                                $1 $00A1
-                            THEN
-                        THEN
-                    THEN
-                ELSE 1 - ?DUP 0=                \ 460800 ?
-                    IF  ." 460800 Bds"
-                        R@ #4000 <
-                        IF  OVR_BAUDS THEN
-                        R@ #4000  =
-                        IF  8 $D600
-                        ELSE R@ #8000  =
-                            IF $11 $4A00
-                            ELSE R@ #16000 =
-                                IF $2 $BB21
-                                ELSE R@ #24000 <>
-                                    IF  BAD_MHz  THEN
-                                    $6 $0001
-                                THEN
-                            THEN
-                        THEN
-                    ELSE 1 - ?DUP 0=                \ 230400 ?
-                        IF  ." 230400 Bds"
-                            R@ #1000 <
-                            IF  OVR_BAUDS THEN
-                            R@ #1000 =
-                            IF  4 $4900
-                            ELSE R@ #4000  =
-                                IF $11 $4A00
-                                ELSE R@ #8000  =
-                                    IF  2 $BB21
-                                    ELSE R@ #16000 =
-                                        IF  4 $5551
-                                        ELSE R@ #24000 <>
-                                            IF  BAD_MHz  THEN
-                                            3 $0241
-                                        THEN
-                                    THEN
-                                THEN
-                            THEN
-                        ELSE 1 - ?DUP 0=                \ 115200 ?
-                            IF  ." 115200 Bds"
-                                R@ #1000  =
-                                IF  8 $D600
-                                ELSE R@ #4000  =
-                                    IF  2 $BB21
-                                    ELSE R@ #8000  =
-                                        IF  4 $5551
-                                        ELSE R@ #16000 =
-                                            IF  8 $F7A1
-                                            ELSE R@ #24000 <>
-                                                IF  BAD_MHz  THEN
-                                                $0D $4901
-                                            THEN
-                                        THEN
-                                    THEN
-                                THEN
-                            ELSE 1 - ?DUP 0=                \ 38400 ?
-                                IF  ." 38400 Bds"
-                                    R@ #1000  =
-                                    IF  $1  $00A1
-                                    ELSE R@ #4000  =
-                                        IF  $6  $2081
-                                        ELSE R@ #8000  =
-                                            IF  $0D $4901
-                                            ELSE R@ #16000 =
-                                                IF  $1A $D601
-                                                ELSE R@ #24000 <>
-                                                    IF  BAD_MHz  THEN
-                                                    $27 $0011
-                                                THEN
-                                            THEN
-                                        THEN
-                                    THEN
-                                ELSE 1 - ?DUP 0=                \ 19200 ?
-                                    IF  ." 19200 Bds"
-                                        R@ #1000  =
-                                        IF  $3  $0241
-                                        ELSE R@ #4000  =
-                                            IF  $0D $4901
-                                            ELSE R@ #8000  =
-                                                IF  $1A $D601
-                                                ELSE R@ #16000 =
-                                                    IF  $34 $4911
-                                                    ELSE R@ #24000 <>
-                                                        IF  BAD_MHz  THEN
-                                                        $4E $0021
-                                                    THEN
-                                                THEN
-                                            THEN
-                                        THEN
-                                    ELSE 8 - ?DUP 0=                \ 9600 ?
-                                        IF  ." 9600 Bds"
-                                            R@ #1000  =
-                                            IF  $6  $2081
-                                            ELSE R@ #4000  =
-                                                IF  $1A $D601
-                                                ELSE R@ #8000  =
-                                                    IF  $34 $4911
-                                                    ELSE R@ #16000 =
-                                                        IF  $68 $D621
-                                                        ELSE R@ #24000 <>
-                                                            IF  BAD_MHz  THEN
-                                                            $9C $0041
-                                                        THEN
-                                                    THEN
-                                                THEN
-                                            THEN
-                                        ELSE                    \ other selected 
-                                            ." abort" CR ABORT
-                                        THEN
-                                    THEN
-                                THEN
-                            THEN
-                        THEN
-                    THEN
-                THEN
+CASE
+#48 OF  ." 6 MBds"           \ add this to the current line
+        R@ CASE
+            #24000 OF $4 $0     ENDOF   \ -- TERM_BRW  TERM_MCTLW
+            DUP 24000 <   
+            IF OVR_BAUDS    \ < 24 MHz --> abort
+            ELSE BAD_MHz    \ other MHz --> abort
             THEN
-        THEN
-    THEN
-THEN
+        ENDCASE
+    ENDOF
+#49 OF  ." 5 MBds"
+        R@ CASE
+            #24000 OF $4 $EE00  ENDOF
+            #16000 OF $3 $2100  ENDOF
+            DUP 16000 <   
+            IF OVR_BAUDS    \ < 16 MHz --> abort
+            ELSE BAD_MHz    \ other MHz --> abort
+            THEN
+        ENDCASE
+    ENDOF
+#50 OF  ." 4 MBds"
+        R@ CASE
+            #24000 OF $6 $0     ENDOF
+            #16000 OF $4 $0     ENDOF
+            DUP 16000 <   
+            IF OVR_BAUDS    \ < 16 MHz --> abort
+            ELSE BAD_MHz    \ other MHz --> abort
+            THEN
+        ENDCASE
+    ENDOF
+#51 OF  ." 2457600 Bds"
+        R@ CASE
+            #24000  OF $9 $DD00 ENDOF
+            #16000  OF $6 $AA00 ENDOF
+            #8000   OF $3 $4400 ENDOF
+            DUP 8000 <   
+            IF OVR_BAUDS    \ < 8 MHz --> abort
+            ELSE BAD_MHz    \ other MHz --> abort
+            THEN
+        ENDCASE
+    ENDOF
+#52 OF  ." 921600 Bds"
+        R@ CASE
+            #24000  OF $1 $00A1     ENDOF
+            #16000  OF $11 $4A00    ENDOF
+            #8000   OF $8 $D600     ENDOF
+            #4000   OF $4 $4900     ENDOF
+            DUP 4000 <   
+            IF OVR_BAUDS    \ < 4 MHz --> abort
+            ELSE BAD_MHz    \ other MHz --> abort
+            THEN
+        ENDCASE
+    ENDOF
+#53 OF  ." 460800 Bds"
+        R@ CASE
+            #24000  OF $6 $0001     ENDOF
+            #16000  OF $2 $BB21     ENDOF
+            #8000   OF $11 $4A00    ENDOF
+            #4000   OF $8 $D600     ENDOF
+            DUP 4000 <   
+            IF OVR_BAUDS    \ < 4 MHz --> abort
+            ELSE BAD_MHz    \ other MHz --> abort
+            THEN
+        ENDCASE
+    ENDOF
+#54 OF  ." 230400 Bds"
+        R@ CASE
+            #24000  OF $3 $0241     ENDOF
+            #16000  OF $4 $5551     ENDOF
+            #8000   OF $2 $BB21     ENDOF
+            #4000   OF $11 $4A00    ENDOF
+            #1000   OF $4 $4900     ENDOF
+            BAD_MHz    \ other MHz --> abort
+        ENDCASE
+    ENDOF
+#55 OF  ." 115200 Bds"
+        R@ CASE
+            #24000  OF $0D $4901    ENDOF
+            #16000  OF $8 $F7A1     ENDOF
+            #8000   OF $4 $5551     ENDOF
+            #4000   OF $2 $BB21     ENDOF
+            #1000   OF $8 $D600     ENDOF
+            BAD_MHz    \ other MHz --> abort
+        ENDCASE
+    ENDOF
+#56 OF  ." 38400 Bds"
+        R@ CASE
+            #24000  OF $27 $0011    ENDOF
+            #16000  OF $1A $D601    ENDOF
+            #8000   OF $0D $4901    ENDOF
+            #4000   OF $6 $2081     ENDOF
+            #1000   OF $1 $00A1     ENDOF
+            BAD_MHz    \ other MHz --> abort
+        ENDCASE
+    ENDOF
+#57 OF  ." 19200 Bds"
+        R@ CASE
+            #24000  OF $4E $0021    ENDOF
+            #16000  OF $34 $4911    ENDOF
+            #8000   OF $1A $D601    ENDOF
+            #4000   OF $0D $4901    ENDOF
+            #1000   OF $3 $0241     ENDOF
+            BAD_MHz    \ other MHz --> abort
+        ENDCASE
+    ENDOF
+#65 OF  ." 9600 Bds"
+        R@ CASE
+            #24000  OF $9C $0041    ENDOF
+            #16000  OF $68 $D621    ENDOF
+            #8000   OF $34 $4911    ENDOF
+            #4000   OF $1A $D601    ENDOF
+            #1000   OF $6 $2081     ENDOF
+            BAD_MHz    \ other MHz --> abort
+        ENDCASE
+    ENDOF
+    ." abort" CR ABORT
+ENDCASE
 TERMMCTLW_RST !             \ set UCAxMCTLW value in FRAM
 TERMBRW_RST !               \ set UCAxBRW value in FRAM
 R> DROP                     \ clear stacks
-CR ESC" [7m"                \ escape sequence to set reverse video
+CR ESC [7m                  \ escape sequence to set reverse video
 ." Change baudrate in Teraterm, save its setup, then reset target."
 ;
 

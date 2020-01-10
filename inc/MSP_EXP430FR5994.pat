@@ -154,8 +154,8 @@ TERM_IE=\$21B!
 TERM_IFG=\$21D!
 BUS_TERM=3!         ; P2.0 = TX, P2.1 = RX
 
-Deep_RST_IN=\$201!  ; TERMINAL TX  pin as FORTH Deep_RST
-Deep_RST=1!         ; P2.0 = TX
+Deep_RST_IN=\$240!  ; pin as FORTH Deep_RST
+Deep_RST=\$40!      ; P5.6 = S1
 
 TERM_CTLW0=\$5C0!    \ eUSCI_A0 control word 0        
 TERM_CTLW1=\$5C2!    \ eUSCI_A0 control word 1        
@@ -178,10 +178,10 @@ CTS=2!              ; P4.1
 HANDSHAKIN=\$221!
 HANDSHAKOUT=\$223!
 
-SD_CD=4!            ; P7.2 as SD_CD
+CD_SD=4!            ; P7.2 as Card Detect
 SD_CDIN=\$260!
 
-SD_CS=1!            ; P4.0 as SD_CS     
+CS_SD=1!            ; P4.0 as Card Select     
 SD_CSOUT=\$223!
 SD_CSDIR=\$225!
 
@@ -215,10 +215,12 @@ SD_IV=\$66E!       \ eUSCI_B0 interrupt vector word
 ! APPLICATION I/O :
 ! ============================================
 LED1_OUT=\$202!
-led1=1!                 P1.0
+LED1_DIR=\$204!
+LED1=1!                 P1.0
 
 LED2_OUT=\$202!
-led2=2!                 P1.1
+LED2_DIR=\$204!
+LED2=2!                 P1.1
 
 SW1_IN=\$240!
 SW1=\$40!               P5.6

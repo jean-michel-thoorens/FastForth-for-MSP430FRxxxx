@@ -270,26 +270,26 @@ BSL_PASSWORD=\$FFE0!    256 bits
 VECT_ORG=\$FFD8!        FFD8-FFFF
 VECT_LEN=\$28!
 
-CAPTIVATE_Vec=\$FFD8!
-P2_Vec=\$FFDA!
-P1_Vec=\$FFDC!
-ADC10_B_Vec=\$FFDE!
-eUSCI_B0_Vec=\$FFE0!
-eUSCI_A1_Vec=\$FFE2!
-eUSCI_A0_Vec=\$FFE4!
-WDT_Vec=\$FFE6!
-RTC_Vec=\$FFE8!
-TA3_x_Vec=\$FFEA!
-TA3_0_Vec=\$FFEC!
-TA2_x_Vec=\$FFEE!
-TA2_0_Vec=\$FFF0!
-TA1_x_Vec=\$FFF2!
-TA1_0_Vec=\$FFF4!
-TA0_x_Vec=\$FFF6!
-TA0_0_Vec=\$FFF8!
-U_NMI_Vec=\$FFFA!
-S_NMI_Vec=\$FFFC!
-RST_Vec=\$FFFE!
+CAPTIVATE_VEC=\$FFD8!
+P2_VEC=\$FFDA!
+P1_VEC=\$FFDC!
+ADC10_B_VEC=\$FFDE!
+EUSCI_B0_VEC=\$FFE0!
+EUSCI_A1_VEC=\$FFE2!
+EUSCI_A0_VEC=\$FFE4!
+WDT_VEC=\$FFE6!
+RTC_VEC=\$FFE8!
+TA3_X_VEC=\$FFEA!
+TA3_0_VEC=\$FFEC!
+TA2_X_VEC=\$FFEE!
+TA2_0_VEC=\$FFF0!
+TA1_X_VEC=\$FFF2!
+TA1_0_VEC=\$FFF4!
+TA0_X_VEC=\$FFF6!
+TA0_0_VEC=\$FFF8!
+U_NMI_VEC=\$FFFA!
+S_NMI_VEC=\$FFFC!
+RST_VEC=\$FFFE!
 
 ! ============================================
 ! Special Fonction Registers (SFR)

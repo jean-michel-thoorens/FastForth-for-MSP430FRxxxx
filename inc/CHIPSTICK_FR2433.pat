@@ -171,13 +171,14 @@ SSCL=\$80!          P1.3
 S_BUS=\$C0!
 
 
-SD_CD=8!        ; P2.3 as SD_CD
-SD_CS=4!        ; P2.2 as SD_CS     
+CD_SD=8!        ; P2.3 as Card Detect
 SD_CDIN=\$201!
+
+CS_SD=4!        ; P2.2 as Card Select     
 SD_CSOUT=\$203!
 SD_CSDIR=\$205!
 
+BUS_SD=\$0E!    ; pins P1.1 as UCB0CLK, P1.2 as UCB0SIMO & P1.3 as UCB0SOMI
 SD_SEL=\$20A!   ; PASEL0 to configure UCB0
 SD_REN=\$206!   ; to configure pullup resistors
-SD_BUS=\$0E!    ; pins P1.1 as UCB0CLK, P1.2 as UCB0SIMO & P1.3 as UCB0SOMI
 

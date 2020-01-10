@@ -207,9 +207,6 @@ RXD         .equ    2          ; P2.1 = RXD
 BUS_TERM    .equ    3
     .ENDIF
 
-WIPE_IN     .equ    P4IN
-IO_WIPE     .equ    1           ; P4.0 = FORTH Deep_RST pin
-
     .IFDEF UCA1_SD
 SD_SEL      .equ    PASEL1     ; to configure UCB0
 SD_REN      .equ    PAREN      ; to configure pullup resistors
@@ -262,8 +259,15 @@ CTS         .equ    8           ; P2.3
 ; P4.0 Switch S1
 ; P4.1 switch S2
 
-SWITCHIN    .equ P4IN
-S1          .equ 1
+SW1_IN      .equ P4IN
+SW1         .equ 1          ; P4.0 = S1
+
+WIPE_IN     .equ    P4IN
+IO_WIPE     .equ    1       ; P4.0 = S1 = FORTH Deep_RST pin
+
+SW2_IN      .equ P4IN
+SW2         .equ 2          ; P4.1 = S2
+
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
@@ -279,6 +283,14 @@ S1          .equ 1
 
 ; PJ FastForth usage
 ; PJ.0 to PJ.3 are  blues LEDs : set as output low = OFF
+
+LED1_OUT    .equ    PJOUT
+LED1_DIR    .equ    PJDIR
+LED1        .equ    1           ;  PJ.0 LED1 blue
+
+LED2_OUT    .equ    PJOUT
+LED2_DIR    .equ    PJDIR
+LED2        .equ    2           ;  PJ.1 LED2 blue
 
 ; PORTx default wanted state : pins as input with pullup resistor else leds output low
 

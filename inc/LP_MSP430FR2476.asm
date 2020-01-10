@@ -118,15 +118,17 @@
 ; reset state : Px{DIR,REN,SEL0,SEL1,SELC,IE,IFG,IV} = 0 ; Px{IN,OUT,IES} = ?
 
 ; PORT1 usage
-; P1.0 - LED1 green   output low
+; P1.0 - green LED2
+
+LED2_OUT    .equ    P1OUT
+LED2_DIR    .equ    P1DIR
+LED2        .equ    1
+
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
             BIS     #-1,&PAREN      ; all pins with pull up/down resistors
             MOV     #0FFFEh,&PAOUT  ; all pins with pull up resistors  else P1.0 (LED2)
-
-WIPE_IN     .equ    P4IN
-IO_WIPE     .equ    1       ; P4.0 = S1 = FORTH Deep_RST pin
 
     .IFDEF UCA0_TERM
 ; P1.4  UCA0-TXD    --> USB2UART RXD    
@@ -139,17 +141,22 @@ RXD         .equ 20h      ; P1.5 = RX
 BUS_TERM    .equ 30h
     .ENDIF
 
+CD_SD       .equ 080h   ; P1.7 as Card Detect
 SD_CDIN     .equ P1IN
+
+CS_SD       .equ 040h   ; P1.6 as Card Select 
 SD_CSOUT    .equ P1OUT
 SD_CSDIR    .equ P1DIR
-CD_SD       .equ 080h   ; P1.7 as CD_SD
-CS_SD       .equ 040h   ; P1.6 as CS_SD     
 
     .IFDEF UCA1_SD
+BUS_SD      .equ 7000h  ; pins P2.4 as UCA1CLK, P2.6 as UCA1SIMO & P2.5 as UCA1SOMI
 SD_SEL      .equ PASEL0 ; to configure UCA1
 SD_REN      .equ PAREN  ; to configure pullup resistors
-BUS_SD      .equ 7000h  ; pins P2.4 as UCA1CLK, P2.6 as UCA1SIMO & P2.5 as UCA1SOMI
     .ENDIF
+
+; P2.3/TA2.0/CAP0.2                 - S2 
+SW2_IN      .equ    P2IN
+SW2         .equ    8
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4
@@ -171,6 +178,11 @@ BUS_TERM    .equ    0Ch     ; P3.2=SDA P3.3=SCL
 ; PORT4 usage
 
 ; S1 - P4.0
+SW1_IN      .equ    P4IN
+SW1         .equ    1       ; P4.0 = S1
+WIPE_IN     .equ    P4IN
+IO_WIPE     .equ    1       ; P4.0 = S1 = FORTH Deep_RST pin
+
 
 ; LED2B - J8 - P4.7
 
@@ -181,8 +193,12 @@ BUS_TERM    .equ    0Ch     ; P3.2=SDA P3.3=SCL
 
 ; PORT5 usage
 
-; LED2R - J8 - P5.1  red LED
+; LED2R - J8 - P5.1  red LED1
 ; LED2G - J8 - P5.0
+
+LED1_OUT    .equ P5OUT
+LED1_DIR    .equ P5DIR
+LED1        .equ 2
 
 ; PORT6 usage
 

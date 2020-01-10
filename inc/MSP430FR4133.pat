@@ -266,21 +266,21 @@ BSL_PASSWORD=\$FFE0!    256 bits
 VECT_ORG=\$FFE2!         FFE2-FFFF
 VECT_LEN=\$1E!
 
-LCD_Vec=\$FFE2!
-P2_Vec=\$FFE4!
-P1_Vec=\$FFE6!
-ADC10_B_Vec=\$FFE8!
-eUSCI_B0_Vec=\$FFEA!
-eUSCI_A0_Vec=\$FFEC!
-WDT_Vec=\$FFEE!
-RTC_Vec=\$FFF0!
-TA1_x_Vec=\$FFF2!
-TA1_0_Vec=\$FFF4!
-TA0_x_Vec=\$FFF6!
-TA0_0_Vec=\$FFF8!
-U_NMI_Vec=\$FFFA!
-S_NMI_Vec=\$FFFC!
-RST_Vec=\$FFFE!
+LCD_VEC=\$FFE2!
+P2_VEC=\$FFE4!
+P1_VEC=\$FFE6!
+ADC10_B_VEC=\$FFE8!
+EUSCI_B0_VEC=\$FFEA!
+EUSCI_A0_VEC=\$FFEC!
+WDT_VEC=\$FFEE!
+RTC_VEC=\$FFF0!
+TA1_X_VEC=\$FFF2!
+TA1_0_VEC=\$FFF4!
+TA0_X_VEC=\$FFF6!
+TA0_0_VEC=\$FFF8!
+U_NMI_VEC=\$FFFA!
+S_NMI_VEC=\$FFFC!
+RST_VEC=\$FFFE!
 
 ! ============================================
 ! Special Fonction Registers (SFR)

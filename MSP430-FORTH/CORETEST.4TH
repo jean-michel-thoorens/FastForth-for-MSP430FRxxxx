@@ -1,7 +1,7 @@
 
 PWR_STATE
 
-: ANSCOMPNOTFOUND
+: COMPNOTFOUND
 $0D EMIT   \ return to column 1
 1 ABORT" {CORE_ANS} word set not found!"
 ;
@@ -1089,9 +1089,6 @@ CR .( End of Core word set tests)
 
 CORETESTSUCCESS
 
-[ELSE]
-
-ECHO
-ANSCOMPNOTFOUND \               download CORECOMP.f before CORETEST.4TH
+[ELSE] ECHO COMPNOTFOUND \  download CORE_ANS.f before CORETEST.4TH
 
 [THEN]

@@ -178,15 +178,15 @@ DisplaySector
 ; ----------------------------------;
             FORTHWORD "CLUSTER"     ; cluster.  --         don't forget to add decimal point to your sector number (if < 65536)
 ; ----------------------------------;
-CLUSTER
-            MOV.B &SecPerClus,W     ; SecPerClus(54321) = multiplicator
+CLUSTER     BIT.B #CD_SD,&SD_CDIN   ; test Card Detect: memory card present ?
+            JZ CD_CLUST_OK          ;
+            MOV #COLD,PC            ; no: force COLD
+CD_CLUST_OK MOV.B &SecPerClus,W     ; SecPerClus(54321) = multiplicator
             MOV @PSP,X              ; X = ClusterL
             JMP CLUSTER1            ;
-CLUSTERLOOP     
-            ADD X,X                 ; (RLA) shift one left MULTIPLICANDlo16
+CLUSTERLOOP ADD X,X                 ; (RLA) shift one left MULTIPLICANDlo16
             ADDC TOS,TOS            ; (RLC) shift one left MULTIPLICANDhi8
-CLUSTER1        
-            RRA W                   ; shift one right multiplicator
+CLUSTER1    RRA W                   ; shift one right multiplicator
             JNC CLUSTERLOOP         ; if not carry
             ADD &OrgClusters,X      ; add OrgClusters = sector of virtual cluster 0 (word size)
             MOV X,0(PSP)            

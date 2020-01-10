@@ -525,6 +525,7 @@ POSTPONE TYPE       \ compile-time code : TYPE
 ; IMMEDIATE
 [THEN]
 
+
 : SPECS             \ to see Fast Forth specifications
 PWR_STATE           \ before free bytes computing, remove all created words 
 ECHO
@@ -629,6 +630,7 @@ KERNEL_ADDON @
     [DEFINED] {CORDIC}    [IF] ." CORDIC engine" CR [THEN]
     [DEFINED] {SD_TOOLS}  [IF] ." SD_TOOLS" CR [THEN]
     [DEFINED] {RTC}       [IF] ." RTC utility" CR [THEN]
+    [DEFINED] {FF_I2C}    [IF] ." I2C TERMINAL bridge" CR [THEN]
 
     [DEFINED] VOCABULARY  [IF] 
         CR 

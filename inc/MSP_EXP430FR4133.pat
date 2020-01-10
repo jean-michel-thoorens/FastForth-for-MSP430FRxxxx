@@ -230,16 +230,20 @@ HANDSHAKOUT=\$203!
 !----
 invert LED numbers because LED1=TXD !
 LED2_OUT=\$202!
+LED2_DIR=\$204!
 LED2=\$01!          P1.0 red LED
 LED1_OUT=\$223!
-LED1=\$01!          P4.0 green LED
+LED1_DIR=\$225!
+LED1=\$01!          P4.0 green LED, warning ! wired with UART RX !
 
 !switches
 !--------
 SW1_IN=\$200!
-SW1=\$04!           P1.2 SW1
+SW1=\$04!           P1.2 = S1
+WIPE_IN=\$200!
+IO_WIPE=\$04!       P1.2 = S1 = FORTH Deep_RST pin
 SW2_IN=\$201!
-SW2=\$40!           P2.6 SW2
+SW2=\$40!           P2.6 = S2
 
 !LCD Vo driver
 !-------------
@@ -377,13 +381,14 @@ I2CS_IE=\$56A!      USCI_B0 Interrupt Enable
 I2CS_IFG=\$56C!     USCI_B0 Interrupt Flags Register
 
 
-SD_CS=2!        ; P8.1 as SD_CS     
-SD_CD=1!        ; P8.0 as SD_CD
+CD_SD=2!        ; P8.1 as Card Detect     
 SD_CDIN=\$261!
+
+CS_SD=1!        ; P8.0 as Card Select
 SD_CSOUT=\$263!
 SD_CSDIR=\$265!
 
+BUS_SD=\$000E!  ; pins P5.1 as UCB0CLK, P5.2 as UCB0SIMO & P5.3 as UCB0SOMI
 SD_SEL=\$24A!   ; PCSEL0 to configure UCB0
 SD_REN=\$246!   ; PCREN to configure pullup resistors
-SD_BUS=\$000E!  ; pins P5.1 as UCB0CLK, P5.2 as UCB0SIMO & P5.3 as UCB0SOMI
 

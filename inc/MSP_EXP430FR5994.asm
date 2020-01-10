@@ -138,6 +138,12 @@
 ; PORT1 FastForth usage
 ; P1.0    - led1 red
 ; P1.1    - led2 green
+LED1_OUT    .equ P1OUT
+LED1_DIR    .equ P1DIR
+LED2_OUT    .equ P1OUT
+LED2_DIR    .equ P1DIR
+LED1        .equ 1
+LED2        .equ 2
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
@@ -215,9 +221,10 @@ CTS         .equ    2           ; P4.1
 ; PORT5 FastForth usage
 ; P5.6 Switch S1
 ; P5.5 Switch S2
-SWITCHIN    .set P5IN    ; port
-S1          .set 040h    ; P5.6 bit position
-S2          .set 020h    ; P5.5 bit position
+SW1_IN      .set P5IN    ; port
+SW1         .set 040h    ; P5.6 bit position
+SW2_IN      .set P5IN    ; port
+SW2         .set 020h    ; P5.5 bit position
 
 WIPE_IN     .equ    P5IN
 IO_WIPE     .equ    40h ; P5.6 = S1 = FORTH Deep_RST pin

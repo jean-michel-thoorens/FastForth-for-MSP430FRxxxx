@@ -33,7 +33,6 @@
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
-
 [DEFINED] {CORDIC} [IF] {CORDIC} [THEN]
 
 MARKER {CORDIC}

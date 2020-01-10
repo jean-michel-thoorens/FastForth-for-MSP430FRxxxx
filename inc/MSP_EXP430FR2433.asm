@@ -112,11 +112,11 @@
 
 LED1_OUT    .equ    202h
 LED1_DIR    .equ    204h
-LED1        .equ    1           ;  P1.0
+LED1        .equ    1           ;  P1.0 LED1 red
 
 LED2_OUT    .equ    202h
 LED2_DIR    .equ    204h
-LED2        .equ    2           ;  P1.1
+LED2        .equ    2           ;  P1.1 LED2 green
 
 HANDSHAKOUT .equ    P1OUT
 HANDSHAKIN  .equ    P1IN
@@ -172,6 +172,9 @@ I2CT_SLA_DIR    .equ   P2DIR
 I2CT_SLA_REN    .equ   P2REN
 I2CT_SLA_BUS    .equ   07h      ; P2.0 P2.1 P2.2
 
+SW1_IN      .equ    P2IN
+SW1         .equ    8           ; P2.3 = S1
+
 WIPE_IN     .equ    P2IN
 IO_WIPE     .equ    8           ; P2.3 = S1 = FORTH Deep_RST pin
 
@@ -188,6 +191,9 @@ IO_WIPE     .equ    8           ; P2.3 = S1 = FORTH Deep_RST pin
             BIC.B #CTS,&P1OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
     .ENDIF  ; TERMINAL4WIRES
+
+SW2_IN      .equ    P2IN
+SW2         .equ    80h         ; P2.7 = S2
 
 
 ; ----------------------------------------------------------------------

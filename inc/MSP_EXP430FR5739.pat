@@ -198,10 +198,13 @@ LED2_OUT=\$322!
 LED2=\$02!              PJ.1
 
 SW1_IN=\$221!
-SW1=\$01!               P4.0
+SW1=\$01!               P4.0 = S1
+
+WIPE_IN=\$221!
+IO_WIPE=\$01!           P4.0 = S1 = = FORTH Deep_RST pin
 
 SW2_IN=\$221!
-SW2=\$02!               P4.1
+SW2=\$02!               P4.1 = S2
 
 LCDVo_DIR=\$204!
 LCDVo_SEL=\$20A!        SEL0
@@ -297,6 +300,17 @@ SSDA=\$40!              P1.6
 SSCL=\$80!              P1.7
 S_BUS=\$C0
 
+LED1_OUT=\$322!
+LED1_DIR=\$324!
+LED1=1!         PJ.0 LED1 BLUE
+
+LED2_OUT=\$322!
+LED2_DIR=\$324!
+LED2=2!         PJ.1 LED2 BLUE
+
+
+
+
 UCSWRST=1!          eUSCI Software Reset
 UCTXIE=2!           eUSCI Transmit Interrupt Enable
 UCRXIE=1!           eUSCI Receive Interrupt Enable
@@ -334,14 +348,15 @@ I2CS_IE=\$66A!      USCI_B0 Interrupt Enable
 I2CS_IFG=\$66C!     USCI_B0 Interrupt Flags Register
 
 
-SD_CD=4!                P2.2 as SD_CD
-SD_CS=8!                P2.3 as SD_CS     
+CD_SD=4!                P2.2 as Card Detect
 SD_CDIN=\$201!
+
+CS_SD=8!                P2.3 as Card Select     
 SD_CSOUT=\$203!
 SD_CSDIR=\$205!
 
+BUS_SD=\$70!            pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
 SD_SEL=\$20D!           to configure UCB0
 SD_REN=\$207!           to configure pullup resistors
-SD_BUS=\$70!            pins P2.4 as UCB0CLK, P2.5 as UCB0SIMO & P2.6 as UCB0SOMI
 
 

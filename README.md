@@ -64,54 +64,10 @@ With all kernel addons, including extended\_ASM and SD\_Card driver, FastForth s
 What is new ?
 -------------
 
-V303
+V304
 
-    -34 bytes.
+    -36 bytes.
     
-    A newcomer: FastForth for I2C TERMINAL. With the driver UART2I2CS running on another FastForth target,
-    we have the USB to I2C_Slave bridge we need:
-    only one TERMINAL to interact with all FastForth targets connected to an I2C network.
-    
-    The speed of bus I2C is about 450 kHz, pullup resistors on SDA and SCL are 3.3k.
-    Coretest.4th is downloaded in 1,6s when both Master and slave targets run @ 16MHz.
-    All works fine, else copy a file to I2C target SD card.
-
-    And you must change baudrate to 921600 Bds or higher for Master running @ 8MHz or higher.
-    
-    "Cherry on the pudding", when they wait for a TERMINAL input, both I2C_Master and I2C_Slave(s)
-    are sleeping in LPMx mode and the bus I2C is freed. 
-    Sleep modes LPM0 to LPM4 are available for I2C_Slave target.
-    
-    The driver UART2I2CS doesn't use the UCBx I2C_Master, really too bad, but
-    profitably its software version used here, faster, consumes just two I/O (better in the range Px0-Px3),
-    the UCBx remaining available typically for another I2C_Slave or SPI driver.
-
-    the Multi Master Mode is not tested.
-
-
-        notebook                                 USB to I2C_Master bridge                                     any I2C_slave
-    +---------------+         +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - --+
-    |               |         |   PL2303HXD               master running UART2I2CS @ 16MHz |
-    |               |         +---------------+           +--------------------------------+         +-------------------------------+
-    |               |         |               |           |                                |         |                               |
-    |   TERATERM   -o--> USB -o--> USB2UART --o--> UART --o--> FAST FORTH ---> UART2I2CS --o--> I2C -o--> FAST FORTH with kernel     |
-    |   terminal    |         |               | 921600Bds |                                |  450kHz |     option TERMINAL_I2C       |
-    |               |         +---------------+           +--------------------------------+         +-------------------------------+
-    |               |         |                                                            | 
-    +---------------+         +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - --+
-    
-
-    to compile FastForth for I2C TERMINAL: 
-    1-  uncomment the line "TERMINAL_I2C" in forthMSP430FR.asm.
-    2-  I2CSLAVEADR  .word <slave address you want>
-    3-  compile for your I2C_Slave target.
-    
-    modify the last operate line of /MSP430-FORTH/UART2I2CS.f with your <slave address you want> 
-    before downloading it to your target used as I2C_Master.
-    Once the driver UART2I2CS is running, you can send source files to any I2C_Slave targets.
-    Type Alt+B on teraterm (send UART break) to quit UART2I2CS.
-
-
     for kernel compiling use the last version of srecord (1.64) to enable overlapping in vectors area.
     
     The forthMSP430FR.lst output file is more readable because purged of all unused conditionnal parts.
@@ -124,12 +80,63 @@ V303
     
     The new option DEFERRED replaces old NONAME one and compile :NONAME CODENNM DEFER IS.
     
-    pin RESET is software replaced by pin NMI, RESET executes COLD allowing code insert before BOR.
+    pin RESET is software replaced by pin NMI and so, RESET executes COLD, allowing code insert before BOR.
     however SYSRSTIV numbering remains unchanged: = 4 for RESET, = 6 for COLD.
     
     Instead of WIPE, Deep RESET reinitializes vectors interrupts and SIGNATURES area.
     
     Fast Forth Deep RESET is done by switches S1 + RST.
+
+
+    A newcomer: FastForth for I2C TERMINAL. With the driver UART2I2CS running on another FastForth target,
+    we have the USB to I2C_Slave bridge we need:
+    only one TERMINAL to interact with all FastForth targets connected to an I2C network.
+    
+        notebook                                 USB to I2C_Master bridge                                     any I2C_slave
+    +---------------+         +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - --+
+    |               |         |   PL2303HXD               master running UART2I2CS @ 16MHz |
+    |               |         +---------------+           +--------------------------------+         +-------------------------------+
+    |               |         |               |           |                                |         |                               |
+    |   TERATERM   -o--> USB -o--> USB2UART --o--> UART --o--> FAST FORTH ---> UART2I2CS --o--> I2C -o--> FAST FORTH with kernel     |
+    |   terminal    |         |               |2457600Bds |                                |  450kHz |  option TERMINAL_I2C @ 16MHz  |
+    |               |         +---------------+           +--------------------------------+         +-------------------------------+
+    |               |         |                                                            | 
+    +---------------+         +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - --+
+    
+    With the indicated MCLK and UART speeds, Coretest.4th is downloaded (and executed) to I2C_Slave in 1,1s.
+    All works fine, from 1MHz up to 24MHz MCLK and from 115200Bds up to 2457600Bds UART.
+
+    the copy of a file to I2C target SD_Card doesn't work.
+
+    the Multi Master Mode works but is not tested in multi master environment.
+
+    "Cherry on the pudding", when they wait for a TERMINAL input (idle state), 
+    both I2C_Master and I2C_Slave(s) are sleeping in LPMx mode and the bus I2C is freed. 
+    Sleep modes down to LPM4 are available for I2C_Slave devices.
+    
+    The driver UART2I2CS doesn't use the UCBx I2C_Master hardware, really too bad, but
+    profitably its software version, faster, which consumes just two I/O (better in the range Px0-Px3),
+    the UCBx remaining available typically for an I2C_Slave or SPI driver.
+
+    if you are uncomfortable with the flashing of leds,
+    comment on their lines in the files forthMSP430FR_TERM_I2C.asm and MSP430-FORTH/UART2I2CS.f". 
+
+
+    HOW TO DO ?
+
+    first you make a I2C cable (GND,SDA,SCL,3V3) between your 2 LaunchPad, with 3,3k pullup resistors on SDA and SCL lines.
+
+    to compile FastForth for I2C TERMINAL from forthMSP430FR.asm file:
+    1-  uncomment the line "TERMINAL_I2C".
+    2-  search "I2CSLAVEADR" line and set your <slave address you want>, i.e. 10h.
+    3-  compile file then prog your I2C_Slave LaunchPad.
+    
+    with the another LaunchPad running FastForth:
+    At line 610 of UART2I2CS.f file set the <slave address you want>, i.e. $10.
+    then download it, it's done: TERMINAL is linked to I2C_Slave.
+    
+    Type Alt+B on teraterm (send UART break) to unlink I2C_Slave.
+
 
 V302
 

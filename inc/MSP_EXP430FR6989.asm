@@ -244,13 +244,20 @@ BUS_SD      .equ 0700h  ; pins P2.2 as UCA0CLK, P2.0 as UCA0SIMO & P2.1 as UCA0S
 
 ; PORT1 usage
 ; P1.0 - LED1 red   output low
+LED1_OUT    .equ    P1OUT
+LED1_DIR    .equ    P1DIR
+LED1        .equ    1       ;  P1.0 LED1 red
+
 ; P1.1 - Switch S1
-; P1.2 - Switch S2
-SWITCHIN    .set P1IN       ; port
-S1          .set 2          ; P1.1 bit position
+SW1_IN      .set P1IN       ; port
+SW1         .set 2          ; P1.1 = S1
 
 WIPE_IN     .equ    P1IN
 IO_WIPE     .equ    2       ; P1.1 = S1 = FORTH Deep_RST pin
+
+; P1.2 - Switch S2
+SW2_IN      .set P1IN       ; port
+SW2         .set 4          ; P1.2 = S2
 
 ; P1.6 -UCB0 SDA/SIMO   J2.15   <---> SDA hardware I2C Master or Slave
 ; P1.7 -UCB0 SCL/SOMI   J2.14   ----> SCL hardware I2C Master or Slave
@@ -362,6 +369,10 @@ BUS_TERM    .equ    30h    ; P3.5 = RX
 
 ; PORT9 usage
 ; P9.7 Green LED2 as output low
+LED2_OUT    .equ    P9OUT
+LED2_DIR    .equ    P9DIR
+LED2        .equ    80h        ;  P9.7 LED2 green
+
 
 ; PORT10 usage
     

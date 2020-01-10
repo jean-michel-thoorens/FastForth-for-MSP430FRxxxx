@@ -190,14 +190,17 @@ HANDSHAKOUT=\$203!
 ! ============================================
 LED1_OUT=\$202!
 LED1_DIR=\$204!
-LED1=1!                 P1.0
+LED1=1!                 P1.0 LED1 red
 
 LED2_OUT=\$243!
 LED2_DIR=\$245!
-LED2=\$40!              P6.6
+LED2=\$40!              P6.6 LED2 green
 
 SW1_IN=\$221!
-SW1=2!                  P4.1    
+SW1=2!                  P4.1 = S1 
+
+WIPE_IN=\$221!
+WIPE=2!                 P4.1 = S1 = FORTH Deep_RST pin    
 
 SW2_IN=\$201!
 SW2=8!                  P2.3
@@ -342,14 +345,15 @@ I2CS_I2CSA=\$560!   USCI_B0 I2C Slave Address
 I2CS_IE=\$56A!      USCI_B0 Interrupt Enable
 I2CS_IFG=\$56C!     USCI_B0 Interrupt Flags Register
 
-SD_CD=\$10!             P4.4 as SD_CD
+CD_SD=\$10!             P4.4 as Card Detect
 SD_CDIN=\$221!
-SD_CS=\$20!             P2.5 as SD_CS     
+
+CS_SD=\$20!             P2.5 as Card Select     
 SD_CSOUT=\$203!
 SD_CSDIR=\$205!
 
+BUS_SD=\$7000!          pins P4.5 as UCB1CLK, P4.6 as UCB1SIMO & P4.7 as UCB1SOMI
 SD_SEL=\$22B!           P4SEL0 to configure UCB1
 SD_REN=\$227!           P4REN to configure pullup resistors
-SD_BUS=\$7000!          pins P4.5 as UCB1CLK, P4.6 as UCB1SIMO & P4.7 as UCB1SOMI
 
 

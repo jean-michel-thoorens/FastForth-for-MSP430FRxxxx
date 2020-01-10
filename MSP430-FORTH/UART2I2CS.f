@@ -21,12 +21,14 @@
 ; ----------------------------------------------------------------------
 \
 \ TARGET SELECTION
+\ LP_MSP430FR2476
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
-\ MSP_EXP430FR4133  MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
+\ MSP_EXP430FR4133 can't use LED1 !!! (wired on UART TX)
+\ MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
 \
 \ FastForth kernel compilation minimal options:
 \ DTC = 2, THREADS = 16, FREQUENCY = 16
-\ TERMINALBAUDRATE = 921600, TERMINAL3WIRES, TERMINAL4WIRES
+\ TERMINALBAUDRATE = 115200 up to 2457600, TERMINAL3WIRES, TERMINAL4WIRES
 \ MSP430ASSEMBLER, CONDCOMP
 \
 \
@@ -44,7 +46,7 @@
 \
 \ software I2C MASTER, you can use any I/O for SDA and SCL,
 \ Preferably use a couple of I/O in the interval Px0...Px3.
-\ don't forget to wire 3.3k pullup resitors on SDA and SCL.
+\ don't forget to wire 3.3k pullup resitors on pin SDA and SCL.
 
 
 \ the LEDs TX and RX work fine, uncomment if you want.
@@ -80,33 +82,35 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
-$1820 CONSTANT SLAVE_ADR    \ to save I2C_Slave address in FRAM
+$1820 CONSTANT SLAVE_ADR    \ CONSTANT = I2C_Slave address in FRAM
 
 
 ASM QUIT_I2C                    \ as ASM word, QUIT_I2C is hidden.
 \ ------------------------------\
 BW1 \   STOP I2C                \
-\ \ ------------------------------\
-\     BIC.B #LED2,&LED2_DIR       \ RX green led OFF
-\     BIC.B #LED2,&LED2_OUT       \ RX green led OFF
-\     BIC.B #LED1,&LED1_DIR       \ TX red led OFF
-\     BIC.B #LED1,&LED1_OUT       \ TX red led OFF
-\ \ ------------------------------\
+\ ------------------------------\
+    BIC.B #LED2,&LED2_DIR       \ RX green led OFF
+    BIC.B #LED2,&LED2_OUT       \ RX green led OFF
+    BIC.B #LED1,&LED1_DIR       \ TX red led OFF
+    BIC.B #LED1,&LED1_OUT       \ TX red led OFF
+\ ------------------------------\
     BIS #M_BUS,&I2CM_REN        \ reset I/O as reset state
     BIC #M_BUS,&I2CM_DIR        \
     BIS #M_BUS,&I2CM_OUT        \
     MOV #$5A88,&WDTCTL          \ stop WDT
     BIC #1,&SFRIE1              \ disable WDT int
-    MOV &$FFFA,&WDT_VEC         \ [USER_NMI_vector] = COLD, restore default WDT_VEC value
-    MOV &TERMINAL_INT,&TERM_VEC \ restore default TERM_VEC value (in FRAM INFO)
-    MOV #WARM,X                 \
-    ADD #4,X
-    MOV X,-2(X)                 \ restore default WARM
-\    MOV @IP+,PC                 \ quiet return without COLD
-    MOV X,PC                    \ explicit return with COLD
+    MOV #COLD,&WDT_VEC          \ restore default WDT_VEC value
+    MOV &TERMINAL_INT,&TERM_VEC \ restore default TERM_VEC value
+    MOV #WARM,X                 \ X = CFA of WARM
+    ADD #4,X                    \ X = BODY of WARM
+    MOV X,-2(X)                 \ restore default WARM: BODY --> PFA
+\    MOV @IP+,PC                 \ quiet return without WARM
+\    MOV #COLD,PC                 \ explicit return with COLD
+    MOV X,PC                    \ explicit return with WARM
 ENDASM
 
 ASM WDT_INT                     \ enable Alt+B when I2C_Master is sleeping
+\ I2C_Master se réveille à l'occurence d'un break qui génère la sortie du programme. 
 BIT #8,&TERM_STATW              \ UART break sent by TERATERM ?
 0<> IF
     ADD #4,RSP                  \ remove RETI
@@ -143,6 +147,7 @@ ENDASM
 \ **************************************\
 ASM TERM_INT                            \  starts with first char of line input from TERMINAL
 \ **************************************\
+\ I2C_Master s'est réveillé en début du flux de caractères en provenance du TERMINAL
 ADD #4,RSP                              \ 1   remove RET and SR
 POPM #6,IP                              \ 8   pop Y,X,W,T,S,IP
 \                                       \ S = last char to RX from UART
@@ -151,38 +156,46 @@ POPM #6,IP                              \ 8   pop Y,X,W,T,S,IP
 \                                       \ X = UART RX char
 \                                       \ Y = I2C TX buffer
 \ --------------------------------------\
+\ les caractères reçus de TERMINAL sont stockés dans le buffer PAD.
+\ A la réception du caractère CR, I2C_Master envoie XOFF à TERMINAL
+\ et refait encore un tour pour capter LF.
+\ pendant ce temps, I2C_Slave est dans l'état SLEEP, le bus I2C est libre
 BEGIN                                   \
     BEGIN                               \
-        BEGIN                           \   wait for a char or for a break
+        BEGIN                           \   wait for a char
             BIT #1,&TERM_IFG            \ 3 received char ?
         0<> UNTIL                       \ 2 
-BW1     MOV.B &TERM_RXBUF,X             \ 3 received char in TERMRXBUF
-        MOV.B X,0(T)                    \ 3 fill I2C_input... ...buffer
+        MOV.B &TERM_RXBUF,X             \ 3 received char in TERMRXBUF
+BW1     MOV.B X,0(T)                    \ 3 fill I2C_input... ...buffer
         CMP.B S,X                       \ 1 char = char end = $0A ?
         0= ?GOTO FW1                    \ 2 goto out of UART RX loop
         ADD #1,T                        \ 1
         CMP.B #$0D,X                    \ 2 CR ?
-    0<> WHILE                           \ 2  32 cycles loop ==> up to 2.5Mbds @ 8MHz
+    0<> WHILE                           \ 2 30 cycles loop ==> up to 2.66 Mbds @ 8MHz
         CMP #0,W                        \ 1
-        0= IF                           \ 2  if echo ON requested by I2C_Slave
+        0= IF                           \ 2 if echo ON requested by I2C_Slave
+            BEGIN                       \
+                BIT #2,&TERM_IFG        \ 3 TX buffer empty ?
+            0<> UNTIL                   \ 2 
             MOV.B X,&TERM_TXBUF         \ 3
         THEN
     REPEAT                              \ 2
     CALL &RXOFF                         \ stops UART RX after received char CR and before receive char LF
 AGAIN                                   \ then take again one loop back to get LF
 \ --------------------------------------\
-FW1 \ END OF UART RX                    \  CR+LF ends the line input from TERMIANL
+FW1 \ END OF UART RX                    \  CR+LF end the line input from TERMINAL
 \ ======================================\ S = last char to transmit
 \ ======================================\ T = last char transmitted
 BW2 \ I2C MASTER TX                     \ W = bits count / delay count down
 \ ======================================\ X = I2C_Address / I2C_Data
 \ ======================================\ Y = buffer TX address            
-\ \ --------------------------------------\
-\ BIS.B #LED1,&LED1_DIR                   \ red led ON = I2C TX 
-\ BIS.B #LED1,&LED1_OUT                   \ red led ON = I2C TX
-\ \ --------------------------------------\
-\ BW3 \ I2C_Master TX Start               \ here, SDA and SCL must be in idle state
 \ --------------------------------------\
+BIS.B #LED1,&LED1_DIR                   \ red led ON = I2C TX 
+BIS.B #LED1,&LED1_OUT                   \ red led ON = I2C TX
+\ --------------------------------------\
+\ \     vvvvvvvvvvMulti-Master-Modevvvvvvv\
+\ BW3 \ I2C_Master TX Start               \ here, SDA and SCL must be in idle state
+\ \     ^^^^^^^^^^Multi-Master-Mode^^^^^^^\
 BIS.B   #MSDA,&I2CM_DIR                 \ 4 l   force SDA as output (low)
 MOV.B   &SLAVE_ADR,X                    \ 1 h   X = Slave_Address
 BIC.B   #1,X                            \ 1 h   Master TX
@@ -223,8 +236,8 @@ BEGIN
 \                 BIS.B #MSCL,&I2CM_DIR           \ 4 l release SCL first
 \                 CALL #DO_IDLE                   \     wait stable idle state 
 \                 GOTO BW3                        \ 2 l goto START TX
-\             THEN
-\         THEN
+\             THEN                                \
+\         THEN                                    \
 \ \       ^^^^^^^^^^^^Multi-Master-Mode^^^^^^^^^^^\
         SUB #1,W                        \ 1 l       bits count-1
     0= UNTIL                            \ 2 l
@@ -255,10 +268,10 @@ THEN                                    \           <-- WHILE1  ...in https://fo
 \   ------------------------------------\
     NOP3                                \ 3 l   _   delay to reach I2C tLO
     BIC.B #MSCL,&I2CM_DIR               \ 4 l _^    release SCL to enable reSTART
-\ \ --------------------------------------\
-\     BIC.B #LED1,&LED1_DIR               \ red led OFF = endof I2C TX 
-\     BIC.B #LED1,&LED1_OUT               \ red led OFF = endof I2C TX
-\ \ --------------------------------------\
+\ --------------------------------------\
+    BIC.B #LED1,&LED1_DIR               \ red led OFF = endof I2C TX 
+    BIC.B #LED1,&LED1_OUT               \ red led OFF = endof I2C TX
+\ --------------------------------------\
 \ ======================================\
 \ END OF I2C MASTER TX                  \
 \ ======================================\
@@ -312,8 +325,8 @@ BEGIN                                   \           I2C MASTER RX
 \                     BIS.B #MSCL,&I2CM_DIR           \ 4 l release SCL first
 \                     CALL #DO_IDLE                   \     wait stable idle state 
 \                     GOTO BW3                        \ 2 l goto START RX
-\                 THEN
-\             THEN
+\                 THEN                                \
+\             THEN                                    \
 \ \           ^^^^^^^^^^^^Multi-Master-Mode^^^^^^^^^^^\
             SUB #1,W                    \ 1 l       bits count - 1
         0= UNTIL                        \ 2 l
@@ -345,10 +358,10 @@ BEGIN                                   \           I2C MASTER RX
         THEN
 \       --------------------------------\
     REPEAT                              \ 2         loop back to MASTER START RX
-\ \   ------------------------------------\
-\     BIS.B #LED2,&LED2_DIR               \           green led ON = I2C RX
-\     BIS.B #LED2,&LED2_OUT               \           green led ON = I2C RX
-\ \   ------------------------------------\
+\   ------------------------------------\
+    BIS.B #LED2,&LED2_DIR               \           green led ON = I2C RX
+    BIS.B #LED2,&LED2_OUT               \           green led ON = I2C RX
+\   ------------------------------------\
 \   I2C_Master_RX_data                  \
 \   ------------------------------------\
     BEGIN
@@ -413,31 +426,38 @@ BEGIN                                   \           I2C MASTER RX
         CMP.B #4,X                      \
 \       --------------------------------\       
         0= IF                           \           $04 = ctrl_char for NOECHO request
-            MOV #1,&TIB_I2CADR          \           set NOECHO
+            MOV #1,&PAD_I2CADR          \           set NOECHO
         ELSE                            \           $05 = ctrl_char for ECHO request
-            MOV #0,&TIB_I2CADR          \           set ECHO
+            MOV #0,&PAD_I2CADR          \           set ECHO
         THEN
     REPEAT                              \           loop back to I2C_Master_RX_data
 \   ------------------------------------\   
 \   if Nack sent by Master              \           SDA is released HIGH
 \   ------------------------------------\   
     CMP.B #2,X                          \ 1 l       $02 = ctrl_char for ABORT request
-0= WHILE                                \ 2 l       if Ctrl_char = $02
-    MOV #0,&TIB_I2CADR                  \           set echo on I2C_Master side
-\   ------------------------------------\   
-\   UART_ABORT                          \
-\   ------------------------------------\
-    CALL &RXON                          \           resume UART downloading source file
-    BEGIN                               \
-        BIC #UCRXIFG,&TERM_IFG          \           clear UCRXIFG ('ESC' char is lost)
-        MOV &FREQ_KHZ,Y                 \           1000, 2000, 4000, 8000, 16000, 240000
-        BEGIN MOV #32,X                 \           2~        <-------+ windows 10 seems very slow... ==> ((32*3)+5) = 101ms delay
-            BEGIN SUB #1,X              \           1~        <---+   |
-            0= UNTIL                    \           2~ 3~ loop ---+   | to refill its USB buffer
-            SUB #1,Y                    \           1~                |
-        0= UNTIL                        \           2~ 101~ loop -----+
-        BIT #UCRXIFG,&TERM_IFG          \           4 new char in TERMRXBUF during this delay ?
-    0= UNTIL                            \           2 yes, the input stream may be still active: loop back
+U>= WHILE                               \ 2 l       if Ctrl_char = $02 (ABORT), $03 (COLD)
+    0= IF                               \    
+\       --------------------------------\   
+\       UART_ABORT                      \           if ctrl_char $02
+\       --------------------------------\
+        MOV #0,&PAD_I2CADR              \           set echo on I2C_Master side (I use the useless address PAD_I2CADR)
+        CALL &RXON                      \           resume UART downloading source file
+        BEGIN                           \
+            BIC #UCRXIFG,&TERM_IFG      \           clear UCRXIFG
+            MOV &FREQ_KHZ,Y             \           1000, 2000, 4000, 8000, 16000, 240000
+            BEGIN MOV #32,X             \           2~        <-------+ windows 10 seems very slow...
+                BEGIN SUB #1,X          \           1~        <---+   | ==> ((32*3)+5)*1000 = 101ms delay
+                0= UNTIL                \           2~ 3~ loop ---+   | to refill its USB buffer
+                SUB #1,Y                \           1~                |
+            0= UNTIL                    \           2~ 101~ loop -----+
+\             BEGIN MOV #65,X             \                  <-------+ linux with minicom seems very very slow...
+\                 BEGIN SUB #1,X          \                  <---+   | ==> ((65*3)+5)*1000 = 200ms delay
+\                 0= UNTIL                \           3~ loop ---+   | to refill its USB buffer
+\                 SUB #1,Y                \                          |
+\             0= UNTIL                    \           200~ loop -----+
+            BIT #UCRXIFG,&TERM_IFG      \           4 new char in TERMRXBUF during this delay ?
+        0= UNTIL                        \           2 yes, the input stream may be still active: loop back
+    THEN
 REPEAT                                  \           loop back to I2C MASTER reSTART RX
 \ --------------------------------------\
 \ I2C_Master Send STOP                  \           after RX Data(s) 
@@ -446,10 +466,10 @@ BIC.B #MSCL,&I2CM_DIR                   \ 4 l _^    release SCL (high)
 NOP3                                    \ 3 h
 NOP3                                    \ 3 h   _
 BIC.B #MSDA,&I2CM_DIR                   \ 4 h _^    SDA as input  ==> SDA high with pull up resistor
-\ \ --------------------------------------\
-\ BIC.B #LED2,&LED2_DIR                   \ 4 l green led OFF = endof I2C RX
-\ BIC.B #LED2,&LED2_OUT                   \ 4 l green led OFF = endof I2C RX
-\ \ --------------------------------------\
+\ --------------------------------------\
+BIC.B #LED2,&LED2_DIR                   \ 4 l green led OFF = endof I2C RX
+BIC.B #LED2,&LED2_OUT                   \ 4 l green led OFF = endof I2C RX
+\ --------------------------------------\
 \ ======================================\
 \ ======================================\
 \ END OF I2C MASTER RX                  \   here I2C_bus is free and Nack on Ctrl_char $00|$01 remains to be processed.
@@ -465,7 +485,7 @@ CMP.B #1,X                              \ 1 l
 \ et une fois ce caractère reçu reSTART TX pour l'envoyer à I2C_Slave
 0= IF                                   \ 2 l
     CALL &RXON                          \ 4 l  to enable UART RX; use no registers
-    MOV #TIB_I2CCNT,Y                   \ Y = input buffer for I2C_Master TX
+    MOV #PAD_I2CCNT,Y                   \ Y = input buffer for I2C_Master TX (I use the useless address PAD_I2CCNT)
     MOV Y,T                             \ T = input buffer for UART RX
     BEGIN                               \   wait for a char or for a break
         BIT #UCRXIFG,&TERM_IFG          \ 3 received char ?
@@ -488,19 +508,28 @@ THEN                                    \
 \ si I2C_Slave est sorti de son sommeil par un START RX, idem.
 \ --------------------------------------\
 \ I2C_Master envoie un XON sur l'UART, à destination de TERMINAL
-\ I2C_Master attend un flux de caractères en provenance du TERMINAL 
-\     ou l'occurence d'un break qui génère la sortie du programme. 
-\ les caractères reçus de TERMINAL sont stockés dans un buffer.
-\ A la réception du caractère CR, I2C_Master envoie XOFF à TERMINAL
-\ et refait encore un tour pour capter LF.
-\ pendant ce temps, I2C_Slave est dans l'état SLEEP, le bus I2C est libre
 \ --------------------------------------\
-MOV #TIB_ORG,Y                          \ Y = input buffer for I2C_Master TX
-MOV &TIB_I2CADR,W                       \ W = 0 if ECHO, 1 if NOECHO
+MOV #PAD_ORG,Y                          \ Y = input buffer for I2C_Master TX
+MOV &PAD_I2CADR,W                       \ W = 0 if ECHO, 1 if NOECHO
 MOV Y,T                                 \ T = input buffer for UART RX
 MOV #$0A,S                              \ S = last char to send with I2C_MASTER TX
+\ --------------------------------------\
+BIT #1,&TERM_IFG                        \ 3 RX_Int ?
+0<> IF                                  \ if RX_INT
+    MOV &TERM_RXBUF,X                   \ 3 clear RX_Int
+    CMP #$0A,X                          \ 2 received char = LF ? (end of downloading ?)
+    0<> IF                              \
+        CALL &RXON                      \ 2 no : send XON then goto process first char of new line.
+        GOTO BW1                        \        without SLEEP
+    THEN
+THEN
+\ --------------------------------------\
 PUSHM #6,IP                             \ push IP,S,T,W,X,Y, as ACCEPT
 MOV #SLEEP,PC                           \ execute RXON then goto dodo
+\ --------------------------------------\
+\ I2C_Master se réveillera lors d'un flux
+\ de caractères en provenance du TERMINAL
+\ ou à l'occurence d'un break. 
 ENDASM                                  \ 
 \ --------------------------------------\
 
@@ -519,7 +548,7 @@ THEN
     U>= IF
         MOV #QUIT_I2C,PC                \           if other SYS failure >= $10 STOP I2C
     THEN                                \
-MOV #0,&SAVE_SYSRSTIV                   \           
+MOV #0,&SAVE_SYSRSTIV                   \           clear it after use
 \ --------------------------------------\
 \ init WDT timer                        \
 \ --------------------------------------\
@@ -558,32 +587,23 @@ ENDASM
 \ type Alt+B on TERATERM TERMINAL to send a break to quit, or <reset> on I2C_Master.
 
 \ UART to I2C_Master 
-CODE UART2I2CS                         \ SlaveAddress --
+CODE UART2I2CS          \ SlaveAddress --
 MOV @RSP+,IP
-MOV TOS,&SLAVE_ADR                  \ save in FRAM
+MOV TOS,&SLAVE_ADR      \ save in FRAM
 MOV @PSP+,TOS
 MOV #WARM,X
-MOV #WARM_I2C,2(X)                  \ replace WARM by WARM_I2C, so POR execute WARM_I2C
-MOV X,PC                            \ execute WARM_I2C
+MOV #WARM_I2C,2(X)      \ replace WARM by WARM_I2C, so POR execute WARM_I2C
+MOV X,PC                \ execute WARM_I2C
 ENDCODE
 
-RST_HERE
+RST_HERE ECHO
 
-; Since there is no difference in behavior whether the TERMINAL is connected to the Master
-; or to a Slave, the convenient way to check which target is connected to is to execute WARM,
+; Since there is no difference in behaviour whether the TERMINAL is connected to the Master
+; or to a Slave, the convenient way to check which target is connected to is WARM,
 ; because WARM displays first the decimal I2C address when TERMINAL is connected to I2C FastForth.
 
-WARM    \ to show the target linked to TERMINAL before: no I2C Slave address 
-
-; v---- in forthMSP430FR.asm file search "I2CSLAVEADR" value used when compiling FastForth for TERMINAL_I2C
- $10 UART2I2CS
+$10 UART2I2CS
 
 WARM    \ to show the target linked to TERMINAL after: see the decimal I2C Slave address first.
+; Alt-B to quit UART2I2CS
 
-; remember: from scite menu or in the SendSourceFileToTarget.bat file, select the good target to download UART2I2CS
-;           then select the good target to download sources file to the target running FastForth I2C
-;           at the specified I2C address !
-
-;           Alt-B to quit UART2I2CS
-
-; ready for a cluster of FastForth(s) ?

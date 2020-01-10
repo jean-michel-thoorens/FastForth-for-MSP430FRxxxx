@@ -204,7 +204,14 @@
 
 ; PORT1 usage
 ; P1.0 - LED2 green   output low
+LED2_OUT    .equ    202h
+LED2_DIR    .equ    204h
+LED2        .equ    1           ;  P1.0 LED2 green
+
 ; P1.1 - Switch S2    input with pullup resistor
+SW2_IN      .equ    P1IN
+SW2         .equ    2     ; P1.1 = S2
+
 
 ; PORTx default wanted state : pins as input with pullup resistor
 
@@ -259,8 +266,15 @@ SD_CSDIR    .equ    P4DIR
 CD_SD       .equ    4       ; P4.2 as Card Detect
 CS_SD       .equ    8       ; P4.3 as Chip Select    
 
+SW1_IN      .equ    P4IN
+SW1         .equ    20h     ; P4.5 = S1
+
 WIPE_IN     .equ    P4IN
 IO_WIPE     .equ    20h     ; P4.5 = S1 = FORTH Deep_RST pin
+
+LED1_OUT    .equ    P4OUT
+LED1_DIR    .equ    P4DIR
+LED1        .equ    40h     ;  P4.6 LED1 red
 
             BIS #-1,&PBREN  ; all pins as input with resistor
             MOV #0BFFFh,&PBOUT  ; all pins as input with pull up resistor else P4.6
