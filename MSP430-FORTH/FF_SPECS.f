@@ -3,20 +3,22 @@
 ; ------------------
 ; FF_SPECS.f
 ; ------------------
- 
+
 ; displays all FastForth specifications
 
 \ from scite editor :
 \ TARGET SELECTION : copy your target in (shift+F8) parameter 1: 
-\ LP_MSP430FR2476
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133  CHIPSTICK_FR2433    MSP_EXP430FR2433    MSP_EXP430FR2355
+\ LP_MSP430FR2476
 \
 \ OR
 \
 \ drag and drop this file onto SendSourceFileToTarget.bat
 \ then select your TARGET when asked.
 \
+\ COLD            \ TEST: must not disrupt the download from TERMINAL.
+
 PWR_STATE       \ remove volatile words
 
 [UNDEFINED] AND [IF]
@@ -167,7 +169,7 @@ CODE IF
 SUB #2,PSP              \
 MOV TOS,0(PSP)          \
 MOV &DP,TOS             \ -- HERE
-ADD #4,&DP            \           compile one word, reserve one word
+ADD #4,&DP              \           compile one word, reserve one word
 MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
 ADD #2,TOS              \ -- HERE+2=IFadr
 MOV @IP+,PC
@@ -493,6 +495,15 @@ LOOP
 ; IMMEDIATE 
 [THEN]
 
+[UNDEFINED] >BODY [IF]
+\ https://forth-standard.org/standard/core/toBODY
+\ >BODY     -- addr      leave BODY of a CREATEd word\ also leave default ACTION-OF primary DEFERred word
+CODE >BODY
+ADD #4,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
 [UNDEFINED] S_ [IF]
 CODE S_             \           Squote alias with blank instead quote separator
 MOV #0,&CAPS        \           turn CAPS OFF
@@ -526,13 +537,13 @@ POSTPONE TYPE       \ compile-time code : TYPE
 [THEN]
 
 
-: SPECS             \ to see Fast Forth specifications
+\ -------------------------------------------------------
+: SPECS             \ to see all FastForth specifications
+\ -------------------------------------------------------
 PWR_STATE           \ before free bytes computing, remove all created words 
 ECHO
-
 42 0 DO CR LOOP     \ to avoid erasing any line of source, create 42 empty lines
 ESC [H              \ then cursor home
-
 ESC [7m             \ Turn reverse video on
 CR ." FastForth V"  \ title line in reverse video 
 VERSION @         
@@ -547,25 +558,21 @@ CASE
     $8160     OF      ." 5948,"   $4400   ENDOF
     $8169     OF      ." 5969,"   $4400   ENDOF
     $81A8     OF      ." 6989,"   $4400   ENDOF
-\   $810D     OF      ." 5986,"   $4400   ENDOF
-\
+    $810D     OF      ." 5986,"   $4400   ENDOF
     $81F0     OF      ." 4133,"   $C400   ENDOF
     $8240     OF      ." 2433,"   $C400   ENDOF
-\
     $82A1     OF      ." 5994,"   $4000   ENDOF
-\   $82A6     OF      ." 5962,"   $4000   ENDOF
-\ 
+    $82A6     OF      ." 5962,"   $4000   ENDOF
     $830C     OF      ." 2355,"   $8000   ENDOF
-\   $830D     OF      ." 2353,"   $C000   ENDOF
-\   $831E     OF      ." 2155,"   $8000   ENDOF
-\   $831D     OF      ." 2153,"   $C000   ENDOF
+    $830D     OF      ." 2353,"   $C000   ENDOF
+    $831E     OF      ." 2155,"   $8000   ENDOF
+    $831D     OF      ." 2153,"   $C000   ENDOF
     $832A     OF      ." 2476,"   $8000   ENDOF
-\   $832B     OF      ." 2475,"   $8000   ENDOF
-\   $833C     OF      ." 2633,"   $C400   ENDOF
-\   $833D     OF      ." 2533,"   $C400   ENDOF
+    $832B     OF      ." 2475,"   $8000   ENDOF
+    $833C     OF      ." 2633,"   $C400   ENDOF
+    $833D     OF      ." 2533,"   $C400   ENDOF
     ABORT" xxxx <-- unrecognized device!"
 ENDCASE                     \ -- HERE MAIN_ORG
-
 ['] ['] DUP @ $1284 =       \ DOCOL = CALL rDOCOL opcode
 IF ."  DTC=1," DROP         \ [CFA] = CALL rDOCOL
 ELSE 2 + @ $1284 =          \ 
@@ -593,20 +600,18 @@ CR
 ." MAX-UD            = 4294967295" CR
 ." STACK-CELLS       = 48" CR
 ." RETURN-STACK-CELLS= 48" CR
-
 CR 
-ESC [7m ." KERNEL ADDONS" ESC [0m   \ subtitle in reverse video
+ESC [7m ." KERNEL SPECS" ESC [0m   \ subtitle in reverse video
 CR
-
 KERNEL_ADDON @
     DUP 0< IF ." 32.768kHz XTAL" CR THEN
-2*  DUP 0< IF 2* ." 5 WIRES (RTS/CTS) UART TERMINAL" CR
+2*  DUP 0< IF 2* ." (RTS/CTS) UART TERMINAL" CR
         ELSE 2* DUP
-            0< IF ." 4 WIRES (RTS) UART TERMINAL" CR
+            0< IF ." (RTS) UART TERMINAL" CR
             THEN
         THEN
-2*  DUP 0< IF ." 3 WIRES (XON/XOFF) UART TERMINAL" CR
-        ELSE  ." I2C SLAVE TERMINAL INPUT" CR
+2*  DUP 0< IF ." (XON/XOFF) UART TERMINAL" CR
+        ELSE  ." I2C SLAVE TERMINAL" CR
         THEN
 2*  DUP 0< IF ." HALF-DUPLEX TERMINAL" CR THEN
 2*  DUP 0< IF ." ASM DATA ACCESS BEYOND $FFFF" CR THEN
@@ -620,7 +625,7 @@ KERNEL_ADDON @
 2*  DUP 0< IF ." EXTENDED ASSEMBLER" CR THEN
 2*  DUP 0< IF ." ASSEMBLER" CR THEN
 2*  DUP 0< IF ." CONDITIONNAL COMPILATION" CR THEN
-        0< IF                   \ true if CONDCOMP add-on
+0< IF                           \ true if CONDCOMP add-on
     CR 
     ESC [7m ." OPTIONS" ESC [0m \ subtitle in reverse video
     CR
@@ -631,21 +636,17 @@ KERNEL_ADDON @
     [DEFINED] {SD_TOOLS}  [IF] ." SD_TOOLS" CR [THEN]
     [DEFINED] {RTC}       [IF] ." RTC utility" CR [THEN]
     [DEFINED] {FF_I2C}    [IF] ." I2C TERMINAL bridge" CR [THEN]
-
     [DEFINED] VOCABULARY  [IF] 
         CR 
         ESC [7m ." ASSEMBLER word set" ESC [0m  \ subtitle in reverse video 
         ALSO ASSEMBLER WORDS PREVIOUS           \ type ASSEMBLER word set
         CR
     [THEN]
-
 THEN
-   
 CR
 ESC [7m ." FORTH word set"  ESC [0m \ subtitle in reverse video 
 WORDS                               \ type FORTH word set 
 CR
-
 WARM    \ type bytes free
 ;
 

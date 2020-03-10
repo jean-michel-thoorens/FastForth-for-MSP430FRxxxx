@@ -1,24 +1,7 @@
 ! -*- coding: utf-8 -*-
 ! MSP_EXP430FR4133.pat
 !
-! Fast Forth For Texas Instrument MSP_EXP430FR4133
-!
-! Copyright (C) <2016>  <J.M. THOORENS>
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-\.f=\.4th!      to change file type
+\.f=\.4th for MSP_EXP430FR4133!      to change file type
 !
 !========================
 ! remove comments        
@@ -191,15 +174,15 @@
 ! ============================================
 ! FORTH I/O :
 ! ============================================
-TERM_TX=1!          ; P1.0 = TX
-TERM_RX=2!          ; P1.1 = RX
-TERM_BUS=3!
+!TERMINAL 
+BUS_TERM=3!         ; P1.0 = TX, P1.1 = RX
 
 TERM_IN=\$200!
 TERM_REN=\$206!
 TERM_SEL=\$20A!     \ SEL0
-TERM_IE=\$21A!
-TERM_IFG=\$21C!
+
+TERM_VEC=\$FFEC!    \ UCA0
+WAKE_UP=1!          \ RX int
 
 TERM_CTLW0=\$500!    \ eUSCI_A control word 0        
 TERM_CTLW1=\$502!    \ eUSCI_A control word 1        
@@ -302,16 +285,16 @@ I2CSM_IN=\$261!
 I2CSM_OUT=\$263!
 I2CSM_DIR=\$265!
 I2CSM_REN=\$267!
-SMSDA=\$04!             P8.2  SDA software MASTER
-SMSCL=\$08!             P8.3  SCL software MASTER
+SM_SDA=\$04!             P8.2  SDA software MASTER
+SM_SCL=\$08!             P8.3  SCL software MASTER
 SM_BUS=\$0C!
 
 I2CSMM_IN=\$261!
 I2CSMM_OUT=\$263!
 I2CSMM_DIR=\$265!
 I2CSMM_REN=\$267!
-SMMSDA=\$04!            P8.2  SDA software MULTI_MASTER
-SMMSCL=\$08!            P8.3  SCL software MULTI_MASTER
+SMM_SDA=\$04!            P8.2  SDA software MULTI_MASTER
+SMM_SCL=\$08!            P8.3  SCL software MULTI_MASTER
 SMM_BUS=\$0C!
 
 I2CMM_IN=\$240!
@@ -320,8 +303,8 @@ I2CMM_DIR=\$244!
 I2CMM_REN=\$246!
 I2CMM_SEL=\$24A!        SEL0
 I2CMM_VEC=\$FFEA!       UCB0_VEC
-MMSDA=\$04!             P5.2  SDA hadware MULTI_MASTER
-MMSCL=\$08!             P5.3  SCL hadware MULTI_MASTER
+MM_SDA=\$04!             P5.2  SDA hadware MULTI_MASTER
+MM_SCL=\$08!             P5.3  SCL hadware MULTI_MASTER
 MM_BUS=\$0C!
 
 I2CM_IN=\$240!
@@ -330,8 +313,8 @@ I2CM_DIR=\$244!
 I2CM_REN=\$246!
 I2CM_SEL=\$24A!         SEL0
 I2CM_VEC=\$FFEA!        UCB0_VEC
-MSDA=\$04!              P5.2  SDA hadware MASTER
-MSCL=\$08!              P5.3  SCL hadware MASTER
+M_SDA=\$04!              P5.2  SDA hadware MASTER
+M_SCL=\$08!              P5.3  SCL hadware MASTER
 M_BUS=\$0C!
 
 I2CS_IN=\$240!
@@ -340,8 +323,8 @@ I2CS_DIR=\$244!
 I2CS_REN=\$246!
 I2CS_SEL=\$24A!         SEL0
 I2CS_VEC=\$FFEA!        UCB0_VEC
-SSDA=\$04!              P5.2  SDA hadware SLAVE
-SSCL=\$08!              P5.3  SCL hadware SLAVE
+S_SDA=\$04!              P5.2  SDA hadware SLAVE
+S_SCL=\$08!              P5.3  SCL hadware SLAVE
 S_BUS=\$0C!
 
 UCSWRST=1!          eUSCI Software Reset

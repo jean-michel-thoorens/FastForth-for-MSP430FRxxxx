@@ -1,25 +1,7 @@
 ! -*- coding: utf-8 -*-
 ! LP_MSP430FR2476.pat
 !
-! Fast Forth For Texas Instrument MSP430FR247
-!
-! Copyright (C) <2014>  <J.M. THOORENS>
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-\.f=\.4th!      to change file type
+\.f=\.4th for LP_MSP430FR2476!      to change file type
 !
 !========================
 ! remove comments        
@@ -184,32 +166,30 @@
 ! FORTH I/O :
 ! ============================================
 !TERMINAL 
-TERM_TX=\$10!            P1.4 = TX also Deep_RST pin
-TERM_RX=\$20!            P1.5 = RX
-TERM_BUS=\$30!
+BUS_TERM=\$30!      ; P1.4 = TX, P1.5 = RX
 
-TERM_IN=\$200!          P1
+TERM_IN=\$200!
 TERM_REN=\$206!
-TERM_SEL=\$20A!      \ SEL0
-TERM_IE=\$21A!
-TERM_IFG=\$21C!
-TERM_VEC=\$FFE0!        UCA0
+TERM_SEL=\$20A!     \SEL0
 
-TERM_CTLW0=\$500!    \ eUSCI_A0 control word 0
-TERM_CTLW1=\$502!    \ eUSCI_A0 control word 1
-TERM_BRW=\$506!
-TERM_BR0=\$506!      \ eUSCI_A0 baud rate 0
-TERM_BR1=\$507!      \ eUSCI_A0 baud rate 1
-TERM_MCTLW=\$508!    \ eUSCI_A0 modulation control
-TERM_STATW=\$50A!    \ eUSCI_A0 status
-TERM_RXBUF=\$50C!    \ eUSCI_A0 receive buffer
-TERM_TXBUF=\$50E!    \ eUSCI_A0 transmit buffer
-TERM_ABCTL=\$510!    \ eUSCI_A0 LIN control
-TERM_IRTCTL=\$512!   \ eUSCI_A0 IrDA transmit control
-TERM_IRRCTL=\$513!   \ eUSCI_A0 IrDA receive control
-TERM_IE=\$51A!       \ eUSCI_A0 interrupt enable
-TERM_IFG=\$51C!      \ eUSCI_A0 interrupt flags
-TERM_IV=\$51E!       \ eUSCI_A0 interrupt vector word
+TERM_VEC=\$FFE4!    \ UCA0
+WAKE_UP=1!          \ RX int
+
+TERM_CTLW0=\$500!   \ eUSCI_A control word 0        
+TERM_CTLW1=\$502!   \ eUSCI_A control word 1        
+TERM_BRW=\$506!         
+TERM_BR0=\$506!     \ eUSCI_A baud rate 0           
+TERM_BR1=\$507!     \ eUSCI_A baud rate 1           
+TERM_MCTLW=\$508!   \ eUSCI_A modulation control    
+TERM_STATW=\$50A!   \ eUSCI_A status                
+TERM_RXBUF=\$50C!   \ eUSCI_A receive buffer        
+TERM_TXBUF=\$50E!   \ eUSCI_A transmit buffer       
+TERM_ABCTL=\$510!   \ eUSCI_A LIN control           
+TERM_IRTCTL=\$512!  \ eUSCI_A IrDA transmit control 
+TERM_IRRCTL=\$513!  \ eUSCI_A IrDA receive control  
+TERM_IE=\$51A!      \ eUSCI_A interrupt enable      
+TERM_IFG=\$51C!     \ eUSCI_A interrupt flags       
+TERM_IV=\$51E!      \ eUSCI_A interrupt vector word 
 
 RTS=2!                  P6.1
 CTS=4!                  P6.2

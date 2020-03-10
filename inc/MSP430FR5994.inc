@@ -78,95 +78,95 @@ BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 ;    .org JTAG_PASSWORD     ;Start of JTAG PASSWORD
 ;
 ;    .org    INTVECT         ; FFB4-FFFF 37 vectors + reset
-;        .word reset         ; 0FFB4h - LEA_Vec        
-;        .word reset         ; 0FFB6h - P8_Vec         
-;        .word reset         ; 0FFB8h - P7_Vec         
-;        .word reset         ; 0FFBAh - eUSCI_B3_Vec   
-;        .word reset         ; 0FFBCh - eUSCI_B2_Vec   
-;        .word reset         ; 0FFBEh - eUSCI_B1_Vec   
-;        .word reset         ; 0FFC0h - eUSCI_A3_Vec   
-;        .word reset         ; 0FFC2h - eUSCI_A2_Vec   
-;        .word reset         ; 0FFC4h - P6_Vec         
-;        .word reset         ; 0FFC6h - P5_Vec         
-;        .word reset         ; 0FFC8h - TA4_x_Vec      
-;        .word reset         ; 0FFCAh - TA4_0_Vec      
-;        .word reset         ; 0FFCCh - AES_Vec        
-;        .word reset         ; 0FFCEh - RTC_C_Vec      
-;        .word reset         ; 0FFD0h - P4_Vec=        
-;        .word reset         ; 0FFD2h - P3_Vec=        
-;        .word reset         ; 0FFD4h - TA3_x_Vec      
-;        .word reset         ; 0FFD6h - TA3_0_Vec      
-;        .word reset         ; 0FFD8h - P2_Vec         
-;        .word reset         ; 0FFDAh - TA2_x_Vec      
-;        .word reset         ; 0FFDCh - TA2_0_Vec      
-;        .word reset         ; 0FFDEh - P1_Vec=        
+;        .word reset-4       ; 0FFB4h - LEA_Vec        
+;        .word reset-4       ; 0FFB6h - P8_Vec         
+;        .word reset-4       ; 0FFB8h - P7_Vec         
+;        .word reset-4       ; 0FFBAh - eUSCI_B3_Vec   
+;        .word reset-4       ; 0FFBCh - eUSCI_B2_Vec   
+;        .word reset-4       ; 0FFBEh - eUSCI_B1_Vec   
+;        .word reset-4       ; 0FFC0h - eUSCI_A3_Vec   
+;        .word reset-4       ; 0FFC2h - eUSCI_A2_Vec   
+;        .word reset-4       ; 0FFC4h - P6_Vec         
+;        .word reset-4       ; 0FFC6h - P5_Vec         
+;        .word reset-4       ; 0FFC8h - TA4_x_Vec      
+;        .word reset-4       ; 0FFCAh - TA4_0_Vec      
+;        .word reset-4       ; 0FFCCh - AES_Vec        
+;        .word reset-4       ; 0FFCEh - RTC_C_Vec      
+;        .word reset-4       ; 0FFD0h - P4_Vec=        
+;        .word reset-4       ; 0FFD2h - P3_Vec=        
+;        .word reset-4       ; 0FFD4h - TA3_x_Vec      
+;        .word reset-4       ; 0FFD6h - TA3_0_Vec      
+;        .word reset-4       ; 0FFD8h - P2_Vec         
+;        .word reset-4       ; 0FFDAh - TA2_x_Vec      
+;        .word reset-4       ; 0FFDCh - TA2_0_Vec      
+;        .word reset-4       ; 0FFDEh - P1_Vec=        
 ;;    .org BSL_PASSWORD      ;Start of BSL PASSWORD
-;        .word reset         ; 0FFE0h - TA1_x_Vec      
-;        .word reset         ; 0FFE2h - TA1_0_Vec      
-;        .word reset         ; 0FFE4h - DMA_Vec        
-;        .word reset         ; 0FFE6h - eUSCI_A1_Vec   
-;        .word reset         ; 0FFE8h - TA0_x_Vec      
-;        .word reset         ; 0FFEAh - TA0_0_Vec      
-;        .word reset         ; 0FFECh - ADC12_B_Vec    
-;        .word reset         ; 0FFEEh - eUSCI_B0_Vec   
-;        .word reset         ; 0FFF0h - eUSCI_A0_Vec   
-;        .word reset         ; 0FFF2h - WDT_Vec        
-;        .word reset         ; 0FFF4h - TB0_x_Vec      
-;        .word reset         ; 0FFF6h - TB0_0_Vec      
-;        .word reset         ; 0FFF8h - COMP_E_Vec     
-;        .word reset         ; 0FFFAh - U_NMI_Vec      
-;        .word reset         ; 0FFFCh - S_NMI_Vec      
+;        .word reset-4       ; 0FFE0h - TA1_x_Vec      
+;        .word reset-4       ; 0FFE2h - TA1_0_Vec      
+;        .word reset-4       ; 0FFE4h - DMA_Vec        
+;        .word reset-4       ; 0FFE6h - eUSCI_A1_Vec   
+;        .word reset-4       ; 0FFE8h - TA0_x_Vec      
+;        .word reset-4       ; 0FFEAh - TA0_0_Vec      
+;        .word reset-4       ; 0FFECh - ADC12_B_Vec    
+;        .word reset-4       ; 0FFEEh - eUSCI_B0_Vec   
+;        .word reset-4       ; 0FFF0h - eUSCI_A0_Vec   
+;        .word reset-4       ; 0FFF2h - WDT_Vec        
+;        .word reset-4       ; 0FFF4h - TB0_x_Vec      
+;        .word reset-4       ; 0FFF6h - TB0_0_Vec      
+;        .word reset-4       ; 0FFF8h - COMP_E_Vec     
+;        .word reset-4       ; 0FFFAh - U_NMI_Vec      
+;        .word reset-4       ; 0FFFCh - S_NMI_Vec      
 ;        .word reset         ; 0FFFEh - RST_Vec        
 
 
 ; ----------------------------------------------------------------------
 ; MSP430FR5994 Peripheral File Map
 ; ----------------------------------------------------------------------
-SFR_SFR         .set 0100h           ; Special function
-PMM_SFR         .set 0120h           ; PMM
-FRAM_SFR        .set 0140h           ; FRAM control
-CRC16_SFR       .set 0150h
-RAM_SFR         .set 0158h
-WDT_A_SFR       .set 015Ch           ; Watchdog
-CS_SFR          .set 0160h           ; Clock System
-SYS_SFR         .set 0180h           ; SYS
-REF_SFR         .set 01B0h           ; REF
-PA_SFR          .set 0200h           ; PORT1/2
-PB_SFR          .set 0220h           ; PORT3/4
-PC_SFR          .set 0240h           ; PORT3/4
-PD_SFR          .set 0260h           ; PORT3/4
-PJ_SFR          .set 0320h           ; PORTJ
-TA0_SFR         .set 0340h
-TA1_SFR         .set 0380h
-TB0_SFR         .set 03C0h
-TA2_SFR         .set 0400h
-CTIO0_SFR       .set 0430h           ; Capacitive Touch IO
-TA3_SFR         .set 0440h
-CTIO1_SFR       .set 0470h           ; Capacitive Touch IO
-RTC_C_SFR       .set 04A0h
-MPY_SFR         .set 04C0h
-DMA_CTRL_SFR    .set 0500h
-DMA_CHN0_SFR    .set 0510h
-DMA_CHN1_SFR    .set 0520h
-DMA_CHN2_SFR    .set 0530h
-DMA_CHN3_SFR    .set 0540h
-DMA_CHN4_SFR    .set 0550h
-DMA_CHN5_SFR    .set 0560h
-MPU_SFR         .set 05A0h           ; memory protect unit
-eUSCI_A0_SFR    .set 05C0h           ; eUSCI_A0
-eUSCI_A1_SFR    .set 05E0h           ; eUSCI_A1
-eUSCI_A2_SFR    .set 0600h           ; eUSCI_A1
-eUSCI_A3_SFR    .set 0620h           ; eUSCI_A1
-eUSCI_B0_SFR    .set 0640h           ; eUSCI_B0
-eUSCI_B1_SFR    .set 0680h           ; eUSCI_B1
-eUSCI_B2_SFR    .set 06C0h           ; eUSCI_B2
-eUSCI_B3_SFR    .set 0700h           ; eUSCI_B3
-TA4_SFR         .set 07C0h
-ADC12_B_SFR     .set 0800h
-COMP_E_SFR      .set 08C0h
-CRC32_SFR       .set 0980h
-AES_SFR         .set 09C0h
-LEA_SFR         .set 0A80h
+SFR_SFR         .equ 0100h           ; Special function
+PMM_SFR         .equ 0120h           ; PMM
+FRAM_SFR        .equ 0140h           ; FRAM control
+CRC16_SFR       .equ 0150h
+RAM_SFR         .equ 0158h
+WDT_A_SFR       .equ 015Ch           ; Watchdog
+CS_SFR          .equ 0160h           ; Clock System
+SYS_SFR         .equ 0180h           ; SYS
+REF_SFR         .equ 01B0h           ; REF
+PA_SFR          .equ 0200h           ; PORT1/2
+PB_SFR          .equ 0220h           ; PORT3/4
+PC_SFR          .equ 0240h           ; PORT3/4
+PD_SFR          .equ 0260h           ; PORT3/4
+PJ_SFR          .equ 0320h           ; PORTJ
+TA0_SFR         .equ 0340h
+TA1_SFR         .equ 0380h
+TB0_SFR         .equ 03C0h
+TA2_SFR         .equ 0400h
+CTIO0_SFR       .equ 0430h           ; Capacitive Touch IO
+TA3_SFR         .equ 0440h
+CTIO1_SFR       .equ 0470h           ; Capacitive Touch IO
+RTC_C_SFR       .equ 04A0h
+MPY_SFR         .equ 04C0h
+DMA_CTRL_SFR    .equ 0500h
+DMA_CHN0_SFR    .equ 0510h
+DMA_CHN1_SFR    .equ 0520h
+DMA_CHN2_SFR    .equ 0530h
+DMA_CHN3_SFR    .equ 0540h
+DMA_CHN4_SFR    .equ 0550h
+DMA_CHN5_SFR    .equ 0560h
+MPU_SFR         .equ 05A0h           ; memory protect unit
+eUSCI_A0_SFR    .equ 05C0h           ; eUSCI_A0
+eUSCI_A1_SFR    .equ 05E0h           ; eUSCI_A1
+eUSCI_A2_SFR    .equ 0600h           ; eUSCI_A1
+eUSCI_A3_SFR    .equ 0620h           ; eUSCI_A1
+eUSCI_B0_SFR    .equ 0640h           ; eUSCI_B0
+eUSCI_B1_SFR    .equ 0680h           ; eUSCI_B1
+eUSCI_B2_SFR    .equ 06C0h           ; eUSCI_B2
+eUSCI_B3_SFR    .equ 0700h           ; eUSCI_B3
+TA4_SFR         .equ 07C0h
+ADC12_B_SFR     .equ 0800h
+COMP_E_SFR      .equ 08C0h
+CRC32_SFR       .equ 0980h
+AES_SFR         .equ 09C0h
+LEA_SFR         .equ 0A80h
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : LOCK PMM_LOCKLPM5
@@ -175,17 +175,17 @@ SFRIE1      .equ SFR_SFR
 SFRIFG1     .equ SFR_SFR + 2
 SFRRPCR     .equ SFR_SFR + 4
 
-PMMCTL0     .set PMM_SFR
-PMMSWBOR    .set 4
+PMMCTL0     .equ PMM_SFR
+PMMSWBOR    .equ 4
 
-PM5CTL0     .set PMM_SFR + 10h    ; Power mode 5 control register 0
-LOCKLPM5    .set 1
+PM5CTL0     .equ PMM_SFR + 10h    ; Power mode 5 control register 0
+LOCKLPM5    .equ 1
 
 ; ----------------------------------------------------------------------
 ; FRAM config
 ; ----------------------------------------------------------------------
-FRCTL0          .set FRAM_SFR + 00h   ; FRAM Controller Control 0
-FRCTL0_H        .set FRAM_SFR + 01h   ; FRAM Controller Control 0 high byte
+FRCTL0      .equ FRAM_SFR + 00h ; FRAM Controller Control 0
+FRCTL0_H    .equ FRAM_SFR + 01h ; FRAM Controller Control 0 high byte
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : WATCHDOG TIMER A
@@ -203,44 +203,44 @@ WDTCNTCL    .equ 0008h  ; WDT timer counter clear
 ; POWER ON RESET AND INITIALIZATION : CLOCK SYSTEM
 ; ----------------------------------------------------------------------
 
-CSCTL0          .equ CS_SFR + 00h  	; CS Control Register 0
-CSCTL0_H        .equ CS_SFR + 01h  	; CS Control Register 0 high byte
-CSCTL1          .equ CS_SFR + 02h  	; CS Control Register 1
-CSCTL2          .equ CS_SFR + 04h  	; CS Control Register 2
-CSCTL3          .equ CS_SFR + 06h  	; CS Control Register 3
+CSCTL0      .equ CS_SFR + 00h   ; CS Control Register 0
+CSCTL0_H    .equ CS_SFR + 01h   ; CS Control Register 0 high byte
+CSCTL1      .equ CS_SFR + 02h   ; CS Control Register 1
+CSCTL2      .equ CS_SFR + 04h   ; CS Control Register 2
+CSCTL3      .equ CS_SFR + 06h   ; CS Control Register 3
 
 ; CSCTL0 Control Bits
 CSKEY           .equ 0A5h           ; CS Password
 ; CSCTL1 Control Bits
-DCORSEL         .equ 0040h
-DCOFSEL0        .equ 0002h           ; DCO frequency select Bit: 0
-DCOFSEL1        .equ 0004h           ; DCO frequency select Bit: 1
-DCOFSEL2        .equ 0008h           ; DCO frequency select Bit: 2
-DCOFSEL3        .equ 000Ch           ; DCO frequency select Bit: 21
+DCORSEL     .equ 0040h
+DCOFSEL0    .equ 0002h          ; DCO frequency select Bit: 0
+DCOFSEL1    .equ 0004h          ; DCO frequency select Bit: 1
+DCOFSEL2    .equ 0008h          ; DCO frequency select Bit: 2
+DCOFSEL3    .equ 000Ch          ; DCO frequency select Bit: 21
 ; CSCTL2 Control Bits
-SELA_LFXCLK     .equ 0000h           ; 0 : ACLK Source Select LFXCLK
-SELA_VLOCLK     .equ 0100h           ; 1 ACLK Source Select VLOCLK 10kHz
-SELS_DCOCLK     .equ 0030h           ; 3 : SMCLK Source Select DCOCLK
-SELM_DCOCLK     .equ 0003h           ; 3 : MCLK Source Select DCOCLK
+SELA_LFXCLK .equ 0000h           ; 0 : ACLK Source Select LFXCLK
+SELA_VLOCLK .equ 0100h           ; 1 ACLK Source Select VLOCLK 10kHz
+SELS_DCOCLK .equ 0030h           ; 3 : SMCLK Source Select DCOCLK
+SELM_DCOCLK .equ 0003h           ; 3 : MCLK Source Select DCOCLK
 ; CSCTL3 Control Bits
-DIVA_0          .equ 0000h           ; ACLK Source Divider 0
-DIVS_0          .equ 0000h           ; SMCLK Source Divider 0
-DIVM_0          .equ 0000h           ; MCLK Source Divider 0
-DIVA_2          .equ 0100h           ; ACLK Source Divider 0
-DIVS_2          .equ 0010h           ; SMCLK Source Divider 0
-DIVM_2          .equ 0001h           ; MCLK Source Divider 0
-DIVA_4          .equ 0200h           ; ACLK Source Divider 0
-DIVS_4          .equ 0020h           ; SMCLK Source Divider 0
-DIVM_4          .equ 0002h           ; MCLK Source Divider 0
-DIVA_8          .equ 0300h           ; ACLK Source Divider 0
-DIVS_8          .equ 0030h           ; SMCLK Source Divider 0
-DIVM_8          .equ 0003h           ; MCLK Source Divider 0
-DIVA_16         .equ 0400h           ; ACLK Source Divider 0
-DIVS_16         .equ 0040h           ; SMCLK Source Divider 0
-DIVM_16         .equ 0004h           ; MCLK Source Divider 0
-DIVA_32         .equ 0500h           ; ACLK Source Divider 0
-DIVS_32         .equ 0050h           ; SMCLK Source Divider 0
-DIVM_32         .equ 0005h           ; MCLK Source Divider 0
+DIVA_0      .equ 0000h           ; ACLK Source Divider 0
+DIVS_0      .equ 0000h           ; SMCLK Source Divider 0
+DIVM_0      .equ 0000h           ; MCLK Source Divider 0
+DIVA_2      .equ 0100h           ; ACLK Source Divider 0
+DIVS_2      .equ 0010h           ; SMCLK Source Divider 0
+DIVM_2      .equ 0001h           ; MCLK Source Divider 0
+DIVA_4      .equ 0200h           ; ACLK Source Divider 0
+DIVS_4      .equ 0020h           ; SMCLK Source Divider 0
+DIVM_4      .equ 0002h           ; MCLK Source Divider 0
+DIVA_8      .equ 0300h           ; ACLK Source Divider 0
+DIVS_8      .equ 0030h           ; SMCLK Source Divider 0
+DIVM_8      .equ 0003h           ; MCLK Source Divider 0
+DIVA_16     .equ 0400h           ; ACLK Source Divider 0
+DIVS_16     .equ 0040h           ; SMCLK Source Divider 0
+DIVM_16     .equ 0004h           ; MCLK Source Divider 0
+DIVA_32     .equ 0500h           ; ACLK Source Divider 0
+DIVS_32     .equ 0050h           ; SMCLK Source Divider 0
+DIVM_32     .equ 0005h           ; MCLK Source Divider 0
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : SYS REGISTERS
@@ -256,11 +256,11 @@ SYSRSTIV    .equ SYS_SFR + 001Eh
 ; POWER ON RESET AND INITIALIZATION : REF
 ; ----------------------------------------------------------------------
 
-REFCTL      equ REF_SFR + 00h       ; REF Shared Reference control register 0
+REFCTL      .equ REF_SFR + 00h       ; REF Shared Reference control register 0
 
 ; REFCTL0 Control Bits
-REFON       equ 0001h               ; REF Reference On
-REFTCOFF    equ 0008h               ; REF Temp.Sensor off
+REFON       .equ 0001h               ; REF Reference On
+REFTCOFF    .equ 0008h               ; REF Temp.Sensor off
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT1/2
@@ -362,7 +362,7 @@ P5REN       .equ PC_SFR + 06h    ; Port 5 Resistor Enable
 P5SEL0      .equ PC_SFR + 0Ah    ; Port 5 Selection 0
 P5SEL1      .equ PC_SFR + 0Ch    ; Port 5 Selection 1
 P5IV        .equ PC_SFR + 0Eh    ; Port 5 Interrupt Vector word 
-P5SELC      .set PC_SFR + 16h    ; Port 5 Complement Selection
+P5SELC      .equ PC_SFR + 16h    ; Port 5 Complement Selection
 P5IES       .equ PC_SFR + 18h    ; Port 5 Interrupt Edge Select
 P5IE        .equ PC_SFR + 1Ah    ; Port 5 Interrupt Enable
 P5IFG       .equ PC_SFR + 1Ch    ; Port 5 Interrupt Flag
@@ -373,7 +373,7 @@ P6DIR       .equ PC_SFR + 05h    ; Port 6 Direction
 P6REN       .equ PC_SFR + 07h    ; Port 6 Resistor Enable
 P6SEL0      .equ PC_SFR + 0Bh    ; Port 6 Selection 0
 P6SEL1      .equ PC_SFR + 0Dh    ; Port 6 Selection 1
-P6SELC      .set PC_SFR + 17h    ; Port 6 Complement Selection
+P6SELC      .equ PC_SFR + 17h    ; Port 6 Complement Selection
 P6IES       .equ PC_SFR + 19h    ; Port 6 Interrupt Edge Select
 P6IE        .equ PC_SFR + 1Bh    ; Port 6 Interrupt Enable
 P6IFG       .equ PC_SFR + 1Dh    ; Port 6 Interrupt Flag
@@ -401,7 +401,7 @@ P7REN       .equ PD_SFR + 06h    ; Port 7 Resistor Enable
 P7SEL0      .equ PD_SFR + 0Ah    ; Port 7 Selection 0
 P7SEL1      .equ PD_SFR + 0Ch    ; Port 7 Selection 1
 P7IV        .equ PD_SFR + 0Eh    ; Port 7 Interrupt Vector word 
-P7SELC      .set PD_SFR + 16h    ; Port 7 Complement Selection
+P7SELC      .equ PD_SFR + 16h    ; Port 7 Complement Selection
 P7IES       .equ PD_SFR + 18h    ; Port 7 Interrupt Edge Select
 P7IE        .equ PD_SFR + 1Ah    ; Port 7 Interrupt Enable
 P7IFG       .equ PD_SFR + 1Ch    ; Port 7 Interrupt Flag
@@ -412,7 +412,7 @@ P8DIR       .equ PD_SFR + 05h    ; Port 8 Direction
 P8REN       .equ PD_SFR + 07h    ; Port 8 Resistor Enable
 P8SEL0      .equ PD_SFR + 0Bh    ; Port 8 Selection 0
 P8SEL1      .equ PD_SFR + 0Dh    ; Port 8 Selection 1
-P8SELC      .set PD_SFR + 16h    ; Port 8 Complement Selection
+P8SELC      .equ PD_SFR + 16h    ; Port 8 Complement Selection
 P8IES       .equ PD_SFR + 19h    ; Port 8 Interrupt Edge Select
 P8IE        .equ PD_SFR + 1Bh    ; Port 8 Interrupt Enable
 P8IFG       .equ PD_SFR + 1Dh    ; Port 8 Interrupt Flag
@@ -435,58 +435,58 @@ PJSELC      .equ PJ_SFR + 16h   ; Port 2 SELection Complement; PJ 5-0 usage
 ; ----------------------------------------------------------------------
 RTC_C
 ; ----------------------------------------------------------------------
-RTCCTL0_L     .set RTC_C_SFR + 00h
-RTCCTL0_H     .set RTC_C_SFR + 01h
-RTCCTL1       .set RTC_C_SFR + 02h
-RTCCTL3       .set RTC_C_SFR + 03h
-RTCOCAL       .set RTC_C_SFR + 04h
-RTCTCMP       .set RTC_C_SFR + 06h
-RTCPS0CTL     .set RTC_C_SFR + 08h
-RTCPS1CTL     .set RTC_C_SFR + 0Ah
-RTCPS         .set RTC_C_SFR + 0Ch ; = RT1PS:RT0PS
-RTCIV         .set RTC_C_SFR + 0Eh
-RTCSEC        .set RTC_C_SFR + 10h
-RTCCNT1       .set RTC_C_SFR + 10h     
-RTCMIN        .set RTC_C_SFR + 11h
-RTCCNT2       .set RTC_C_SFR + 11h
-RTCHOUR       .set RTC_C_SFR + 12h
-RTCCNT3       .set RTC_C_SFR + 12h
-RTCDOW        .set RTC_C_SFR + 13h
-RTCCNT4       .set RTC_C_SFR + 13h
-RTCDAY        .set RTC_C_SFR + 14h
-RTCMON        .set RTC_C_SFR + 15h
-RTCYEAR       .set RTC_C_SFR + 16h
+RTCCTL0_L   .equ RTC_C_SFR + 00h
+RTCCTL0_H   .equ RTC_C_SFR + 01h
+RTCCTL1     .equ RTC_C_SFR + 02h
+RTCCTL3     .equ RTC_C_SFR + 03h
+RTCOCAL     .equ RTC_C_SFR + 04h
+RTCTCMP     .equ RTC_C_SFR + 06h
+RTCPS0CTL   .equ RTC_C_SFR + 08h
+RTCPS1CTL   .equ RTC_C_SFR + 0Ah
+RTCPS       .equ RTC_C_SFR + 0Ch ; = RT1PS:RT0PS
+RTCIV       .equ RTC_C_SFR + 0Eh
+RTCSEC      .equ RTC_C_SFR + 10h
+RTCCNT1     .equ RTC_C_SFR + 10h     
+RTCMIN      .equ RTC_C_SFR + 11h
+RTCCNT2     .equ RTC_C_SFR + 11h
+RTCHOUR     .equ RTC_C_SFR + 12h
+RTCCNT3     .equ RTC_C_SFR + 12h
+RTCDOW      .equ RTC_C_SFR + 13h
+RTCCNT4     .equ RTC_C_SFR + 13h
+RTCDAY      .equ RTC_C_SFR + 14h
+RTCMON      .equ RTC_C_SFR + 15h
+RTCYEAR     .equ RTC_C_SFR + 16h
 
-RTCHOLD       .set 40h
-RTCRDY        .set 10h
+RTCHOLD     .equ 40h
+RTCRDY      .equ 10h
 
 ; ----------------------------------------------------------------------
 MPY_32
 ; ----------------------------------------------------------------------
 
-MPY       .equ MPY_SFR + 00h    ; Multiply16 Unsigned/Operand 1 */
-MPYS      .equ MPY_SFR + 02h    ; Multiply16 signed/Operand 1
-MAC       .equ MPY_SFR + 04h    ; MultiplyAccumulate16 Unsigned/Operand 1 */
-MACS      .equ MPY_SFR + 06h    ; MultiplyAccumulate16 signed/Operand 1
-OP2       .equ MPY_SFR + 08h    ; Operand2_16 */
-RESLO     .equ MPY_SFR + 0Ah    ; 16x16-bit result low - least significant word */
-RESHI     .equ MPY_SFR + 0Ch    ; 16x16-bit result high */
-SUMEXT    .equ MPY_SFR + 0Eh    ; 16x16-bit sum extension register
-MPY32L    .equ MPY_SFR + 10h    ; Multiply32 Unsigned/Operand 1
-MPY32H    .equ MPY_SFR + 12h    ; Multiply32 Unsigned/Operand 1
-MPYS32L   .equ MPY_SFR + 14h    ; Multiply32 signed/Operand 1
-MPYS32H   .equ MPY_SFR + 16h    ; Multiply32 signed/Operand 1
-MAC32L    .equ MPY_SFR + 18h    ; MultiplyAccumulate32 Unsigned/Operand 1
-MAC32H    .equ MPY_SFR + 1Ah    ; MultiplyAccumulate32 Unsigned/Operand 1
-MACS32L   .equ MPY_SFR + 1Ch    ; MultiplyAccumulate32 signed/Operand 1
-MACS32H   .equ MPY_SFR + 1Eh    ; MultiplyAccumulate32 signed/Operand 1
-OP2L      .equ MPY_SFR + 20h    ; Multiply32 Operand 2
-OP2H      .equ MPY_SFR + 22h    ; Multiply32 Operand 2
-RES0      .equ MPY_SFR + 24h    ; 32x32-bit result 0 - least significant word */
-RES1      .equ MPY_SFR + 26h    ; 32x32-bit result 1 */
-RES2      .equ MPY_SFR + 28h    ; 32x32-bit result 2 */
-RES3      .equ MPY_SFR + 2Ah    ; 32x32-bit result 3 */
-MPY32CTL0 .equ MPY_SFR + 2Ch    ; MPY32 control register 0
+MPY         .equ MPY_SFR + 00h  ; Multiply16 Unsigned/Operand 1 */
+MPYS        .equ MPY_SFR + 02h  ; Multiply16 signed/Operand 1
+MAC         .equ MPY_SFR + 04h  ; MultiplyAccumulate16 Unsigned/Operand 1 */
+MACS        .equ MPY_SFR + 06h  ; MultiplyAccumulate16 signed/Operand 1
+OP2         .equ MPY_SFR + 08h  ; Operand2_16 */
+RESLO       .equ MPY_SFR + 0Ah  ; 16x16-bit result low - least significant word */
+RESHI       .equ MPY_SFR + 0Ch  ; 16x16-bit result high */
+SUMEXT      .equ MPY_SFR + 0Eh  ; 16x16-bit sum extension register
+MPY32L      .equ MPY_SFR + 10h  ; Multiply32 Unsigned/Operand 1
+MPY32H      .equ MPY_SFR + 12h  ; Multiply32 Unsigned/Operand 1
+MPYS32L     .equ MPY_SFR + 14h  ; Multiply32 signed/Operand 1
+MPYS32H     .equ MPY_SFR + 16h  ; Multiply32 signed/Operand 1
+MAC32L      .equ MPY_SFR + 18h  ; MultiplyAccumulate32 Unsigned/Operand 1
+MAC32H      .equ MPY_SFR + 1Ah  ; MultiplyAccumulate32 Unsigned/Operand 1
+MACS32L     .equ MPY_SFR + 1Ch  ; MultiplyAccumulate32 signed/Operand 1
+MACS32H     .equ MPY_SFR + 1Eh  ; MultiplyAccumulate32 signed/Operand 1
+OP2L        .equ MPY_SFR + 20h  ; Multiply32 Operand 2
+OP2H        .equ MPY_SFR + 22h  ; Multiply32 Operand 2
+RES0        .equ MPY_SFR + 24h  ; 32x32-bit result 0 - least significant word */
+RES1        .equ MPY_SFR + 26h  ; 32x32-bit result 1 */
+RES2        .equ MPY_SFR + 28h  ; 32x32-bit result 2 */
+RES3        .equ MPY_SFR + 2Ah  ; 32x32-bit result 3 */
+MPY32CTL0   .equ MPY_SFR + 2Ch  ; MPY32 control register 0
 
 MPUCTL0     .equ MPU_SFR + 00h  ; MPU control 0             
 MPUCTL1     .equ MPU_SFR + 02h  ; MPU control 1             
@@ -497,78 +497,63 @@ MPUIPC0     .equ MPU_SFR + 0Ah  ; MPU IP control 0
 MPUIPSEGB2  .equ MPU_SFR + 0Ch  ; MPU IP Encapsulation Segment Border 2 
 MPUIPSEGB1  .equ MPU_SFR + 0Eh  ; MPU IP Encapsulation Segment Border 1 
 
-
+    .IFDEF UCA0_TERM
 ; ----------------------------------------------------------------------
 ; eUSCI_A0
 ; ----------------------------------------------------------------------
+TERM_CTLW0  .equ eUSCI_A0_SFR + 00h ; eUSCI_A0 Control Word Register 0
+TERM_BRW    .equ eUSCI_A0_SFR + 06h ; eUSCI_A0 Baud Word Rate 0
+TERM_MCTLW  .equ eUSCI_A0_SFR + 08h ; eUSCI_A0 Modulation Control
+TERM_STATW  .equ eUSCI_A0_SFR + 0Ah ; eUSCI_A0 status Word Register
+TERM_RXBUF  .equ eUSCI_A0_SFR + 0Ch ; eUSCI_A0 Receive Buffer
+TERM_TXBUF  .equ eUSCI_A0_SFR + 0Eh ; eUSCI_A0 Transmit Buffer
+TERM_IE     .equ eUSCI_A0_SFR + 1Ah ; eUSCI_A0 Interrupt Enable Register
+TERM_IFG    .equ eUSCI_A0_SFR + 1Ch ; eUSCI_A0 Interrupt Flags Register
 
-    .IFDEF UCA0_TERM
-TERM_CTLW0       .equ eUSCI_A0_SFR + 00h    ; eUSCI_A0 Control Word Register 0
-TERM_BRW         .equ eUSCI_A0_SFR + 06h    ; eUSCI_A0 Baud Word Rate 0
-TERM_MCTLW       .equ eUSCI_A0_SFR + 08h    ; eUSCI_A0 Modulation Control
-TERM_STATW       .equ eUSCI_A0_SFR + 0Ah    ; eUSCI_A0 status Word Register
-TERM_RXBUF       .equ eUSCI_A0_SFR + 0Ch    ; eUSCI_A0 Receive Buffer
-TERM_TXBUF       .equ eUSCI_A0_SFR + 0Eh    ; eUSCI_A0 Transmit Buffer
-TERM_IE          .equ eUSCI_A0_SFR + 1Ah    ; eUSCI_A0 Interrupt Enable Register
-TERM_IFG         .equ eUSCI_A0_SFR + 1Ch    ; eUSCI_A0 Interrupt Flags Register
-TERM_VEC         .equ 0FFF0h      ; interrupt vector for  eUSCI_A0
-RX_TERM         .equ 1
-TX_TERM         .equ 2
+TERM_VEC    .equ 0FFF0h ; interrupt vector for  eUSCI_A0
+WAKE_UP     .equ 1      ; UART RX interrupt
+
+RX_TERM     .equ 1
+TX_TERM     .equ 2
+
     .ENDIF ;UCA0_TERM
 
-; ----------------------------------------------------------------------
-; eUSCI_A1
-; ----------------------------------------------------------------------
-
-    .IFDEF UCA1_TERM
-TERM_CTLW0       .equ eUSCI_A1_SFR + 00h    ; eUSCI_A1 Control Word Register 0
-TERM_BRW         .equ eUSCI_A1_SFR + 06h    ; eUSCI_A1 Baud Word Rate 0
-TERM_MCTLW       .equ eUSCI_A1_SFR + 08h    ; eUSCI_A1 Modulation Control
-TERM_STATW       .equ eUSCI_A1_SFR + 0Ah    ; eUSCI_A1 status Word Register
-TERM_RXBUF       .equ eUSCI_A1_SFR + 0Ch    ; eUSCI_A1 Receive Buffer
-TERM_TXBUF       .equ eUSCI_A1_SFR + 0Eh    ; eUSCI_A1 Transmit Buffer
-TERM_IE          .equ eUSCI_A1_SFR + 1Ah    ; eUSCI_A1 Interrupt Enable Register
-TERM_IFG         .equ eUSCI_A1_SFR + 1Ch    ; eUSCI_A1 Interrupt Flags Register
-TERM_VEC         .equ 0FFE6h      ; interrupt vector for  eUSCI_A1
-RX_TERM         .equ 1
-TX_TERM         .equ 2
-    .ENDIF ;UCA1_TERM
-
+    .IFDEF UCB0_SD
 ; ----------------------------------------------------------------------
 ; eUSCI_B0
 ; ----------------------------------------------------------------------
-    .IFDEF UCB0_SD
-SD_CTLW0        .equ eUSCI_B0_SFR + 00h    ; eUSCI_B0 Control Word Register 0
-SD_BRW          .equ eUSCI_B0_SFR + 06h    ; eUSCI_B0 Baud Word Rate 0
-SD_RXBUF        .equ eUSCI_B0_SFR + 0Ch    ; eUSCI_B0 Receive Buffer 8
-SD_TXBUF        .equ eUSCI_B0_SFR + 0Eh    ; eUSCI_B0 Transmit Buffer 8
-SD_IFG          .equ eUSCI_B0_SFR + 2Ch    ; eUSCI_B0 Interrupt Flags Register
-RX_SD           .equ 1
-TX_SD           .equ 2
+SD_CTLW0    .equ eUSCI_B0_SFR + 00h ; eUSCI_B0 Control Word Register 0
+SD_BRW      .equ eUSCI_B0_SFR + 06h ; eUSCI_B0 Baud Word Rate 0
+SD_RXBUF    .equ eUSCI_B0_SFR + 0Ch ; eUSCI_B0 Receive Buffer 8
+SD_TXBUF    .equ eUSCI_B0_SFR + 0Eh ; eUSCI_B0 Transmit Buffer 8
+SD_IFG      .equ eUSCI_B0_SFR + 2Ch ; eUSCI_B0 Interrupt Flags Register
+RX_SD       .equ 1
+TX_SD       .equ 2
+
     .ENDIF ;UCB0_SD
 
-; ----------------------------------------------------------------------
-; eUSCI_B1
-; ----------------------------------------------------------------------
 
+    .IFDEF UCB2_TERM
 ; ----------------------------------------------------------------------
 ; eUSCI_B2
 ; ----------------------------------------------------------------------
+TERM_CTLW0  .equ eUSCI_B2_SFR + 00h ; USCI_B2 Control Word Register 0
+TERM_CTLW1  .equ eUSCI_B2_SFR + 02h ; USCI_B2 Control Word Register 1
+TERM_BRW    .equ eUSCI_B2_SFR + 06h ; USCI_B2 Baud Word Rate 0
+TERM_STATW  .equ eUSCI_B2_SFR + 08h ; USCI_B2 Status Word
+TERM_RXBUF  .equ eUSCI_B2_SFR + 0Ch ; USCI_B2 Receive Buffer 8
+TERM_TXBUF  .equ eUSCI_B2_SFR + 0Eh ; USCI_B2 Transmit Buffer 8
+TERM_I2COA0 .equ eUSCI_B2_SFR + 14h ; USCI_B2 I2C Own Address 0
+TERM_ADDRX  .equ eUSCI_B2_SFR + 1Ch ; USCI_B2  Received Address Register 
+TERM_I2CSA  .equ eUSCI_B2_SFR + 20h ; USCI_B2 I2C Slave Address
+TERM_IE     .equ eUSCI_B2_SFR + 2Ah ; USCI_B2 Interrupt Enable
+TERM_IFG    .equ eUSCI_B2_SFR + 2Ch ; USCI_B2 Interrupt Flags Register
 
-    .IFDEF UCB2_TERM
-TERM_CTLW0      .equ eUSCI_B2_SFR + 00h     ; USCI_B2 Control Word Register 0
-TERM_CTLW1      .equ eUSCI_B2_SFR + 02h     ; USCI_B2 Control Word Register 1
-TERM_BRW        .equ eUSCI_B2_SFR + 06h     ; USCI_B2 Baud Word Rate 0
-TERM_STATW      .equ eUSCI_B2_SFR + 08h     ; USCI_B2 Status Word
-TERM_RXBUF      .equ eUSCI_B2_SFR + 0Ch     ; USCI_B2 Receive Buffer 8
-TERM_TXBUF      .equ eUSCI_B2_SFR + 0Eh     ; USCI_B2 Transmit Buffer 8
-TERM_I2COA0     .equ eUSCI_B2_SFR + 14h     ; USCI_B2 I2C Own Address 0
-TERM_ADDRX      .equ eUSCI_B2_SFR + 1Ch     ; USCI_B2  Received Address Register 
-TERM_I2CSA      .equ eUSCI_B2_SFR + 20h     ; USCI_B2 I2C Slave Address
-TERM_IE         .equ eUSCI_B2_SFR + 2Ah     ; USCI_B2 Interrupt Enable
-TERM_IFG        .equ eUSCI_B2_SFR + 2Ch     ; USCI_B2 Interrupt Flags Register
-TERM_VEC        .equ 0FFBCh                 ; interrupt vector for eUSCI_B2
-RX_TERM         .equ 1
-TX_TERM         .equ 2
+TERM_VEC    .equ 0FFBCh ; interrupt vector for eUSCI_B2
+WAKE_UP     .equ 4      ; START interrupt
+
+RX_TERM     .equ 1
+TX_TERM     .equ 2
+
     .ENDIF ;UCB0_TERM
 

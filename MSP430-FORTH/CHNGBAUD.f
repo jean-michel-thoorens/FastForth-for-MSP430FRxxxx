@@ -15,17 +15,6 @@
 \
 PWR_STATE
 
-[UNDEFINED] SWAP [IF]
-\ https://forth-standard.org/standard/core/SWAP
-\ SWAP     x1 x2 -- x2 x1    swap top two items
-CODE SWAP
-MOV @PSP,W      \ 2
-MOV TOS,0(PSP)  \ 3
-MOV W,TOS       \ 1
-MOV @IP+,PC     \ 4
-ENDCODE
-[THEN]
-
 [UNDEFINED] DUP [IF]    \ define DUP and DUP?
 \ https://forth-standard.org/standard/core/DUP
 \ DUP      x -- x x      duplicate top of stack
@@ -92,12 +81,15 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
-[UNDEFINED] UM/MOD [IF]
-\ https://forth-standard.org/standard/core/UMDivMOD
-\ UM/MOD   udlo|udhi u1 -- r q   unsigned 32/16->r16 q16
-CODE UM/MOD
-    PUSH #DROP      \
-    MOV #MUSMOD,PC  \ execute MUSMOD then return to DROP
+[UNDEFINED] U/ [IF]
+\ U/   u1 u2 -- q   unsigned 16/16->q16
+CODE U/
+SUB #2,PSP
+MOV #0,0(PSP)   \ -- u1lo u1hi u2
+CALL #MUSMOD    \ -- r qlo qhi
+MOV @PSP,TOS    \ -- r qlo qlo
+ADD #4,PSP      \ -- qlo
+MOV @IP+,PC
 ENDCODE
 [THEN]
 
@@ -119,17 +111,6 @@ SUB #2,PSP      \ 1
 MOV TOS,0(PSP)  \ 3
 MOV @RSP+,TOS   \ 2
 MOV @IP+,PC     \ 4
-ENDCODE
-[THEN]
-
-[UNDEFINED] R@ [IF]
-\ https://forth-standard.org/standard/core/RFetch
-\ R@    -- x     R: x -- x   fetch from return stack
-CODE R@
-SUB #2,PSP
-MOV TOS,0(PSP)
-MOV @RSP,TOS
-MOV @IP+,PC
 ENDCODE
 [THEN]
 
@@ -278,7 +259,6 @@ LOOP
 ; IMMEDIATE 
 [THEN]
 
-
 [UNDEFINED] S_ [IF]
 CODE S_             \           Squote alias with blank separator instead quote
 MOV #0,&CAPS        \           turn CAPS OFF
@@ -318,19 +298,18 @@ $20 DUP EMIT
 
 : OVR_BAUDS
 $20 DUP EMIT ESC [7m    \ set reverse video
-        ." with MCLK = " FREQ_KHZ @ 0 1000 UM/MOD . DROP
+        ." with MCLK = " FREQ_KHZ @ 1000 U/ .
         ABORT" MHz? don't dream!"
 ;
 
 : CHNGBAUD                  \ only for 1, 4, 8, 16, 24 MHz
 PWR_STATE                   \ removes this created word (garbage collector)
 ECHO
-42              \ number of terminal lines   
-0 DO CR LOOP    \ don't erase any line of source
+42 0 DO CR LOOP    \ don't erase any line of source
 ESC [H          \ cursor home
 
-FREQ_KHZ @ >R               \ r-- target MCLCK frequency in MHz
-." target MCLK = " R@ 0 1000 UM/MOD . ." MHz" DROP CR
+FREQ_KHZ @ DUP >R               \ r-- target MCLCK frequency in MHz
+." target MCLK = " 1000 U/ . ." MHz" CR
 ." choose your baudrate:" CR
 ."  0 --> 6 MBds" CR
 ."  1 --> 5 MBds" CR
@@ -348,72 +327,67 @@ FREQ_KHZ @ >R               \ r-- target MCLCK frequency in MHz
 KEY
 
 CASE
-#48 OF  ." 6 MBds"           \ add this to the current line
-        R@ CASE
-            #24000 OF $4 $0     ENDOF   \ -- TERM_BRW  TERM_MCTLW
-            DUP 24000 <   
+#48 OF  ." 6 MBds"          \ add this to the current line
+        R> CASE
+            #24000 OF $4 $0 \ -- TERM_BRW  TERM_MCTLW
+                   ENDOF
+            24000 <   
             IF OVR_BAUDS    \ < 24 MHz --> abort
-            ELSE BAD_MHz    \ other MHz --> abort
-            THEN
+            THEN BAD_MHz    \ other MHz --> abort
         ENDCASE
     ENDOF
 #49 OF  ." 5 MBds"
-        R@ CASE
+        R> CASE
             #24000 OF $4 $EE00  ENDOF
             #16000 OF $3 $2100  ENDOF
-            DUP 16000 <   
+            16000 <   
             IF OVR_BAUDS    \ < 16 MHz --> abort
-            ELSE BAD_MHz    \ other MHz --> abort
-            THEN
+            THEN BAD_MHz    \ other MHz --> abort
         ENDCASE
     ENDOF
 #50 OF  ." 4 MBds"
-        R@ CASE
+        R> CASE
             #24000 OF $6 $0     ENDOF
             #16000 OF $4 $0     ENDOF
-            DUP 16000 <   
+            16000 <   
             IF OVR_BAUDS    \ < 16 MHz --> abort
-            ELSE BAD_MHz    \ other MHz --> abort
-            THEN
+            THEN BAD_MHz    \ other MHz --> abort
         ENDCASE
     ENDOF
 #51 OF  ." 2457600 Bds"
-        R@ CASE
+        R> CASE
             #24000  OF $9 $DD00 ENDOF
             #16000  OF $6 $AA00 ENDOF
             #8000   OF $3 $4400 ENDOF
-            DUP 8000 <   
+            8000 <   
             IF OVR_BAUDS    \ < 8 MHz --> abort
-            ELSE BAD_MHz    \ other MHz --> abort
-            THEN
+            THEN BAD_MHz    \ other MHz --> abort
         ENDCASE
     ENDOF
 #52 OF  ." 921600 Bds"
-        R@ CASE
+        R> CASE
             #24000  OF $1 $00A1     ENDOF
             #16000  OF $11 $4A00    ENDOF
             #8000   OF $8 $D600     ENDOF
             #4000   OF $4 $4900     ENDOF
-            DUP 4000 <   
+            4000 <   
             IF OVR_BAUDS    \ < 4 MHz --> abort
-            ELSE BAD_MHz    \ other MHz --> abort
-            THEN
+            THEN BAD_MHz    \ other MHz --> abort
         ENDCASE
     ENDOF
 #53 OF  ." 460800 Bds"
-        R@ CASE
+        R> CASE
             #24000  OF $6 $0001     ENDOF
             #16000  OF $2 $BB21     ENDOF
             #8000   OF $11 $4A00    ENDOF
             #4000   OF $8 $D600     ENDOF
-            DUP 4000 <   
+            4000 <   
             IF OVR_BAUDS    \ < 4 MHz --> abort
-            ELSE BAD_MHz    \ other MHz --> abort
-            THEN
+            THEN BAD_MHz    \ other MHz --> abort
         ENDCASE
     ENDOF
 #54 OF  ." 230400 Bds"
-        R@ CASE
+        R> CASE
             #24000  OF $3 $0241     ENDOF
             #16000  OF $4 $5551     ENDOF
             #8000   OF $2 $BB21     ENDOF
@@ -423,7 +397,7 @@ CASE
         ENDCASE
     ENDOF
 #55 OF  ." 115200 Bds"
-        R@ CASE
+        R> CASE
             #24000  OF $0D $4901    ENDOF
             #16000  OF $8 $F7A1     ENDOF
             #8000   OF $4 $5551     ENDOF
@@ -433,7 +407,7 @@ CASE
         ENDCASE
     ENDOF
 #56 OF  ." 38400 Bds"
-        R@ CASE
+        R> CASE
             #24000  OF $27 $0011    ENDOF
             #16000  OF $1A $D601    ENDOF
             #8000   OF $0D $4901    ENDOF
@@ -443,7 +417,7 @@ CASE
         ENDCASE
     ENDOF
 #57 OF  ." 19200 Bds"
-        R@ CASE
+        R> CASE
             #24000  OF $4E $0021    ENDOF
             #16000  OF $34 $4911    ENDOF
             #8000   OF $1A $D601    ENDOF
@@ -453,7 +427,7 @@ CASE
         ENDCASE
     ENDOF
 #65 OF  ." 9600 Bds"
-        R@ CASE
+        R> CASE
             #24000  OF $9C $0041    ENDOF
             #16000  OF $68 $D621    ENDOF
             #8000   OF $34 $4911    ENDOF
@@ -466,7 +440,6 @@ CASE
 ENDCASE
 TERMMCTLW_RST !             \ set UCAxMCTLW value in FRAM
 TERMBRW_RST !               \ set UCAxBRW value in FRAM
-R> DROP                     \ clear stacks
 CR ESC [7m                  \ escape sequence to set reverse video
 ." Change baudrate in Teraterm, save its setup, then reset target."
 ;

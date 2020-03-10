@@ -1,11 +1,10 @@
 
 ; ----------
-; CORDIC.4th
+; CORDIC.4th for MSP_EXP430FR5994
 ; ----------
 ; -----------------------------------------------------------
 ; requires FIXPOINT_INPUT kernel addon, see forthMSP430FR.asm
 ; -----------------------------------------------------------
-
 
 [DEFINED] {CORDIC} [IF] {CORDIC} [THEN]
 
@@ -116,8 +115,8 @@ REPEAT      MOV R8,&$1DB2
 ENDCODE
 [THEN]
 
-$1A04 @ $81F3 U<
 $81EF $1A04 @ U< 
+$1A04 @ $81F3 U<
 = [IF]   ; MSP430FR413x subfamily without hardware_MPY
 
 [UNDEFINED] F#S [IF]

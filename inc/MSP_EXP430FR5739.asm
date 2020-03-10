@@ -1,23 +1,5 @@
 ; -*- coding: utf-8 -*-
 
-; Fast Forth For Texas Instrument MSP430FR5739
-; Tested on MSP-EXP430FR5739 launchpad
-;
-; Copyright (C) <2014>  <J.M. THOORENS>
-;
-; This program is free software: you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation, either version 3 of the License, or
-; (at your option) any later version.
-; 
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-; 
-; You should have received a copy of the GNU General Public License
-; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 ; ----------------------------------------------------------------------
 ; MSP_EXP430FR739.inc 
 ; ----------------------------------------------------------------------
@@ -399,4 +381,3 @@ ClockWaitY  SUB     #1,Y            ;1
     BIS.B   #010h,&PJSEL0   ; SEL0 for only LFXIN
     BIC.B   #RTCHOLD,&RTCCTL1 ; Clear RTCHOLD = start RTC_B
     .ENDIF
-

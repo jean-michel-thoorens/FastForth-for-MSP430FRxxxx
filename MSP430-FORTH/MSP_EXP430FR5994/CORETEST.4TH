@@ -1,7 +1,7 @@
 
 PWR_STATE
 
-: ANSCOMPNOTFOUND
+: COMPNOTFOUND
 $0D EMIT   \ return to column 1
 1 ABORT" {CORE_ANS} word set not found!"
 ;
@@ -1071,8 +1071,8 @@ CREATE ABUF 80 CHARS ALLOT
 ABUF 80 \ ACCEPT            \ JMT 
 ['] ACCEPT DUP @ $4030 =    \ JMT: if CFA content = $4030 (MOV @PC+,PC), ACCEPT is deferred
 IF      >BODY               \ JMT: find default part of deferred ACCEPT
-THEN    EXECUTE             \ execute ACCEPT
-    CR CR ." RECEIVED: " [CHAR] " EMIT
+THEN    EXECUTE             \ JMT: execute ACCEPT
+    CR ." RECEIVED: " [CHAR] " EMIT
     ABUF SWAP TYPE [CHAR] " EMIT CR
 ;
 
@@ -1086,12 +1086,9 @@ T{ : GDX   123 ; : GDX   GDX 234 ; -> }T
 T{ GDX -> 123 234 }T
 
 CR .( End of Core word set tests)
-
+         
 CORETESTSUCCESS
 
-[ELSE]
-
-ECHO
-ANSCOMPNOTFOUND \               download CORECOMP.f before CORETEST.4TH
+[ELSE] COMPNOTFOUND ;             download CORE_ANS.f before CORETEST.4TH
 
 [THEN]

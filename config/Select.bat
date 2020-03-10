@@ -16,7 +16,6 @@
 @echo 7  CHIPSTICK_FR2433
 @echo 8  MSP_EXP430FR2355
 @echo 9  LP_MSP430FR2476
-
 @set /p choice=your choice: 
 
 @if %choice% == 1    set template=MSP_EXP430FR5739
@@ -32,7 +31,7 @@
 @exit /b
 
 :SelectDevice
-:: fonction called by prog.bat
+:: fonction called by FET_prog.bat
 
 @shift /1
 
@@ -49,3 +48,10 @@
 
 @exit /b
 
+
+:SelectPortCOM
+:: fonction called by BSL_prog.bat
+@set /p number=select your Port: COM
+@set PortCOM=COM%number%
+
+@exit /b

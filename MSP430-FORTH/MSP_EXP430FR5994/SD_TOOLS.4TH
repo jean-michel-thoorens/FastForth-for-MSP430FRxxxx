@@ -1,6 +1,6 @@
 
 ; ---------------------------------------------------------------
-; SD_TOOLS.4th : BASIC TOOLS for SD Card : DIR FAT SECTOR CLUSTER
+; SD_TOOLS.4th for MSP_EXP430FR5994 : BASIC TOOLS for SD Card : DIR FAT SECTOR CLUSTER
 ; ---------------------------------------------------------------
 
 PWR_STATE
@@ -205,7 +205,11 @@ COLON
     $1E00 $200 DUMP CR ;
 
 CODE CLUSTER
-BW2 MOV.B &$2012,R10
+BW2 BIT.B   #4,&$260
+    0<> IF
+        MOV #COLD,R0
+    THEN
+    MOV.B &$2012,R10
     MOV @R15,R9
     GOTO FW1
     BEGIN

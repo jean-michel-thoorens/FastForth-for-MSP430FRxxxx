@@ -73,16 +73,26 @@ lastasmword31   .equ asmlink31
 
     .ENDIF
 
-    .IFDEF TERMINAL_I2C
-    .org 0FFA0h ; MSP430FR2355/2476 BSL I2C Address, a good idea for I2C_SLAVE_ADR(s) area, isn't it?
-;    .word 10h  ; --> BSL I2C
-;    .word 10h  ; --> UCBxI2COA0
-;    .word 20h  ; --> UCBxI2COA1
-;    .word 30h  ; --> UCBxI2COA2
-;    .word 40h  ; --> UCBxI2COA3
-    .ENDIF
+;    .org 0FF88h ; JTAG_PASSWORD, up to 44 words ?
+;    .org 0FFE0h ; BSL_PASSWORD, 16 words
 
-    .ORG 0FFB0h ; 39 vectors value <== word COLD by default
+    .org 0FFA0h ; MSP430FR2355/2476 BSL I2C Address, a good idea for I2C_SLAVE_ADR(s) area, isn't it?
+    .IFDEF TERMINAL_I2C
+    .word 10h  ; --> BSL I2C
+    .word 10h  ; --> UCBxI2COA0
+    .word 20h  ; --> UCBxI2COA1
+    .word 30h  ; --> UCBxI2COA2
+    .word 40h  ; --> UCBxI2COA3
+    .ELSE
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
+    .ENDIF
+    .word RESET-4
+    .word RESET-4
+    .word RESET-4
     .word RESET-4
     .word RESET-4
     .word RESET-4

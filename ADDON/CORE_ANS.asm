@@ -21,6 +21,17 @@
     FORTHWORD "{CORE_ANS}"
     MOV @IP+,PC
 
+;-------------------------------------------------------------------------------
+; RETURN from high level word
+;-------------------------------------------------------------------------------
+            FORTHWORD "EXIT"
+; https://forth-standard.org/standard/core/EXIT
+; EXIT     --      exit a colon definition; CALL #EXIT performs ASMtoFORTH (10 cycles)
+;                                           JMP #EXIT performs EXIT
+            MOV @RSP+,IP    ; 2 pop previous IP (or next PC) from return stack
+            MOV @IP+,PC     ; 4 = NEXT
+                            ; 6 (ITC-2)
+
 ;https://forth-standard.org/standard/core/SPACE
 ;C SPACE   --               output a space
             FORTHWORD "SPACE"

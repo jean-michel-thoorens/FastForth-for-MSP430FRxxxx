@@ -1,25 +1,7 @@
 ! -*- coding: utf-8 -*-
 ! MSP_EXP430FR2433.pat
 !
-!
-! FastForth declarations for MSP-EXP430FR2433 launchpad
-!
-! Copyright (C) <2016>  <J.M. THOORENS>
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-\.f=\.4th!      to change file type
+\.f=\.4th for MSP_EXP430FR2433!      to change file type
 !
 !========================
 ! remove comments        
@@ -108,31 +90,31 @@
 ! ============================================
 ! FORTH I/O :
 ! ============================================
-TERM_TX=\$10!          ; P1.4 = TX also Deep_RST pin
-TERM_RX=\$20!          ; P1.5 = RX
-TERM_BUS=\$30!
+!TERMINAL 
+BUS_TERM=\$30!      ; P1.4 = TX, P1.5 = RX
 
 TERM_IN=\$200!
 TERM_REN=\$206!
-TERM_SEL=\$20A!     \ SEL0
-TERM_IE=\$21A!
-TERM_IFG=\$21C!
+TERM_SEL=\$20A!     \SEL0
 
-TERM_CTLW0=\$500!    \ eUSCI_A control word 0        
-TERM_CTLW1=\$502!    \ eUSCI_A control word 1        
+TERM_VEC=\$FFE4!    \ UCA0
+WAKE_UP=1!          \ RX int
+
+TERM_CTLW0=\$500!   \ eUSCI_A control word 0        
+TERM_CTLW1=\$502!   \ eUSCI_A control word 1        
 TERM_BRW=\$506!         
-TERM_BR0=\$506!      \ eUSCI_A baud rate 0           
-TERM_BR1=\$507!      \ eUSCI_A baud rate 1           
-TERM_MCTLW=\$508!    \ eUSCI_A modulation control    
-TERM_STATW=\$50A!     \ eUSCI_A status                
-TERM_RXBUF=\$50C!    \ eUSCI_A receive buffer        
-TERM_TXBUF=\$50E!    \ eUSCI_A transmit buffer       
-TERM_ABCTL=\$510!    \ eUSCI_A LIN control           
-TERM_IRTCTL=\$512!   \ eUSCI_A IrDA transmit control 
-TERM_IRRCTL=\$513!   \ eUSCI_A IrDA receive control  
-TERM_IE=\$51A!       \ eUSCI_A interrupt enable      
-TERM_IFG=\$51C!      \ eUSCI_A interrupt flags       
-TERM_IV=\$51E!       \ eUSCI_A interrupt vector word 
+TERM_BR0=\$506!     \ eUSCI_A baud rate 0           
+TERM_BR1=\$507!     \ eUSCI_A baud rate 1           
+TERM_MCTLW=\$508!   \ eUSCI_A modulation control    
+TERM_STATW=\$50A!   \ eUSCI_A status                
+TERM_RXBUF=\$50C!   \ eUSCI_A receive buffer        
+TERM_TXBUF=\$50E!   \ eUSCI_A transmit buffer       
+TERM_ABCTL=\$510!   \ eUSCI_A LIN control           
+TERM_IRTCTL=\$512!  \ eUSCI_A IrDA transmit control 
+TERM_IRRCTL=\$513!  \ eUSCI_A IrDA receive control  
+TERM_IE=\$51A!      \ eUSCI_A interrupt enable      
+TERM_IFG=\$51C!     \ eUSCI_A interrupt flags       
+TERM_IV=\$51E!      \ eUSCI_A interrupt vector word 
 
 RTS=1!              P1.0
 CTS=2!              P1.1
@@ -177,8 +159,8 @@ I2CSM_IN=\$220!
 I2CSM_OUT=\$222!
 I2CSM_DIR=\$224!
 I2CSM_REN=\$226!
-SMSDA=4!            P3.2
-SMSCL=2!            P3.1
+SM_SDA=4!            P3.2
+SM_SCL=2!            P3.1
 SM_BUS=\$06!    
 
 !I2C_Soft_Multi_Master
@@ -186,8 +168,8 @@ I2CSMM_IN=\$220!
 I2CSMM_OUT=\$222!
 I2CSMM_DIR=\$224!
 I2CSMM_REN=\$226!
-SMMSDA=4!            P3.2
-SMMSCL=2!            P3.1
+SMM_SDA=4!            P3.2
+SMM_SCL=2!            P3.1
 SMM_BUS=\$06!    
 
 !I2C_Multi_Master
@@ -197,8 +179,8 @@ I2CMM_DIR=\$204!
 I2CMM_REN=\$206!
 I2CMM_SEL=\$20A!    SEL0   
 I2CMM_VEC=\$FFE0!   UCB0_VEC
-MMSDA=\$04!         P1.2
-MMSCL=\$08!         P1.3
+MM_SDA=\$04!         P1.2
+MM_SCL=\$08!         P1.3
 MM_BUS=\$0C!
 
 !I2C_Master
@@ -208,8 +190,8 @@ I2CM_DIR=\$204!
 I2CM_REN=\$206!
 I2CM_SEL=\$20A!     SEL0
 I2CM_VEC=\$FFE0!    UCB0_VEC
-MSDA=\$04!          P1.2
-MSCL=\$08!          P1.3
+M_SDA=\$04!          P1.2
+M_SCL=\$08!          P1.3
 M_BUS=\$0C!
 
 !I2C_Slave
@@ -219,8 +201,8 @@ I2CS_DIR=\$204!
 I2CS_REN=\$206!
 I2CS_SEL=\$20A!     SEL0
 I2CS_VEC=\$FFE0!    UCB0_VEC
-SSDA=\$04!          P1.2
-SSCL=\$08!          P1.3
+S_SDA=\$04!          P1.2
+S_SCL=\$08!          P1.3
 S_BUS=\$0C!
 
 UCSWRST=1!          eUSCI Software Reset

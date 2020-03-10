@@ -1,24 +1,7 @@
 ! -*- coding: utf-8 -*-
 ! MSP_EXP430FR6989.pat
 !
-! Fast Forth For Texas Instrument MSP_EXP430FR6989
-!
-! Copyright (C) <2016>  <J.M. THOORENS>
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-\.f=\.4th!      to change file type
+\.f=\.4th for MSP_EXP430FR6989!      to change file type
 !
 !========================
 ! remove comments        
@@ -105,31 +88,30 @@
 ! ============================================
 ! FORTH I/O :
 ! ============================================
-TERM_TX=\$10!          ; P3.4 = TX also FORTH Deep_RST pin
-TERM_RX=\$20!          ; P3.5 = RX
-TERM_BUS=\$30!
+BUS_TERM=\$30!      \ P3.5 = RX, P3.4 = TX
 
 TERM_IN=\$220!
 TERM_REN=\$226!
-TERM_SEL=\$22C!
-TERM_IE=\$23A!
-TERM_IFG=\$23C!
+TERM_SEL=\$22C!     \ SEL0
 
-TERM_CTLW0=\$5E0!    \ eUSCI_A control word 0
-TERM_CTLW1=\$5E2!    \ eUSCI_A control word 1
+TERM_VEC=\$FFE4!    \ UCA1
+WAKE_UP=1!          \ RX int
+
+TERM_CTLW0=\$5E0!   \ eUSCI_A control word 0
+TERM_CTLW1=\$5E2!   \ eUSCI_A control word 1
 TERM_BRW=\$5E6!
-TERM_BR0=\$5E6!      \ eUSCI_A baud rate 0
-TERM_BR1=\$5E7!      \ eUSCI_A baud rate 1
-TERM_MCTLW=\$5E8!    \ eUSCI_A modulation control
-TERM_STAT=\$5EA!     \ eUSCI_A status
-TERM_RXBUF=\$5EC!    \ eUSCI_A receive buffer
-TERM_TXBUF=\$5EE!    \ eUSCI_A transmit buffer
-TERM_ABCTL=\$5F0!    \ eUSCI_A LIN control
-TERM_IRTCTL=\$5F2!   \ eUSCI_A IrDA transmit control
-TERM_IRRCTL=\$5F3!   \ eUSCI_A IrDA receive control
-TERM_IE=\$5FA!       \ eUSCI_A interrupt enable
-TERM_IFG=\$5FC!      \ eUSCI_A interrupt flags
-TERM_IV=\$5FE!       \ eUSCI_A interrupt vector word
+TERM_BR0=\$5E6!     \ eUSCI_A baud rate 0
+TERM_BR1=\$5E7!     \ eUSCI_A baud rate 1
+TERM_MCTLW=\$5E8!   \ eUSCI_A modulation control
+TERM_STAT=\$5EA!    \ eUSCI_A status
+TERM_RXBUF=\$5EC!   \ eUSCI_A receive buffer
+TERM_TXBUF=\$5EE!   \ eUSCI_A transmit buffer
+TERM_ABCTL=\$5F0!   \ eUSCI_A LIN control
+TERM_IRTCTL=\$5F2!  \ eUSCI_A IrDA transmit control
+TERM_IRRCTL=\$5F3!  \ eUSCI_A IrDA receive control
+TERM_IE=\$5FA!      \ eUSCI_A interrupt enable
+TERM_IFG=\$5FC!     \ eUSCI_A interrupt flags
+TERM_IV=\$5FE!      \ eUSCI_A interrupt vector word
 
 RTS=1!              ; P3.0
 CTS=2!              ; P3.1
@@ -160,6 +142,9 @@ LED2=\$80!      P9.7
 
 SW1_IN=\$200!
 SW1=2!       P1.1
+
+WIPE_IN=\$200!      ; pin as FORTH Deep_RST
+IO_WIPE=2!          ; P1.1 = S1
 
 SW2_IN=\$200!
 SW2=4!       P1.2
@@ -213,16 +198,16 @@ I2CSM_IN=\$200!
 I2CSM_OUT=\$202!
 I2CSM_DIR=\$204!
 I2CSM_REN=\$206!
-SMSDA=8!     P1.3
-SMSCL=\$20!     P1.5
+SM_SDA=8!     P1.3
+SM_SCL=\$20!     P1.5
 SM_BUS=\$28!     
 
 I2CSMM_IN=\$200!
 I2CSMM_OUT=\$202!
 I2CSMM_DIR=\$204!
 I2CSMM_REN=\$206!
-SMMSDA=8!    P1.3
-SMMSCL=\$20!    P1.5
+SMM_SDA=8!    P1.3
+SMM_SCL=\$20!    P1.5
 SMM_BUS=\$28!    
 RC5_TIM_CTL=\$380!      TA1CTL
 RC5_TIM_R=\$390!        TA1R
@@ -235,8 +220,8 @@ I2CMM_DIR=\$204!
 I2CMM_REN=\$206!
 I2CMM_SEL=\$20A!    SEL0
 I2CMM_Vec=\$FFEC!   UCBO_Vec
-MMSDA=\$40!         P1.6
-MMSCL=\$80!         P1.7
+MM_SDA=\$40!         P1.6
+MM_SCL=\$80!         P1.7
 MM_BUS=\$C0!    
 
 I2CM_IN=\$200!
@@ -245,8 +230,8 @@ I2CM_DIR=\$204!
 I2CM_REN=\$206!
 I2CM_SEL=\$20A!     SEL0
 I2CM_Vec=\$FFEC!    UCBO_Vec
-MSDA=\$40!          P1.6
-MSCL=\$80!          P1.7
+M_SDA=\$40!          P1.6
+M_SCL=\$80!          P1.7
 M_BUS=\$C0!    
 
 I2CS_IN=\$200!
@@ -255,8 +240,8 @@ I2CS_DIR=\$204!
 I2CS_REN=\$206!
 I2CS_SEL=\$20A!     SEL0
 I2CS_Vec=\$FFEC!    UCBO_Vec
-SSDA=\$40!          P1.6
-SSCL=\$80!          P1.7
+S_SDA=\$40!          P1.6
+S_SCL=\$80!          P1.7
 S_BUS=\$C0!
 
 UCSWRST=1!          eUSCI Software Reset

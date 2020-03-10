@@ -171,8 +171,8 @@ REPEAT      MOV Y,&HP           \ 3
 ENDCODE
 [THEN]
 
-DEVICEID @ $81F3 U<
 $81EF DEVICEID @ U< 
+DEVICEID @ $81F3 U<
 = [IF]   ; MSP430FR413x subfamily without hardware_MPY
 
 [UNDEFINED] F#S [IF]

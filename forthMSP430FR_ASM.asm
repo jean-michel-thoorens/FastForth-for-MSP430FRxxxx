@@ -298,7 +298,6 @@ MAKEOPCODE  MOV     T,X             ; -- opcode             X= OPCODEADR to comp
             asmword "MOV"
             CALL rDODOES
             .word   TYPE1DOES,4000h
-
             asmword "MOV.B"
             CALL rDODOES
             .word   TYPE1DOES,4040h

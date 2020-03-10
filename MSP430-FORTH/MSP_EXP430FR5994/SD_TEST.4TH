@@ -1,6 +1,6 @@
 
 ; -----------
-; SD_TEST.4th
+; SD_TEST.4th for MSP_EXP430FR5994
 ; -----------
 
 PWR_STATE

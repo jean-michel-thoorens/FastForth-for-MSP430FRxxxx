@@ -579,7 +579,6 @@ MOV #%01_0001_0100,&WDT_TIM_CTL \ start WDT_TIM_, ACLK, up mode, disable int,
 \ activate I/O                  \
 \ ------------------------------\
 BIC #1,&PM5CTL0                 \ activate all previous I/O settings; if not activated, nothing works after reset !
-BIS.B #BUS_TERM,&TERM_SEL       \ Configure pins TXD & RXD for TERM_UART use, otherwise no TERMINAL !
 \ ------------------------------\
 \ RESET events handling         \ search "SYSRSTIV" in your MSP430FRxxxx datasheet
 \ ------------------------------\

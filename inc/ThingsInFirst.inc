@@ -34,16 +34,128 @@ UF11        .equ 0800h ; = SR(11) User Flag 3
 
 ;----------------------------------------------------------------------------
 LPM0        .equ CPUOFF
-; LPM0        .equ SCG0 + CPUOFF  ; for devices with FLL, to disable FLL
-LPM1        .equ SCG0 + CPUOFF
+LPM1        .equ SCG0 + CPUOFF  ; for devices with FLL: LPM1 = LPM0 + FLL disabled
 LPM2        .equ SCG1 + CPUOFF
 LPM3        .equ SCG1 + SCG0 + CPUOFF
 LPM4        .equ SCG1 + SCG0 + OSCOFF + CPUOFF
 
+;-------------------------------------------------------------------------------
+; DEFINING FORTH REGISTERS - DTC model
+;-------------------------------------------------------------------------------
+RSP         .reg    R1      ; RSP = Return Stack Pointer (return stack)
+;                   R2      ; not to be used
+;                   R3      ; not to be used
+; DOxxx registers           ; must be saved before use and restored after use
+rDOCOL      .reg    R4
+rDODOES     .reg    r5      ; to restore: MOV #XDODOES,rDODOES
+rDOCON      .reg    r6      ; to restore: MOV #XDOCON,rDOCON
+rDOVAR      .reg    r7      ; to restore: MOV #R>,rDOVAR
+; rDOxxx alias
+R           .reg    r4      ; rDOCOL alias
+Q           .reg    r5      ; rDODOES alias
+P           .reg    r6      ; rDOCON alias
+M           .reg    R7      ; rDOVAR alias
+; Scratch registers
+Y           .reg    R8
+X           .reg    R9
+W           .reg    R10
+T           .reg    R11
+S           .reg    R12
+; Forth virtual machine
+IP          .reg    R13     ; interpretative pointer
+TOS         .reg    R14     ; first PSP cell
+PSP         .reg    R15     ; PSP = Parameters Stack Pointer (stack data)
+
+
+
+; ----------------------------------------------
+; EXECUTIVE WORDS FOR Direct-Threaded Code (DTC)
+; ----------------------------------------------
+
+;-------------------------------------------------------------------------------
+; DODOES  leave on parameter stack the PFA of a CREATE definition and execute Master word
+;-------------------------------------------------------------------------------
+DODOES      .equ    1285h       ; CALL rDODOES ; [rDODOES] is defined as xdodoes by COLD
+
+;-------------------------------------------------------------------------------
+; DOCON  leave on parameter stack the [PFA] of a CONSTANT definition
+;-------------------------------------------------------------------------------
+DOCON       .equ    1286h   ; 4 CALL rDOCON ; [rDOCON] is defined as xdocon by COLD
+
+;-------------------------------------------------------------------------------
+; DOVAR leave on parameter stack the PFA of a VARIABLE definition
+;-------------------------------------------------------------------------------
+DOVAR       .equ    1287h   ; 4 for CALL rDOVAR       S-- VAR      PFA  R--  
+                            ; [rDOVAR] is defined as RFROM by COLD
+;-------------------------------------------------------------------------------
+; DOCOL starts high level words
+;-------------------------------------------------------------------------------
+; very nice FAST FORTH feature:
+; as IP is always computed from the PC value, we can place low to high level
+; "ASMtoFORTH" or "mDOCOL" switches anywhere in a word, i.e. not only at its
+; beginning as ITC competitors.
+;-------------------------------------------------------------------------------
+    .SWITCH DTC
+
+    .CASE 1 ; DOCOL = CALL rDOCOL, [rDOCOL] = xdocol
+
+DOCOL1      .equ    1284h   ; 4 CALL rDOCOL
+
+ASMtoFORTH  .MACRO          ; compiled by LO2HI
+            CALL #EXIT      ; 10 cycles
+            .ENDM           ; 2 words, 10 cycles
+                            ; LO2HI + HI2LO = 3 words, 10 cycles.
+
+mDOCOL      .MACRO          ; compiled by : and by colon
+            CALL rDOCOL     ; 10 [rDOCOL] = xdocol
+            .ENDM           ; 1 word, 14 cycles (CALL included) (ITC+4)
+                            ; COLON + SEMI = 2 words, 20 cycles (ITC+2)
+
+    .CASE 2 ; DOCOL = PUSH IP + CALL rDOCOL, [rDOCOL] = EXIT
+
+DOCOL1      .equ    120Dh   ; 3 PUSH IP
+DOCOL2      .equ    1284h   ; 4 CALL rDOCOL
+
+ASMtoFORTH  .MACRO          ; compiled by LO2HI
+            CALL rDOCOL     ; 10 [rDOCOL] = EXIT
+            .ENDM           ; 1 word, 10 cycles. 
+                            ; LO2HI + HI2LO = 2 words, 10 cycles.
+
+mDOCOL      .MACRO          ; compiled by : and by COLON
+            PUSH IP         ; 3
+            CALL rDOCOL     ; 10 [rDOCOL] = EXIT
+            .ENDM           ; 2 words, 13 cycles (ITC+3)
+                            ; COLON + SEMI = 3 words, 19 cycles (ITC+1)
+
+    .CASE 3 ; inlined DOCOL
+
+DOCOL1      .equ    120Dh   ; 3 PUSH IP
+DOCOL2      .equ    400Dh   ; 1 MOV PC,IP
+DOCOL3      .equ    522Dh   ; 1 ADD #4,IP
+
+ASMtoFORTH  .MACRO          ; compiled by LO2HI
+            MOV PC,IP       ; 1
+            ADD #4,IP       ; 1
+            MOV @IP+,PC     ; 4 NEXT
+            .ENDM           ; 6 cycles, 3 words
+                            ; LO2HI + HI2LO = 4 words, 6 cycles.
+
+mDOCOL      .MACRO          ; compiled by : and by COLON
+            PUSH IP         ; 3
+            MOV PC,IP       ; 1
+            ADD #4,IP       ; 1
+            MOV @IP+,PC     ; 4 NEXT
+            .ENDM           ; 4 words, 9 cycles (ITC-1)
+                            ; COLON + SEMI = 5 words, 15 cycles (ITC-3)
+    .ENDCASE ; DTC
+
+;low level return
+NEXT        .equ    4D30h   ; 4 MOV @IP+,PC
+                            ; jump from Asm word to NEXT Asm word: 1 word, 4 cycles (ITC-2)
+
 ; ----------------------------------------------
 ; INIT VOCABULARY POINTERS and MACROS FOR HEADER
 ; ----------------------------------------------
-
 voclink     .set 0  ; init vocabulary links
 forthlink   .set 0
 asmlink     .set 0
@@ -460,10 +572,10 @@ asmlink31 .set    $
     .endif ; thread case
 
     .restore
+    .IFNDEF TERMINAL_I2C
 ; --------------------------
 ; COMPUTE BAUDRATE registers = fn(FREQUENCY,BAUDS)
 ; --------------------------
-    .IFNDEF TERMINAL_I2C
         .include "TERMINALBAUDRATE.inc"
     .ENDIF
 
@@ -487,7 +599,6 @@ UCA0_TERM
 UCA1_SD
     .include "MSP430FR5739.inc"
     .ENDIF
-
     .IFDEF MSP_EXP430FR5969
 LF_XTAL
         .IFDEF TERMINAL_I2C
@@ -498,7 +609,6 @@ UCA0_TERM
 UCA1_SD
     .include "MSP430FR5969.inc"
     .ENDIF
-
     .IFDEF MSP_EXP430FR5994
 LF_XTAL
         .IFDEF TERMINAL_I2C
@@ -509,7 +619,6 @@ UCA0_TERM
 UCB0_SD
     .include "MSP430FR5994.inc"
     .ENDIF
-
     .IFDEF MSP_EXP430FR6989
 LF_XTAL
         .IFDEF TERMINAL_I2C
@@ -520,7 +629,6 @@ UCA1_TERM
 UCA0_SD
     .INCLUDE "MSP430FR6989.inc"
     .ENDIF
-
     .IFDEF MSP_EXP430FR4133
 LF_XTAL
         .IFDEF TERMINAL_I2C
@@ -531,7 +639,6 @@ UCB0_SD
         .ENDIF
     .INCLUDE "MSP430FR4133.inc"
     .ENDIF
-
     .IFDEF MSP_EXP430FR2433
 LF_XTAL
         .IFDEF TERMINAL_I2C
@@ -542,7 +649,6 @@ UCA0_TERM
 UCA1_SD
     .include "MSP430FR2433.inc"
     .ENDIF
-
     .IFDEF CHIPSTICK_FR2433
 ; no LF_XTAL to select ACLK = REFOCLK
         .IFDEF TERMINAL_I2C
@@ -554,7 +660,6 @@ UCB0_SD
         .ENDIF
     .include "MSP430FR2433.inc"
     .ENDIF
-
     .IFDEF MSP_EXP430FR2355
 LF_XTAL
         .IFDEF TERMINAL_I2C
@@ -565,7 +670,6 @@ UCA1_TERM
 UCB1_SD
     .include "MSP430FR2355.inc"
     .ENDIF
-
     .IFDEF LP_MSP430FR2476
 ; LF_XTAL       ; connect resistors R2=0k, R3=0k before uncomment this line
         .IFDEF TERMINAL_I2C
@@ -576,7 +680,6 @@ UCA0_TERM
 UCA1_SD
     .include "MSP430FR2476.inc"
     .ENDIF
-
     .save
     .listing off
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -645,7 +748,6 @@ DOUBLE_INPUT
         .ENDIF
     .ENDIF
 
-
     .IFDEF FIXPOINT
         .IFNDEF FIXPOINT_INPUT
 FIXPOINT_INPUT              ; to interpret fixpoint numbers
@@ -664,59 +766,60 @@ DOUBLE_NUMBERS              ; to process double numbers
     .ENDIF
     .ENDIF
 
+    .restore
 ; ---------------------------
 ; compute value of FORTHADDON
 ; ---------------------------
 FADDON .set 0
     .IFDEF CONDCOMP
-FADDON .SET FADDON | 01h
+FADDON .SET FADDON | 01h    ; Conditionnal Compilation
     .ENDIF
     .IFDEF MSP430ASSEMBLER
-FADDON .SET FADDON | 02h
+FADDON .SET FADDON | 02h    ; MSP430 Assembler (16 bits addresses)
     .ENDIF
-    .IFDEF EXTENDED_ASM
+    .IFDEF EXTENDED_ASM     ; MSP430X Assembler (16+20 bits addresses)
 FADDON .SET FADDON | 04h
     .ENDIF
     .IFDEF DEFERRED
-FADDON .SET FADDON | 08h
+FADDON .SET FADDON | 08h    ; DEFERRED, adds DEFER IS :NONAME CODENNM
     .ENDIF
     .IFDEF VOCABULARY_SET
-FADDON .SET FADDON | 10h
+FADDON .SET FADDON | 10h    ; VOCABULERY SET, adds VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83)
     .ENDIF
     .IFDEF DOUBLE_INPUT
-FADDON .SET FADDON | 20h
+FADDON .SET FADDON | 20h    ; DOUBLE INPUT
     .ENDIF
     .IFDEF FIXPOINT_INPUT
-FADDON .SET FADDON | 40h
+FADDON .SET FADDON | 40h    ; FIXPOINT INPUT
     .ENDIF
     .IFDEF SD_CARD_LOADER
-FADDON .SET FADDON | 80h
+FADDON .SET FADDON | 80h    ; SD_CARD Loader
     .ENDIF
     .IFDEF SD_CARD_READ_WRITE
-FADDON .SET FADDON | 100h
+FADDON .SET FADDON | 100h   ; SD_CARD Read Write Delete
     .ENDIF
     .IFDEF BOOTLOADER
-FADDON .SET FADDON | 200h
+FADDON .SET FADDON | 200h   ; BOOTLOADER
     .ENDIF
     .IFDEF EXTENDED_MEM
     .IFNDEF EXTENDED_ASM
-FADDON .SET FADDON | 400h
+FADDON .SET FADDON | 400h   ; MSP430 Assembler with Address access beyond $FFFF
     .ENDIF
     .ENDIF
-    .IFDEF HALFDUPLEX
-FADDON .SET FADDON | 800h
-    .ENDIF
-    .IFDEF TERMINAL3WIRES
-FADDON .SET FADDON | 1000h
-    .ENDIF
-    .IFDEF TERMINAL4WIRES
-FADDON .SET FADDON | 2000h
-    .ENDIF
-    .IFDEF TERMINAL5WIRES
-FADDON .SET FADDON | 4000h
-    .ENDIF
+    .IFNDEF TERMINAL_I2C ; if TERMINAL UART...
+        .IFDEF HALFDUPLEX
+FADDON .SET FADDON | 800h   ; UART Half Duplex
+        .ENDIF
+        .IFDEF TERMINAL3WIRES
+FADDON .SET FADDON | 1000h  ; UART XON/XOFF
+        .ENDIF
+        .IFDEF TERMINAL4WIRES
+FADDON .SET FADDON | 2000h  ; UART RTS
+        .ENDIF
+        .IFDEF TERMINAL5WIRES
+FADDON .SET FADDON | 4000h  ; UART CTS
+        .ENDIF
+    .ENDIF ; TERMINAL UART
     .IFDEF LF_XTAL
-FADDON .SET FADDON | 8000h
+FADDON .SET FADDON | 8000h  ; LFXTAL = 32768 Hz
     .ENDIF
-
-    .restore

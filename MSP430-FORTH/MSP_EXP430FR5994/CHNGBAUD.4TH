@@ -1,15 +1,86 @@
 
 ; ------------
-; CHNGBAUD.4th
+; CHNGBAUD.4th for MSP_EXP430FR5994
 ; ------------
 
 PWR_STATE
 
-[UNDEFINED] SWAP [IF]
-CODE SWAP
-MOV @R15,R10
+[UNDEFINED] DUP [IF]
+CODE DUP
+BW1 SUB #2,R15
+    MOV R14,0(R15)
+    MOV @R13+,R0
+ENDCODE
+
+CODE ?DUP
+CMP #0,R14
+0<> ?GOTO BW1
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] DROP [IF]
+CODE DROP
+MOV @R15+,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] OVER [IF]
+CODE OVER
+MOV R14,-2(R15)
+MOV @R15,R14
+SUB #2,R15
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] @ [IF]
+CODE @
+MOV @R14,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] ! [IF]
+CODE !
+MOV @R15+,0(R14)
+MOV @R15+,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] 1+ [IF]
+CODE 1+
+ADD #1,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] U/ [IF]
+CODE U/
+SUB #2,R15
+MOV #0,0(R15)
+CALL #$4074
+MOV @R15,R14
+ADD #4,R15
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] >R [IF]
+CODE >R
+PUSH R14
+MOV @R15+,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] R> [IF]
+CODE R>
+SUB #2,R15
 MOV R14,0(R15)
-MOV R10,R14
+MOV @R1+,R14
 MOV @R13+,R0
 ENDCODE
 [THEN]
@@ -26,11 +97,21 @@ MOV @R13+,R0
 ENDCODE
 [THEN]
 
-[UNDEFINED] 0= [IF]
-CODE 0=
-SUB #1,R14
-SUBC R14,R14
-MOV @R13+,R0
+[UNDEFINED] < [IF]
+CODE <
+    SUB @R15+,R14
+    S< ?GOTO FW1
+    0<> IF
+BW1     MOV #-1,R14
+    THEN
+    MOV @R13+,R0
+ENDCODE
+
+CODE >
+    SUB @R15+,R14
+    S< ?GOTO BW1
+FW1 AND #0,R14
+    MOV @R13+,R0
 ENDCODE
 [THEN]
 
@@ -62,35 +143,6 @@ SUB #2,R10
 MOV R10,R14
 MOV @R13+,R0
 ENDCODE IMMEDIATE
-[THEN]
-
-[UNDEFINED] BEGIN [IF]
-CODE BEGIN
-    MOV #$402C,R0
-ENDCODE IMMEDIATE
-
-CODE UNTIL
-    MOV #$4042,R9
-BW1 ADD #4,&$1DC6
-    MOV &$1DC6,R10
-    MOV R9,-4(R10)
-    MOV R14,-2(R10)
-    MOV @R15+,R14
-    MOV @R13+,R0
-ENDCODE IMMEDIATE
-
-CODE AGAIN
-MOV #$403E,R9
-GOTO BW1
-ENDCODE IMMEDIATE
-
-: WHILE
-POSTPONE IF SWAP
-; IMMEDIATE
-
-: REPEAT
-POSTPONE AGAIN POSTPONE THEN
-; IMMEDIATE
 [THEN]
 
 [UNDEFINED] DO [IF]
@@ -130,126 +182,83 @@ GOTO BW1
 ENDCODE IMMEDIATE
 [THEN]
 
-[UNDEFINED] >R [IF]
-CODE >R
-PUSH R14
-MOV @R15+,R14
-MOV @R13+,R0
-ENDCODE
+[UNDEFINED] CASE [IF]
+: CASE 0 ; IMMEDIATE
+
+: OF
+1+	
+>R	
+POSTPONE OVER POSTPONE =
+POSTPONE IF	
+POSTPONE DROP	
+R>	
+; IMMEDIATE 
+
+: ENDOF
+>R	
+POSTPONE ELSE 
+R>	
+; IMMEDIATE 
+
+: ENDCASE
+POSTPONE DROP
+0 DO 
+    POSTPONE THEN 
+LOOP 
+; IMMEDIATE 
 [THEN]
 
-[UNDEFINED] R> [IF]
-CODE R>
-SUB #2,R15
-MOV R14,0(R15)
-MOV @R1+,R14
-MOV @R13+,R0
-ENDCODE
-[THEN]
-
-[UNDEFINED] R@ [IF]
-CODE R@
-SUB #2,R15
-MOV R14,0(R15)
-MOV @R1,R14
-MOV @R13+,R0
-ENDCODE
-[THEN]
-
-[UNDEFINED] DROP [IF]
-CODE DROP
-MOV @R15+,R14
-MOV @R13+,R0
-ENDCODE
-[THEN]
-
-[UNDEFINED] ?DUP [IF]
-CODE ?DUP
-CMP #0,R14
-0<> IF
-    SUB #2,R15
-    MOV R14,0(R15)
-THEN
-MOV @R13+,R0
-ENDCODE
-[THEN]
-
-[UNDEFINED] @ [IF]
-CODE @
-MOV @R14,R14
-MOV @R13+,R0
-ENDCODE
-[THEN]
-
-[UNDEFINED] ! [IF]
-CODE !
-MOV @R15+,0(R14)
-MOV @R15+,R14
-MOV @R13+,R0
-ENDCODE
-[THEN]
-
-[UNDEFINED] < [IF]
-CODE <
-    SUB @R15+,R14
-    S< ?GOTO FW1
-    0<> IF
-BW1     MOV #-1,R14
-    THEN
-    MOV @R13+,R0
-ENDCODE
-
-CODE >
-    SUB @R15+,R14
-    S< ?GOTO BW1
-FW1 AND #0,R14
-    MOV @R13+,R0
-ENDCODE
-[THEN]
-
-[UNDEFINED] - [IF]
-CODE -
-SUB @R15+,R14
-XOR #-1,R14
+[UNDEFINED] S_ [IF]
+CODE S_
+MOV #0,&$1DB4
+COLON
+$4018 ,
+$20 WORD
+HI2LO
+MOV.B @R14,R14
 ADD #1,R14
+BIT #1,R14
+ADDC R14,&$1DC6
+MOV @R15+,R14
+MOV @R1+,R13
+MOV #$20,&$1DB4
 MOV @R13+,R0
-ENDCODE
+ENDCODE IMMEDIATE
 [THEN]
 
-[UNDEFINED] UM/MOD [IF]
-CODE UM/MOD
-    PUSH #DROP
-    MOV #$4074,R0
-ENDCODE
-[THEN]
-
-[UNDEFINED] ESC" [IF]
-: ESC" $1B POSTPONE LITERAL POSTPONE EMIT POSTPONE S" POSTPONE TYPE ; IMMEDIATE
+[UNDEFINED] ESC [IF]
+CODE ESC
+CMP #0,&$1DBE
+0= IF MOV @R13+,R0
+THEN
+COLON          
+$1B
+POSTPONE LITERAL
+POSTPONE EMIT
+POSTPONE S_
+POSTPONE TYPE
+; IMMEDIATE
 [THEN]
 
 : BAD_MHz
-$20 EMIT 1 ABORT" only for 1,4,8,16,24 MHz MCLK!"
+$20 DUP EMIT 
+        ABORT" only for 1,4,8,16,24 MHz MCLK!"
 ;
 
 : OVR_BAUDS
-$20 EMIT ESC" [7m"
-." with MCLK = " $1806 @ 0 1000 UM/MOD . DROP
-1 ABORT" MHz? don't dream!"
+$20 DUP EMIT ESC [7m
+        ." with MCLK = " $1806 @ 1000 U/ .
+        ABORT" MHz? don't dream!"
 ;
-
-: <> = 0= ;
 
 : CHNGBAUD
 PWR_STATE
 ECHO
-42
-0 DO CR LOOP
+42 0 DO CR LOOP
+ESC [H
 
-ESC" [1J"
-ESC" [H"
-
-$1806 @ >R
-." target MCLK = " R@ 0 1000 UM/MOD . ." MHz" DROP CR
+$1806 @ DUP >R
+." target MCLK = " 1000 U/ . ." MHz" CR
 ." choose your baudrate:" CR
 ."  0 --> 6 MBds" CR
 ."  1 --> 5 MBds" CR
@@ -266,185 +275,121 @@ $1806 @ >R
 ." your choice: "
 KEY
 
-#48 - ?DUP 0=
-IF  ." 6 MBds"
-    R@ #24000 <
-    IF  OVR_BAUDS THEN
-    R@ #24000 <>
-    IF  BAD_MHz  THEN
-    $4
-    $0
-ELSE 1 - ?DUP 0=
-    IF  ." 5 MBds"
-        R@ #16000 <
-        IF  OVR_BAUDS THEN
-        R@ #16000 =
-        IF  $3
-            $2100
-        ELSE R@ #24000 <>
-            IF  BAD_MHz  THEN
-            $4
-            $EE00
-        THEN
-    ELSE 1 - ?DUP 0=
-        IF  ." 4 MBds"
-            R@ #16000 <
-            IF  OVR_BAUDS THEN
-            R@ #16000 =
-                IF  $4 $0
-                ELSE R@ #24000 <>
-                    IF  BAD_MHz  THEN
-                    $6 $0
-                THEN
-        ELSE 1 - ?DUP 0=
-            IF  ." 2457600 Bds"
-                R@ #8000 <
-                IF  OVR_BAUDS THEN
-                R@ #8000 =
-                IF  $3 $4400
-                ELSE R@ #16000 =
-                    IF  $6 $AA00
-                    ELSE R@ #24000 <>
-                        IF  BAD_MHz  THEN
-                        $9 $DD00
-                    THEN
-                THEN
-            ELSE 1 - ?DUP 0=
-                IF  ." 921600 Bds"
-                    R@ #4000 <
-                    IF  OVR_BAUDS THEN
-                    R@ #4000 =
-                    IF  4 $4900
-                    ELSE R@ #8000 =
-                        IF  8 $D600
-                        ELSE R@ #16000 =
-                            IF  $11 $4A00
-                            ELSE R@ #24000 <>
-                                IF  BAD_MHz  THEN
-                                $1 $00A1
-                            THEN
-                        THEN
-                    THEN
-                ELSE 1 - ?DUP 0=
-                    IF  ." 460800 Bds"
-                        R@ #4000 <
-                        IF  OVR_BAUDS THEN
-                        R@ #4000  =
-                        IF  8 $D600
-                        ELSE R@ #8000  =
-                            IF $11 $4A00
-                            ELSE R@ #16000 =
-                                IF $2 $BB21
-                                ELSE R@ #24000 <>
-                                    IF  BAD_MHz  THEN
-                                    $6 $0001
-                                THEN
-                            THEN
-                        THEN
-                    ELSE 1 - ?DUP 0=
-                        IF  ." 230400 Bds"
-                            R@ #1000 <
-                            IF  OVR_BAUDS THEN
-                            R@ #1000 =
-                            IF  4 $4900
-                            ELSE R@ #4000  =
-                                IF $11 $4A00
-                                ELSE R@ #8000  =
-                                    IF  2 $BB21
-                                    ELSE R@ #16000 =
-                                        IF  4 $5551
-                                        ELSE R@ #24000 <>
-                                            IF  BAD_MHz  THEN
-                                            3 $0241
-                                        THEN
-                                    THEN
-                                THEN
-                            THEN
-                        ELSE 1 - ?DUP 0=
-                            IF  ." 115200 Bds"
-                                R@ #1000  =
-                                IF  8 $D600
-                                ELSE R@ #4000  =
-                                    IF  2 $BB21
-                                    ELSE R@ #8000  =
-                                        IF  4 $5551
-                                        ELSE R@ #16000 =
-                                            IF  8 $F7A1
-                                            ELSE R@ #24000 <>
-                                                IF  BAD_MHz  THEN
-                                                $0D $4901
-                                            THEN
-                                        THEN
-                                    THEN
-                                THEN
-                            ELSE 1 - ?DUP 0=
-                                IF  ." 38400 Bds"
-                                    R@ #1000  =
-                                    IF  $1  $00A1
-                                    ELSE R@ #4000  =
-                                        IF  $6  $2081
-                                        ELSE R@ #8000  =
-                                            IF  $0D $4901
-                                            ELSE R@ #16000 =
-                                                IF  $1A $D601
-                                                ELSE R@ #24000 <>
-                                                    IF  BAD_MHz  THEN
-                                                    $27 $0011
-                                                THEN
-                                            THEN
-                                        THEN
-                                    THEN
-                                ELSE 1 - ?DUP 0=
-                                    IF  ." 19200 Bds"
-                                        R@ #1000  =
-                                        IF  $3  $0241
-                                        ELSE R@ #4000  =
-                                            IF  $0D $4901
-                                            ELSE R@ #8000  =
-                                                IF  $1A $D601
-                                                ELSE R@ #16000 =
-                                                    IF  $34 $4911
-                                                    ELSE R@ #24000 <>
-                                                        IF  BAD_MHz  THEN
-                                                        $4E $0021
-                                                    THEN
-                                                THEN
-                                            THEN
-                                        THEN
-                                    ELSE 8 - ?DUP 0=
-                                        IF  ." 9600 Bds"
-                                            R@ #1000  =
-                                            IF  $6  $2081
-                                            ELSE R@ #4000  =
-                                                IF  $1A $D601
-                                                ELSE R@ #8000  =
-                                                    IF  $34 $4911
-                                                    ELSE R@ #16000 =
-                                                        IF  $68 $D621
-                                                        ELSE R@ #24000 <>
-                                                            IF  BAD_MHz  THEN
-                                                            $9C $0041
-                                                        THEN
-                                                    THEN
-                                                THEN
-                                            THEN
-                                        ELSE
-                                            ." abort" CR ABORT
-                                        THEN
-                                    THEN
-                                THEN
-                            THEN
-                        THEN
-                    THEN
-                THEN
-            THEN
-        THEN
-    THEN
-THEN
+CASE
+#48 OF  ." 6 MBds"
+        R> CASE
+            #24000 OF $4 $0
+                   ENDOF
+            24000 <   
+            IF OVR_BAUDS
+            THEN BAD_MHz
+        ENDCASE
+    ENDOF
+#49 OF  ." 5 MBds"
+        R> CASE
+            #24000 OF $4 $EE00  ENDOF
+            #16000 OF $3 $2100  ENDOF
+            16000 <   
+            IF OVR_BAUDS
+            THEN BAD_MHz
+        ENDCASE
+    ENDOF
+#50 OF  ." 4 MBds"
+        R> CASE
+            #24000 OF $6 $0     ENDOF
+            #16000 OF $4 $0     ENDOF
+            16000 <   
+            IF OVR_BAUDS
+            THEN BAD_MHz
+        ENDCASE
+    ENDOF
+#51 OF  ." 2457600 Bds"
+        R> CASE
+            #24000  OF $9 $DD00 ENDOF
+            #16000  OF $6 $AA00 ENDOF
+            #8000   OF $3 $4400 ENDOF
+            8000 <   
+            IF OVR_BAUDS
+            THEN BAD_MHz
+        ENDCASE
+    ENDOF
+#52 OF  ." 921600 Bds"
+        R> CASE
+            #24000  OF $1 $00A1     ENDOF
+            #16000  OF $11 $4A00    ENDOF
+            #8000   OF $8 $D600     ENDOF
+            #4000   OF $4 $4900     ENDOF
+            4000 <   
+            IF OVR_BAUDS
+            THEN BAD_MHz
+        ENDCASE
+    ENDOF
+#53 OF  ." 460800 Bds"
+        R> CASE
+            #24000  OF $6 $0001     ENDOF
+            #16000  OF $2 $BB21     ENDOF
+            #8000   OF $11 $4A00    ENDOF
+            #4000   OF $8 $D600     ENDOF
+            4000 <   
+            IF OVR_BAUDS
+            THEN BAD_MHz
+        ENDCASE
+    ENDOF
+#54 OF  ." 230400 Bds"
+        R> CASE
+            #24000  OF $3 $0241     ENDOF
+            #16000  OF $4 $5551     ENDOF
+            #8000   OF $2 $BB21     ENDOF
+            #4000   OF $11 $4A00    ENDOF
+            #1000   OF $4 $4900     ENDOF
+            BAD_MHz
+        ENDCASE
+    ENDOF
+#55 OF  ." 115200 Bds"
+        R> CASE
+            #24000  OF $0D $4901    ENDOF
+            #16000  OF $8 $F7A1     ENDOF
+            #8000   OF $4 $5551     ENDOF
+            #4000   OF $2 $BB21     ENDOF
+            #1000   OF $8 $D600     ENDOF
+            BAD_MHz
+        ENDCASE
+    ENDOF
+#56 OF  ." 38400 Bds"
+        R> CASE
+            #24000  OF $27 $0011    ENDOF
+            #16000  OF $1A $D601    ENDOF
+            #8000   OF $0D $4901    ENDOF
+            #4000   OF $6 $2081     ENDOF
+            #1000   OF $1 $00A1     ENDOF
+            BAD_MHz
+        ENDCASE
+    ENDOF
+#57 OF  ." 19200 Bds"
+        R> CASE
+            #24000  OF $4E $0021    ENDOF
+            #16000  OF $34 $4911    ENDOF
+            #8000   OF $1A $D601    ENDOF
+            #4000   OF $0D $4901    ENDOF
+            #1000   OF $3 $0241     ENDOF
+            BAD_MHz
+        ENDCASE
+    ENDOF
+#65 OF  ." 9600 Bds"
+        R> CASE
+            #24000  OF $9C $0041    ENDOF
+            #16000  OF $68 $D621    ENDOF
+            #8000   OF $34 $4911    ENDOF
+            #4000   OF $1A $D601    ENDOF
+            #1000   OF $6 $2081     ENDOF
+            BAD_MHz
+        ENDCASE
+    ENDOF
+    ." abort" CR ABORT
+ENDCASE
 $1804 !
 $1802 !
-R> DROP
-CR ESC" [7m"
+CR ESC [7m
 ." Change baudrate in Teraterm, save its setup, then reset target."
 ;
 

@@ -1,16 +1,17 @@
 \ -*- coding: utf-8 -*-
 
 ; -----------------------------------------------------
-; CORE_ANS.f    words complement to pass CORETEST.4TH
+; CORE_ANS.f
 ; -----------------------------------------------------
 \
+; words complement to pass CORETEST.4TH
 \ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP
 \ to see FastForth kernel options, download FF_SPECS.f
 \
 \ TARGET Current Selection 
 \ (used by preprocessor GEMA to load the pattern: \inc\TARGET.pat)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
-\ MSP_EXP430FR2433  MSP_EXP430FR4133    MSP_EXP430FR2355    CHIPSTICK_FR2433
+\ MSP_EXP430FR4133  CHIPSTICK_FR2433    MSP_EXP430FR2433    MSP_EXP430FR2355
 \
 \ REGISTERS USAGE
 \ rDODOES to rEXIT must be saved before use and restored after
@@ -29,7 +30,6 @@
 \ ASSEMBLER conditionnal usage with ?GOTO           S<  S>=  U<   U>=  0=  0<>  0<
 
 PWR_STATE
-
 
 [DEFINED] {CORE_ANS} [IF]  {CORE_ANS} [THEN] \ remove it if defined out of kernel 
 
@@ -1147,6 +1147,26 @@ CODE EXECUTE
 PUSH TOS                \ 3 push xt
 MOV @PSP+,TOS           \ 2 
 MOV @RSP+,PC            \ 4 xt --> PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] EVALUATE [IF]
+\ https://forth-standard.org/standard/core/EVALUATE
+\ EVALUATE          \ i*x c-addr u -- j*x  interpret string
+CODE EVALUATE
+MOV #SOURCE_LEN,X       \ 2
+MOV @X+,S               \ 2 S = SOURCE_LEN
+MOV @X+,T               \ 2 T = SOURCE_ORG
+MOV @X+,W               \ 2 W = TOIN
+PUSHM #4,IP             \ 6 PUSHM IP,S,T,W
+LO2HI
+INTERPRET
+HI2LO
+MOV @RSP+,&TOIN         \ 4
+MOV @RSP+,&SOURCE_ORG   \ 4
+MOV @RSP+,&SOURCE_LEN   \ 4
+MOV @RSP+,IP 
+MOV @IP+,PC
 ENDCODE
 [THEN]
 

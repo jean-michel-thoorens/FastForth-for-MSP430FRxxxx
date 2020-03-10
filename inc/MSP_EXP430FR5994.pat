@@ -1,24 +1,7 @@
 ! -*- coding: utf-8 -*-
 ! MSP_EXP430FR5994.pat
-!
-! Fast Forth For Texas Instrument MSP_EXP430FR5994
-!
-! Copyright (C) <2016>  <J.M. THOORENS>
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-\.f=\.4th!      to change file type
+!!
+\.f=\.4th for MSP_EXP430FR5994!      to change file type
 
 !========================
 ! remove comments        
@@ -147,15 +130,14 @@
 ! ============================================
 ! FORTH I/O :
 ! ============================================
+BUS_TERM=3!         ; P2.0 = TX, P2.1 = RX
+
+TERM_VEC=\$FFF0!    \ UCA0
+WAKE_UP=1!          \ RX int
+
 TERM_IN=\$201!
 TERM_REN=\$207!
 TERM_SEL=\$20D!     ; SEL1
-TERM_IE=\$21B!
-TERM_IFG=\$21D!
-BUS_TERM=3!         ; P2.0 = TX, P2.1 = RX
-
-Deep_RST_IN=\$240!  ; pin as FORTH Deep_RST
-Deep_RST=\$40!      ; P5.6 = S1
 
 TERM_CTLW0=\$5C0!    \ eUSCI_A0 control word 0        
 TERM_CTLW1=\$5C2!    \ eUSCI_A0 control word 1        
@@ -225,6 +207,9 @@ LED2=2!                 P1.1
 SW1_IN=\$240!
 SW1=\$40!               P5.6
 
+WIPE_IN=\$240!      ; pin as FORTH Deep_RST
+IO_WIPE=\$40!       ; P5.6 = S1
+
 SW2_IN=\$240!
 SW2=\$20!               P5.5
 
@@ -282,16 +267,16 @@ I2CSM_IN=\$261!
 I2CSM_OUT=\$263!
 I2CSM_DIR=\$265!
 I2CSM_REN=\$267!
-SMSDA=4!                P8.2
-SMSCL=2!                P8.1
+SM_SDA=4!                P8.2
+SM_SCL=2!                P8.1
 SM_BUS=6!
 
 I2CSMM_IN=\$261!
 I2CSMM_OUT=\$263!
 I2CSMM_DIR=\$265!
 I2CSMM_REN=\$267!
-SMMSDA=4!               P8.2
-SMMSCL=2!               P8.1
+SMM_SDA=4!               P8.2
+SMM_SCL=2!               P8.1
 SMM_BUS=6!
 
 I2CMM_IN=\$260!
@@ -300,8 +285,8 @@ I2CMM_DIR=\$264!
 I2CMM_REN=\$266!
 I2CMM_SEL=\$26A!        SEL0
 I2CMM_VEC=\$FFBC!       UCB2_VEC
-MMSDA=1!                P7.0
-MMSCL=2!                P7.1
+MM_SDA=1!                P7.0
+MM_SCL=2!                P7.1
 MM_BUS=3!
 
 I2CM_IN=\$260!
@@ -310,8 +295,8 @@ I2CM_DIR=\$264!
 I2CM_REN=\$266!
 I2CM_SEL=\$26A!        SEL0
 I2CM_VEC=\$FFBC!       UCB2_VEC
-MSDA=1!                 P7.0
-MSCL=2!                 P7.1
+M_SDA=1!                 P7.0
+M_SCL=2!                 P7.1
 M_BUS=3!
 
 I2CS_IN=\$260!
@@ -320,8 +305,8 @@ I2CS_DIR=\$264!
 I2CS_REN=\$266!
 I2CS_SEL=\$26A!        SEL0
 I2CS_VEC=\$FFBC!       UCB2_VEC
-SSDA=1!                 P7.0
-SSCL=2!                 P7.1
+S_SDA=1!                 P7.0
+S_SCL=2!                 P7.1
 S_BUS=3!
 
 UCSWRST=1!          eUSCI Software Reset

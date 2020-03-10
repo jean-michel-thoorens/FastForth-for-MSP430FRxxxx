@@ -82,24 +82,6 @@ IF
 THEN
 ;
 
-[UNDEFINED] AND [IF]
-\ https://forth-standard.org/standard/core/AND
-\ C AND    x1 x2 -- x3           logical AND
-CODE AND
-AND @PSP+,TOS
-MOV @IP+,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] OR [IF]
-\ https://forth-standard.org/standard/core/OR
-\ C OR     x1 x2 -- x3           logical OR
-CODE OR
-BIS @PSP+,TOS
-MOV @IP+,PC
-ENDCODE
-[THEN]
-
 [UNDEFINED] @ [IF]
 \ https://forth-standard.org/standard/core/Fetch
 \ @     c-addr -- char   fetch char from memory
@@ -122,14 +104,6 @@ MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
-                        ; search devide ID:
-$81EF DEVICEID @ U<        ; MSP430FR2433 or...
-DEVICEID @ $8241 U<        ; ...MSP430FR4133
-AND
-$830B DEVICEID @ U<        ; MSP430FR21xx/23xx/24xx/25xx/26xx
-OR                      ; -- flag       0 ==> RTC, -1 ==> no RTC
-NORTC                   \
-
 [UNDEFINED] = [IF]
 \ https://forth-standard.org/standard/core/Equal
 \ =      x1 x2 -- flag         test x1=x2
@@ -143,6 +117,23 @@ XOR #-1,TOS     \ 1 flag Z = 1
 MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
+
+[UNDEFINED] OR [IF]
+\ https://forth-standard.org/standard/core/OR
+\ C OR     x1 x2 -- x3           logical OR
+CODE OR
+BIS @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+                        ; search devide ID:
+$81EF DEVICEID @ U<        ; MSP430FR4133 or...
+DEVICEID @ $8241 U<        ; ...MSP430FR2433
+=
+$830B DEVICEID @ U<        ; MSP430FR21xx/23xx/24xx/25xx/26xx
+OR                      ; -- flag       0 ==> RTC, -1 ==> no RTC
+NORTC                   \
 
 [UNDEFINED] SWAP [IF]
 \ https://forth-standard.org/standard/core/SWAP
@@ -326,6 +317,26 @@ ENDCODE
 \ >BODY     -- addr      leave BODY of a CREATEd word\ also leave default ACTION-OF primary DEFERred word
 CODE >BODY
 ADD #4,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] EVALUATE [IF]
+\ https://forth-standard.org/standard/core/EVALUATE
+\ EVALUATE          \ i*x c-addr u -- j*x  interpret string
+CODE EVALUATE
+MOV #SOURCE_LEN,X       \ 2
+MOV @X+,S               \ 2 S = SOURCE_LEN
+MOV @X+,T               \ 2 T = SOURCE_ORG
+MOV @X+,W               \ 2 W = TOIN
+PUSHM #4,IP             \ 6 PUSHM IP,S,T,W
+LO2HI
+INTERPRET
+HI2LO
+MOV @RSP+,&TOIN         \ 4
+MOV @RSP+,&SOURCE_ORG   \ 4
+MOV @RSP+,&SOURCE_LEN   \ 4
+MOV @RSP+,IP 
 MOV @IP+,PC
 ENDCODE
 [THEN]

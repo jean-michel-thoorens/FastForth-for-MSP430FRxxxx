@@ -8,39 +8,61 @@ Tested on all MSP-EXP430FR TI launchpads (5739,5969,5994,6989,4133,2355,2433,247
 It's an "interpret and compile" operating system for MSP430, very interesting because of its 5kB size.
 This includes the kernel FORTH with double numbers and Q15.16 numbers interpreting,
 an amazing assembler "label free" with conditional compilation, a 16-input search engine that speeds up the interpreter by 4,
-and a the choice between a connection to the serial terminal, software (XON/XOFF) or hardware (RTS) control flow,
-up to 6 Mbds, or an I2C_Slave terminal @ 450kHz.
+and the choice between a connection with a serial UART terminal up to 6 Mbds, software (XON/XOFF) + hardware (RTS) control flow,
+or with a serial I2C_Slave terminal up to 920kHz (yes, you read it right! see \FAST-FORTH\UARTI2CS.f).
 
-Don't panic, Forth is not (only) used as programming language but also as a superstructure for the embedded assembler.
-If your goal is to program a MSP430FRxxxx in assembler or just to learn assembler, enjoy yourself: try it!
+FastForth is a true ANS FORTH for afficionados but also as superstructure for the embedded assembler.
+So, if your goal is to program a MSP430FRxxxx in assembler or just to learn assembler, enjoy yourself: try it!
 To discover how it works, compare the content of \ADDON\files.asm with their FORTH equivalent in \MSP430-FORTH\files.f
 
 However, if the IDE works well with Windows 10, it works less well with Linux due to the lack of a good alternative to TERATERM...
 
 For only 3 kbytes in addition, you have the primitives to access the SD\_CARD FAT16 and FAT32: read, write, del, download source files and to copy them from PC to the SD_Card. It works with all SD\_CARD memories from 64MB to 64GB. The cycle of read/write a byte is below 1 us @ 16 MHz.
 This enables to make a fast data logger with a small footprint as a MSP430FR5738 QFN24.
-
 With all kernel addons, including extended\_ASM and SD\_Card driver, FastForth size under 10 kB.
 
+how to connect TERMINAL
+----------------------
     The files launchpad_xMHz.txt are the executables ready to use with a serial terminal 
-    (TERATERM.exe), 115200Bds, with XON/XOFF or RTS hardware flow control and a PL2303HXD cable.
+    (TERATERM.exe), 115200Bds, with XON/XOFF or RTS hardware flow control and a PL2303TA/CP2102 cable.
     ------------------------------------------------------------------------------------------
     WARNING! don't use it to supply your launchpad: red wire is 5V ==> MSP430FRxxxx destroyed!
     ------------------------------------------------------------------------------------------
     (you can modify this by opening the box and by welding red wire on 3.3V pad).
-    
-     TI Launchpad      PL2302HXD cable
-               RX <--- TX
-               TX ---> RX
+
+programming with MSP430Flasher.exe and FET interface
+
+     TI Launchpad <--> CP2102/PL2302TA cable <------> USB <-------------> TERATERM.exe 
+               RX <--- TX            )
+              GND <--> GND           > used by FastForth TERMINAL
+               TX ---> RX            )
+              RTS ---> CTS (optionnal) RTS pin Px.y is described in your \inc\launchpad.asm)
+
+     TI Launchpad <--> FET interface  <-------------> USB <-------------> MSP430Flasher.exe
+       TST/SBWTCK <--> SBWTCK
               GND <--> GND
-              RTS ---> CTS  see in your launchpad.asm file to find RTS pin.
-                            (not necessary if software XON/XOFF flow control)
-                           
-    The interest of XON/XOFF flow control is to allow 3.75kV galvanic isolation of terminal input
-    with SOIC8 Si8622EC|ISO7421E, or better yet, powered 5kV galvanic isolation with SOIC16 ISOW7821.
+      RST/SBWTDIO <--> SBWTDIO
+
+programming with BSL_Scripter.exe
+
+     TI Launchpad <--> CP2102/PL2303TA cable <------> USB <-------->+<--> TERATERM.exe
+               RX <--- TX   )                                       |
+              GND <--> GND  > used by FastForth TERMINAL            +<--> BSL_Scripter.exe
+               TX ---> RX   )
+       TST/SBWTCK <--- RTS  )
+              GND <--> GND  > used by BSL_Scripter
+      RST/SBWTDIO <--> DTR  ) 
+    
+    Before programming device, close FastForth TERMINAL and connect the wire RST/SBWTDIO <--> DTR 
+    Once device is programmed, open FastForth TERMINAL then disconnect the wire RST/SBWTDIO <--> DTR.
+
+-
+
+    Another interest of XON/XOFF flow control is to allow 3.75kV galvanic isolation of terminal input
+    with SOIC8 Si8622EC|ISO7421E.
 
     Once FastForth is loaded in the target FRAM memory, you add assembly code or FORTH code, or both,
-    by downloading your source files that the embedded FastForth interprets and compiles.
+    by downloading your source files that FastForth and its assembler interpret and compile.
 
     Beforehand, the preprocessor GEMA, by means of a \config\gema\target.pat file, will have translated
     your generic source file.f in a targeted source file.4th, allowing you to use
@@ -64,6 +86,28 @@ With all kernel addons, including extended\_ASM and SD\_Card driver, FastForth s
 What is new ?
 -------------
 
+V305
+
+    -48 bytes.
+    
+    from Scite menu, we can program MSP430FRxxxx also with BSL_Scripter.
+   
+    To do, save file \prog\BSL_Scripter.exe from: 
+    https://github.com/drcrane/bslscripter-vs2017/releases/download/v3.4.2/BSL-Scripter-v3.4.2.zip,
+    but erasing a MSP430FR2355 doesn't work.
+    
+    and buy a USB2UART module CP2102 6 pin. On the web, search: "CP2102 3.3V DTR RTS" 
+    For wiring, see \config\BSL_Prog.bat.
+    
+    So, we download both binaries and source files with only one CP2102|PL2303TA module,
+    the XON/XOFF TERMINAL and BSL_Scripter. Bye bye T.I. FET!
+
+    ABORT messages display first the I2C address, if applicable.
+    QNUMBER some issues solved.
+    UART version of ACCEPT and KEY are shortened.
+    EVALUATE is moved to CORE_ANS.
+
+
 V304
 
     -36 bytes.
@@ -74,16 +118,16 @@ V304
     
     Fixed: word F. issue in FIXPOINT.asm
     
-    Moved: words ALLOT and DOES> to CORECOMP.asm/f files.
+    Moved: words ALLOT and DOES> to CORE_ANS.asm/f files.
     
     CORDIC.f also works without hardware MPY (MSP430FR4133).
     
-    The new option DEFERRED replaces old NONAME one and compile :NONAME CODENNM DEFER IS.
+    By compiling :NONAME CODENNM DEFER IS, the new option DEFERRED superseeds the old NONAME option.
     
     pin RESET is software replaced by pin NMI and so, RESET executes COLD, allowing code insert before BOR.
     however SYSRSTIV numbering remains unchanged: = 4 for RESET, = 6 for COLD.
     
-    Instead of WIPE, Deep RESET reinitializes vectors interrupts and SIGNATURES area.
+    Deep RESET reinitializes vectors interrupts and SIGNATURES area, instead of WIPE.
     
     Fast Forth Deep RESET is done by switches S1 + RST.
 
@@ -93,17 +137,17 @@ V304
     only one TERMINAL to interact with all FastForth targets connected to an I2C network.
     
         notebook                                 USB to I2C_Master bridge                                     any I2C_slave
-    +---------------+         +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - --+
-    |               |         |   PL2303HXD               master running UART2I2CS @ 16MHz |
-    |               |         +---------------+           +--------------------------------+         +-------------------------------+
-    |               |         |               |           |                                |         |                               |
-    |   TERATERM   -o--> USB -o--> USB2UART --o--> UART --o--> FAST FORTH ---> UART2I2CS --o--> I2C -o--> FAST FORTH with kernel     |
-    |   terminal    |         |               |2457600Bds |                                |  450kHz |  option TERMINAL_I2C @ 16MHz  |
+    +---------------+         +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - --+           +-------------------------------+
+    |               |         |PL2303TA/CP2102            master running UART2I2CS @ 16MHz |          +-------------------------------+|
+    |               |         +---------------+           +--------------------------------+         +-------------------------------+||
+    |               |         |               |2457600 Bds|                                |         |                               |||
+    |   TERATERM   -o--> USB -o--> USB2UART --o--> UART --o--> FAST FORTH ---> UART2I2CS --o--> I2C -o--> FAST FORTH @ 16MHz with    ||+
+    |   terminal    |         |               | XON/XOFF  |                                |  450kHz |  kernel option: TERMINAL_I2C  |+
     |               |         +---------------+           +--------------------------------+         +-------------------------------+
     |               |         |                                                            | 
     +---------------+         +- - - - - - - - - - - - - - - - - - - - - - - - - - - - - --+
     
-    With the indicated MCLK and UART speeds, Coretest.4th is downloaded (and executed) to I2C_Slave in 1,1s.
+    With the indicated MCLK and UART speeds, Coretest.4th is downloaded (and executed) to any I2C_Slave in 1,3s.
     All works fine, from 1MHz up to 24MHz MCLK and from 115200Bds up to 2457600Bds UART.
 
     the copy of a file to I2C target SD_Card doesn't work.
@@ -116,16 +160,19 @@ V304
     
     The driver UART2I2CS doesn't use the UCBx I2C_Master hardware, really too bad, but
     profitably its software version, faster, which consumes just two I/O (better in the range Px0-Px3),
-    the UCBx remaining available typically for an I2C_Slave or SPI driver.
-
+    the UCBx remaining available typically for another I2C_Slave or SPI driver.
+    
+    Pin SDA and pin SCL are those defined as BUS_TERM in the file \inc\your_target.asm.
+    I2CSLAVEADR, in the file forthMSP430FR.asm, defines the I2C_Slave address of the I2C FastForth module.
+    
     if you are uncomfortable with the flashing of leds,
     comment on their lines in the files forthMSP430FR_TERM_I2C.asm and MSP430-FORTH/UART2I2CS.f". 
 
-
-    HOW TO DO ?
+HOW TO DO ?
 
     first you make a I2C cable (GND,SDA,SCL,3V3) between your 2 LaunchPad, with 3,3k pullup resistors on SDA and SCL lines.
-
+    see each of two /inc/target.pat files to know SDA ans SCL pins.
+   
     to compile FastForth for I2C TERMINAL from forthMSP430FR.asm file:
     1-  uncomment the line "TERMINAL_I2C".
     2-  search "I2CSLAVEADR" line and set your <slave address you want>, i.e. 10h.
@@ -515,7 +562,7 @@ or USBtoUART bridge, with a CP2102 device and 3.3V/5V that allows XON/XOFF contr
     search google: cp2102 module 3.3V
     http://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx
 
-    you must program CP2102 device to access 1382400 and 1843200 bds rates :
+    you must program CP2102 device for speeds beyond 1MBds
     http://www.silabs.com/Support%20Documents/Software/install_USBXpress_SDK.exe
     http://www.silabs.com/Support%20Documents/TechnicalDocs/an169.pdf
 
@@ -528,46 +575,6 @@ or a USBtoUART bridge, with a FT232RL device and 3.3V/5V for only hardware contr
 
 or compatible 921600bds wireless module: RN42 (bluesmirf), RN4878...
     
-How to configure the connection ?
--------------------------------
-
-1-    XON/XOFF control flow: Launchpad UARTn  <--> USBtoUART bridge <--> TERATERM
-
-   launchpad <--> UART2USB
-         TXn ---> RX    
-         RXn <--- TX    
-         GND <--> GND  
-        WARNING! DON'T CONNECT 5V RED WIRE! 
-
-      TeraTerm configuration : see forthMSP430fr.asm
-
-If you plan to supply your target vith a PL2303 cable, open its box to weld red wire onto 3.3V pad.
-
-2-    hardware control flow: Launchpad UARTn <--> USBtoUART bridge <--> TERATERM
- 
-   Launchpad <--> UART2USB
-         TXn ---> RX    
-         RXn <--- TX    
-         RTS ---> CTS  4th wire    
-         GND <--> GND     
-        WARNING! DON'T CONNECT 5V !
-
-      TeraTerm configuration : see forthMSP430fr.asm
-
-
-3-    Bluetooth module: Launchpad UARTn <--> RN42 <-wireless_BL2.1-> TERATERM
-                        Launchpad UARTn <--> BGX13P EVK <-wireless_BLE5.0-> BGX13P EVK <--> USB <--> TERATERM
- 
-   launchpad <--> wireless module
-         TXn ---> RX    
-         RXn <--- TX    
-         RTS ---> CTS  4th wire
-         GND <--> GND     
-        (CTS <--- RTS) 5th wire if necessary   
-         3V3 <--> 3V3
-
-      TeraTerm configuration : see forthMSP430fr.asm
-
 
 Send a source file.f or file.4th to the FAST FORH target
 ------------------

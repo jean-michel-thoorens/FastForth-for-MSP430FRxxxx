@@ -524,15 +524,18 @@ TX_SD           .equ 2
 ; ----------------------------------------------------------------------
 
     .IFDEF UCA1_TERM
-TERM_CTLW0       .equ eUSCI_A1_SFR + 00h    ; eUSCI_A1 Control Word Register 0
-TERM_BRW         .equ eUSCI_A1_SFR + 06h    ; eUSCI_A1 Baud Word Rate 0
-TERM_MCTLW       .equ eUSCI_A1_SFR + 08h    ; eUSCI_A1 Modulation Control
-TERM_STATW       .equ eUSCI_A1_SFR + 0Ah    ; eUSCI_A1 status Word Register
-TERM_RXBUF       .equ eUSCI_A1_SFR + 0Ch    ; eUSCI_A1 Receive Buffer
-TERM_TXBUF       .equ eUSCI_A1_SFR + 0Eh    ; eUSCI_A1 Transmit Buffer
-TERM_IE          .equ eUSCI_A1_SFR + 1Ah    ; eUSCI_A1 Interrupt Enable Register
-TERM_IFG         .equ eUSCI_A1_SFR + 1Ch    ; eUSCI_A1 Interrupt Flags Register
-TERM_VEC         .equ 0FFE4h      ; interrupt vector for  eUSCI_A1
+TERM_CTLW0      .equ eUSCI_A1_SFR + 00h    ; eUSCI_A1 Control Word Register 0
+TERM_BRW        .equ eUSCI_A1_SFR + 06h    ; eUSCI_A1 Baud Word Rate 0
+TERM_MCTLW      .equ eUSCI_A1_SFR + 08h    ; eUSCI_A1 Modulation Control
+TERM_STATW      .equ eUSCI_A1_SFR + 0Ah    ; eUSCI_A1 status Word Register
+TERM_RXBUF      .equ eUSCI_A1_SFR + 0Ch    ; eUSCI_A1 Receive Buffer
+TERM_TXBUF      .equ eUSCI_A1_SFR + 0Eh    ; eUSCI_A1 Transmit Buffer
+TERM_IE         .equ eUSCI_A1_SFR + 1Ah    ; eUSCI_A1 Interrupt Enable Register
+TERM_IFG        .equ eUSCI_A1_SFR + 1Ch    ; eUSCI_A1 Interrupt Flags Register
+
+TERM_VEC        .equ 0FFE4h ; interrupt vector for  eUSCI_A1
+WAKE_UP         .equ 1      ; UART RX interrupt
+
 RX_TERM         .equ 1
 TX_TERM         .equ 2
     .ENDIF ;UCA1_TERM
@@ -573,7 +576,10 @@ TERM_ADDRX      .equ eUSCI_B0_SFR + 1Ch     ; USCI_B0  Received Address Register
 TERM_I2CSA      .equ eUSCI_B0_SFR + 20h     ; USCI_B0 I2C Slave Address
 TERM_IE         .equ eUSCI_B0_SFR + 2Ah     ; USCI_B0 Interrupt Enable
 TERM_IFG        .equ eUSCI_B0_SFR + 2Ch     ; USCI_B0 Interrupt Flags Register
-TERM_VEC        .equ 0FFECh                 ; interrupt vector for eUSCI_B0
+
+TERM_VEC        .equ 0FFECh ; interrupt vector for eUSCI_B0
+WAKE_UP         .equ 4      ; START interrupt
+
 RX_TERM         .equ 1
 TX_TERM         .equ 2
     .ENDIF ;UCB0_TERM

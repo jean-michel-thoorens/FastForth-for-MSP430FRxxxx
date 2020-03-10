@@ -1,6 +1,6 @@
 
 ; ------------------
-; FF_SPECS.4th
+; FF_SPECS.4th for MSP_EXP430FR5994
 ; ------------------
  
 ; displays all FastForth specifications
@@ -403,6 +403,13 @@ LOOP
 ; IMMEDIATE 
 [THEN]
 
+[UNDEFINED] >BODY [IF]
+CODE >BODY
+ADD #4,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
 [UNDEFINED] S_ [IF]
 CODE S_
 MOV #0,&$1DB4
@@ -435,13 +442,12 @@ POSTPONE TYPE
 ; IMMEDIATE
 [THEN]
 
+
 : SPECS
 PWR_STATE
 ECHO
-
 42 0 DO CR LOOP
 ESC [H
-
 ESC [7m
 CR ." FastForth V"
 $1810 @         
@@ -462,7 +468,6 @@ CASE
     $832A     OF      ." 2476,"   $8000   ENDOF
     ABORT" xxxx <-- unrecognized device!"
 ENDCASE
-
 ['] ['] DUP @ $1284 =
 IF ."  DTC=1," DROP
 ELSE 2 + @ $1284 =
@@ -490,20 +495,18 @@ CR
 ." MAX-UD            = 4294967295" CR
 ." STACK-CELLS       = 48" CR
 ." RETURN-STACK-CELLS= 48" CR
-
 CR 
-ESC [7m ." KERNEL ADDONS" ESC [0m
+ESC [7m ." KERNEL SPECS" ESC [0m
 CR
-
 $1812 @
     DUP 0< IF ." 32.768kHz XTAL" CR THEN
-2*  DUP 0< IF 2* ." 5 WIRES (RTS/CTS) UART TERMINAL" CR
+2*  DUP 0< IF 2* ." (RTS/CTS) UART TERMINAL" CR
         ELSE 2* DUP
-            0< IF ." 4 WIRES (RTS) UART TERMINAL" CR
+            0< IF ." (RTS) UART TERMINAL" CR
             THEN
         THEN
-2*  DUP 0< IF ." 3 WIRES (XON/XOFF) UART TERMINAL" CR
-        ELSE  ." I2C SLAVE TERMINAL INPUT" CR
+2*  DUP 0< IF ." (XON/XOFF) UART TERMINAL" CR
+        ELSE  ." I2C SLAVE TERMINAL" CR
         THEN
 2*  DUP 0< IF ." HALF-DUPLEX TERMINAL" CR THEN
 2*  DUP 0< IF ." ASM DATA ACCESS BEYOND $FFFF" CR THEN
@@ -527,14 +530,13 @@ $1812 @
     [DEFINED] {CORDIC}    [IF] ." CORDIC engine" CR [THEN]
     [DEFINED] {SD_TOOLS}  [IF] ." SD_TOOLS" CR [THEN]
     [DEFINED] {RTC}       [IF] ." RTC utility" CR [THEN]
-
+    [DEFINED] {FF_I2C}    [IF] ." I2C TERMINAL bridge" CR [THEN]
     [DEFINED] VOCABULARY  [IF] 
         CR 
         ESC [7m ." ASSEMBLER word set" ESC [0m
         ALSO ASSEMBLER WORDS PREVIOUS
         CR
     [THEN]
-
 THEN
    
 CR

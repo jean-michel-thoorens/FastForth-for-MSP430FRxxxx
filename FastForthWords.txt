@@ -17,7 +17,7 @@ FORTH vocabulary
 ----------------
 COLD            WARM            WIPE            RST_HERE        PWR_HERE        RST_STATE       PWR_STATE       CREATE          
 ;               :               IMMEDIATE       POSTPONE        ]               [               \               '               
-[']             ABORT"          ABORT           QUIT            EVALUATE        COUNT           LITERAL         ALLOT           
+[']             ABORT"          ABORT           QUIT            INTERPRET       COUNT           LITERAL         ALLOT           
 ,               >NUMBER         FIND            WORD            ."              S"              .               U.              
 SIGN            HOLD            #>              #S              #               <#              CR              TYPE            
 NOECHO          ECHO            EMIT            KEY             ACCEPT
@@ -36,6 +36,8 @@ RST_STATE       removes all words defined after RST_HERE (COLD or <reset> have s
 
 PWR_STATE       removes all words defined after PWR_HERE (an error has same effect)
 
+INTERPRET       text interpreter, common part of EVALUATE and QUIT.
+
 NOECHO          stop display on output 
 
 ECHO            start display on output
@@ -53,7 +55,6 @@ POSTPONE        https://forth-standard.org/standard/core/POSTPONE
 ABORT"          https://forth-standard.org/standard/core/ABORTq
 ABORT           https://forth-standard.org/standard/core/ABORT
 QUIT            https://forth-standard.org/standard/core/QUIT
-EVALUATE        https://forth-standard.org/standard/core/EVALUATE
 COUNT           https://forth-standard.org/standard/core/COUNT
 LITERAL         https://forth-standard.org/standard/core/LITERAL
 ,               https://forth-standard.org/standard/core/Comma
@@ -205,14 +206,14 @@ RPT     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=219
 
 CONDCOMP ADD-ON
 ---------------
-MARKER          [DEFINED]       [UNDEFINED]     [IF]            [ELSE]          [THEN]          COMPARE         
+MARKER          [DEFINED]       [UNDEFINED]     [IF]            [ELSE]          [THEN]        
 
+MARKER          https://forth-standard.org/standard/core/MARKER
 [DEFINED]       https://forth-standard.org/standard/tools/BracketDEFINED
 [UNDEFINED]     https://forth-standard.org/standard/tools/BracketUNDEFINED
 [IF]            https://forth-standard.org/standard/tools/BracketIF
 [ELSE]          https://forth-standard.org/standard/tools/BracketELSE
 [THEN]          https://forth-standard.org/standard/tools/BracketTHEN
-COMPARE         https://forth-standard.org/standard/string/COMPARE
 
 
 VOCABULARY ADD-ON
@@ -230,18 +231,19 @@ VOCABULARY <word>     creates a new VOCABULARY named word
 
 NONAME ADD-ON
 ---------------------
-:NONAME         CODENNM
+CODENNM         IS              DEFER           :NONAME         
 
 :NONAME         https://forth-standard.org/standard/core/ColonNONAME 
 CODENNM         assembly counterpart of :NONAME
+DEFER           https://forth-standard.org/standard/core/DEFER
+IS              https://forth-standard.org/standard/core/IS
 
 
 SD_CARD_LOADER ADD-ON
 ---------------------
-LOAD"           CIB
+LOAD"
 
 LOAD"           LOAD" SD_TEST.4TH" loads source file SD_TEST.4TH from SD_Card and compile it.
-CIB             Currrent Input Buffer, TIB by default.
 
 ACCEPT becomes a DEFERed word
 
@@ -276,20 +278,20 @@ QUIT becomes a DEFERed word
 ANS_COMPLEMENT ADD-ON
 ---------------------
 SPACES          SPACE           BL              PAD             >IN             BASE            STATE           
-CONSTANT        VARIABLE        SOURCE          RECURSE         EXECUTE         >BODY           .(              
-(               DECIMAL         HEX             HERE            FILL            MOVE            +!              
-[CHAR]          CHAR            CELL+           CELLS           CHAR+           CHARS           ALIGN           
-ALIGNED         2OVER           2SWAP           2DROP           2DUP            2!              2@              
-R@              ROT             OVER            */              */MOD           MOD             /               
-/MOD            *               FM/MOD          ABS             NEGATE          SM/REM          UM/MOD          
-M*              UM*             2/              2*              MIN             MAX             RSHIFT          
-LSHIFT          INVERT          1-              1+              S>D             XOR             OR              
-AND             LEAVE           UNLOOP          J               I               +LOOP           LOOP            
-DO              REPEAT          WHILE           AGAIN           UNTIL           ELSE            THEN            
-IF              >               <               U<              =               0<              0=              
-C,              C!              C@              R>              >R              NIP             DROP            
-SWAP            DEPTH           EXIT            ?DUP            DUP             !               @               
--               +               DOES>           BEGIN           {CORE_COMP}
+CONSTANT        VARIABLE        SOURCE          RECURSE         EVALUATE        EXECUTE         >BODY           
+.(              (               DECIMAL         HEX             HERE            FILL            MOVE            
++!              [CHAR]          CHAR            CELL+           CELLS           CHAR+           CHARS           
+ALIGN           ALIGNED         2OVER           2SWAP           2DROP           2DUP            2!              
+2@              R@              ROT             OVER            */              */MOD           MOD             
+/               /MOD            *               FM/MOD          ABS             NEGATE          SM/REM          
+UM/MOD          M*              UM*             2/              2*              MIN             MAX             
+RSHIFT          LSHIFT          INVERT          1-              1+              S>D             XOR             
+OR              AND             LEAVE           UNLOOP          J               I               +LOOP           
+LOOP            DO              REPEAT          WHILE           AGAIN           UNTIL           ELSE            
+THEN            IF              >               <               U<              =               0<              
+0=              C,              C!              C@              R>              >R              NIP             
+DROP            SWAP            DEPTH           EXIT            ?DUP            DUP             !               
+@               -               +               DOES>           BEGIN           {CORE_COMP}
 
 BEGIN           https://forth-standard.org/standard/core/BEGIN
 DOES>           https://forth-standard.org/standard/core/DOES
@@ -304,6 +306,7 @@ CONSTANT        https://forth-standard.org/standard/core/CONSTANT
 VARIABLE        https://forth-standard.org/standard/core/VARIABLE
 SOURCE          https://forth-standard.org/standard/core/SOURCE
 RECURSE         https://forth-standard.org/standard/core/RECURSE
+EVALUATE        https://forth-standard.org/standard/core/EVALUATE
 EXECUTE         https://forth-standard.org/standard/core/EXECUTE
 >BODY           https://forth-standard.org/standard/core/toBODY
 .(              https://forth-standard.org/standard/core/Dotp
@@ -400,9 +403,6 @@ DUP             https://forth-standard.org/standard/core/DUP
 OTHER WORDS
 
 
-MARKER          https://forth-standard.org/standard/core/MARKER
-DEFER           https://forth-standard.org/standard/core/DEFER
-IS              https://forth-standard.org/standard/core/IS
 D.              https://forth-standard.org/standard/double/Dd
 DABS            https://forth-standard.org/standard/double/DABS
 TO              https://forth-standard.org/standard/core/TO

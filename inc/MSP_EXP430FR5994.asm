@@ -1,24 +1,6 @@
 ; -*- coding: utf-8 -*-
 ; MSP_EXP430FR5994.inc
 
-; Fast Forth For Texas Instrument MSP430FR5994
-;
-; Copyright (C) <2014>  <J.M. THOORENS>
-;
-; This program is free software: you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation, either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License
-; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
 ; ======================================================================
 ; MSP_EXP430FR5994 board
 ; ======================================================================
@@ -167,22 +149,10 @@ BUS_SD      .equ 04C0h  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0S
 TERM_IN     .equ P2IN
 TERM_SEL    .equ P2SEL1
 TERM_REN    .equ P2REN
-TXD         .equ 1      ; P2.0 = TXD + FORTH Deep_RST pin
+TXD         .equ 1      ; P2.0 = TXD
 RXD         .equ 2      ; P2.1 = RXD
 BUS_TERM    .equ 3
     .ENDIF
-
-    .IFDEF UCA1_TERM ; see device.inc
-; P2.5  UCA1-TXD    --> USB2UART RXD    
-; P2.6  UCA1-RXD    <-- USB2UART TXD 
-TERM_IN     .equ P2IN
-TERM_SEL    .equ P2SEL1
-TERM_REN    .equ P2REN
-TXD         .equ 20h   ; P2.5 = TXD
-RXD         .equ 40h   ; P2.6 = RXD
-BUS_TERM    .equ 60h
-    .ENDIF
-
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4

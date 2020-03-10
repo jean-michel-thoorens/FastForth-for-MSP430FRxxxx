@@ -1,6 +1,6 @@
 
 ; --------------------
-; RTC.4th
+; RTC.4th for MSP_EXP430FR5994
 ; --------------------
 
 PWR_STATE
@@ -35,20 +35,6 @@ IF
 THEN
 ;
 
-[UNDEFINED] AND [IF]
-CODE AND
-AND @R15+,R14
-MOV @R13+,R0
-ENDCODE
-[THEN]
-
-[UNDEFINED] OR [IF]
-CODE OR
-BIS @R15+,R14
-MOV @R13+,R0
-ENDCODE
-[THEN]
-
 [UNDEFINED] @ [IF]
 CODE @
 MOV @R14,R14
@@ -69,14 +55,6 @@ MOV @R13+,R0
 ENDCODE
 [THEN]
 
-                        ; search devide ID:
-$81EF $1A04 @ U<        ; MSP430FR2433 or...
-$1A04 @ $8241 U<        ; ...MSP430FR4133
-AND
-$830B $1A04 @ U<        ; MSP430FR21xx/23xx/24xx/25xx/26xx
-OR                      ; -- flag       0 ==> RTC, -1 ==> no RTC
-NORTC
-
 [UNDEFINED] = [IF]
 CODE =
 SUB @R15+,R14
@@ -88,6 +66,21 @@ XOR #-1,R14
 MOV @R13+,R0
 ENDCODE
 [THEN]
+
+[UNDEFINED] OR [IF]
+CODE OR
+BIS @R15+,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+                        ; search devide ID:
+$81EF $1A04 @ U<        ; MSP430FR4133 or...
+$1A04 @ $8241 U<        ; ...MSP430FR2433
+=
+$830B $1A04 @ U<        ; MSP430FR21xx/23xx/24xx/25xx/26xx
+OR                      ; -- flag       0 ==> RTC, -1 ==> no RTC
+NORTC
 
 [UNDEFINED] SWAP [IF]
 CODE SWAP
@@ -243,6 +236,24 @@ ENDCODE
 [UNDEFINED] >BODY [IF]
 CODE >BODY
 ADD #4,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] EVALUATE [IF]
+CODE EVALUATE
+MOV #$1DC0,R9
+MOV @R9+,R12
+MOV @R9+,R11
+MOV @R9+,R10
+PUSHM #4,R13
+LO2HI
+INTERPRET
+HI2LO
+MOV @R1+,&$1DC4
+MOV @R1+,&$1DC2
+MOV @R1+,&$1DC0
+MOV @R1+,R13 
 MOV @R13+,R0
 ENDCODE
 [THEN]

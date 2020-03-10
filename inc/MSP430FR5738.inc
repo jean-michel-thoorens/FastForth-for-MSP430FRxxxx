@@ -237,6 +237,52 @@ P2IE        .equ PA_SFR + 1Bh    ; Port 2 Interrupt Enable
 P2IFG       .equ PA_SFR + 1Dh    ; Port 2 Interrupt Flag
 P2IV        .equ PA_SFR + 1Eh    ; Port 2 Interrupt Vector word 
 
+    .IFDEF UCB0_SD
+SD_SEL      .equ PASEL1     ; word access, to configure UCB0
+SD_REN      .equ PAREN      ; word access, to configure pullup resistors
+BUS_SD      .equ 04C0h      ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0SOMI
+    .ENDIF
+
+    .IFDEF UCB0_TERM
+TERM_IN     .equ    P1IN
+TERM_SEL    .equ    P1SEL1
+TERM_REN    .equ    P1REN
+SDA         .equ    40h     ; P1.6 = SDA
+SCL         .equ    80h     ; P1.7 = SCL
+BUS_TERM    .equ    0C0h
+    .ENDIF
+
+    .IFDEF UCA0_TERM
+TERM_IN     .equ P2IN
+TERM_SEL    .equ P2SEL1
+TERM_REN    .equ P2REN
+TXD         .equ 1          ; P2.0 = TX + FORTH Deep_RST pin
+RXD         .equ 2          ; P2.1 = RX
+BUS_TERM    .equ 3
+    .ENDIF
+
+WIPE_IN     .equ    P2IN
+IO_WIPE     .equ 1          ; P2.0 = TX + FORTH Deep_RST pin
+
+    .IFDEF TERMINAL4WIRES
+; RTS output is wired to the CTS input of UART2USB bridge 
+; configure RTS as output high to disable RX TERM during start FORTH
+HANDSHAKOUT .equ    P2OUT
+HANDSHAKIN  .equ    P2IN
+RTS         .equ    4       ; P2.2
+        .IFDEF TERMINAL5WIRES
+; CTS input must be wired to the RTS output of UART2USB bridge 
+; configure CTS as input low (true) to avoid lock when CTS is not wired
+CTS         .equ    8       ; P2.3
+        .ENDIF
+    .ENDIF
+
+SD_CDIN     .equ P2IN
+SD_CSOUT    .equ P2OUT
+SD_CSDIR    .equ P2DIR
+CD_SD       .equ 8          ; P2.3 as SD Card Detect
+CS_SD       .equ 10h        ; P2.4 as SD Chip Select    
+
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORTJ
 ; ----------------------------------------------------------------------
@@ -307,35 +353,25 @@ MPUSAM      .equ MPU_SFR + 06h  ; MPU access management
 ; ----------------------------------------------------------------------
 ; eUSCI_A0
 ; ----------------------------------------------------------------------
-TERM_CTLW0       .equ eUSCI_A0_SFR + 00h    ; eUSCI_A0 Control Word Register 0
-TERM_BRW         .equ eUSCI_A0_SFR + 06h    ; eUSCI_A0 Baud Word Rate 0
-TERM_MCTLW       .equ eUSCI_A0_SFR + 08h    ; eUSCI_A0 Modulation Control
-TERM_STATW       .equ eUSCI_A0_SFR + 0Ah    ; eUSCI_A0 status Word Register
-TERM_RXBUF       .equ eUSCI_A0_SFR + 0Ch    ; eUSCI_A0 Receive Buffer
-TERM_TXBUF       .equ eUSCI_A0_SFR + 0Eh    ; eUSCI_A0 Transmit Buffer
-TERM_IE          .equ eUSCI_A0_SFR + 1Ah    ; eUSCI_A0 Interrupt Enable Register
-TERM_IFG         .equ eUSCI_A0_SFR + 1Ch    ; eUSCI_A0 Interrupt Flags Register
-TERM_VEC         .equ 0FFF0h      ; interrupt vector for  eUSCI_A0
+TERM_CTLW0      .equ eUSCI_A0_SFR + 00h    ; eUSCI_A0 Control Word Register 0
+TERM_BRW        .equ eUSCI_A0_SFR + 06h    ; eUSCI_A0 Baud Word Rate 0
+TERM_MCTLW      .equ eUSCI_A0_SFR + 08h    ; eUSCI_A0 Modulation Control
+TERM_STATW      .equ eUSCI_A0_SFR + 0Ah    ; eUSCI_A0 status Word Register
+TERM_RXBUF      .equ eUSCI_A0_SFR + 0Ch    ; eUSCI_A0 Receive Buffer
+TERM_TXBUF      .equ eUSCI_A0_SFR + 0Eh    ; eUSCI_A0 Transmit Buffer
+TERM_IE         .equ eUSCI_A0_SFR + 1Ah    ; eUSCI_A0 Interrupt Enable Register
+TERM_IFG        .equ eUSCI_A0_SFR + 1Ch    ; eUSCI_A0 Interrupt Flags Register
+
+TERM_VEC        .equ 0FFF0h ; interrupt vector for  eUSCI_A0
+WAKE_UP         .equ 1      ; UART RX interrupt
+
 RX_TERM         .equ 1
 TX_TERM         .equ 2
     .ENDIF ;UCA0_TERM
 
-    .IFDEF UCA0_SD
-; ----------------------------------------------------------------------
-; eUSCI_A0
-; ----------------------------------------------------------------------
-SD_CTLW0       .equ eUSCI_A0_SFR + 00h      ; USCI_A0 Control Word Register 0
-SD_BRW         .equ eUSCI_A0_SFR + 06h      ; USCI_A0 Baud Word Rate 0
-SD_RXBUF       .equ eUSCI_A0_SFR + 0Ch      ; USCI_A0 Receive Buffer 8
-SD_TXBUF       .equ eUSCI_A0_SFR + 0Eh      ; USCI_A0 Transmit Buffer 8
-SD_IFG         .equ eUSCI_A0_SFR + 1Ch      ; USCI_A0 Interrupt Flags Register
-RX_SD           .equ 1
-TX_SD           .equ 2
-    .ENDIF
-
     .IFDEF UCB0_TERM
 ; ----------------------------------------------------------------------
-; eUSCI_B0
+; eUSCI_B0 as TERMINAL I2C input
 ; ----------------------------------------------------------------------
 TERM_CTLW0      .equ eUSCI_B0_SFR + 00h     ; USCI_B0 Control Word Register 0
 TERM_CTLW1      .equ eUSCI_B0_SFR + 02h     ; USCI_B0 Control Word Register 1
@@ -348,7 +384,10 @@ TERM_ADDRX      .equ eUSCI_B0_SFR + 1Ch     ; USCI_B0  Received Address Register
 TERM_I2CSA      .equ eUSCI_B0_SFR + 20h     ; USCI_B0 I2C Slave Address
 TERM_IE         .equ eUSCI_B0_SFR + 2Ah     ; USCI_B0 Interrupt Enable
 TERM_IFG        .equ eUSCI_B0_SFR + 2Ch     ; USCI_B0 Interrupt Flags Register
-TERM_VEC        .equ 0FFEEh                 ; interrupt vector for eUSCI_B0
+
+TERM_VEC        .equ 0FFEEh ; interrupt vector for eUSCI_B0
+WAKE_UP         .equ 4      ; START interrupt
+
 RX_TERM         .equ 1
 TX_TERM         .equ 2
     .ENDIF ;UCB0_TERM
@@ -362,6 +401,7 @@ SD_BRW         .equ eUSCI_B0_SFR + 06h    ; USCI_B0 Baud Word Rate 0
 SD_RXBUF       .equ eUSCI_B0_SFR + 0Ch    ; USCI_B0 Receive Buffer 8
 SD_TXBUF       .equ eUSCI_B0_SFR + 0Eh    ; USCI_B0 Transmit Buffer 8
 SD_IFG         .equ eUSCI_B0_SFR + 2Ch    ; USCI_B0 Interrupt Flags Register
+
 RX_SD           .equ 1
 TX_SD           .equ 2
     .ENDIF ;UCB0_SD

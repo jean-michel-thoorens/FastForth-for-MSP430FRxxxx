@@ -1,23 +1,5 @@
 ; -*- coding: utf-8 -*-
 
-; Fast Forth For Texas Instrument MSP430FR5739
-; Tested on MSP-EXP430FR2433 launchpad
-;
-; Copyright (C) <2017>  <J.M. THOORENS>
-;
-; This program is free software: you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation, either version 3 of the License, or
-; (at your option) any later version.
-; 
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-; 
-; You should have received a copy of the GNU General Public License
-; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 ; ======================================================================
 ; INIT MSP-EXP430FR2433 board
 ; ======================================================================
@@ -110,12 +92,12 @@
 ; P1.0  - RTS TERMINAL     
 ; P1.1  - CTS TERMINAL     
 
-LED1_OUT    .equ    202h
-LED1_DIR    .equ    204h
+LED1_OUT    .equ    P1OUT
+LED1_DIR    .equ    P1DIR
 LED1        .equ    1           ;  P1.0 LED1 red
 
-LED2_OUT    .equ    202h
-LED2_DIR    .equ    204h
+LED2_OUT    .equ    P1OUT
+LED2_DIR    .equ    P1DIR
 LED2        .equ    2           ;  P1.1 LED2 green
 
 HANDSHAKOUT .equ    P1OUT
@@ -131,9 +113,9 @@ BUS_TERM    .equ    0Ch         ; P1.2=SDA, P1.3=SCL
     .ENDIF
 
     .IFDEF UCB0_SD
-SD_SEL      .equ PASEL0         ; to configure UCB0
-SD_REN      .equ PAREN          ; to configure pullup resistors
-BUS_SD      .equ 000Eh          ; pins P1.1 as UCB0CLK, P1.2 as UCB0SIMO & P1.3 as UCB0SOMI
+SD_SEL      .equ    PASEL0      ; to configure UCB0
+SD_REN      .equ    PAREN       ; to configure pullup resistors
+BUS_SD      .equ    000Eh       ; pins P1.1 as UCB0CLK, P1.2 as UCB0SIMO & P1.3 as UCB0SOMI
     .ENDIF
 
     .IFDEF UCA0_TERM
@@ -165,12 +147,6 @@ TERM_SEL    .equ    P2SEL0
 TERM_REN    .equ    P2REN
 BUS_TERM    .equ    60h
     .ENDIF
-
-I2CT_SLA_IN     .equ   P2IN
-I2CT_SLA_OUT    .equ   P2OUT
-I2CT_SLA_DIR    .equ   P2DIR
-I2CT_SLA_REN    .equ   P2REN
-I2CT_SLA_BUS    .equ   07h      ; P2.0 P2.1 P2.2
 
 SW1_IN      .equ    P2IN
 SW1         .equ    8           ; P2.3 = S1

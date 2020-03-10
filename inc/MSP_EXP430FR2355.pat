@@ -1,22 +1,7 @@
 ! -*- coding: utf-8 -*-
 ! MSP_EXP430FR2355.pat
 !
-! Copyright (C) <2018>  <J.M. THOORENS>
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-\.f=\.4th!      to change file type
+\.f=\.4th for MSP_EXP430FR2355! to change file type
 !
 !========================
 ! remove comments        
@@ -154,15 +139,14 @@
 ! FORTH I/O :
 ! ============================================
 !TERMINAL 
-TERM_TX=\$8!            P4.3 = TX also Deep_RST pin
-TERM_RX=\$4!            P4.2 = RX
-TERM_BUS=\$0C!
+BUS_TERM=\$0C!          P4.2 = RX, P4.3 = TX
 
 TERM_IN=\$221!          P4
 TERM_REN=\$227!
 TERM_SEL=\$22B!     \ SEL0
+
 TERM_VEC=\$FFE2!    \ UCA1
-IE_TERM=1!          \ RX int
+WAKE_UP=1!          \ RX int
 
 TERM_CTLW0=\$580!   \ eUSCI_A1 control word 0
 TERM_CTLW1=\$582!   \ eUSCI_A1 control word 1
@@ -262,17 +246,17 @@ I2CSM_IN=\$220!
 I2CSM_OUT=\$222!
 I2CSM_DIR=\$224!
 I2CSM_REN=\$226!
-SMSDA=4!                P3.2
-SMSCL=8!                P3.3
-SM_BUS=\$03!    
+SM_SDA=4!                P3.2
+SM_SCL=8!                P3.3
+SM_BUS=\$0C!    
 
 !Software I2C_Multi_Master
 I2CSMM_IN=\$220!
 I2CSMM_OUT=\$222!
 I2CSMM_DIR=\$224!
 I2CSMM_REN=\$226!
-SMMSDA=4!               P3.2
-SMMSCL=8!               P3.3
+SMM_SDA=4!               P3.2
+SMM_SCL=8!               P3.3
 SMM_BUS=\$0C!    
 
 !hardware I2C_Multi_Master
@@ -282,8 +266,8 @@ I2CMM_DIR=\$204!
 I2CMM_REN=\$206!
 I2CMM_SEL=\$20A!        SEL0
 I2CMM_VEC=\$FFE0!       UCB0
-MMSDA=4!                P1.2
-MMSCL=8!                P1.3
+MM_SDA=4!                P1.2
+MM_SCL=8!                P1.3
 MM_BUS=\$0C!
 
 !hardware I2C_Master
@@ -293,8 +277,8 @@ I2CM_DIR=\$204!
 I2CM_REN=\$206!
 I2CM_SEL=\$20A!         SEL0
 I2CM_VEC=\$FFE0!        UCB0
-MSDA=4!                 P1.2
-MSCL=8!                 P1.3
+M_SDA=4!                 P1.2
+M_SCL=8!                 P1.3
 M_BUS=\$0C!
 
 !hardware I2C_Slave
@@ -304,8 +288,8 @@ I2CS_DIR=\$204!
 I2CS_REN=\$206!
 I2CS_SEL=\$20A!         SEL0
 I2CS_VEC=\$FFE0!        UCB0
-SSDA=4!                 P1.2
-SSCL=8!                 P1.3
+S_SDA=4!                 P1.2
+S_SCL=8!                 P1.3
 S_BUS=\$0C!
 I2CMM_VEC=\$FFE0!       UCB0
 

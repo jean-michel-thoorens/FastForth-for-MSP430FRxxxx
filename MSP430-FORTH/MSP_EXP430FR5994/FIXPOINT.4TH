@@ -1,6 +1,6 @@
 
 ; -----------------------------------------------------
-; FIXPOINT.4th 
+; FIXPOINT.4th for MSP_EXP430FR5994 
 ; -----------------------------------------------------
 
 ; -----------------------------------------------------------
@@ -403,7 +403,7 @@ ENDCODE
 ECHO
 
 ; -----------------------
-; (volatile) tests for FIXPOINT.asm | FIXPOINT.4th
+; (volatile) tests for FIXPOINT.asm | FIXPOINT.4th for MSP_EXP430FR5994
 ; -----------------------
 
 3,14159 2CONSTANT PI
