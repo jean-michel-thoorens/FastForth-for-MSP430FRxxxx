@@ -47,27 +47,23 @@ RAM_LEN         .equ 00800h
 ; ----------------------------------------------
 MAIN_ORG        .equ 04400h      ; Code space start
 MAIN_LEN        .equ 1FC00h      ; 127 k FRAM
+; ----------------------------------------------
+; Interrupt Vectors and signatures
+; ----------------------------------------------
 SIGNATURES      .equ 0FF80h      ; JTAG, BSL and IP Encapsulation signatures 1 and 2
 JTAG_SIG1       .equ 0FF80h      ; if 0, enable JTAG/SBW
 JTAG_SIG2       .equ 0FF82h      ; if JTAG_SIG1=0xAAAA, length of password string @ JTAG_PASSWORD
 BSL_SIG1        .equ 0FF84h      ;
 BSL_SIG2        .equ 0FF86h      ;
 JTAG_PASSWORD   .equ 0FF86h      ; up to 0FFC5h : 256 bits
+I2CSLA0         .equ 0FFA2h      ; UCBxI2COA0 default value address 
+I2CSLA1         .equ 0FFA4h      ; UCBxI2COA1 default value address
+I2CSLA2         .equ 0FFA6h      ; UCBxI2COA2 default value address
+I2CSLA3         .equ 0FFA8h      ; UCBxI2COA3 default value address
 VECT_ORG        .equ 0FFC6h      ; FFC6-FFFF
 VECT_LEN        .equ 3Ah
 BSL_PASSWORD    .equ 0FFE0h      ; up to 0FFFFh : 256 bits
 ; ----------------------------------------------
-
-; ----------------------------------------------
-; Interrupt Vectors and signatures - MSP430FR6989
-; ----------------------------------------------
-
-;    .org    SIGNATURES
-;;Start of JTAG and BSL signatures
-;        .word   0FFFFh      ; JTAG signature 1
-;        .word   0FFFFh      ; JTAG signature 2
-;        .word   0FFFFh      ; BSL signature 1, 5555h to disable BSL
-;        .word   0FFFFh      ; BSL signature 2
 ;
 ;   .org JTAG_PASSWORD      ;Start of JTAG PASSWORD
 ;

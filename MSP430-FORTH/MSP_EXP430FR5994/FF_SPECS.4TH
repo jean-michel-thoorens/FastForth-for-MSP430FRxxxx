@@ -2,8 +2,9 @@
 ; ------------------
 ; FF_SPECS.4th for MSP_EXP430FR5994
 ; ------------------
- 
+
 ; displays all FastForth specifications
+
 
 PWR_STATE
 
@@ -442,7 +443,6 @@ POSTPONE TYPE
 ; IMMEDIATE
 [THEN]
 
-
 : SPECS
 PWR_STATE
 ECHO
@@ -461,11 +461,19 @@ CASE
     $8160     OF      ." 5948,"   $4400   ENDOF
     $8169     OF      ." 5969,"   $4400   ENDOF
     $81A8     OF      ." 6989,"   $4400   ENDOF
+    $810D     OF      ." 5986,"   $4400   ENDOF
     $81F0     OF      ." 4133,"   $C400   ENDOF
     $8240     OF      ." 2433,"   $C400   ENDOF
     $82A1     OF      ." 5994,"   $4000   ENDOF
+    $82A6     OF      ." 5962,"   $4000   ENDOF
     $830C     OF      ." 2355,"   $8000   ENDOF
+    $830D     OF      ." 2353,"   $C000   ENDOF
+    $831E     OF      ." 2155,"   $8000   ENDOF
+    $831D     OF      ." 2153,"   $C000   ENDOF
     $832A     OF      ." 2476,"   $8000   ENDOF
+    $832B     OF      ." 2475,"   $8000   ENDOF
+    $833C     OF      ." 2633,"   $C400   ENDOF
+    $833D     OF      ." 2533,"   $C400   ENDOF
     ABORT" xxxx <-- unrecognized device!"
 ENDCASE
 ['] ['] DUP @ $1284 =
@@ -495,12 +503,13 @@ CR
 ." MAX-UD            = 4294967295" CR
 ." STACK-CELLS       = 48" CR
 ." RETURN-STACK-CELLS= 48" CR
+." WoRdS aRe CaSe-InSeNsItIvE" CR
 CR 
 ESC [7m ." KERNEL SPECS" ESC [0m
 CR
 $1812 @
     DUP 0< IF ." 32.768kHz XTAL" CR THEN
-2*  DUP 0< IF 2* ." (RTS/CTS) UART TERMINAL" CR
+2*  DUP 0< IF 2* ." (4/2) UART TERMINAL" CR
         ELSE 2* DUP
             0< IF ." (RTS) UART TERMINAL" CR
             THEN
@@ -520,17 +529,18 @@ $1812 @
 2*  DUP 0< IF ." EXTENDED ASSEMBLER" CR THEN
 2*  DUP 0< IF ." ASSEMBLER" CR THEN
 2*  DUP 0< IF ." CONDITIONNAL COMPILATION" CR THEN
-        0< IF
+0< IF
     CR 
     ESC [7m ." OPTIONS" ESC [0m
     CR
     [DEFINED] {CORE_ANS}  [IF] ." ANS94 CORE COMPLIANT" CR [THEN]
+    [DEFINED] {DOUBLE}    [IF] ." Double-Number word set" CR [THEN]
     [DEFINED] {TOOLS}     [IF] ." UTILITY" CR [THEN]
     [DEFINED] {FIXPOINT}  [IF] ." FIXPOINT" CR [THEN]
     [DEFINED] {CORDIC}    [IF] ." CORDIC engine" CR [THEN]
     [DEFINED] {SD_TOOLS}  [IF] ." SD_TOOLS" CR [THEN]
     [DEFINED] {RTC}       [IF] ." RTC utility" CR [THEN]
-    [DEFINED] {FF_I2C}    [IF] ." I2C TERMINAL bridge" CR [THEN]
+    [DEFINED] {UARTI2CS}  [IF] ." UART to I2C_FastForth bridge" CR [THEN]
     [DEFINED] VOCABULARY  [IF] 
         CR 
         ESC [7m ." ASSEMBLER word set" ESC [0m
@@ -538,12 +548,10 @@ $1812 @
         CR
     [THEN]
 THEN
-   
 CR
 ESC [7m ." FORTH word set"  ESC [0m
 WORDS
 CR
-
 WARM
 ;
 

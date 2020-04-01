@@ -5,8 +5,6 @@
 
 ; restore signatures and vectors area
 
-NOECHO
-
 [UNDEFINED] ! [IF]
 CODE !
 MOV @R15+,0(R14)
@@ -15,5 +13,4 @@ MOV @R13+,R0
 ENDCODE
 [THEN]
 
-ECHO
--1 $1808 ! COLD
+ECHO -1 $1808 ! COLD

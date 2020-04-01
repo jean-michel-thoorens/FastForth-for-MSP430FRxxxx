@@ -6,6 +6,9 @@
 :: called by PreprocessSourceFile.bat, SendSourceFileToTarget.bat and CopySourceFileToTarget_SD_Card.bat
 :: just before calling Preprocess.bat,             SendSource.bat and           CopyToTarget_SD_Card.bat
 
+::%1 = "SelectTemplate"
+::%2 = file.f name
+
 @echo select your target:
 @echo 1  MSP_EXP430FR5739
 @echo 2  MSP_EXP430FR5969
@@ -31,11 +34,10 @@
 @exit /b
 
 :SelectDevice
-:: fonction called by FET_prog.bat
+::%1 = "SelectDevice"
+::%2 = file.pat name
 
-@shift /1
-
-@set device=%~n1
+set device=%~n2
 @if /I %device:~0,16%  == MSP_EXP430FR5739 set device=MSP430FR5739
 @if /I %device:~0,16%  == MSP_EXP430FR5969 set device=MSP430FR5969
 @if /I %device:~0,16%  == MSP_EXP430FR5994 set device=MSP430FR5994
@@ -45,6 +47,27 @@
 @if /I %device:~0,16%  == CHIPSTICK_FR2433 set device=MSP430FR2433
 @if /I %device:~0,16%  == MSP_EXP430FR2355 set device=MSP430FR2355
 @if /I %device:~0,15%  == LP_EXP430FR2476  set device=MSP430FR2476
+
+@exit /b
+
+:SelectDeviceId
+:: fonction called by SendSource.bat
+
+::echo %~n2
+set deviceid=%~n2
+@if /I %deviceid:~0,16%  == MSP_EXP430FR5739 set deviceid=$8103
+@if /I %deviceid:~0,16%  == MSP_EXP430FR5969 set deviceid=$8169
+@if /I %deviceid:~0,16%  == MSP_EXP430FR5994 set deviceid=$82A1
+@if /I %deviceid:~0,16%  == MSP_EXP430FR6989 set deviceid=$81A8
+@if /I %deviceid:~0,16%  == MSP_EXP430FR4133 set deviceid=$81F0
+@if /I %deviceid:~0,16%  == MSP_EXP430FR2433 set deviceid=$8240
+@if /I %deviceid:~0,16%  == CHIPSTICK_FR2433 set deviceid=$8240
+@if /I %deviceid:~0,16%  == MSP_EXP430FR2355 set deviceid=$830C
+@if /I %deviceid:~0,15%  == LP_EXP430FR2476  set deviceid=$832A
+
+::echo %deviceid%
+::%1 = "SelectDevice"
+::%2 = file.pat name
 
 @exit /b
 

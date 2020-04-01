@@ -57,9 +57,13 @@ BSL_SIG1        .equ 0FF84h      ;
 BSL_SIG2        .equ 0FF86h      ;
 BSL_CONF_SIG    .equ 0FF88h      ;
 BSL_CONF        .equ 0FF8Ah      ;
-BSL_I2C_ADRE    .equ 0FF8Ch      ;
 JTAG_PASSWORD   .equ 0FF88h      ; 256 bits
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
+BSL_I2C_ADRE    .equ 0FFA0h      ;
+I2CSLA0         .equ 0FFA2h      ; UCBxI2COA0 default value address 
+I2CSLA1         .equ 0FFA4h      ; UCBxI2COA1 default value address
+I2CSLA2         .equ 0FFA6h      ; UCBxI2COA2 default value address
+I2CSLA3         .equ 0FFA8h      ; UCBxI2COA3 default value address
 VECT_ORG        .equ 0FFCEh      ; FFCE-FFFF :  24 vectors + reset
 VECT_LEN        .equ 32h
 ; ----------------------------------------------

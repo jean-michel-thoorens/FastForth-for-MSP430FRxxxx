@@ -35,7 +35,7 @@
     MACEXP_DFT noif     ; reduce macros listing to true part
 ;-------------------------------------------------------------------------------
 
-VER .equ "V305"     ; FORTH version
+VER .equ "V306"     ; FORTH version
 
 ;===============================================================================
 ; before assembling or programming you must set TARGET in scite param1 (SHIFT+F8)
@@ -47,35 +47,35 @@ VER .equ "V305"     ; FORTH version
 ; kernel size below are for 8MHz, DTC=1, THREADS=1, 4WIRES (RTS) options
 ;===============================================================================
 ;    TARGET        ;                                        ;INFO+VECTORS+ MAIN bytes
-;MSP_EXP430FR5739  ; compile for MSP-EXP430FR5739 launchpad ; 30 +  96   + 2770 bytes
-;MSP_EXP430FR5969  ; compile for MSP-EXP430FR5969 launchpad ; 30 +  96   + 2760 bytes
-MSP_EXP430FR5994  ; compile for MSP-EXP430FR5994 launchpad ; 30 +  96   + 2782 bytes
-;MSP_EXP430FR6989  ; compile for MSP-EXP430FR6989 launchpad ; 30 +  96   + 2786 bytes
-;MSP_EXP430FR4133  ; compile for MSP-EXP430FR4133 launchpad ; 30 +  96   + 2826 bytes
-;MSP_EXP430FR2355  ; compile for MSP-EXP430FR2355 launchpad ; 30 +  96   + 2758 bytes
-;MSP_EXP430FR2433  ; compile for MSP-EXP430FR2433 launchpad ; 30 +  96   + 2750 bytes
-;LP_MSP430FR2476   ; compile for LP_MSP430FR2476  launchpad ; 30 +  96   + 2758 bytes
-;CHIPSTICK_FR2433  ; compile for "CHIPSTICK" of M. Ken BOAK ; 30 +  96   + 2750 bytes
+;MSP_EXP430FR5739  ; compile for MSP-EXP430FR5739 launchpad ; 30 +  128  + 2766 bytes
+;MSP_EXP430FR5969  ; compile for MSP-EXP430FR5969 launchpad ; 30 +  128  + 2756 bytes
+MSP_EXP430FR5994  ; compile for MSP-EXP430FR5994 launchpad ; 30 +  128  + 2778 bytes
+;MSP_EXP430FR6989  ; compile for MSP-EXP430FR6989 launchpad ; 30 +  128  + 2790 bytes
+;MSP_EXP430FR4133  ; compile for MSP-EXP430FR4133 launchpad ; 30 +  128  + 2820 bytes
+;MSP_EXP430FR2355  ; compile for MSP-EXP430FR2355 launchpad ; 30 +  128  + 2754 bytes
+;MSP_EXP430FR2433  ; compile for MSP-EXP430FR2433 launchpad ; 30 +  128  + 2746 bytes 
+;LP_MSP430FR2476   ; compile for LP_MSP430FR2476  launchpad ; 30 +  128  + 2758 bytes
+;CHIPSTICK_FR2433  ; compile for "CHIPSTICK" of M. Ken BOAK ; 30 +  128  + 2746 bytes
 
-; choose DTC (Direct Threaded Code) model, if you don't know, choose 2, for DOxxx routines without scratch register use
+; choose DTC model (Direct Threaded Code); if you don't know, choose 2, because DOCOL routine without using scratch register
 DTC .equ 2  ; DTC model 1 : DOCOL = CALL rDOCOL           14 cycles 1 word      shortest DTC model
             ; DTC model 2 : DOCOL = PUSH IP, CALL rEXIT   13 cycles 2 words     best compromize to mix FORTH/ASM code
             ; DTC model 3 : inlined DOCOL                  9 cycles 4 words     fastest
 
 THREADS     .equ 16 ;  1,  2 ,  4 ,  8 ,  16,  32  search entries in dictionnary.
                     ; +0, +28, +48, +56, +90, +154 bytes, usefull to speed up compilation;
-                    ; the FORTH interpreter speeds up by about a square root factor of THREADS.
+                    ; the FORTH interpreter is speed up by about a square root factor of THREADS.
 
-FREQUENCY   .equ 16 ; fully tested at 1,2,4,8,16 MHz (+ 24 MHz for MSP430FR57xx,MSP430FR2355)
+FREQUENCY   .equ 16 ; fully tested at 1,2,4,8,16,24 MHz (24 MHz for MSP430FR57xx,MSP430FR2355)
 
+;===============================================================================
+;TERMINAL_I2C        ; uncomment to select I2C Slave TERMINAL instead of UART TERMINAL below
 ;===============================================================================
 TERMINALBAUDRATE    .equ 115200 ; choose value considering the frequency and the UART2USB bridge, see explanations below.
 TERMINAL3WIRES      ; + 18 bytes    enable 3 wires (GND,TX,RX) with XON/XOFF software flow control (PL2303TA/HXD, CP2102)
 TERMINAL4WIRES      ; + 12 bytes    enable 4 wires with hardware flow control on RX with RTS (PL2303TA/HXD, FT232RL)
 ;TERMINAL5WIRES      ; + 10 bytes    enable 5 wires with hardware flow control on RX/TX with RTS/CTS (PL2303TA/HXD, FT232RL)...
 ;HALFDUPLEX          ; switch to UART half duplex TERMINAL input
-;===============================================================================
-TERMINAL_I2C        ; uncomment to select I2C Slave TERMINAL instead of UART TERMINAL
 ;===============================================================================
 
 ;===============================================================================
@@ -87,14 +87,14 @@ TERMINAL_I2C        ; uncomment to select I2C Slave TERMINAL instead of UART TER
 ;-------------------------------------------------------------------------------
 ; KERNEL ADDONs that can't be added later
 ;-------------------------------------------------------------------------------
-MSP430ASSEMBLER     ; + 1710 bytes : adds embedded assembler with TI syntax; without, you can do all but bigger and slower...
+MSP430ASSEMBLER     ; + 1722 bytes : adds embedded assembler with TI syntax; without, you can do all but bigger and slower...
 CONDCOMP            ; +  302 bytes : adds conditionnal compilation [IF] [ELSE] [THEN] [DEFINED] [UNDEFINED]
 DOUBLE_INPUT        ; +   58 bytes : adds the interpretation engine for double numbers (numbers with dot)
 FIXPOINT_INPUT      ; +  128 bytes : adds the interpretation engine for Q15.16 numbers (numbers with comma)
 DEFERRED            ; +  122 bytes : adds DEFER IS :NONAME CODENNM (CODE_No_NaMe).
 VOCABULARY_SET      ; +  106 bytes : adds words: VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83)
-EXTENDED_MEM        ; +  318 bytes : allows MSP430ASSEMBLER to read/write datas beyond $FFFF.
-EXTENDED_ASM        ; + 1488 bytes : adds extended assembler for programming beyond $FFFF.
+EXTENDED_MEM        ; +  318 bytes : allows assembler to execute code up to 1MB.
+EXTENDED_ASM        ; + 1488 bytes : extended assembler to 20 bits Datas.
 SD_CARD_LOADER      ; + 1766 bytes : to load source files from SD_card
 SD_CARD_READ_WRITE  ; + 1148 bytes : to read, create, write and del files + copy text files from PC to target SD_Card
 BOOTLOADER          ; +  128 bytes : includes in WARM the bootloader SD_CARD\BOOT.4TH.
@@ -105,7 +105,7 @@ BOOTLOADER          ; +  128 bytes : includes in WARM the bootloader SD_CARD\BOO
 ; OPTIONS that can be added later by downloading their source file              >-----------------------+
 ; however, added here, they are protected against WIPE and Deep Reset.                                  |
 ;-------------------------------------------------------------------------------                        v
-;CORE_COMPLEMENT     ; + 1872 bytes : MINIMAL OPTIONS if you want a conventional FORTH              CORECOMP.f
+;CORE_COMPLEMENT     ; + 1974 bytes : MINIMAL OPTIONS if you want a conventional FORTH              CORECOMP.f
 ;FIXPOINT            ; +  422/528 bytes add HOLDS F+ F- F/ F* F#S F. S>F                            FIXPOINT.f
 ;UTILITY             ; +  434/524 bytes (1/16threads) : add .S .RS WORDS U.R DUMP ?                 UTILITY.f
 ;SD_TOOLS            ; +  142 bytes for trivial DIR, FAT, CLUSTER and SECTOR view, (adds UTILITY)   SD_TOOLS.f
@@ -149,7 +149,7 @@ BOOTLOADER          ; +  128 bytes : includes in WARM the bootloader SD_CARD\BOO
 ; up to 2457600 Bds (8MHz,FR5xxx)
 ; up to 3MBds       (16MHz,FR5xxx,PL2303TA)
 ; up to 5MBds       (16MHz,FR5xxx,PL2303HXD with shortened cable) 5MBds at 16MHz, not too lazy !:-)
-; up to 6MBds       (24MHz,FR57xx,PL2303HXD with shortened cable)
+; up to 6MBds       (24MHz,PL2303HXD with shortened cable)
 
 ; UARTtoUSB module with Silabs CP2102 (supply current = 20 mA)
 ; ---------------------------------------------------------------------------------------------------
@@ -629,14 +629,14 @@ XLOOP       ADD #1,0(RSP)   ;4 increment INDEX
 ;-------------------------------------------------------------------------------
 ; 2 times faster if DVDhi = 0 (it's the general case)
 
-; reg     division        MU/MOD      NUM
-; -----------------------------------------
-; S     = DVDlo (15-0)  = ud1lo     = ud1lo
-; TOS   = DVDhi (31-16) = ud1hi     = ud1hi
-; T     = DIVlo         = BASE
-; W     = REMlo         = REMlo     = digit --> char --> -[HP]
-; X     = QUOTlo        = ud2lo     = ud2lo
-; Y     = QUOThi        = ud2hi     = ud2hi
+; reg     division            MU/MOD      NUM
+; ---------------------------------------------
+; S     = DVD(15-0)         = ud1lo     = ud1lo
+; TOS   = DVD(31-16)        = ud1hi     = ud1hi
+; T     = DIV(15-0)         = BASE
+; W     = DVD(47-32)/REM    = rem       = digit --> char --> -[HP]
+; X     = QUOTlo            = ud2lo     = ud2lo
+; Y     = QUOThi            = ud2hi     = ud2hi
 ; rDODOES = count
 
 MUSMOD      MOV TOS,T           ;1 T = DIVlo
@@ -1675,15 +1675,7 @@ COUNT       SUB #2,PSP              ;1
             MOV.B -1(TOS),TOS       ;3
             MOV @IP+,PC             ;4 15~
 
-    .IFDEF CORE_COMPLEMENT
-            FORTHWORD "BL"
-    .ENDIF
-; https://forth-standard.org/standard/core/BL
-; BL      -- char            an ASCII space
-FBLANK       CALL rDOCON
-            .word   20h
-
-            FORTHWORD "INTERPRET"
+            FORTHWORD "TREAT"
 ; INTERPRET    i*x addr u -- j*x      interpret given buffer
 ; This is the common factor of EVALUATE and QUIT.
 ; set addr u as input buffer then parse it word by word
@@ -1735,7 +1727,13 @@ EVALUATE    MOV #SOURCE_LEN,X       ;2
             MOV @RSP+,&SOURCE_LEN   ;4
             MOV @RSP+,IP 
             MOV @IP+,PC
-    .ENDIF
+
+            FORTHWORD "BL"
+; https://forth-standard.org/standard/core/BL
+; BL      -- char            an ASCII space
+    .ENDIF ; CORE_COMPLEMENT
+FBLANK       CALL rDOCON
+            .word   20h
 
     .IFDEF DEFER_QUIT               ; defined in ThingsInFirst.inc
 
@@ -1855,16 +1853,16 @@ QABORTYES   CALL #QAB_DEFER         ; init some variables, common part with WIPE
 QABORT_TERM CALL #RXON              ; resume downloading source file then wait the end of downloading.
 QABORTLOOP  BIC #RX_TERM,&TERM_IFG  ; clear RX_TERM
             MOV &FREQ_KHZ,Y         ; 1000, 2000, 4000, 8000, 16000, 240000
-QABUSBLOOPJ MOV #32,X               ; 2~        <-------+ windows 10 seems very slow... ==> ((32*3)+5)*1000 = 101ms delay
-QABUSBLOOPI SUB #1,X                ; 1~        <---+   |
+;QABUSBLOOPJ MOV #32,X               ; 2~        <-------+ windows 10 seems very slow... ==> ((32*3)+5)*1000 = 101ms delay
+;QABUSBLOOPI SUB #1,X                ; 1~        <---+   |
+;            JNZ QABUSBLOOPI         ; 2~ 3~ loop ---+   | to refill its USB buffer
+;            SUB #1,Y                ; 1~                |
+;            JNZ QABUSBLOOPJ         ; 2~ 101~ loop -----+
+QABUSBLOOPJ MOV #65,X               ; 2~        <-------+ linux with minicom seems very very slow...
+QABUSBLOOPI SUB #1,X                ; 1~        <---+   |  ==> ((65*3)+5)*1000 = 200ms delay
             JNZ QABUSBLOOPI         ; 2~ 3~ loop ---+   | to refill its USB buffer
             SUB #1,Y                ; 1~                |
-            JNZ QABUSBLOOPJ         ; 2~ 101~ loop -----+
-; QABUSBLOOPJ MOV #65,X               ; 2~        <-------+ linux with minicom seems very very slow...
-; QABUSBLOOPI SUB #1,X                ; 1~        <---+   |  ==> ((65*3)+5)*1000 = 200ms delay
-;             JNZ QABUSBLOOPI         ; 2~ 3~ loop ---+   | to refill its USB buffer
-;             SUB #1,Y                ; 1~                |
-;             JNZ QABUSBLOOPJ         ; 2~ 200~ loop -----+
+            JNZ QABUSBLOOPJ         ; 2~ 200~ loop -----+
             BIT #RX_TERM,&TERM_IFG  ; 4 new char in TERMRXBUF after QABUSBLOOPJ delay ?
             JNZ QABORTLOOP          ; 2 yes, the input stream is still active: loop back
             mDOCOL                  ;
@@ -2009,7 +2007,7 @@ COLONNEXT                           ;               Y is NFA              )
 
 ;;Z ?REVEAL   --      if no stack mismatch, link this new word in the CURRENT vocabulary
 QREVEAL     CMP PSP,&LAST_PSP       ; Check SP with its saved value by :, :NONAME, CODE...
-            JNZ BAD_CSP             ; if no stack mismatch.
+            JNZ BAD_CSP             ; if stack mismatch.
 GOOD_CSP    MOV &LAST_NFA,Y         ; GOOD_CSP is the end of word MARKER
             MOV &LAST_THREAD,X      ;
 REVEAL      MOV @X,-2(Y)            ; [LAST_THREAD] --> LFA         (for NONAME: [LAST_THREAD] --> unused PA reg)

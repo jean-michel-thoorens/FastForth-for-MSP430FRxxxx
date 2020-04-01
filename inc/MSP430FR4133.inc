@@ -38,6 +38,10 @@ JTAG_SIG1       .equ 0FF80h      ; if 0 (electronic fuse=0) enable JTAG/SBW ; re
 JTAG_SIG2       .equ 0FF82h      ; if JTAG_SIG <> |0xFFFFFFFF, 0x00000000|, SBW and JTAG are locked
 BSL_SIG1        .equ 0FF84h      ;
 BSL_SIG2        .equ 0FF86h      ;
+I2CSLA0         .equ 0FFA2h      ; UCBxI2COA0 default value address 
+I2CSLA1         .equ 0FFA4h      ; UCBxI2COA1 default value address
+I2CSLA2         .equ 0FFA6h      ; UCBxI2COA2 default value address
+I2CSLA3         .equ 0FFA8h      ; UCBxI2COA3 default value address
 JTAG_PASSWORD   .equ 0FF88h      ; 256 bits
 VECT_ORG        .equ 0FFE2h      ; FFE2-FFFF
 VECT_LEN        .equ 1Eh

@@ -361,12 +361,12 @@ CODE S>F
 ENDCODE
 [THEN]
 
-PWR_HERE
+RST_HERE
 
 [THEN]
 
 ; -----------------------
-; definitions (volatile) for tests below
+; complements (volatile) for tests below
 ; -----------------------
 
 [UNDEFINED] ! [IF]
@@ -387,6 +387,17 @@ MOV @R13+,R0
 ENDCODE
 [THEN]
 
+[UNDEFINED] CONSTANT [IF]
+: CONSTANT 
+CREATE
+HI2LO
+MOV R14,-2(R10)
+MOV @R15+,R14
+MOV @R1+,R13
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
 [UNDEFINED] 2CONSTANT [IF]
 : 2CONSTANT
 CREATE , ,
@@ -400,25 +411,38 @@ MOV @R13+,R0
 ENDCODE
 [THEN]
 
+[UNDEFINED] D. [IF]
+CODE D.
+MOV #U.,R10
+ADD #10,R10
+MOV R10,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] BASE [IF]
+$1DDC CONSTANT BASE
+[THEN]
+
 ECHO
 
 ; -----------------------
-; (volatile) tests for FIXPOINT.asm | FIXPOINT.4th for MSP_EXP430FR5994
+; (volatile) tests for FIXPOINT.asm|FIXPOINT.4th for MSP_EXP430FR5994
 ; -----------------------
 
 3,14159 2CONSTANT PI
-PI U. U.
-PI F.
-
 PI -1,0 F* 2CONSTANT -PI
--PI . U.
--PI F.
 
-$10 $1DDC !  PI F. 
+PI D.   ; D. is not appropriate -->
+-PI D.  ; D. is not appropriate -->
+
+PI F.   ; good value! ------------>
+-PI F.  ; good value! ------------>
+
+$10 BASE  !  PI F. 
             -PI F.
-%10 $1DDC !  PI F. 
+%10 BASE  !  PI F. 
             -PI F.
-#10 $1DDC !  PI F. 
+#10 BASE  !  PI F. 
             -PI F.
 
 PI 2,0 F* F.      
@@ -431,6 +455,11 @@ PI -2,0 F/ F.
 -PI 2,0 F/ F.    
 -PI -2,0 F/ F.    
 
+32768,0 1,0 F* F.   ; overflow! -->
+32768,0 1,0 F/ F.   ; overflow! -->
+-32768,0 -1,0 F* F. ; overflow! -->
+-32768,0 -1,0 F/ F. ; overflow! -->
+
 32767,99999 1,0 F* F. 
 32767,99999 1,0 F/ F. 
 32767,99999 2,0 F/ F. 
@@ -438,19 +467,21 @@ PI -2,0 F/ F.
 32767,99999 8,0 F/ F. 
 32767,99999 16,0 F/ F.
 
--32767,0 -1,0 F* F.   
--32767,0 -1,0 F/ F.   
--32767,0 -2,0 F/ F.   
--32767,0 -4,0 F/ F.   
--32767,0 -8,0 F/ F.   
--32767,0 -16,0 F/ F.  
--32767,0 -32,0 F/ F.  
--32767,0 -64,0 F/ F.  
+-32768,0 -2,0 F/ F.   
+-32768,0 -4,0 F/ F.   
+-32768,0 -8,0 F/ F.   
+-32768,0 -16,0 F/ F.  
+-32768,0 -32,0 F/ F.  
+-32768,0 -64,0 F/ F.  
+
+-3276,80 -1,0 F/ F.   
+-327,680 -1,0 F/ F.   
+-32,7680 -1,0 F/ F.   
+-3,27680 -1,0 F/ F.   
+-0,32768 -1,0 F/ F.   
 
 ; SQRT(32768)^2 = 32768
 181,01933598375 181,01933598375 F* F.  
 181,01933598375 -181,01933598375 F* F.
 -181,01933598375 181,01933598375 F* F.
 -181,01933598375 -181,01933598375 F* F.
-
-

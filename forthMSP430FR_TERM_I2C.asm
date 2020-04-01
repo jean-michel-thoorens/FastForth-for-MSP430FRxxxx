@@ -151,7 +151,7 @@ YEMITEND    MOV @IP+,PC             ;4 11 words
 ;Z ECHO     --      connect EMIT to TERMINAL (default)
 ECHO        MOV #4882h,&YEMIT       ; 4882h = MOV Y,&<next_adr>
             MOV #0,&LINE            ;
-            MOV #5,Y                ;
+            MOV #5,Y                ; tell I2C_Master to echo chars received from the TERMINAL
 ECHOEND     CALL #CTRLCHARTX
             MOV @IP+,PC
 
@@ -159,5 +159,5 @@ ECHOEND     CALL #CTRLCHARTX
 ;Z NOECHO   --      disconnect EMIT to TERMINAL
 NOECHO      MOV #NEXT,&YEMIT        ;  NEXT = 4030h = MOV @IP+,PC
             MOV #1,&LINE            ;
-            MOV #4,Y                ;
+            MOV #4,Y                ; tell I2C_Master not to echo chars received from the TERMINAL
             JMP ECHOEND

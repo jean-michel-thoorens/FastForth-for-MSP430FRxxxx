@@ -426,7 +426,7 @@ CS_SD       .equ 2        ; P8.1
 
     .ELSE
             BIS     #0010h,&CSCTL3      ; FLL select REFCLOCK
-;           MOV     #0100h,&CSCTL4      ; ACLOCK select REFO, MCLK & SMCLK select DCOCLKDIV (default value)
+            MOV     #0200h,&CSCTL4      ; ACLOCK select VLOCLK, MCLK & SMCLK select DCOCLKDIV (default value)
     .ENDIF
 
             BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV preserving a pending request for DEEP_RST

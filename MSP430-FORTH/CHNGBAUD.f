@@ -3,17 +3,57 @@
 ; ------------
 ; CHNGBAUD.f
 ; ------------
-
-\ to see kernel options, download FastForthSpecs.f
-\ FastForth kernel options: nothing
 \
-\ TARGET SELECTION : copy your target in (shift+F8) parameter 1: 
+\ TARGET SELECTION ( = the name of \INC\target.pat file without the extension)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
-\ MSP_EXP430FR4133  MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
+\ MSP_EXP430FR4133  MSP_EXP430FR2433    CHIPSTICK_FR2433    MSP_EXP430FR2355
 \ LP_MSP430FR2476
 \
+\ from scite editor : copy your target selection in (shift+F8) parameter 1:
 \
-PWR_STATE
+\ OR
+\
+\ drag and drop this file onto SendSourceFileToTarget.bat
+\ then select your TARGET when asked.
+\
+\ COLD            \ uncomment for this TEST which must not disrupt the downloading process
+
+[UNDEFINED] @ [IF]
+\ https://forth-standard.org/standard/core/Fetch
+\ @     c-addr -- char   fetch char from memory
+CODE @
+MOV @TOS,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] AND [IF]
+\ https://forth-standard.org/standard/core/AND
+\ C AND    x1 x2 -- x3           logical AND
+CODE AND
+AND @PSP+,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] 0= [IF]
+\ https://forth-standard.org/standard/core/ZeroEqual
+\ 0=     n/u -- flag    return true if TOS=0
+CODE 0=
+SUB #1,TOS      \ borrow (clear cy) if TOS was 0
+SUBC TOS,TOS    \ TOS=-1 if borrow was set
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+: I2CTERM_ABORT
+$0D EMIT   \ return to column 1
+1 ABORT" <-- Ouch! unexpected target with I2C TERMINAL"
+;
+
+KERNEL_ADDON @ $7800 AND 0= [IF] ; unexpected I2C TERMINAL ?
+I2CTERM_ABORT
+[THEN]
 
 [UNDEFINED] DUP [IF]    \ define DUP and DUP?
 \ https://forth-standard.org/standard/core/DUP

@@ -245,7 +245,8 @@ SKIPBRAN=\$4448!
 XDO=\$444C! 
 XPLOOP=\$445C! 
 XLOOP=\$446E! 
-MUSMOD=\$4474!          unsigned 32/16 division
+MUSMOD=\$4474!          32/16 unsigned division
+MDIV1=\$448E!           input for 48/16 unsigned division
 SETIB=\$44BA!           Set Input Buffer with org len values, reset >IN 
 REFILL=\$44CA!          accept one line from input and leave org len of input buffer
 CIB_ADR=\$44D8!         contents currently TIB_ORG; may be redirected to SDIB_ORG
@@ -266,6 +267,10 @@ JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW; must be reset 
 JTAG_SIG2=\$FF82!       if JTAG_SIG1=\$AAAA, length of password string @ JTAG_PASSWORD
 BSL_SIG1=\$FF84!  
 BSL_SIG2=\$FF86!  
+I2CSLA0=\$FFA2!         UCBxI2COA0 default value address
+I2CSLA1=\$FFA4!         UCBxI2COA1 default value address
+I2CSLA2=\$FFA6!         UCBxI2COA2 default value address
+I2CSLA3=\$FFA8!         UCBxI2COA3 default value address
 JTAG_PASSWORD=\$FF88!   256 bits
 BSL_PASSWORD=\$FFE0!    256 bits
 VECT_ORG=\$FFCC!        FFCC-FFFF

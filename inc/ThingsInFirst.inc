@@ -18,20 +18,19 @@ NOP3        .macro      ; 1 Word, 3 cycles
             .word 4000h ; MOV PC,PC
             .endm
 
-; SR bits : only SR(11:0) are PUSHed by calls and interrupts
+; SR(11:0) bits are saved by interrupts and restored by the instruction RETI
 C           .equ 0001h
 Z           .equ 0002h
 N           .equ 0004h
-V           .equ 0100h
 GIE         .equ 0008h
 CPUOFF      .equ 0010h ; CPU Off.                  1=turn_off_CPU
 OSCOFF      .equ 0020h ; Oscillator Off.           1=turn_off_LFXT1CLK
 SCG0        .equ 0040h ; System Clock Generator 0. 1=turn_off_DCO
 SCG1        .equ 0080h ; System Clock Generator 1. 1=turn_off_SMCLK
-UF9         .equ 0200h ; = SR(9) User Flag 1
-UF10        .equ 0400h ; = SR(10) User Flag 2  
-UF11        .equ 0800h ; = SR(11) User Flag 3  
-
+V           .equ 0100h
+UF9         .equ 0200h ; = SR(9) User Flag 9
+UF10        .equ 0400h ; = SR(10) User Flag 1  
+UF11        .equ 0800h ; = SR(11) User Flag 11  
 ;----------------------------------------------------------------------------
 LPM0        .equ CPUOFF
 LPM1        .equ SCG0 + CPUOFF  ; for devices with FLL: LPM1 = LPM0 + FLL disabled
@@ -597,9 +596,10 @@ UCB0_TERM
 UCA0_TERM
         .ENDIF
 UCA1_SD
-    .include "MSP430FR5739.inc"
+        .include "MSP430FR5739.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR5969
+;EXTENDED_MEM
 LF_XTAL
         .IFDEF TERMINAL_I2C
 UCB0_TERM
@@ -607,9 +607,10 @@ UCB0_TERM
 UCA0_TERM
         .ENDIF
 UCA1_SD
-    .include "MSP430FR5969.inc"
+        .include "MSP430FR5969.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR5994
+;EXTENDED_MEM
 LF_XTAL
         .IFDEF TERMINAL_I2C
 UCB2_TERM
@@ -617,9 +618,10 @@ UCB2_TERM
 UCA0_TERM
         .ENDIF
 UCB0_SD
-    .include "MSP430FR5994.inc"
+        .include "MSP430FR5994.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR6989
+;EXTENDED_MEM
 LF_XTAL
         .IFDEF TERMINAL_I2C
 UCB0_TERM
@@ -627,7 +629,7 @@ UCB0_TERM
 UCA1_TERM
         .ENDIF
 UCA0_SD
-    .INCLUDE "MSP430FR6989.inc"
+        .INCLUDE "MSP430FR6989.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR4133
 LF_XTAL
@@ -637,7 +639,7 @@ UCB0_TERM
 UCA0_TERM
 UCB0_SD
         .ENDIF
-    .INCLUDE "MSP430FR4133.inc"
+        .INCLUDE "MSP430FR4133.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR2433
 LF_XTAL
@@ -647,7 +649,7 @@ UCB0_TERM
 UCA0_TERM
         .ENDIF
 UCA1_SD
-    .include "MSP430FR2433.inc"
+        .include "MSP430FR2433.inc"
     .ENDIF
     .IFDEF CHIPSTICK_FR2433
 ; no LF_XTAL to select ACLK = REFOCLK
@@ -658,7 +660,7 @@ UCA0_SD
 UCA0_TERM
 UCB0_SD
         .ENDIF
-    .include "MSP430FR2433.inc"
+        .include "MSP430FR2433.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR2355
 LF_XTAL
@@ -668,9 +670,10 @@ UCB0_TERM
 UCA1_TERM
         .ENDIF
 UCB1_SD
-    .include "MSP430FR2355.inc"
+        .include "MSP430FR2355.inc"
     .ENDIF
     .IFDEF LP_MSP430FR2476
+;EXTENDED_MEM
 ; LF_XTAL       ; connect resistors R2=0k, R3=0k before uncomment this line
         .IFDEF TERMINAL_I2C
 UCB1_TERM
@@ -678,10 +681,9 @@ UCB1_TERM
 UCA0_TERM
         .ENDIF
 UCA1_SD
-    .include "MSP430FR2476.inc"
+        .include "MSP430FR2476.inc"
     .ENDIF
-    .save
-    .listing off
+
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 ; add here your device.inc item:
 ;     .IFDEF MY_MSP430FR5738_1
@@ -695,7 +697,6 @@ UCA1_SD
 ; --------------------------
 ; COMPUTE SWITCHES
 ; --------------------------
-
     .IFDEF CORE_COMPLEMENT
         .IFNDEF USE_MOVE
 USE_MOVE
@@ -766,7 +767,6 @@ DOUBLE_NUMBERS              ; to process double numbers
     .ENDIF
     .ENDIF
 
-    .restore
 ; ---------------------------
 ; compute value of FORTHADDON
 ; ---------------------------

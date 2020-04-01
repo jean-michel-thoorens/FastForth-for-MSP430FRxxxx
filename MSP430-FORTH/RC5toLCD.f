@@ -7,9 +7,18 @@
 \ to see kernel options, download FastForthSpecs.f
 \ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP, FREQUENCY = 8/16/24 MHz
 \
-\ TARGET SELECTION
+\ TARGET SELECTION ( = the name of \INC\target.pat file without the extension)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR2355
+\ LP_MSP430FR2476
+\
+\ from scite editor : copy your target selection in (shift+F8) parameter 1:
+\
+\ OR
+\
+\ drag and drop this file onto SendSourceFileToTarget.bat
+\ then select your TARGET when asked.
+\
 \
 \ REGISTERS USAGE
 \ R4 to R7 must be saved before use and restored after
@@ -302,7 +311,6 @@ ENDCODE
 \ ******************************\
 ASM WDT_INT                     \ Watchdog interrupt routine, warning : not FORTH executable !
 \ ******************************\
-ADD #2,RSP                      \ 1  smart and fast RETI with GIE=0
 \ XOR.B #LED1,&LED1_OUT           \ to visualise WDT
 BIT.B #SW2,&SW2_IN              \ test switch S2
 0= IF                           \ case of switch S2 pressed
@@ -319,8 +327,8 @@ ELSE
         THEN                    \
     THEN                        \
 THEN                            \
-BW1                             \ from quit on truncated RC5 message, repeated RC5 command
-RET                             \ 5
+BW1                             \ <== truncated RC5 message, repeated RC5 command
+RETI                            \ 5
 ENDASM
 
 \ ******************************\
@@ -336,7 +344,6 @@ ASM RC5_INT                     \   wake up on Px.RC5 change interrupt
 \ ******************************\
 \ RC5_FirstStartBitHalfCycle:   \
 \ ******************************\                division in RC5_TIM_CTL (SMCLK/1|SMCLK/1|SMCLK/2|SMCLK/4|SMCLK/8)
-ADD #2,RSP                      \ 1  smart and fast RETI with GIE=0
 \ FREQ_KHZ @ 8000 = [IF]        \ 8 MHz ?
 \     MOV #0,&RC5_TIM_EX0       \ predivide by 1 in RC5_TIM_EX0 register, reset value
 \ [THEN]
@@ -401,7 +408,7 @@ THEN                            \ X =  0  C6 C5 C4 C3 C2 C1 C0
 \ ******************************\
 \ RC5_CommandByteIsDone         \ -- BASE RC5_code
 \ ******************************\
-\ Only New_RC5_Command ADD_ON   \ use SR(9) bit as toggle bit
+\ Only New_RC5_Command ADD_ON   \ use SR(10) bit as toggle bit
 \ ******************************\
 RRUM    #3,T                    \ new toggle bit = T(13) ==> T(10)
 XOR     @RSP,T                  \ (new XOR old) Toggle bits
@@ -426,7 +433,7 @@ LO2HI                           \                                               
 HI2LO                           \     --                                        switch from FORTH to assembler
 MOV @PSP+,&BASEADR              \     -- Save_TOS TOS                           restore current BASE
 MOV @PSP+,TOS                   \     -- TOS
-RET
+RETI
 ENDASM
 
 \ ******************************\
@@ -448,7 +455,7 @@ ENDASM                          \
 \ ******************************\
 
 \ ------------------------------\
-ASM SYS_OUT                    \ system OUT init, replaces WARM at the request of STOP.
+ASM SYS_OUT                     \ system OUT init, replaces WARM at the request of STOP.
 \ ------------------------------\
 \     ...                         \ init specific I/O sys as you want
 \     ...                         \ before executing default WARM
@@ -572,8 +579,8 @@ MOV #%01_0001_0100,&WDT_TIM_CTL \ start WDT_TIM_, ACLK, up mode, disable int,
 \ ------------------------------\
 \ define LPM mode for ACCEPT    \
 \ ------------------------------\
-\    MOV #LPM4,&LPM_MODE         \ with MSP430FR59xx
-\    MOV #LPM2,&LPM_MODE         \ with MSP430FR57xx, terminal input don't work for LPMx > 2
+\    MOV #LPM4+GIE,&LPM_MODE    \ with MSP430FR59xx
+\    MOV #LPM2+GIE,&LPM_MODE    \ with MSP430FR57xx, terminal input don't work for LPMx > 2
 \                               \ with MSP430FR2xxx, terminal input don't work for LPMx > 0 ; LPM0 is the default value
 \ ------------------------------\
 \ activate I/O                  \

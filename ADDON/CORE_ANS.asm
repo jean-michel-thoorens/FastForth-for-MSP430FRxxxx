@@ -277,19 +277,6 @@ TWOSTORE    MOV @PSP+,0(TOS)
             MOV @PSP+,TOS
             MOV @IP+,PC
 
-;; https://forth-standard.org/standard/double/TwoVALUE
-;            FORTHWORD "2VALUE"
-;            mDOCOL
-;            .word CREATE
-;            .word COMMA,COMMA  ; compile hi then lo
-;            .word DOES
-;            .word   $+2
-;            MOV @RSP+,IP
-;            BIT #UF10,SR
-;            JZ TWOFETCH 
-;            BIC #UF10,SR
-;            JMP TWOSTORE
-
 ; https://forth-standard.org/standard/core/TwoDROP
 ; 2DROP  x1 x2 --          drop 2 cells
             FORTHWORD "2DROP"
@@ -559,3 +546,33 @@ FTOIN       CALL rDOCON
 PAD         CALL rDOCON
             .WORD    PAD_ORG
 
+; https://forth-standard.org/standard/core/TO
+; TO name Run-time: ( x -- )
+; Assign the value x to named VALUE.
+            FORTHWORD "TO"
+            BIS #UF9,SR
+            MOV @IP+,PC
+
+; https://forth-standard.org/standard/core/VALUE
+; ( x "<spaces>name" -- )                      define a Forth VALUE
+; Skip leading space delimiters. Parse name delimited by a space.
+; Create a definition for name with the execution semantics defined below,
+; with an initial value equal to x.
+; 
+; name Execution: ( -- x )
+; Place x on the stack. The value of x is that given when name was created,
+; until the phrase x TO name is executed, causing a new value of x to be assigned to name.
+            FORTHWORD "VALUE"
+            mDOCOL
+            .word CREATE,COMMA
+            .word DOES
+            .word $+2
+            MOV @RSP+,IP
+            BIT #UF9,SR         ; see TO
+            JNZ VALUENEXT  
+            MOV @TOS,TOS        ; execute @
+            MOV @IP+,PC
+VALUENEXT   BIC #UF9,SR         ; clear 'TO' flag
+            MOV @PSP+,0(TOS)    ; 4 execute '!'
+            MOV @PSP+,TOS       ; 2
+            MOV @IP+,PC         ; 4

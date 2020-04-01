@@ -7,10 +7,18 @@
 \ to see kernel options, download FastForthSpecs.f
 \ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP
 \
-\ TARGET SELECTION
-\ LP_MSP430FR2476
+\ TARGET SELECTION ( = the name of \INC\target.pat file without the extension)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133  MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
+\ LP_MSP430FR2476
+\
+\ from scite editor : copy your target selection in (shift+F8) parameter 1:
+\
+\ OR
+\
+\ drag and drop this file onto SendSourceFileToTarget.bat
+\ then select your TARGET when asked.
+\
 \
 \ REGISTERS USAGE
 \ R4 to R7 must be saved before use and restored after

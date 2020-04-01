@@ -51,6 +51,9 @@ RAM_LEN         .equ 00800h
 ; ----------------------------------------------
 MAIN_ORG        .equ 04400h      ; Code space start
 MAIN_LEN        .equ 14000h      ; 63 k FRAM
+; ----------------------------------------------
+; Interrupt Vectors and signatures
+; ----------------------------------------------
 SIGNATURES      .equ 0FF80h      ; JTAG/BSL signatures
 JTAG_SIG1       .equ 0FF80h      ; if 0, enable JTAG/SBW
 JTAG_SIG2       .equ 0FF82h      ; if JTAG_SIG1=0xAAAA, length of password string @ JTAG_PASSWORD
@@ -59,6 +62,10 @@ BSL_SIG2        .equ 0FF86h      ;
 JTAG_PASSWORD   .equ 0FF88h      ; 256 bits max
 IPE_SIG_VALID   .equ 0FF88h      ; one word
 IPE_STR_PTR_SRC .equ 0FF8Ah      ; one word
+I2CSLA0         .equ 0FFA2h      ; UCBxI2COA0 default value address 
+I2CSLA1         .equ 0FFA4h      ; UCBxI2COA1 default value address
+I2CSLA2         .equ 0FFA6h      ; UCBxI2COA2 default value address
+I2CSLA3         .equ 0FFA8h      ; UCBxI2COA3 default value address
 VECT_ORG        .equ 0FFCCh      ; FFCC-FFFF
 VECT_LEN        .equ 34h
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits

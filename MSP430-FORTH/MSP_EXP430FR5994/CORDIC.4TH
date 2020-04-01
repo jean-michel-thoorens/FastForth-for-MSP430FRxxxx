@@ -6,6 +6,8 @@
 ; requires FIXPOINT_INPUT kernel addon, see forthMSP430FR.asm
 ; -----------------------------------------------------------
 
+PWR_STATE
+
 [DEFINED] {CORDIC} [IF] {CORDIC} [THEN]
 
 MARKER {CORDIC}

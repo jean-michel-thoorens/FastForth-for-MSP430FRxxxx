@@ -7,6 +7,8 @@ PC=R0!
 SP=R1!
 RSP=R1!
 SR=R2!
+CG1=R2!
+CG2=R3!
 rDOCOL=R4!
 rDODOES=R5!
 rDOCON=R6!
@@ -39,17 +41,20 @@ S\>=S\>!
 S\<=S\<!
 S\>\==S\>\=!
 \.S=\.S!
-\#S=\#S!
 S\"=S\"!
 S\_=S\_!
+
+\<\#=\<\#!
+\#S=\#S!
+\#\>=\#\>!
 
 T\{=T\{!
 \}T=\}T!
 
 U\.R=U\.R!
 
-\(RTS=\(RTS!
-CTS\)=CTS\)!
+\(RTS\)=\(RTS\)!
+\(CTS\)=\(CTS\)!
 
 
 ! ============================================
@@ -68,11 +73,17 @@ CTS\)=CTS\)!
 \#UF10=\#\$400! = SR(10) User Flag 2  
 \#UF11=\#\$800! = SR(11) User Flag 3  
 
-LPM4=\$F8! SR(LPM4+GIE)
-LPM3=\$D8! SR(LPM3+GIE)
-LPM2=\$98! SR(LPM2+GIE)
-LPM1=\$58! SR(LPM1+GIE)
-LPM0=\$18! SR(LPM0+GIE)
+LPM4=\$F0! SR(LPM4)
+LPM3=\$D0! SR(LPM3)
+LPM2=\$90! SR(LPM2)
+LPM1=\$50! SR(LPM1)
+LPM0=\$10! SR(LPM0)
+
+LPM4\+GIE=\$F8! SR(LPM4+GIE)
+LPM3\+GIE=\$D8! SR(LPM3+GIE)
+LPM2\+GIE=\$98! SR(LPM2+GIE)
+LPM1\+GIE=\$58! SR(LPM1+GIE)
+LPM0\+GIE=\$18! SR(LPM0+GIE)
 
 ! ============================================
 ! PORTx, Reg  bits :
@@ -98,7 +109,7 @@ BIT15=\$8000!
 ! symbolic codes :
 ! ============================================
 RET=MOV \@R1+,R0!   \ MOV @RSP+,PC
-RETA=MOVA \@R1+,R0! \ MOV @RSP+,PC
+RETA=MOVA \@R1+,R0! \ MOVA @RSP+,PC
 NOP=MOV \#0,R3!     \                one word one cycle
 NOP2=\$3C00 ,!      \ compile JMP 0  one word two cycles
 NOP3=MOV R0,R0!     \ MOV PC,PC      one word three cycles
@@ -106,4 +117,4 @@ NEXT=MOV \@R13+,R0! \ MOV @IP+,PC
 
 DOVAR=\$1287!       \ CALL rDOVAR
 DOCON=\$1286!       \ CALL rDOCON
-DODOES=\$1285!      \ CALl rDODOES
+DODOES=\$1285!      \ CALL rDODOES

@@ -5,13 +5,21 @@
 ; -----------------------------------------------------
 \
 ; words complement to pass CORETEST.4TH
+\
 \ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP
 \ to see FastForth kernel options, download FF_SPECS.f
 \
-\ TARGET Current Selection 
+\ TARGET SELECTION ( = the name of \INC\target.pat file without the extension)
 \ (used by preprocessor GEMA to load the pattern: \inc\TARGET.pat)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133  CHIPSTICK_FR2433    MSP_EXP430FR2433    MSP_EXP430FR2355
+\
+\ from scite editor : copy your target selection in (shift+F8) parameter 1:
+\
+\ OR
+\
+\ drag and drop this file onto SendSourceFileToTarget.bat
+\ then select your TARGET when asked.
 \
 \ REGISTERS USAGE
 \ rDODOES to rEXIT must be saved before use and restored after
@@ -816,6 +824,7 @@ M* DROP
 : */
 >R M* R> FM/MOD NIP
 ;
+[THEN]
 
 \ -------------------------------------------------------------------------------
 \  STACK OPERATIONS
@@ -841,7 +850,6 @@ MOV 2(PSP),TOS      \ 3 fetch x1
 MOV W,2(PSP)        \ 3 store x2
 MOV @IP+,PC
 ENDCODE
-[THEN]
 [THEN]
 
 [UNDEFINED] R@ [IF]
@@ -1160,7 +1168,7 @@ MOV @X+,T               \ 2 T = SOURCE_ORG
 MOV @X+,W               \ 2 W = TOIN
 PUSHM #4,IP             \ 6 PUSHM IP,S,T,W
 LO2HI
-INTERPRET
+TREAT
 HI2LO
 MOV @RSP+,&TOIN         \ 4
 MOV @RSP+,&SOURCE_ORG   \ 4
@@ -1288,8 +1296,47 @@ NEXT
 ENDCODE
 [THEN]
 
+[UNDEFINED] TO [IF]
+\ https://forth-standard.org/standard/core/TO
+\ TO name Run-time: ( x -- )
+\ Assign the value x to named VALUE.
+CODE TO
+BIS #UF9,SR
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] VALUE [IF]
+\ https://forth-standard.org/standard/core/VALUE
+\ ( x "<spaces>name" -- )                      define a Forth VALUE
+\ Skip leading space delimiters. Parse name delimited by a space.
+\ Create a definition for name with the execution semantics defined below,
+\ with an initial value equal to x.
+\ 
+\ name Execution: ( -- x )
+\ Place x on the stack. The value of x is that given when name was created,
+\ until the phrase x TO name is executed, causing a new value of x to be assigned to name.
+\ 
+: VALUE                 \ x "<spaces>name" -- 
+CREATE ,
+DOES> 
+HI2LO
+MOV @RSP+,IP
+BIT #UF9,SR    \ see TO
+0= IF           \ execute @
+    MOV @TOS,TOS
+    MOV @IP+,PC
+THEN 
+BIC #UF9,SR        \ clear 'TO' flag
+MOV @PSP+,0(TOS)    \ 4 execute '!'
+MOV @PSP+,TOS       \ 2
+MOV @IP+,PC         \ 4
+ENDCODE
+[THEN]
+
 RST_HERE
 
 [THEN]              \ end of [UNDEFINED] {CORE_ANS}
 
 ECHO
+; CORE_ANS.f loaded

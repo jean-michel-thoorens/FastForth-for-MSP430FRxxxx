@@ -377,16 +377,15 @@ LED2        .equ    40h         ;  P6.6 LED2 green
     .error "bad frequency setting, only 0.5,1,2,4,8,12,16,20,24 MHz"
     .ENDIF
 
+
     .IFDEF LF_XTAL
+; because LOCKLPM5 is ON, XT1 is replaced by REFO automaticaly until WARM clears LOCKLPM5
 ;           MOV     #0000h,&CSCTL3      ; FLL select XT1, FLLREFDIV=0 (default value)
             MOV     #0000h,&CSCTL4      ; ACLOCK select XT1, MCLK & SMCLK select DCOCLKDIV
-;            BIC.B   #1,&CSCTL6          ; disable XT1AUTOOFF
-
             BIS.B   #0C0h,&P2SEL1       ; P2.6 as XOUT, P2.7 as XIN
-
     .ELSE
             BIS     #0010h,&CSCTL3      ; FLL select REFCLOCK
-;           MOV     #0100h,&CSCTL4      ; ACLOCK select REFO, MCLK & SMCLK select DCOCLKDIV (default value)
+;            MOV     #0100h,&CSCTL4      ; ACLOCK select REFOCLK, MCLK & SMCLK select DCOCLKDIV (default value)
     .ENDIF
 
 

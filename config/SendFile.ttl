@@ -1,61 +1,61 @@
-;connect  param3
-testlink
-if result<1 connect  param3
+; macro called by SendSource.bat
+; param1 = this macro
+; param2 = file.4TH to send
+; param3 = "/C" i.e. connect to current COMx
+; param4 = "ECHO" | "NOECHO" | "HALF" | ""
+; param5 = deviceID, see select.bat
+
+connect param3
 
 inputbox 'Send this file to the MSP430FR target:' ' ' param2
 
-uptime timestart
+sendln 'CODE ?ID';                              CODE ?ID
+sendln 'CMP #0,R14 0<> IF SUB &$1A04,R14 THEN'; CMP #0,TOS 0<> IF SUB &DEVICEID,TOS THEN
+sendln 'COLON $1B EMIT $63 EMIT';               COLON $1B EMIT $63 EMIT     \ send 'ESC c'
+sendln 'ABORT" DeviceID mismatch!" ';           ABORT" DeviceID mismatch!"
+sendln '[DEFINED] STOP [IF] STOP [THEN]';       compile STOP if defined
+sendln 'NOECHO ;';                              NOECHO ;
 
+send param5 ' ?ID ' ;                           %deviceID% ?ID
 
 strcompare param4 'NOECHO'
 if result = 0 then
-    send 'NOECHO [DEFINED] STOP [IF] STOP [THEN] ' ; set no echo from FastForth
-    setecho 0       ; suppr. echo from Teraterm
+    setecho 0           ; no echo from Teraterm
     showtt 0
-    clearscreen 1
+    uptime timestart ; starts chrono...
     sendfile inputstr 0
-    showtt 1
     goto end
 endif
 
 strcompare param4 'HALF'
 if result = 0 then
-    send 'NOECHO [DEFINED] STOP [IF] STOP [THEN] ' ; set no echo from FastForth
-    setecho 1
+    setecho 0
     showtt 0
-    clearscreen 1
+    uptime timestart ; starts chrono...
     sendfile inputstr 0
-    setecho 1
     send #4
-    showtt 1
+    setecho 1
     goto end
 endif
 
 ; default mode = ECHO
-    send 'ECHO [DEFINED] STOP [IF] STOP [THEN] '
+    sendln 'ECHO'
     setecho 0       ; no echo from Teraterm
     showtt 0
-    clearscreen 1
+    uptime timestart ; starts chrono...
     sendfile inputstr 0
-    showtt 1
 
 :end
 
+uptime timeend  ; stops chrono...
 
-; do something...
+showtt 1
 
-uptime timeend
 diff = timeend - timestart
 sprintf2 resultat " %s download and execute: %d msec" param2 diff
 messagebox resultat "teraterm.exe"
 
 unlink
 ;end
-
-
-; param1 = this macro
-; param2 = file to send
-; param3 = "/C"
-; param4 = "ECHO" or "NOECHO" or "HALF" or nothing
 
 

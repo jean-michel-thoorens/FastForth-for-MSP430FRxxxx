@@ -11,16 +11,16 @@ MAX-N               = 32767         largest usable signed integer
 MAX-U               = 65535         largest usable unsigned integer
 MAX-D	            = 2147483647    largest usable signed double number
 MAX-UD              = 4294967295    largest usable unsigned double number
-
+WoRdS aRe CaSe-InSeNsItIvE
 
 FORTH vocabulary
 ----------------
 COLD            WARM            WIPE            RST_HERE        PWR_HERE        RST_STATE       PWR_STATE       CREATE          
 ;               :               IMMEDIATE       POSTPONE        ]               [               \               '               
-[']             ABORT"          ABORT           QUIT            INTERPRET       COUNT           LITERAL         ALLOT           
-,               >NUMBER         FIND            WORD            ."              S"              .               U.              
-SIGN            HOLD            #>              #S              #               <#              CR              TYPE            
-NOECHO          ECHO            EMIT            KEY             ACCEPT
+[']             ?ID             ABORT"          ABORT           QUIT            TREAT           COUNT           LITERAL         
+ALLOT           ,               >NUMBER         FIND            WORD            ."              S"              .               
+U.              SIGN            HOLD            #>              #S              #               <#              CR              
+TYPE            NOECHO          ECHO            EMIT            KEY             ACCEPT
 
 COLD            Software reset
 
@@ -36,7 +36,11 @@ RST_STATE       removes all words defined after RST_HERE (COLD or <reset> have s
 
 PWR_STATE       removes all words defined after PWR_HERE (an error has same effect)
 
-INTERPRET       text interpreter, common part of EVALUATE and QUIT.
+?ID             %deviceID% ?ID -- 
+                String sent by Teraterm to target before downloading a file.4TH issued from a source file.f.
+                ?ID compare %deviceID% with target's value then performs ABORT" DeviceID mismatch!".
+
+TREAT           text interpreter, common part of EVALUATE and QUIT.
 
 NOECHO          stop display on output 
 
@@ -230,7 +234,7 @@ VOCABULARY <word>     creates a new VOCABULARY named word
 
 
 NONAME ADD-ON
----------------------
+-------------
 CODENNM         IS              DEFER           :NONAME         
 
 :NONAME         https://forth-standard.org/standard/core/ColonNONAME 
@@ -277,22 +281,25 @@ QUIT becomes a DEFERed word
 
 ANS_COMPLEMENT ADD-ON
 ---------------------
-SPACES          SPACE           BL              PAD             >IN             BASE            STATE           
-CONSTANT        VARIABLE        SOURCE          RECURSE         EVALUATE        EXECUTE         >BODY           
-.(              (               DECIMAL         HEX             HERE            FILL            MOVE            
-+!              [CHAR]          CHAR            CELL+           CELLS           CHAR+           CHARS           
-ALIGN           ALIGNED         2OVER           2SWAP           2DROP           2DUP            2!              
-2@              R@              ROT             OVER            */              */MOD           MOD             
-/               /MOD            *               FM/MOD          ABS             NEGATE          SM/REM          
-UM/MOD          M*              UM*             2/              2*              MIN             MAX             
-RSHIFT          LSHIFT          INVERT          1-              1+              S>D             XOR             
-OR              AND             LEAVE           UNLOOP          J               I               +LOOP           
-LOOP            DO              REPEAT          WHILE           AGAIN           UNTIL           ELSE            
-THEN            IF              >               <               U<              =               0<              
-0=              C,              C!              C@              R>              >R              NIP             
-DROP            SWAP            DEPTH           EXIT            ?DUP            DUP             !               
-@               -               +               DOES>           BEGIN           {CORE_COMP}
+VALUE           TO              SPACES          SPACE           BL              PAD             >IN             
+BASE            STATE           CONSTANT        VARIABLE        SOURCE          RECURSE         EVALUATE        
+EXECUTE         >BODY           .(              (               DECIMAL         HEX             HERE            
+FILL            MOVE            +!              [CHAR]          CHAR            CELL+           CELLS           
+CHAR+           CHARS           ALIGN           ALIGNED         2OVER           2SWAP           2DROP           
+2DUP            2!              2@              R@              ROT             OVER            */              
+*/MOD           MOD             /               /MOD            *               FM/MOD          ABS             
+NEGATE          SM/REM          UM/MOD          M*              UM*             2/              2*              
+MIN             MAX             RSHIFT          LSHIFT          INVERT          1-              1+              
+S>D             XOR             OR              AND             LEAVE           UNLOOP          J               
+I               +LOOP           LOOP            DO              REPEAT          WHILE           AGAIN           
+UNTIL           ELSE            THEN            IF              >               <               U<              
+=               0<              0=              C,              C!              C@              R>              
+>R              NIP             DROP            SWAP            DEPTH           EXIT            ?DUP            
+DUP             !               @               -               +               DOES>           BEGIN           
+{CORE_COMP}
 
+VALUE           https://forth-standard.org/standard/core/VALUE
+TO              https://forth-standard.org/standard/core/TO
 BEGIN           https://forth-standard.org/standard/core/BEGIN
 DOES>           https://forth-standard.org/standard/core/DOES
 SPACES          https://forth-standard.org/standard/core/SPACES
@@ -400,22 +407,49 @@ DUP             https://forth-standard.org/standard/core/DUP
 {CORE_COMP}
 
 
-OTHER WORDS
+DOUBLE word set
+---------------
+D.R             2LITERAL        2VALUE          2CONSTANT       2VARIABLE       M*/             DMIN            
+DMAX            D2*             D2/             DABS            DNEGATE         D-              M+              
+D+              DU<             D<              D=              D0<             D0=             D>S             
+2ROT            D.              2R>             2R@             2>R             {DOUBLE}
 
 
-D.              https://forth-standard.org/standard/double/Dd
+D.R             https://forth-standard.org/standard/double/DDotR
+2LITERAL        https://forth-standard.org/standard/double/TwoLITERAL
+2VALUE          https://forth-standard.org/standard/double/TwoVALUE
+2CONSTANT       https://forth-standard.org/standard/double/TwoCONSTANT
+2VARIABLE       https://forth-standard.org/standard/double/TwoVARIABLE
+M*/             https://forth-standard.org/standard/double/MTimesDiv
+DMIN            https://forth-standard.org/standard/double/DMIN
+DMAX            https://forth-standard.org/standard/double/DMAX
+D2*             https://forth-standard.org/standard/double/DTwoTimes
+D2/             https://forth-standard.org/standard/double/DTwoDiv
 DABS            https://forth-standard.org/standard/double/DABS
-TO              https://forth-standard.org/standard/core/TO
-VALUE           https://forth-standard.org/standard/core/VALUE
+DNEGATE         https://forth-standard.org/standard/double/DNEGATE
+D-              https://forth-standard.org/standard/double/DMinus
+M+              https://forth-standard.org/standard/double/MPlus
+D+              https://forth-standard.org/standard/double/DPlus
+DU<             https://forth-standard.org/standard/double/DUless
+D<              https://forth-standard.org/standard/double/Dless
+D=              https://forth-standard.org/standard/double/DEqual
+D0<             https://forth-standard.org/standard/double/DZeroless
+D0=             https://forth-standard.org/standard/double/DZeroEqual
+D>S             https://forth-standard.org/standard/double/DtoS
+2ROT            https://forth-standard.org/standard/double/TwoROT
+D.              https://forth-standard.org/standard/double/Dd
+2R>             https://forth-standard.org/standard/core/TwoRfrom
+2R@             https://forth-standard.org/standard/core/TwoRFetch
+2>R             https://forth-standard.org/standard/core/TwotoR
+{DOUBLE}
 
 
 FIXPOINT ADD-ON
 ---------------
 
-2CONSTANT       S>F             F.              F*              F#S             
-F/              F-              F+              HOLDS           {FIXPOINT}
+S>F             F.              F*              F#S             F/              F-              F+              
+HOLDS           {FIXPOINT}
 
-2CONSTANT       https://forth-standard.org/standard/double/TwoCONSTANT
 S>F             u/n -- Qlo Qhi       convert u/n in a s15.16 value
 F.              display a s15.16 value
 F*              s15.16 multiplication  

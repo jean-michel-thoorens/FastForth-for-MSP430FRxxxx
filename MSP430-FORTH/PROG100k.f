@@ -6,33 +6,17 @@
 ; download source file sized to compile 100 kbytes
 ; -----------------------------------
 
-\ TARGET SELECTION
+\ TARGET SELECTION ( = the name of \INC\target.pat file without the extension)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR2355
+\ LP_MSP430FR2476
 \
-\ MY_MSP430FR5738   MY_MSP430FR5738_1 MY_MSP430FR5738_2   
-\ MY_MSP430FR5948   MY_MSP430FR5948_1   
+\ from scite editor : copy your target selection in (shift+F8) parameter 1:
 \
+\ OR
 \
-\ Copyright (C) <2016>  <J.M. THOORENS>
-\
-\ This program is free software: you can redistribute it and/or modify
-\ it under the terms of the GNU General Public License as published by
-\ the Free Software Foundation, either version 3 of the License, or
-\ (at your option) any later version.
-\
-\ This program is distributed in the hope that it will be useful,
-\ but WITHOUT ANY WARRANTY\ without even the implied warranty of
-\ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-\ GNU General Public License for more details.
-\
-\ You should have received a copy of the GNU General Public License
-\ along with this program.  If not, see <http://www.gnu.org/licenses/>.
-\
-\
-\ ===========================================================================
-\ remember: for good downloading to target, all lines must be ended with CR+LF !
-\ ===========================================================================
+\ drag and drop this file onto SendSourceFileToTarget.bat
+\ then select your TARGET when asked.
 \
 \
 \ REGISTERS USAGE

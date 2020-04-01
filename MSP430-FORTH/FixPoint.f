@@ -11,9 +11,18 @@
 \ to see kernel options, download FastForthSpecs.f
 \ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP, FIXPOINT_INPUT
 \
-\ TARGET SELECTION
+\ TARGET SELECTION ( = the name of \INC\target.pat file without the extension)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR2433  MSP_EXP430FR4133    MSP_EXP430FR2355    CHIPSTICK_FR2433
+\ LP_MSP430FR2476
+\
+\ from scite editor : copy your target selection in (shift+F8) parameter 1:
+\
+\ OR
+\
+\ drag and drop this file onto SendSourceFileToTarget.bat
+\ then select your TARGET when asked.
+\
 \
 \ REGISTERS USAGE
 \ rDODOES to rEXIT must be saved before use and restored after
@@ -138,13 +147,13 @@ REPEAT      MOV Y,&HP           \ 3
 ENDCODE
 [THEN]
 
-CODE F+                         \ add Q15.16|double numbers
+CODE F+ \ add Q15.16|double numbers
             ADD @PSP+,2(PSP)    \ -- sumlo  d1hi d2hi
             ADDC @PSP+,TOS      \ -- sumlo sumhi
             MOV @IP+,PC
 ENDCODE
 
-CODE F-                         \ substract Q15.16|double numbers
+CODE F- \ substract Q15.16|double numbers
             SUB @PSP+,2(PSP)    \ -- diflo d1hi d2hi
             SUBC TOS,0(PSP)     \ -- diflo difhi d2hi
             MOV @PSP+,TOS
@@ -395,7 +404,7 @@ BEGIN       MOV @PSP,&MPY       \                   Load 1st operand
 ENDCODE
 [THEN]
 
-CODE F*                         \ signed s15.16 multiplication --> s15.16 result
+CODE F* \ signed s15.16 multiplication --> s15.16 result
             MOV 4(PSP),&MPYS32L \ 5 Load 1st operand
             MOV 2(PSP),&MPYS32H \ 5
             MOV @PSP,&OP2L      \ 4 load 2nd operand
@@ -406,10 +415,10 @@ CODE F*                         \ signed s15.16 multiplication --> s15.16 result
             MOV @IP+,PC
 ENDCODE
 
-[THEN]  \ endcase of hardware multiplier
+[THEN]  \ end of hardware/software multiplier
 
 [UNDEFINED] F. [IF]
-CODE F.             \ display a Q15.16 number with 4/5/16 digits after comma
+CODE F. \ display a Q15.16 number with 4/5/16 digits after comma
 MOV TOS,S           \ S = sign
 MOV #4,T            \ T = 4     preset 4 digits for base 16 and by default
 MOV &BASEADR,W
@@ -432,19 +441,19 @@ LO2HI
     TYPE $20 EMIT   \ --         
 ;
 
-CODE S>F            \ convert a signed number to a Q15.16 (signed) number
+CODE S>F    \ convert a signed number to a Q15.16 (signed) number
     SUB #2,PSP
     MOV #0,0(PSP)
     MOV @IP+,PC
 ENDCODE
 [THEN]
 
-PWR_HERE
+RST_HERE
 
-[THEN] \ endof [UNDEFINED] {FIXPOINT}
+[THEN] \ end of [UNDEFINED] {FIXPOINT}
 
 ; -----------------------
-; definitions (volatile) for tests below
+; complements (volatile) for tests below
 ; -----------------------
 
 [UNDEFINED] ! [IF]
@@ -469,6 +478,19 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
+[UNDEFINED] CONSTANT [IF]
+\ https://forth-standard.org/standard/core/CONSTANT
+\ CONSTANT <name>     n --                      define a Forth CONSTANT 
+: CONSTANT 
+CREATE
+HI2LO
+MOV TOS,-2(W)           \   PFA = n
+MOV @PSP+,TOS
+MOV @RSP+,IP
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
 [UNDEFINED] 2CONSTANT [IF]
 \ https://forth-standard.org/standard/double/TwoCONSTANT
 : 2CONSTANT \  udlo/dlo/Qlo udhi/dhi/Qhi --         to create double or Q15.16 CONSTANT
@@ -483,25 +505,42 @@ NEXT
 ENDCODE
 [THEN]
 
+[UNDEFINED] D. [IF]
+\ https://forth-standard.org/standard/double/Dd
+\ D.     dlo dhi --           display d (signed)
+CODE D.
+MOV #U.,W   \ U. + 10 = D.
+ADD #10,W
+MOV W,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] BASE [IF]
+\ https://forth-standard.org/standard/core/BASE
+\ BASE    -- a-addr       holds conversion radix
+BASEADR CONSTANT BASE
+[THEN]
+
 ECHO
 
 ; -----------------------
-; (volatile) tests for FIXPOINT.asm | FIXPOINT.f
+; (volatile) tests for FIXPOINT.asm|FIXPOINT.f
 ; -----------------------
 
 3,14159 2CONSTANT PI
-PI U. U.
-PI F.
-
 PI -1,0 F* 2CONSTANT -PI
--PI . U.
--PI F.
 
-$10 BASEADR !  PI F. 
+PI D.   ; D. is not appropriate -->
+-PI D.  ; D. is not appropriate -->
+
+PI F.   ; good value! ------------>
+-PI F.  ; good value! ------------>
+
+$10 BASE  !  PI F. 
             -PI F.
-%10 BASEADR !  PI F. 
+%10 BASE  !  PI F. 
             -PI F.
-#10 BASEADR !  PI F. 
+#10 BASE  !  PI F. 
             -PI F.
 
 PI 2,0 F* F.      
@@ -514,6 +553,11 @@ PI -2,0 F/ F.
 -PI 2,0 F/ F.    
 -PI -2,0 F/ F.    
 
+32768,0 1,0 F* F.   ; overflow! -->
+32768,0 1,0 F/ F.   ; overflow! -->
+-32768,0 -1,0 F* F. ; overflow! -->
+-32768,0 -1,0 F/ F. ; overflow! -->
+
 32767,99999 1,0 F* F. 
 32767,99999 1,0 F/ F. 
 32767,99999 2,0 F/ F. 
@@ -521,19 +565,21 @@ PI -2,0 F/ F.
 32767,99999 8,0 F/ F. 
 32767,99999 16,0 F/ F.
 
--32767,0 -1,0 F* F.   
--32767,0 -1,0 F/ F.   
--32767,0 -2,0 F/ F.   
--32767,0 -4,0 F/ F.   
--32767,0 -8,0 F/ F.   
--32767,0 -16,0 F/ F.  
--32767,0 -32,0 F/ F.  
--32767,0 -64,0 F/ F.  
+-32768,0 -2,0 F/ F.   
+-32768,0 -4,0 F/ F.   
+-32768,0 -8,0 F/ F.   
+-32768,0 -16,0 F/ F.  
+-32768,0 -32,0 F/ F.  
+-32768,0 -64,0 F/ F.  
+
+-3276,80 -1,0 F/ F.   
+-327,680 -1,0 F/ F.   
+-32,7680 -1,0 F/ F.   
+-3,27680 -1,0 F/ F.   
+-0,32768 -1,0 F/ F.   
 
 ; SQRT(32768)^2 = 32768
 181,01933598375 181,01933598375 F* F.  
 181,01933598375 -181,01933598375 F* F.
 -181,01933598375 181,01933598375 F* F.
 -181,01933598375 -181,01933598375 F* F.
-
-

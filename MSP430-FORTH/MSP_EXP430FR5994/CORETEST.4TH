@@ -1,12 +1,16 @@
 
-PWR_STATE
+; -------------------------------------
+; CORETEST.4TH for any FastForth target
+; -------------------------------------
 
 : COMPNOTFOUND
 $0D EMIT   \ return to column 1
 1 ABORT" {CORE_ANS} word set not found!"
 ;
 
-[DEFINED] {CORE_ANS} [IF]
+[UNDEFINED] {CORE_ANS} [IF] ; {CORE_ANS} is not found ?
+COMPNOTFOUND
+[THEN]
 
 : CORETESTSUCCESS
 $0A BASE !
@@ -1085,10 +1089,25 @@ T{ : GDX   123 ; : GDX   GDX 234 ; -> }T
 
 T{ GDX -> 123 234 }T
 
+\ ------------------------------------------------------------------------
+TESTING TO VALUE
+
+T{  111 VALUE v1 -> }T
+T{ -999 VALUE v2 -> }T
+T{ v1 ->  111 }T
+T{ v2 -> -999 }T
+T{ 222 TO v1 -> }T
+T{ v1 -> 222 }T
+T{ : vd1 v1 ; -> }T
+T{ vd1 -> 222 }T
+
+T{ : vd2 TO v2 ; -> }T
+T{ v2 -> -999 }T
+T{ -333 vd2 -> }T
+T{ v2 -> -333 }T
+T{ v1 ->  222 }T
+
+
 CR .( End of Core word set tests)
-         
+
 CORETESTSUCCESS
-
-[ELSE] COMPNOTFOUND ;             download CORE_ANS.f before CORETEST.4TH
-
-[THEN]

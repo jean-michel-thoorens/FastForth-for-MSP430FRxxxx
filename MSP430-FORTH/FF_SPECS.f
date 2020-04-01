@@ -6,18 +6,19 @@
 
 ; displays all FastForth specifications
 
-\ from scite editor :
-\ TARGET SELECTION : copy your target in (shift+F8) parameter 1: 
+\ TARGET SELECTION ( = the name of \INC\target.pat file without the extension)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133  CHIPSTICK_FR2433    MSP_EXP430FR2433    MSP_EXP430FR2355
 \ LP_MSP430FR2476
+\
+\ from scite editor : copy your target selection in (shift+F8) parameter 1:
 \
 \ OR
 \
 \ drag and drop this file onto SendSourceFileToTarget.bat
 \ then select your TARGET when asked.
 \
-\ COLD            \ TEST: must not disrupt the download from TERMINAL.
+\ COLD            \ uncomment for this TEST which must not disrupt the downloading process
 
 PWR_STATE       \ remove volatile words
 
@@ -536,7 +537,6 @@ POSTPONE TYPE       \ compile-time code : TYPE
 ; IMMEDIATE
 [THEN]
 
-
 \ -------------------------------------------------------
 : SPECS             \ to see all FastForth specifications
 \ -------------------------------------------------------
@@ -600,6 +600,7 @@ CR
 ." MAX-UD            = 4294967295" CR
 ." STACK-CELLS       = 48" CR
 ." RETURN-STACK-CELLS= 48" CR
+." WoRdS aRe CaSe-InSeNsItIvE" CR
 CR 
 ESC [7m ." KERNEL SPECS" ESC [0m   \ subtitle in reverse video
 CR
@@ -630,12 +631,13 @@ KERNEL_ADDON @
     ESC [7m ." OPTIONS" ESC [0m \ subtitle in reverse video
     CR
     [DEFINED] {CORE_ANS}  [IF] ." ANS94 CORE COMPLIANT" CR [THEN]
+    [DEFINED] {DOUBLE}    [IF] ." Double-Number word set" CR [THEN]
     [DEFINED] {TOOLS}     [IF] ." UTILITY" CR [THEN]
     [DEFINED] {FIXPOINT}  [IF] ." FIXPOINT" CR [THEN]
     [DEFINED] {CORDIC}    [IF] ." CORDIC engine" CR [THEN]
     [DEFINED] {SD_TOOLS}  [IF] ." SD_TOOLS" CR [THEN]
     [DEFINED] {RTC}       [IF] ." RTC utility" CR [THEN]
-    [DEFINED] {FF_I2C}    [IF] ." I2C TERMINAL bridge" CR [THEN]
+    [DEFINED] {UARTI2CS}  [IF] ." UART to I2C_FastForth bridge" CR [THEN]
     [DEFINED] VOCABULARY  [IF] 
         CR 
         ESC [7m ." ASSEMBLER word set" ESC [0m  \ subtitle in reverse video 

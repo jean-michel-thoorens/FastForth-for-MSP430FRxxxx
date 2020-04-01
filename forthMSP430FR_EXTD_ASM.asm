@@ -122,8 +122,11 @@ ComputeARGParenREG                  ; sep -- Rn
 ; search REG of "REG,"          separator = ',' <== PARAM13
 ; search REG of ",REG"          separator = BL  <== PARAM21
 
-SearchREG   PUSHM #2,S              ;                   PUSHM S,T as OPCODE, OPCODEADR
-            PUSH &TOIN              ; -- sep        save >IN
+SearchREG   PUSHM #2,S              ;               PUSHM S,T as OPCODE, OPCODEADR
+            CMP &SOURCE_LEN,&TOIN   ;               bad case of ,xxxx without prefix &
+            JNZ SearchREG1          ;
+            MOV #BAD_CSP,PC         ;               génère une erreur bidon
+SearchREG1  PUSH &TOIN              ; -- sep        save >IN
             ADD #1,&TOIN            ;               skip "R"
             ASMtoFORTH              ;               search xx of Rxx
             .word WORDD,QNUMBER     ;
@@ -137,7 +140,6 @@ SearchREG   PUSHM #2,S              ;                   PUSHM S,T as OPCODE, OPC
 NOTaREG     .word   $+2             ; -- addr       Z=1
             MOV @RSP+,&TOIN         ; -- addr       restore >IN
             JMP SearchEnd           ; -- addr       Z=1 ==> not a register 
-
 
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER : INTERPRET FIRST OPERAND
@@ -444,93 +446,6 @@ BOUNDERROR                          ; <== REG number error
             .byte 13,"out of bounds"
             .word   QABORTYES
 
-; --------------------------------------------------------------------------------
-; DTCforthMSP430FR5xxx ASSEMBLER, OPCODES TYPE III : PUSHM|POPM|RLAM|RRAM|RRUM|RRCM
-; --------------------------------------------------------------------------------
-; PUSHM, syntax:    PUSHM #n,REG  with 0 < n < 17 
-; POPM syntax:       POPM #n,REG  with 0 < n < 17 
-
-
-; PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
-; PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
-
-; example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
-;
-; POPM  order :  PC,RSP, SR, R3, rDODOES,rDOCON,rDOVAR,rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
-; POPM  order :  R0, R1, R2, R3,   R4   ,  R5  ,  R6  ,  R7 , R8, R9,R10,R11,R12,R13,R14,R15
-
-; example : POPM #6,IP   pulls Y,X,W,T,S,IP registers from return stack
-
-; RxxM syntax: RxxM #n,REG  with 0 < n < 5 
-
-TYPE3DOES   .word   FBLANK,SKIP     ;                       skip spaces if any
-            .word   $+2             ; -- BODYDOES c-addr
-            ADD     #1,&TOIN        ;                       skip "#"
-            MOV     #',',TOS        ; -- BODYDOES ","
-            ASMtoFORTH
-            .word   WORDD,QNUMBER
-            .word   QFBRAN,NotFound ;                       ABORT
-            .word   PARAM3          ; -- BODYDOES 0x000N    S=OPCODE = 0x000R
-            .word   $+2
-            MOV     TOS,W           ; -- BODYDOES n         W = n
-            MOV     @PSP+,TOS       ; -- BODYDOES
-            SUB     #1,W            ;                       W = n floored to 0
-            JN      BOUNDERRWM1
-            MOV     @TOS,X          ;                       X=OPCODE
-            RLAM    #4,X            ;                       OPCODE bit 1000h --> C
-            JNC     RxxMINSTRU      ;                       if bit 1000h = 0
-PxxxINSTRU  MOV     S,Y             ;                       S=REG, Y=REG to test
-            RLAM    #3,X            ;                       OPCODE bit 0200h --> C                  
-            JNC     PUSHMINSTRU     ;                       W=n-1 Y=REG
-POPMINSTRU  SUB     W,S             ;                       to make POPM opcode, compute first REG to POP; TI is complicated....
-PUSHMINSTRU SUB     W,Y             ;                       Y=REG-(n-1)
-            CMP     #16,Y
-            JC      BOUNDERRWM1     ;                       JC=JHS    (U>=)
-            RLAM    #4,W            ;                       W = n << 4      
-            JMP     BIS_ASMTYPE     ; BODYDOES --            
-RxxMINSTRU  CMP     #4,W            ;
-            JC      BOUNDERRWM1     ;                       JC=JHS    (U>=)
-            SWPB    W               ; -- BODYDOES           W = n << 8
-            RLAM    #2,W            ;                       W = N << 10
-            JMP     BIS_ASMTYPE     ; BODYDOES --
-
-            asmword "RRCM.A"
-            CALL rDODOES
-            .word   TYPE3DOES,0040h
-            asmword "RRCM"
-            CALL rDODOES
-            .word   TYPE3DOES,0050h
-            asmword "RRAM.A"
-            CALL rDODOES
-            .word   TYPE3DOES,0140h
-            asmword "RRAM"
-            CALL rDODOES
-            .word   TYPE3DOES,0150h
-            asmword "RLAM.A"
-            CALL rDODOES
-            .word   TYPE3DOES,0240h
-            asmword "RLAM"
-            CALL rDODOES
-            .word   TYPE3DOES,0250h
-            asmword "RRUM.A"
-            CALL rDODOES
-            .word   TYPE3DOES,0340h
-            asmword "RRUM"
-            CALL rDODOES
-            .word   TYPE3DOES,0350h
-            asmword "PUSHM.A"
-            CALL rDODOES
-            .word   TYPE3DOES,1400h
-            asmword "PUSHM"
-            CALL rDODOES
-            .word   TYPE3DOES,1500h
-            asmword "POPM.A"
-            CALL rDODOES
-            .word   TYPE3DOES,1600h
-            asmword "POPM"
-            CALL rDODOES
-            .word   TYPE3DOES,1700h
-
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER, CONDITIONAL BRANCHS
 ; ----------------------------------------------------------------------
@@ -726,9 +641,153 @@ GOTONEXT    mDOCOL
             MOV #3C00h,TOS          ; asmcode JMP
             JMP GOTONEXT
 
-; ===============================================================
-; Extended assembler
-; ===============================================================
+; --------------------------------------------------------------------------------
+; DTCforthMSP430FR5xxx ASSEMBLER, OPCODES TYPE III : PUSHM|POPM|RLAM|RRAM|RRUM|RRCM
+; --------------------------------------------------------------------------------
+; PUSHM, syntax:    PUSHM #n,REG  with 0 < n < 17 
+; POPM syntax:       POPM #n,REG  with 0 < n < 17 
+
+
+; PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
+; PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
+
+; example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
+;
+; POPM  order :  PC,RSP, SR, R3, rDODOES,rDOCON,rDOVAR,rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
+; POPM  order :  R0, R1, R2, R3,   R4   ,  R5  ,  R6  ,  R7 , R8, R9,R10,R11,R12,R13,R14,R15
+
+; example : POPM #6,IP   pulls Y,X,W,T,S,IP registers from return stack
+
+; RxxM syntax: RxxM #n,REG  with 0 < n < 5 
+
+TYPE3DOES   .word   FBLANK,SKIP     ;                       skip spaces if any
+            .word   $+2             ; -- BODYDOES c-addr
+            ADD     #1,&TOIN        ;                       skip "#"
+            MOV     #',',TOS        ; -- BODYDOES ","
+            ASMtoFORTH
+            .word   WORDD,QNUMBER
+            .word   QFBRAN,NotFound ;                       ABORT
+            .word   PARAM3          ; -- BODYDOES 0x000N    S=OPCODE = 0x000R
+            .word   $+2
+            MOV     TOS,W           ; -- BODYDOES n         W = n
+            MOV     @PSP+,TOS       ; -- BODYDOES
+            SUB     #1,W            ;                       W = n floored to 0
+            JN      BOUNDERRWM1
+            MOV     @TOS,X          ;                       X=OPCODE
+            RLAM    #4,X            ;                       OPCODE bit 1000h --> C
+            JNC     RxxMINSTRU      ;                       if bit 1000h = 0
+PxxxINSTRU  MOV     S,Y             ;                       S=REG, Y=REG to test
+            RLAM    #3,X            ;                       OPCODE bit 0200h --> C                  
+            JNC     PUSHMINSTRU     ;                       W=n-1 Y=REG
+POPMINSTRU  SUB     W,S             ;                       to make POPM opcode, compute first REG to POP; TI is complicated....
+PUSHMINSTRU SUB     W,Y             ;                       Y=REG-(n-1)
+            CMP     #16,Y
+            JC      BOUNDERRWM1     ;                       JC=JHS    (U>=)
+            RLAM    #4,W            ;                       W = n << 4      
+            JMP     BIS_ASMTYPE     ; BODYDOES --            
+RxxMINSTRU  CMP     #4,W            ;
+            JC      BOUNDERRWM1     ;                       JC=JHS    (U>=)
+            SWPB    W               ; -- BODYDOES           W = n << 8
+            RLAM    #2,W            ;                       W = N << 10
+            JMP     BIS_ASMTYPE     ; BODYDOES --
+
+            asmword "RRCM"
+            CALL rDODOES
+            .word   TYPE3DOES,0050h
+            asmword "RRAM"
+            CALL rDODOES
+            .word   TYPE3DOES,0150h
+            asmword "RLAM"
+            CALL rDODOES
+            .word   TYPE3DOES,0250h
+            asmword "RRUM"
+            CALL rDODOES
+            .word   TYPE3DOES,0350h
+            asmword "PUSHM"
+            CALL rDODOES
+            .word   TYPE3DOES,1500h
+            asmword "POPM"
+            CALL rDODOES
+            .word   TYPE3DOES,1700h
+
+            asmword "RRCM.A"
+            CALL rDODOES
+            .word   TYPE3DOES,0040h
+            asmword "RRAM.A"
+            CALL rDODOES
+            .word   TYPE3DOES,0140h
+            asmword "RLAM.A"
+            CALL rDODOES
+            .word   TYPE3DOES,0240h
+            asmword "RRUM.A"
+            CALL rDODOES
+            .word   TYPE3DOES,0340h
+            asmword "PUSHM.A"
+            CALL rDODOES
+            .word   TYPE3DOES,1400h
+            asmword "POPM.A"
+            CALL rDODOES
+            .word   TYPE3DOES,1600h
+
+; --------------------------------------------------------------------------------
+; DTCforthMSP430FR5xxx ASSEMBLER:  OPCODE TYPE III bis: CALLA (without extended word)
+; --------------------------------------------------------------------------------
+; absolute and immediate instructions must be written as $x.xxxx  (DOUBLE numbers)
+; indexed instructions must be written as $.xxxx(REG) (DOUBLE numbers)
+; --------------------------------------------------------------------------------
+
+            asmword "CALLA"
+            mDOCOL
+            .word FBLANK,SKIP       ; -- addr
+            .word   $+2
+            MOV &DDP,T              ;           T = DDP
+            ADD #2,&DDP             ;           make room for opcode
+            MOV.B @TOS,TOS          ; -- char   First char of opcode
+CALLA0      MOV #134h,S             ;           134h<<4 = 1340h = opcode for CALLA Rn
+            CMP.B #'R',TOS   
+            JNZ CALLA1
+CALLA01     MOV.B #' ',TOS          ;        
+CALLA02     CALL #SearchREG         ; -- Rn
+CALLA03     RLAM #4,S               ;           (opcode>>4)<<4 = opcode
+            BIS TOS,S               ;           update opcode
+            MOV S,0(T)              ;           store opcode
+            MOV @PSP+,TOS
+            MOV @RSP+,IP 
+            MOV @IP+,PC
+;-----------------------------------;
+CALLA1      ADD #2,S                ;           136h<<4 = opcode for CALLA @REG
+            CMP.B #'@',TOS          ; -- char   Search @REG
+            JNZ CALLA2              ;
+            ADD #1,&TOIN            ;           skip '@'
+            MOV.B #' ',TOS          ; -- ' '
+            CALL #SearchREG         ;
+            JNZ  CALLA03            ;           if REG found, update opcode
+;-----------------------------------;
+            ADD #1,S                ;           137h<<4 = opcode for CALLA @REG+
+            MOV #'+',TOS            ; -- '+'
+            JMP CALLA02             ;
+;-----------------------------------;
+CALLA2      ADD #2,&DDP             ;           make room for xxxx of #$x.xxxx|&$x.xxxx|$0.xxxx(REG)
+            CMP.B #'#',TOS          ;
+            JNZ CALLA3
+            MOV #13Bh,S             ;           13Bh<<4 = opcode for CALLA #$x.xxxx
+CALLA21     ADD #1,&TOIN            ;           skip '#'|'&'
+CALLA22     CALL #SearchARG         ; -- Lo Hi
+            MOV @PSP+,2(T)          ; -- Hi     store #$xxxx|&$xxxx
+            JMP CALLA03             ;           update opcode with $x. and store opcode
+;-----------------------------------;
+CALLA3      CMP.B #'&',TOS   
+            JNZ CALLA4              ;
+            ADD #2,S                ;           138h<<4 = opcode for CALLA &$x.xxxx
+            JMP CALLA21
+;-----------------------------------;
+CALLA4      MOV.B #'(',TOS          ; -- "("
+            SUB #1,S                ;           135h<<4 = opcode for CALLA $0.xxxx(REG)
+CALLA41     CALL #SearchARG         ; -- Lo Hi
+            MOV @PSP+,2(T)          ; -- Hi     store $xxxx 
+            MOV #')',TOS            ; -- ')'
+            JMP CALLA02             ;           search Rn and update opcode
+    
 
 ; ===============================================================
 ; to allow data access beyond $FFFF
@@ -857,65 +916,6 @@ TYPE4DOES   .word   lit,','         ; -- BODYDOES ","        char separator for 
             CALL rDODOES
             .word   TYPE4DOES,00F0h
 
-; --------------------------------------------------------------------------------
-; DTCforthMSP430FR5xxx ASSEMBLER:  OPCODE TYPE III bis: CALLA (without extended word)
-; --------------------------------------------------------------------------------
-; absolute and immediate instructions must be written as $x.xxxx  (DOUBLE numbers)
-; indexed instructions must be written as $.xxxx(REG) (DOUBLE numbers)
-; --------------------------------------------------------------------------------
-
-            asmword "CALLA"
-            mDOCOL
-            .word FBLANK,SKIP       ; -- addr
-            .word   $+2
-            MOV &DDP,T              ;           T = DDP
-            ADD #2,&DDP             ;           make room for opcode
-            MOV.B @TOS,TOS          ; -- char   First char of opcode
-CALLA0      MOV #134h,S             ;           134h<<4 = 1340h = opcode for CALLA Rn
-            CMP.B #'R',TOS   
-            JNZ CALLA1
-CALLA01     MOV.B #' ',TOS          ;        
-CALLA02     CALL #SearchREG         ; -- Rn
-CALLA03     RLAM #4,S               ;           (opcode>>4)<<4 = opcode
-            BIS TOS,S               ;           update opcode
-            MOV S,0(T)              ;           store opcode
-            MOV @PSP+,TOS
-            MOV @RSP+,IP 
-            MOV @IP+,PC
-;-----------------------------------;
-CALLA1      ADD #2,S                ;           136h<<4 = opcode for CALLA @REG
-            CMP.B #'@',TOS          ; -- char   Search @REG
-            JNZ CALLA2              ;
-            ADD #1,&TOIN            ;           skip '@'
-            MOV.B #' ',TOS          ; -- ' '
-            CALL #SearchREG         ;
-            JNZ  CALLA03            ;           if REG found, update opcode
-;-----------------------------------;
-            ADD #1,S                ;           137h<<4 = opcode for CALLA @REG+
-            MOV #'+',TOS            ; -- '+'
-            JMP CALLA02             ;
-;-----------------------------------;
-CALLA2      ADD #2,&DDP             ;           make room for xxxx of #$x.xxxx|&$x.xxxx|$0.xxxx(REG)
-            CMP.B #'#',TOS          ;
-            JNZ CALLA3
-            MOV #13Bh,S             ;           13Bh<<4 = opcode for CALLA #$x.xxxx
-CALLA21     ADD #1,&TOIN            ;           skip '#'|'&'
-CALLA22     CALL #SearchARG         ; -- Lo Hi
-            MOV @PSP+,2(T)          ; -- Hi     store #$xxxx|&$xxxx
-            JMP CALLA03             ;           update opcode with $x. and store opcode
-;-----------------------------------;
-CALLA3      CMP.B #'&',TOS   
-            JNZ CALLA4              ;
-            ADD #2,S                ;           138h<<4 = opcode for CALLA &$x.xxxx
-            JMP CALLA21
-;-----------------------------------;
-CALLA4      MOV.B #'(',TOS          ; -- "("
-            SUB #1,S                ;           135h<<4 = opcode for CALLA $0.xxxx(REG)
-CALLA41     CALL #SearchARG         ; -- Lo Hi
-            MOV @PSP+,2(T)          ; -- Hi     store $xxxx 
-            MOV #')',TOS            ; -- ')'
-            JMP CALLA02             ;           search Rn and update opcode
-    
 
 ; PRMX1 is used for OPCODES type V (double operand) and OPCODES type VI (single operand) extended instructions
 

@@ -4,8 +4,16 @@
 ; TESTXASM.f
 ; -----------------------------------------------------------------------
 \
-\ TARGET SELECTION
+\ TARGET SELECTION ( = the name of \INC\target.pat file without the extension)
 \ MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
+\
+\ from scite editor : copy your target selection in (shift+F8) parameter 1:
+\
+\ OR
+\
+\ drag and drop this file onto SendSourceFileToTarget.bat
+\ then select your TARGET when asked.
+\
 \
 \ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
 \ PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0

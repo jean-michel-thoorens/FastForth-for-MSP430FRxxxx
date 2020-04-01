@@ -2,6 +2,7 @@
 ; param1 = this macro filename
 ; param2 = pathname of file to write in SD_CARD
 ; param3 = /C = default COM saved in TERATERM.INI with all its parameters.
+; param4 = deviceID
 
 basename fname param2       ; fname = file.ext of param2
 strinsert fname 1 '\'       ; fname = \file.ext, to force absolute path
@@ -9,16 +10,21 @@ strinsert fname 1 '\'       ; fname = \file.ext, to force absolute path
 testlink
 if result=0 connect  param3
 
-sendln '     PWR_STATE ECHO [DEFINED] STOP [IF] STOP [THEN]' ; blanks are to pass LPMx wake up time...
-
 inputbox 'here you can change path of the file: ' 'Send this file to SD_CARD target' fname
 
-sendln 'TERM2SD" ' inputstr '"'    ; send to FastForth the command TERM2SD" \file.ext" ...with optionnal path added in inputbox
+sendln 'CODE ?ID';                              CODE ?ID
+sendln 'CMP #0,R14 0<> IF SUB &$1A04,R14 THEN'; CMP #0,TOS 0<> IF SUB &DEVICEID,TOS THEN
+sendln 'COLON $1B EMIT $63 EMIT';               COLON $1B EMIT $63 EMIT     \ send 'ESC c'
+sendln 'ABORT" DeviceID mismatch!" ;';          ABORT" DeviceID mismatch!" ;
+
+sendln param5 ' ?ID NOECHO' ; send : "%deviceID% ?ID NOECHO"
+
+sendln 'ECHO [DEFINED] STOP [IF] STOP [THEN]' ; execute STOP if defined
+
+sendln 'TERM2SD" ' inputstr '"'    ; send to FastForth the command TERM2SD" \file.4TH" ...with optionnal path added in inputbox
 
 sendfile param2 0       ; binary flag = 0 to send text file
 
-sendln #4               ; send ETX to ask FastForth to close file
-
-showtt 0
+sendln #4               ; send ETX to ask TERM2SD" to close file
 
 ; end

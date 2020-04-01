@@ -44,6 +44,9 @@ RAM_LEN         .equ 02000h     ;
 ; FRAM
 ; ----------------------------------------------
 MAIN_ORG        .equ 08000h      ; Code space start
+; ----------------------------------------------
+; Interrupt Vectors and signatures - MSP430FR2355
+; ----------------------------------------------
 SIGNATURES      .equ 0FF80h      ; JTAG/BSL signatures
 JTAG_SIG1       .equ 0FF80h      ; if 0 (electronic fuse=0) enable JTAG/SBW ; reset by wipe and by S1+<reset>
 JTAG_SIG2       .equ 0FF82h      ; if JTAG_SIG <> |0xFFFFFFFF, 0x00000000|, SBW and JTAG are locked
@@ -51,6 +54,11 @@ BSL_SIG1        .equ 0FF84h      ;
 BSL_SIG2        .equ 0FF86h      ;
 JTAG_PASSWORD   .equ 0FF88h      ; 256 bits
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
+BSL_I2C_ADRE    .equ 0FFA0h      ;
+I2CSLA0         .equ 0FFA2h      ; UCBxI2COA0 default value address 
+I2CSLA1         .equ 0FFA4h      ; UCBxI2COA1 default value address
+I2CSLA2         .equ 0FFA6h      ; UCBxI2COA2 default value address
+I2CSLA3         .equ 0FFA8h      ; UCBxI2COA3 default value address
 VECT_ORG        .equ 0FF8Ch      ; FFDA-FFFF
 VECT_LEN        .equ 38h
 ; ----------------------------------------------

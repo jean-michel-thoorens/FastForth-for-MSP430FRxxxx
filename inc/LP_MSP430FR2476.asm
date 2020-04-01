@@ -375,7 +375,7 @@ CTS         .equ    4           ; P6.2
 
     .ELSE
             BIS     #0010h,&CSCTL3      ; FLL select REFCLOCK
-;            MOV     #0100h,&CSCTL4      ; ACLOCK select REFO, MCLK & SMCLK select DCOCLKDIV (default value)
+            MOV     #0200h,&CSCTL4      ; ACLOCK select VLOCLK, MCLK & SMCLK select DCOCLKDIV (default value)
 
     .ENDIF
 
