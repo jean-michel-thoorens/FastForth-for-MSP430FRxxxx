@@ -1,5 +1,8 @@
 ; MSP430fr2433.inc
 ; MSP430fr2433 minimal declarations for Fast FORTH usage
+    .save
+    .listing off
+
 DEVICE = "MSP430FR2433"
 FR2_FAMILY
 

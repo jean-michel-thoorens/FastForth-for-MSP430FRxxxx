@@ -33,6 +33,20 @@
 \
 \ FORTH conditionnal    : 0= 0< = < > U<
 
+\ first, we test for downloading driver only if UART TERMINAL target
+CODE ABORT_TEST_ASM
+SUB #2,PSP
+MOV TOS,0(PSP)
+MOV &VERSION,TOS
+SUB #307,TOS        \ FastForth V3.7
+COLON
+'CR' EMIT            \ return to column 1 without 'LF'
+ABORT" FastForth version = 3.7 please!"
+PWR_STATE           \ remove ABORT_TEST_ASM definition before resuming
+;
+
+ABORT_TEST_ASM      \ abort test
+
 [UNDEFINED] >R [IF]
 \ https://forth-standard.org/standard/core/toR
 \ >R    x --   R: -- x   push to return stack
@@ -98,25 +112,6 @@ FW1 MOV @PSP+,TOS
     MOV @IP+,PC
 ENDCODE
 
-[THEN]
-
-[UNDEFINED] @ [IF]
-\ https://forth-standard.org/standard/core/Fetch
-\ @     c-addr -- char   fetch char from memory
-CODE @
-MOV @TOS,TOS
-MOV @IP+,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] ! [IF]
-\ https://forth-standard.org/standard/core/Store
-\ !        x a-addr --   store cell in memory
-CODE !
-MOV @PSP+,0(TOS)    \ 4
-MOV @PSP+,TOS       \ 2
-MOV @IP+,PC         \ 4
-ENDCODE
 [THEN]
 
 [UNDEFINED] C@ [IF]
@@ -209,13 +204,21 @@ NEXT
 ENDCODE
 [THEN]
 
-[UNDEFINED] DUP [IF]
+[UNDEFINED] DUP [IF]    \ define DUP and ?DUP
 \ https://forth-standard.org/standard/core/DUP
 \ DUP      x -- x x      duplicate top of stack
 CODE DUP
 BW1 SUB #2,PSP      \ 2  push old TOS..
     MOV TOS,0(PSP)  \ 3  ..onto stack
     MOV @IP+,PC     \ 4
+ENDCODE
+
+\ https://forth-standard.org/standard/core/qDUP
+\ ?DUP     x -- 0 | x x    DUP if nonzero
+CODE ?DUP
+CMP #0,TOS      \ 2  test for TOS nonzero
+0<> ?GOTO BW1    \ 2
+MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 

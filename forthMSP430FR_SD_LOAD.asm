@@ -1,28 +1,23 @@
 ; -*- coding: utf-8 -*-
 ; forthMSP430FR_SD_LOAD.asm
 
-; Tested with MSP-EXP430FR5994 launchpad
-; Copyright (C) <2019>  <J.M. THOORENS>
-;
-; This program is free software: you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation, either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License
-; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+;Z SD_ACCEPT  addr addr len -- addr' len'  get line to interpret from a SD Card file
+; no interrupt allowed
+; defered word ACCEPT is redirected here by the word LOAD"
+; "defered" word CIB is redirected to SDIB (PAD if RAM<2k) by the word LOAD"
+; sequentially move an input line ended by CRLF from SD_BUF to PAD
+;   if end of SD_BUF is reached before CRLF, asks Read_HandledFile to refill buffer with next sector
+;   then load the end of the line to PAD ptr.
+; when all LOAD"ed files are read, redirects defered word ACCEPT to default ACCEPT and restore interpret pointers.
+; see CloseHandleT.
 
 ; used variables : BufferPtr, BufferLen
 
 ;-----------------------------------------------------------------------
 ; SD card OPEN, LOAD subroutines
 ;-----------------------------------------------------------------------
+
+; used variables : BufferPtr, BufferLen
 
 ; rules for registers use
 ; S = error
@@ -125,8 +120,6 @@ ComputeHDLcurrentSector             ; input: currentHandle, output: Cluster, Sec
 ; ----------------------------------;
 
 
-
-
 ; ----------------------------------; input : X = countdown_of_spaces, Y = name pointer in buffer
 ParseEntryNameSpaces                ;XY
 ; ----------------------------------; output: Z flag, Y is set after the last space char
@@ -168,7 +161,9 @@ Read_File                           ; <== SD_ACCEPT, READ
 ; ----------------------------------;
     MOV.B   #0,HDLB_ClustOfst(T)    ; reset Current_Cluster sectors offset
     CALL #HDLCurClusToFAT1sectWofstY;WXY  Output: W=FATsector, Y=FAToffset, Cluster=HDL_CurCluster
-    CALL    #ReadFAT1SectorW        ;SWX (< 65536)
+    ADD     &OrgFAT1,W              ;
+    MOV     #0,X                    ;
+    CALL    #ReadSectorWX           ;SWX (< 65536)
     MOV     #0,HDLH_CurClust(T)     ;
     MOV SD_BUF(Y),HDLL_CurClust(T)  ;
     CMP     #1,&FATtype             ; FAT16?
@@ -305,7 +300,7 @@ RestorePreviousLoadedBuffer         ;
     BIC #Z,SR                       ; 
 ; ----------------------------------;
 CloseHandleRet                      ;
-    MOV @RSP+,PC                             ; Z = 1 if no more handle
+    MOV @RSP+,PC                    ; Z = 1 if no more handle
 ; ----------------------------------;
 
 
@@ -340,7 +335,7 @@ RestoreSD_ACCEPTContext             ;
 ; ----------------------------------;
 ReturnOfSD_ACCEPT                   ;
 ; ----------------------------------;
-    ADD #6,RSP                      ; R-- QUIT3     empties return stack
+    ADD #6,RSP                      ; R-- QUIT4     empties return stack
     MOV @RSP+,IP                    ;               skip return to SD_ACCEPT
 ; ----------------------------------;
     CALL #CloseHandleHere           ;               Z = 1 if no more handle
@@ -702,7 +697,49 @@ OPEN_Error                          ; S= error
 ; Error 16 : NomoreHandle           ; S = error 16
 ; ----------------------------------;
     mDOCOL                          ; set ECHO, type Pathname, type #error, type "< OpenError"; no return
+    .word   ECHO                    ;
     .word   XSQUOTE                 ; don't use S register
     .byte   11,"< OpenError"        ;
-    .word   BRAN,SD_QABORTYES       ; to insert S error as flag, no return
+    .word   BRAN,ABORT_SD           ; to insert S error as flag, no return
 ; ----------------------------------;
+
+
+    .IFDEF BOOTLOADER
+        .IFNDEF CORE_COMPLEMENT
+            FORTHWORD "+"
+; https://forth-standard.org/standard/core/Plus
+; +       n1/u1 n2/u2 -- n3/u3     add n1+n2
+            ADD @PSP+,TOS
+            MOV @IP+,PC
+        .ENDIF
+
+            FORTHWORD "BOOT"
+; BOOT          RSTIV_MEM --        ; bootstrap on SD_CARD\BOOT.4th file
+;                                   ; called by WARM
+;  to enable bootstrap type: ' BOOT IS WARM
+; to disable bootstrap type: ' BOOT 2 + @ IS WARM
+            MOV @PC+,X
+PFA_BOOT   .word INIT_SD            ; X = INIT_SD
+            CMP #2,TOS              ; RSTIV_MEM <> WARM ?
+            JC QSD_MEM              ; yes
+            MOV @RSP+,PC            ; if RSTIV_MEM U< 2, return to BODYWARM
+QSD_MEM     BIT.B #CD_SD,&SD_CDIN   ; SD_memory in SD_Card socket ?
+            JZ BOOT_YES             ;
+            MOV 2(X),PC             ; if no, goto previous INIT: INIT TERMINAL then ret to PFAWARM
+;---------------------------------------------------------------------------------
+; RESET 6: if RSTIV_MEM <> WARM, init TERM, init SD
+;---------------------------------------------------------------------------------
+BOOT_YES    CALL X                  ; init TERM UC first then init SD card, TOS = RSTIV_MEM
+;---------------------------------------------------------------------------------
+; END OF RESET
+;---------------------------------------------------------------------------------
+            MOV #PSTACK-2,PSP       ; PUSH 0 on Stack
+            MOV #0,0(PSP)           ;
+            MOV #0,&STATE           ; )
+            MOV #LSTACK,&LEAVEPTR   ; > same as QUIT
+            MOV #RSTACK,RSP         ; )
+            ASMtoFORTH              ;
+            .word XSQUOTE                   ; -- RSTIV_MEM addr u
+            .byte 15,"LOAD\34 BOOT.4TH\34"  ; LOAD" BOOT.4TH" issues error 2 if no such file...
+            .word BRAN,QUIT4                ; to interpret this string
+        .ENDIF

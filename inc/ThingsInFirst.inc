@@ -2,10 +2,26 @@
 
     .cpu MSP430X    ; define CPU
 
+BIT0        .equ 1
+BIT1        .equ 2
+BIT2        .equ 4
+BIT3        .equ 8
+BIT4        .equ 16
+BIT5        .equ 32
+BIT6        .equ 64
+BIT7        .equ 128
+BIT8        .equ 256
+BIT9        .equ 512
+BIT10       .equ 1024
+BIT11       .equ 2048
+BIT12       .equ 4096
+BIT13       .equ 8192
+BIT14       .equ 16384
+BIT15       .equ 32768
+
 ; ----------------------------------------------
 ; MACROS FOR assembly instructions
 ; ----------------------------------------------
-
 NOP         .macro      ; 1 word, 1 cycle    
             .word 4303h ; mov #0, r3         
             .endm
@@ -29,7 +45,7 @@ SCG0        .equ 0040h ; System Clock Generator 0. 1=turn_off_DCO
 SCG1        .equ 0080h ; System Clock Generator 1. 1=turn_off_SMCLK
 V           .equ 0100h
 UF9         .equ 0200h ; = SR(9) User Flag 9
-UF10        .equ 0400h ; = SR(10) User Flag 1  
+UF10        .equ 0400h ; = SR(10) User Flag 10
 UF11        .equ 0800h ; = SR(11) User Flag 11  
 ;----------------------------------------------------------------------------
 LPM0        .equ CPUOFF
@@ -65,29 +81,9 @@ IP          .reg    R13     ; interpretative pointer
 TOS         .reg    R14     ; first PSP cell
 PSP         .reg    R15     ; PSP = Parameters Stack Pointer (stack data)
 
-
-
 ; ----------------------------------------------
 ; EXECUTIVE WORDS FOR Direct-Threaded Code (DTC)
 ; ----------------------------------------------
-
-;-------------------------------------------------------------------------------
-; DODOES  leave on parameter stack the PFA of a CREATE definition and execute Master word
-;-------------------------------------------------------------------------------
-DODOES      .equ    1285h       ; CALL rDODOES ; [rDODOES] is defined as xdodoes by COLD
-
-;-------------------------------------------------------------------------------
-; DOCON  leave on parameter stack the [PFA] of a CONSTANT definition
-;-------------------------------------------------------------------------------
-DOCON       .equ    1286h   ; 4 CALL rDOCON ; [rDOCON] is defined as xdocon by COLD
-
-;-------------------------------------------------------------------------------
-; DOVAR leave on parameter stack the PFA of a VARIABLE definition
-;-------------------------------------------------------------------------------
-DOVAR       .equ    1287h   ; 4 for CALL rDOVAR       S-- VAR      PFA  R--  
-                            ; [rDOVAR] is defined as RFROM by COLD
-;-------------------------------------------------------------------------------
-; DOCOL starts high level words
 ;-------------------------------------------------------------------------------
 ; very nice FAST FORTH feature:
 ; as IP is always computed from the PC value, we can place low to high level
@@ -96,71 +92,52 @@ DOVAR       .equ    1287h   ; 4 for CALL rDOVAR       S-- VAR      PFA  R--
 ;-------------------------------------------------------------------------------
     .SWITCH DTC
 
-    .CASE 1 ; DOCOL = CALL rDOCOL, [rDOCOL] = xdocol
+    .CASE 1 ; DOCOL = CALL rDOCOL, [rDOCOL] = XDOCOL
+ASMtoFORTH  .MACRO                  ; compiled by LO2HI
+            CALL #EXIT              ; 10 cycles
+            .ENDM                   ; 2 words, 10 cycles
+                                    ; LO2HI + HI2LO = 3 words, 10 cycles.
 
-DOCOL1      .equ    1284h   ; 4 CALL rDOCOL
-
-ASMtoFORTH  .MACRO          ; compiled by LO2HI
-            CALL #EXIT      ; 10 cycles
-            .ENDM           ; 2 words, 10 cycles
-                            ; LO2HI + HI2LO = 3 words, 10 cycles.
-
-mDOCOL      .MACRO          ; compiled by : and by colon
-            CALL rDOCOL     ; 10 [rDOCOL] = xdocol
-            .ENDM           ; 1 word, 14 cycles (CALL included) (ITC+4)
-                            ; COLON + SEMI = 2 words, 20 cycles (ITC+2)
-
+mDOCOL      .MACRO                  ; compiled by : and by colon
+            CALL rDOCOL             ; 10 [rDOCOL] = XDOCOL
+            .ENDM                   ; 1 word, 14 cycles (CALL included) (ITC+4)
+                                    ; COLON + SEMI = 2 words, 20 cycles (ITC+2)
     .CASE 2 ; DOCOL = PUSH IP + CALL rDOCOL, [rDOCOL] = EXIT
+ASMtoFORTH  .MACRO                  ; compiled by LO2HI
+            CALL rDOCOL             ; 10 [rDOCOL] = EXIT
+            .ENDM                   ; 1 word, 10 cycles. 
+                                    ; LO2HI + HI2LO = 2 words, 10 cycles.
 
-DOCOL1      .equ    120Dh   ; 3 PUSH IP
-DOCOL2      .equ    1284h   ; 4 CALL rDOCOL
-
-ASMtoFORTH  .MACRO          ; compiled by LO2HI
-            CALL rDOCOL     ; 10 [rDOCOL] = EXIT
-            .ENDM           ; 1 word, 10 cycles. 
-                            ; LO2HI + HI2LO = 2 words, 10 cycles.
-
-mDOCOL      .MACRO          ; compiled by : and by COLON
-            PUSH IP         ; 3
-            CALL rDOCOL     ; 10 [rDOCOL] = EXIT
-            .ENDM           ; 2 words, 13 cycles (ITC+3)
-                            ; COLON + SEMI = 3 words, 19 cycles (ITC+1)
-
+mDOCOL      .MACRO                  ; compiled by : and by COLON
+            PUSH IP                 ; 3
+            CALL rDOCOL             ; 10 [rDOCOL] = EXIT
+            .ENDM                   ; 2 words, 13 cycles (ITC+3)
+                                    ; COLON + SEMI = 3 words, 19 cycles (ITC+1)
     .CASE 3 ; inlined DOCOL
+ASMtoFORTH  .MACRO                  ; compiled by LO2HI
+            MOV PC,IP               ; 1
+            ADD #4,IP               ; 1
+            MOV @IP+,PC             ; 4 NEXT
+            .ENDM                   ; 6 cycles, 3 words
+                                    ; LO2HI + HI2LO = 4 words, 6 cycles.
 
-DOCOL1      .equ    120Dh   ; 3 PUSH IP
-DOCOL2      .equ    400Dh   ; 1 MOV PC,IP
-DOCOL3      .equ    522Dh   ; 1 ADD #4,IP
-
-ASMtoFORTH  .MACRO          ; compiled by LO2HI
-            MOV PC,IP       ; 1
-            ADD #4,IP       ; 1
-            MOV @IP+,PC     ; 4 NEXT
-            .ENDM           ; 6 cycles, 3 words
-                            ; LO2HI + HI2LO = 4 words, 6 cycles.
-
-mDOCOL      .MACRO          ; compiled by : and by COLON
-            PUSH IP         ; 3
-            MOV PC,IP       ; 1
-            ADD #4,IP       ; 1
-            MOV @IP+,PC     ; 4 NEXT
-            .ENDM           ; 4 words, 9 cycles (ITC-1)
-                            ; COLON + SEMI = 5 words, 15 cycles (ITC-3)
+mDOCOL      .MACRO                  ; compiled by : and by COLON
+            PUSH IP                 ; 3
+            MOV PC,IP               ; 1
+            ADD #4,IP               ; 1
+            MOV @IP+,PC             ; 4 NEXT
+            .ENDM                   ; 4 words, 9 cycles (ITC-1)
+                                    ; COLON + SEMI = 5 words, 15 cycles (ITC-3)
     .ENDCASE ; DTC
 
-;low level return
-NEXT        .equ    4D30h   ; 4 MOV @IP+,PC
-                            ; jump from Asm word to NEXT Asm word: 1 word, 4 cycles (ITC-2)
-
+    .save
+    .listing off
 ; ----------------------------------------------
 ; INIT VOCABULARY POINTERS and MACROS FOR HEADER
 ; ----------------------------------------------
 voclink     .set 0  ; init vocabulary links
 forthlink   .set 0
 asmlink     .set 0
-
-    .save
-    .listing off
 
     .IF THREADS = 1
 
@@ -570,21 +547,84 @@ asmlink31 .set    $
 
     .endif ; thread case
 
-    .restore
-    .IFNDEF TERMINAL_I2C
-; --------------------------
-; COMPUTE BAUDRATE registers = fn(FREQUENCY,BAUDS)
-; --------------------------
-        .include "TERMINALBAUDRATE.inc"
-    .ENDIF
-
 ; -------------------------------------
 ; define MAIN max bound
 ; -------------------------------------
 FRAM_FULL   .equ SIGNATURES-40h ; set to protect JTAG and BSL signatures against overwrite.
                                 ; 64 bytes are sufficient considering what can be compiled in one line + WORD use.
                                 ; take care with ALLOT : don't ALLOT more than 32 words by line!
+    .restore
+; --------------------------
+; COMPUTE ASSEMBLY SWITCHES
+; --------------------------
+    .IFDEF CORE_COMPLEMENT
+        .IFNDEF USE_MOVE
+USE_MOVE
+        .ENDIF
+    .ENDIF
+    .IFDEF UTILITY
+        .IFNDEF USE_MOVE
+USE_MOVE
+        .ENDIF
+    .ENDIF
+    .IFDEF FIXPOINT_INPUT
+        .IFNDEF DOUBLE_INPUT
+DOUBLE_INPUT
+        .ENDIF
+    .ENDIF
+    .IFDEF SD_CARD_LOADER 
+; define if QUIT is DEFERed
+        .IFNDEF DOUBLE_INPUT
+DOUBLE_INPUT
+        .ENDIF
+        .IFNDEF DEFER_ACCEPT
+DEFER_ACCEPT
+        .ENDIF
+        .IFDEF BOOTLOADER
+            .IFNDEF CONDCOMP
+CONDCOMP                    ; mandatory for Bootstrap
+            .ENDIF
+            .IFNDEF DEFER_QUIT
+DEFER_QUIT
+            .ENDIF
+        .ENDIF
+    .ENDIF
+    .IFDEF EXTENDED_ASM
+        .IFNDEF DOUBLE_INPUT
+DOUBLE_INPUT
+        .ENDIF
+    .ELSE
+        .IFDEF EXTENDED_MEM
+            .IFNDEF MSP430ASSEMBLER
+MSP430ASSEMBLER
+            .ENDIF
+            .IFNDEF DOUBLE_INPUT
+DOUBLE_INPUT
+            .ENDIF
+        .ENDIF
+    .ENDIF
+    .IFDEF FIXPOINT
+        .IFNDEF FIXPOINT_INPUT
+FIXPOINT_INPUT              ; to interpret fixpoint numbers
+        .ENDIF
+    .ENDIF
+    .IFDEF FIXPOINT_INPUT
+    .IFNDEF DOUBLE_NUMBERS
+DOUBLE_NUMBERS              ; to process double numbers
+    .ENDIF
+    .ENDIF
+    .IFDEF DOUBLE_INPUT
+    .IFNDEF DOUBLE_NUMBERS
+DOUBLE_NUMBERS              ; to process double numbers
+    .ENDIF
+    .ENDIF
 
+; --------------------------
+; COMPUTE BAUDRATE registers = fn(FREQUENCY,BAUDS)
+; --------------------------
+    .IFNDEF TERMINAL_I2C
+        .include "TERMINALBAUDRATE.inc"
+    .ENDIF
 ;-----------------------------------------------------------------------
 ; DEVICE I/O, MEMORY, SFR, vectors and minimum FORTH I/O declarations
 ;-----------------------------------------------------------------------
@@ -631,7 +671,19 @@ UCA1_TERM
 UCA0_SD
         .INCLUDE "MSP430FR6989.inc"
     .ENDIF
+    .IFDEF MSP_EXP430FR5972
+;EXTENDED_MEM
+LF_XTAL
+        .IFDEF TERMINAL_I2C
+UCB0_TERM
+        .ELSE
+UCA1_TERM
+        .ENDIF
+UCA0_SD
+        .INCLUDE "MSP430FR5972.inc"
+    .ENDIF
     .IFDEF MSP_EXP430FR4133
+FLL
 LF_XTAL
         .IFDEF TERMINAL_I2C
 UCB0_TERM
@@ -642,6 +694,7 @@ UCB0_SD
         .INCLUDE "MSP430FR4133.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR2433
+FLL
 LF_XTAL
         .IFDEF TERMINAL_I2C
 UCB0_TERM
@@ -652,6 +705,7 @@ UCA1_SD
         .include "MSP430FR2433.inc"
     .ENDIF
     .IFDEF CHIPSTICK_FR2433
+FLL
 ; no LF_XTAL to select ACLK = REFOCLK
         .IFDEF TERMINAL_I2C
 UCB0_TERM
@@ -663,6 +717,7 @@ UCB0_SD
         .include "MSP430FR2433.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR2355
+FLL
 LF_XTAL
         .IFDEF TERMINAL_I2C
 UCB0_TERM
@@ -673,6 +728,7 @@ UCB1_SD
         .include "MSP430FR2355.inc"
     .ENDIF
     .IFDEF LP_MSP430FR2476
+FLL
 ;EXTENDED_MEM
 ; LF_XTAL       ; connect resistors R2=0k, R3=0k before uncomment this line
         .IFDEF TERMINAL_I2C
@@ -683,143 +739,51 @@ UCA0_TERM
 UCA1_SD
         .include "MSP430FR2476.inc"
     .ENDIF
-
+    .IFDEF YOUR_TARGET
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 ; add here your device.inc item:
-;     .IFDEF MY_MSP430FR5738_1
-; UCA0_UART   ; defines uart used by FORTH input terminal 
-; LF_XTAL     ; defines if your module have a 32768 Hz xtal, to enable it.
-; UCB0_SD     ; defines UC used for SD Card driver if used
-;     .include "MSP430FR5738.inc"  ; include device declarations
-;     .ENDIF
 ;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-; --------------------------
-; COMPUTE SWITCHES
-; --------------------------
-    .IFDEF CORE_COMPLEMENT
-        .IFNDEF USE_MOVE
-USE_MOVE
-        .ENDIF
     .ENDIF
 
-    .IFDEF UTILITY
-        .IFNDEF USE_MOVE
-USE_MOVE
-        .ENDIF
-    .ENDIF
-
-    .IFDEF FIXPOINT_INPUT
-        .IFNDEF DOUBLE_INPUT
-DOUBLE_INPUT
-        .ENDIF
-    .ENDIF
-
-; define if QUIT is DEFERed
-    .IFDEF SD_CARD_LOADER 
-        .IFNDEF DOUBLE_INPUT
-DOUBLE_INPUT
-        .ENDIF
-        .IFNDEF DEFER_ACCEPT
-DEFER_ACCEPT
-        .ENDIF
-
-        .IFDEF BOOTLOADER
-            .IFNDEF CONDCOMP
-CONDCOMP                    ; mandatory for Bootstrap
-            .ENDIF
-            .IFNDEF DEFER_QUIT
-DEFER_QUIT
-            .ENDIF
-        .ENDIF
-    .ENDIF
-
-    .IFDEF EXTENDED_ASM
-        .IFNDEF DOUBLE_INPUT
-DOUBLE_INPUT
-        .ENDIF
-    .ELSE
-        .IFDEF EXTENDED_MEM
-            .IFNDEF MSP430ASSEMBLER
-MSP430ASSEMBLER
-            .ENDIF
-            .IFNDEF DOUBLE_INPUT
-DOUBLE_INPUT
-            .ENDIF
-        .ENDIF
-    .ENDIF
-
-    .IFDEF FIXPOINT
-        .IFNDEF FIXPOINT_INPUT
-FIXPOINT_INPUT              ; to interpret fixpoint numbers
-        .ENDIF
-    .ENDIF
-
-    .IFDEF FIXPOINT_INPUT
-    .IFNDEF DOUBLE_NUMBERS
-DOUBLE_NUMBERS              ; to process double numbers
-    .ENDIF
-    .ENDIF
-
-    .IFDEF DOUBLE_INPUT
-    .IFNDEF DOUBLE_NUMBERS
-DOUBLE_NUMBERS              ; to process double numbers
-    .ENDIF
-    .ENDIF
-
+    .restore
 ; ---------------------------
 ; compute value of FORTHADDON
 ; ---------------------------
 FADDON .set 0
-    .IFDEF CONDCOMP
-FADDON .SET FADDON | 01h    ; Conditionnal Compilation
+    .IFDEF LF_XTAL
+FADDON .SET FADDON | BIT15  ; LFXTAL = 32768 Hz
     .ENDIF
-    .IFDEF MSP430ASSEMBLER
-FADDON .SET FADDON | 02h    ; MSP430 Assembler (16 bits addresses)
-    .ENDIF
-    .IFDEF EXTENDED_ASM     ; MSP430X Assembler (16+20 bits addresses)
-FADDON .SET FADDON | 04h
-    .ENDIF
-    .IFDEF DEFERRED
-FADDON .SET FADDON | 08h    ; DEFERRED, adds DEFER IS :NONAME CODENNM
-    .ENDIF
-    .IFDEF VOCABULARY_SET
-FADDON .SET FADDON | 10h    ; VOCABULERY SET, adds VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83)
+    .IFNDEF TERMINAL_I2C ; if TERMINAL UART...
+        .IFDEF TERMINAL5WIRES
+FADDON .SET FADDON | BIT14  ; UART CTS
+        .ENDIF
+        .IFDEF TERMINAL4WIRES
+FADDON .SET FADDON | BIT13  ; UART RTS
+        .ENDIF
+        .IFDEF TERMINAL3WIRES
+FADDON .SET FADDON | BIT12  ; UART XON/XOFF
+        .ENDIF
+        .IFDEF HALFDUPLEX
+FADDON .SET FADDON | BIT11  ; UART Half Duplex
+        .ENDIF
+    .ENDIF ; TERMINAL UART
+    .IFDEF FIXPOINT_INPUT
+FADDON .SET FADDON | BIT10  ; FIXPOINT INPUT
     .ENDIF
     .IFDEF DOUBLE_INPUT
-FADDON .SET FADDON | 20h    ; DOUBLE INPUT
+FADDON .SET FADDON | BIT9   ; DOUBLE INPUT
     .ENDIF
-    .IFDEF FIXPOINT_INPUT
-FADDON .SET FADDON | 40h    ; FIXPOINT INPUT
+    .IFDEF EXTENDED_ASM     ; Assembler 20 bits
+FADDON .SET FADDON | BIT8
     .ENDIF
-    .IFDEF SD_CARD_LOADER
-FADDON .SET FADDON | 80h    ; SD_CARD Loader
-    .ENDIF
-    .IFDEF SD_CARD_READ_WRITE
-FADDON .SET FADDON | 100h   ; SD_CARD Read Write Delete
-    .ENDIF
-    .IFDEF BOOTLOADER
-FADDON .SET FADDON | 200h   ; BOOTLOADER
+    .IFDEF MSP430ASSEMBLER
+FADDON .SET FADDON | BIT7   ; Assembler 16 bits
     .ENDIF
     .IFDEF EXTENDED_MEM
     .IFNDEF EXTENDED_ASM
-FADDON .SET FADDON | 400h   ; MSP430 Assembler with Address access beyond $FFFF
+FADDON .SET FADDON | BIT6   ; Assembler 16 bits with Address access beyond $FFFF
     .ENDIF
     .ENDIF
-    .IFNDEF TERMINAL_I2C ; if TERMINAL UART...
-        .IFDEF HALFDUPLEX
-FADDON .SET FADDON | 800h   ; UART Half Duplex
-        .ENDIF
-        .IFDEF TERMINAL3WIRES
-FADDON .SET FADDON | 1000h  ; UART XON/XOFF
-        .ENDIF
-        .IFDEF TERMINAL4WIRES
-FADDON .SET FADDON | 2000h  ; UART RTS
-        .ENDIF
-        .IFDEF TERMINAL5WIRES
-FADDON .SET FADDON | 4000h  ; UART CTS
-        .ENDIF
-    .ENDIF ; TERMINAL UART
-    .IFDEF LF_XTAL
-FADDON .SET FADDON | 8000h  ; LFXTAL = 32768 Hz
+    .IFDEF CONDCOMP
+FADDON .SET FADDON | BIT0   ; Conditionnal Compilation
     .ENDIF

@@ -61,6 +61,20 @@
 \ --------------------------------------------------------------------------------
 
 
+[UNDEFINED] = [IF]
+\ https://forth-standard.org/standard/core/Equal
+\ =      x1 x2 -- flag         test x1=x2
+CODE =
+SUB @PSP+,TOS   \ 2
+0<> IF          \ 2
+    AND #0,TOS  \ 1
+    MOV @IP+,PC \ 4
+THEN
+XOR #-1,TOS     \ 1 flag Z = 1
+MOV @IP+,PC     \ 4
+ENDCODE
+[THEN]
+
 \ it's an example:
 
 $04 = [IF]      \ if origin of SYSRST is <reset>

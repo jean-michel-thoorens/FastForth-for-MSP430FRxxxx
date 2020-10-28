@@ -1,5 +1,8 @@
 ; MSP430fr2355.inc
 ; MSP430FR2355 minimal declarations for FastForth usage
+    .save
+    .listing off
+
 DEVICE = "MSP430FR2355"
 FR2_FAMILY
 
@@ -389,5 +392,3 @@ SD_IFG         .equ eUSCI_B1_SFR + 2Ch    ; USCI_B1 Interrupt Flags Register
 RX_SD           .equ 1
 TX_SD           .equ 2
     .ENDIF ;UCB1_SD
-
-

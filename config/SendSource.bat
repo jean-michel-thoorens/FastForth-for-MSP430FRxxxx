@@ -14,7 +14,7 @@ IF /I "%~x1" == ".4TH" GOTO 4TH
 :: source file.f part
 :: %~dpn1.f is the symbolic source file.f described as drive\path\name.f
 :: %~d1\inc\%~n2.pat is the pattern file for preprocessor gema.exe
-:: %~dpn1.4TH is the source file.4TH to be preprocessed then sent to the target
+:: %~dpn1.4TH is the source file.4TH to be sent to the target
 :: %~d1 is the drive of arg %1
 :: %~n2 is your selected template by SelectTarget.bat or your scite $(1)
 
@@ -46,15 +46,13 @@ IF /I "%3" == "HALF" GOTO preprocessF
 echo unexpected third parameter %3 !
 
 :badend
-::pause > nul
-
+pause > nul
 exit
 
 
 :preprocessF
-::@%~d1\prog\gema.exe -nobackup -line -t '\n=\r\n;\r\n=\r\n' -f  %~d1\inc\%~n2.pat %~dpn1.f %~dpn1.4TH
 @%~d1\prog\gema.exe -nobackup -line -t '-\r\n=\r\n' -f  %~d1\inc\%~n2.pat %~dpn1.f %~dpn1.4TH
-call  %~d1\config\Select.bat SelectDeviceId %~d1\inc\%~n2.pat
+@call  %~d1\config\Select.bat SelectDeviceId %~d1\inc\%~n2.pat
 
 :DownloadF
 @taskkill /F /IM ttermpro.exe 1> NUL 2>&1
@@ -112,6 +110,6 @@ goto badend
 @"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d1\config\SendFile.ttl %~dpn1.4TH /C %2 0
 
 :End4th
-::@COPY "%~dpn1.4TH" "%~dp1\LAST.4TH" > NUL
+@COPY "%~dpn1.4TH" "%~dp1\LAST.4TH" > NUL
 exit
 

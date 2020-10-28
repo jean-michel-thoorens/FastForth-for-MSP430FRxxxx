@@ -1,21 +1,5 @@
 \ name : msp430FR5xxx_I2C_Master.asm
 \
-\ Copyright (C) <2016>  <J.M. THOORENS>
-\
-\ This program is free software: you can redistribute it and/or modify
-\ it under the terms of the GNU General Public License as published by
-\ the Free Software Foundation, either version 3 of the License, or
-\ (at your option) any later version.
-\
-\ This program is distributed in the hope that it will be useful,
-\ but WITHOUT ANY WARRANTY; without even the implied warranty of
-\ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-\ GNU General Public License for more details.
-\
-\ You should have received a copy of the GNU General Public License
-\ along with this program.  If not, see <http://www.gnu.org/licenses/>.
-\
-\
 \ I2C MASTER Standard Mode software driver without interrupt
 \ Target: MSP-EXP430FR5969 @ 8,16MHz
 \ version 1.1 2016-03-18
@@ -96,82 +80,153 @@ VARIABLE I2CM_BUF   \ low(I2CM_BUF) = RX or TX lentgh, high(I2CM_BUF) = TX buffe
 
 
 
-\ ----------------------------------\
-ASM I2C_M                           \
-\ ----------------------------------\
-\                                   \ in    I2CS_ADR/I2CM_BUF as RX/TX buffer requested by I2CS_ADR(0(0))
-\                                   \       I2CS_ADR(0) = I2C_Slave_addr&R/w
-\                                   \       I2CM_BUF(0) = TX/RX count of datas
-\                                   \       I2CM_BUF(0) = 0 ==> send only I2C address
-\                                   \ used  S = BUF ptr
-\                                   \       T
-\                                   \ out   I2CSLA_ADR & (R/W) unCHNGd
-\                                   \       S = BUF PTR pointing on first data not exCHNGd
-\                                   \       T = count of TX/RX datas exCHNGd
-\                                   \       T = -1 ==> NACK on address
-\                                   \       I2CS_ADR(0) = unCHNGd
-\                                   \       I2CM_BUF(0) = unCHNGd
-BIS #1,&UCB0CTLW0                   \ SWRST 
-MOV #$0FD3,&UCB0CTLW0               \ master mode + UCTR + START + SWRST, IFG=IE=0 
-MOV #$00C8,&UCB0CTLW1               \ set automatic stop (count byte reached)
-MOV #$14,&UCB0BRW                   \ baudrate = SMCLK/20 = 400 kHz @8MHz ; 340 kHz measured
-MOV #I2CM_BUF,S                     \ count & TX buf
-MOV.B @S+,&UCB0TBCNT                \
-CMP.B #0,&UCB0TBCNT                 \
-0= IF                               \ count = 0
-    BIS #4,&UCB0CTLW0               \ add Stop cmd to Start cmd ==> Master send only I2C address
-THEN    
-MOV #I2CS_ADR,T                     \ I2Cadr & RX buf
-MOV.B @T+,&UCB0I2CSA                \ UCB0I2CSA = slave_address & R/w bit
-RRA &UCB0I2CSA                      \ UCB0I2CSA = slave_address, C flag = R/w flag
-U>= IF                              \ C flag = 1
-    MOV T,S                         \ Master read  : S = RX buffer
-    BIC #$10,&UCB0CTLW0             \                UCB0CTLW0 <-- UCTR=0
-THEN                                \
-\ ------------------------------    \
-\ Start                             \
-\ ------------------------------    \
-MOV.B #-1,T                         \ T=-1
-BIC #1,&UCB0CTLW0                   \ UCB0CTLW0 : clear SWRST, start I2C MASTER
-BIT.B #1,&I2CS_ADR                  \ R/W test
-0= IF                               \
-\   ----------------------------    \
-\   MASTER TX                       \
-\   ----------------------------    \
-    BEGIN                           \
-        MOV.B &UCBCNT0,T            \ store count of byte
-        BIT #8,&UCB0IFG             \ test UCSTPIFG
-        0<> IF                      \
-            MOV @RSP+,PC            \ end of I2C_M TX driver
-        THEN                        \
-        BIT #$20,&UCB0IFG           \ test UCNACKIFG
-        0<> IF                      \
-            BIS #4,&UCB0CTLW0       \ generate stop bit
-            MOV @RSP+,PC            \ end of I2C_M TX driver
-        THEN                        \
-        BIT #2,&UCB0IFG             \ test UCTXIFG0
-        0<> IF                      \
-            MOV.B @S+,&UCB0TXBUF    \ load data into UCB0TXBUF
-        THEN                        \
-    AGAIN                           \
-THEN                                \
-\ ------------------------------    \
-\ MASTER RX                         \
-\ ------------------------------    \
-BEGIN                               \ of Master RX
-    MOV.B &UCBCNT0,T                \ store count of byte
-    BIT #8,&UCB0IFG                 \ test UCSTPIFG
-    0<> IF                          \
-        MOV @RSP+,PC                \ end of I2C_M RX driver
-    THEN                            \
-    BIT #1,&UCB0IFG                 \ test UCRXIFG0
-    0<> IF                          \
-        MOV.B &UCB0RXBUF,0(S)       \ load data from UCB0RXBUF
-        ADD   #1,S                  \
-    THEN                            \
-AGAIN                               \
-ENDASM                              \ 62 words + 9 init words
-    \
+\ \ ----------------------------------\
+\ ASM I2C_M                           \
+\ \ ----------------------------------\
+\ \                                   \ in    I2CS_ADR/I2CM_BUF as RX/TX buffer requested by I2CS_ADR(0(0))
+\ \                                   \       I2CS_ADR(0) = I2C_Slave_addr&R/w
+\ \                                   \       I2CM_BUF(0) = TX/RX count of datas
+\ \                                   \       I2CM_BUF(0) = 0 ==> send only I2C address
+\ \                                   \ used  S = BUF ptr
+\ \                                   \       T
+\ \                                   \ out   I2CSLA_ADR & (R/W) unCHNGd
+\ \                                   \       S = BUF PTR pointing on first data not exCHNGd
+\ \                                   \       T = count of TX/RX datas exCHNGd
+\ \                                   \       T = -1 ==> NACK on address
+\ \                                   \       I2CS_ADR(0) = unCHNGd
+\ \                                   \       I2CM_BUF(0) = unCHNGd
+\ BIS #1,&UCB0CTLW0                   \ SWRST 
+\ MOV #$0FD3,&UCB0CTLW0               \ master mode + UCTR + START + SWRST, IFG=IE=0 
+\ MOV #$00C8,&UCB0CTLW1               \ set automatic stop (count byte reached)
+\ MOV #$14,&UCB0BRW                   \ baudrate = SMCLK/20 = 400 kHz @8MHz ; 340 kHz measured
+\ MOV #I2CM_BUF,S                     \ count & TX buf
+\ MOV.B @S+,&UCB0TBCNT                \
+\ CMP.B #0,&UCB0TBCNT                 \
+\ 0= IF                               \ count = 0
+\     BIS #4,&UCB0CTLW0               \ add Stop cmd to Start cmd ==> Master send only I2C address
+\ THEN    
+\ MOV #I2CS_ADR,T                     \ I2Cadr & RX buf
+\ MOV.B @T+,&UCB0I2CSA                \ UCB0I2CSA = slave_address & R/w bit
+\ RRA &UCB0I2CSA                      \ UCB0I2CSA = slave_address, C flag = R/w flag
+\ U>= IF                              \ C flag = 1
+\     MOV T,S                         \ Master read  : S = RX buffer
+\     BIC #$10,&UCB0CTLW0             \                UCB0CTLW0 <-- UCTR=0
+\ THEN                                \
+\ \ ------------------------------    \
+\ \ Start                             \
+\ \ ------------------------------    \
+\ MOV.B #-1,T                         \ T=-1
+\ BIC #1,&UCB0CTLW0                   \ UCB0CTLW0 : clear SWRST, start I2C MASTER
+\ BIT.B #1,&I2CS_ADR                  \ R/W test
+\ 0= IF                               \
+\ \   ----------------------------    \
+\ \   MASTER TX                       \
+\ \   ----------------------------    \
+\     BEGIN                           \
+\         MOV.B &UCBCNT0,T            \ store count of byte
+\         BIT #8,&UCB0IFG             \ test UCSTPIFG
+\         0<> IF                      \
+\             MOV @RSP+,PC            \ end of I2C_M TX driver
+\         THEN                        \
+\         BIT #$20,&UCB0IFG           \ test UCNACKIFG
+\         0<> IF                      \
+\             BIS #4,&UCB0CTLW0       \ generate stop bit
+\             MOV @RSP+,PC            \ end of I2C_M TX driver
+\         THEN                        \
+\         BIT #2,&UCB0IFG             \ test UCTXIFG0
+\         0<> IF                      \
+\             MOV.B @S+,&UCB0TXBUF    \ load data into UCB0TXBUF
+\         THEN                        \
+\     AGAIN                           \
+\ THEN                                \
+\ \ ------------------------------    \
+\ \ MASTER RX                         \
+\ \ ------------------------------    \
+\ BEGIN                               \ of Master RX
+\     MOV.B &UCBCNT0,T                \ store count of byte
+\     BIT #8,&UCB0IFG                 \ test UCSTPIFG
+\     0<> IF                          \
+\         MOV @RSP+,PC                \ end of I2C_M RX driver
+\     THEN                            \
+\     BIT #1,&UCB0IFG                 \ test UCRXIFG0
+\     0<> IF                          \
+\         MOV.B &UCB0RXBUF,0(S)       \ load data from UCB0RXBUF
+\         ADD   #1,S                  \
+\     THEN                            \
+\ AGAIN                               \
+\ ENDASM                              \ 62 words + 9 init words
+\     \
+
+\ ------------------------------\
+ASM I2C_M                       \
+\ ------------------------------\
+\                               \ in    I2CS_ADR(S) = -4(S) = I2C address
+\                               \       I2CS_CNT(S) = -2(S) = count of data to be exchanged
+\                               \       0(S) = data1
+\                               \       1(S) = data2...
+\                               \ used  S = BUF ptr, W
+\                               \ out   I2CS_EXG(S) = -1(S) = count of bytes exchanged
+\
+BIS #1,&UCB0CTLW0               \ SWRST 
+MOV #$0FD3,&UCB0CTLW0           \ master mode + UCTR + START + SWRST, IFG=IE=0 
+MOV #$00C8,&UCB0CTLW1           \ set automatic stop (count byte reached)
+FREQ_KHZ @ 16000 =              \ 16 MHz or 8 MHz ?
+[IF]                            \ if 16 MHz
+    MOV #$40,&UCB0BRW           \ baudrate = SMCLK/40 = 400 kHz @16MHz ; 340 kHz measured
+[ELSE]                          \ if 8 MHz
+    MOV #$20,&UCB0BRW           \ baudrate = SMCLK/20 = 400 kHz @8MHz ; 340 kHz measured
+[THEN]                          \
+MOV.B I2C_CNT(S),W              \ W = count of data
+CMP.B #0,W                      \
+0= IF                           \ if count = 0
+    BIS #4,&UCB0CTLW0           \ add Stop cmd ==> Master send only I2C address then STOP (doesn't work with MASTER RX!)
+THEN                            \
+MOV.B W,&UCB0TBCNT              \ set threshold byte count to generate automatic STOP
+MOV.B I2C_ADR(S),W              \ 3 W = slave_address & R/w bit
+RRA.B W                         \ 1 C flag =  R/w bit
+U>= IF                          \ if read
+    BIC #$10,&UCB0CTLW0         \ UCB0CTLW0 <-- UCTR=0
+THEN                            \
+MOV W,&UCB0I2CSA                \ 3 UCB0I2CSA = slave_address
+MOV.B #0,W                      \ clear buffer pointer
+\ ------------------------------\
+BIC #1,&UCB0CTLW0               \ UCB0CTLW0 : clear SWRST ==> start I2C MASTER
+\ ------------------------------\
+BW2                             \ 
+BIT #$20,&UCB0IFG               \ test Nack flag UCNACKIFG (on address | on TX data) from slave
+0<> IF                          \
+    BIS #4,&UCB0CTLW0           \ generate STOP
+    CMP.B #0,W                  \ Nack on TX data ?
+    0<> IF                      \ yes 
+        SUB.B #1,W              \ remove this TX data from count
+    THEN                        \
+    GOTO BW2                    \
+THEN                            \
+BIT #8,&UCB0IFG                 \ test stop flag UCSTPIFG
+0<> IF                          \
+    MOV.B W,I2C_EXG(S)          \ store count of bytes
+    BIS #1,&UCB0CTLW0           \ SWRST
+    RET                         \ ===================> end of I2C_M driver
+THEN                            \
+BIT #2,&UCB0IFG                 \ test TX flag UCTXIFG0
+0<> IF                          \
+\   ----------------------------\
+\   MASTER TX                   \
+\   ----------------------------\
+    MOV.B I2C_BUF(W),&UCB0TXBUF \ load byte into UCB0TXBUF
+    ADD.B #1,W                  \
+    GOTO BW2                    \
+THEN                            \
+BIT #1,&UCB0IFG                 \ test RX flag UCRXIFG0
+0<> IF                          \
+\   ----------------------------\
+\   MASTER RX                   \
+\   ----------------------------\
+    MOV.B &UCB0RXBUF,I2C_BUF(W) \ load byte from UCB0RXBUF
+    ADD.B #1,W                  \
+THEN
+GOTO BW2                        \
+ENDASM                          \ 64 words
 
 \ ------------------------------\
 CODE START                      \ init

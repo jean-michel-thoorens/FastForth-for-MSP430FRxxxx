@@ -356,17 +356,12 @@ RTS         .equ    4           ; P3.2
 ;           MOV     #0100h,&CSCTL4      ; ACLOCK select REFO, MCLK & SMCLK select DCOCLKDIV (default value)
     .ENDIF
 
-            BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV preserving a pending request for DEEP_RST
-;            MOV &SAVE_SYSRSTIV,TOS  ;
-;            CMP #2,TOS              ; POWER ON ?
-;            JZ      ClockWaitX      ; yes
-;            RRUM    #1,X            ; wait only 250 ms
-ClockWaitX  MOV     #5209,Y         ; wait 0.5s before starting after POR
+ClockWaitX  MOV     #4375,Y         ; wait 0.42s before starting after POR
                                     ;       ...because FLL lock time = 280 ms
 ClockWaitY  SUB     #1,Y            ;1
-            JNZ     ClockWaitY      ;2 5209x3 = 15625 cycles delay = 15.625ms @ 1MHz
-            SUB     #1,X            ; x 32 @ 1 MHZ = 500ms
-            JNZ     ClockWaitX      ; time to stabilize power source ( 500ms )
+            JNZ     ClockWaitY      ;2 4375x3 = 13125 cycles delay = 13.125ms @ 1MHz
+            SUB     #1,X            ; x 32 @ 1 MHZ = 330ms
+            JNZ     ClockWaitX      ;
 
 ;WAITFLL     BIT #300h,&CSCTL7       ; wait FLL lock
 ;            JNZ WAITFLL

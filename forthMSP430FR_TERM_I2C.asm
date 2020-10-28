@@ -1,21 +1,153 @@
 ; -*- coding: utf-8 -*-
 
-; Fast Forth For Texas Instrument MSP430FRxxxx FRAM devices with I2C TERMINAL
-; Copyright (C) <2019>  <J.M. THOORENS>
-;
-; This program is free software: you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation, either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License
-; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+; define run-time part of ABORT"
+;Z ?ABORT   xi f c-addr u --           abort & print msg.
+;            FORTHWORD "?ABORT"
+QABORT      CMP #0,2(PSP)           ; -- f c-addr u         test flag f
+            JNZ ABORT_TERM          ;
+THREEDROP   ADD #4,PSP              ; -- u
+            MOV @PSP+,TOS           ; -- 
+            MOV @IP+,PC             ;
+; ----------------------------------;
+ABORT_TERM                          ; exit from downloading then reinit some variables via INI_FORTH
+; ----------------------------------;
+            MOV.B #2,Y              ; ABORT request Ctrl_Char = $02
+            CALL #I2C_CTRL_CH       ; send it to I2C_Master to run QABORT_TERM on its side
+            CALL #INI_FORTH         ; common ?ABORT|RST subroutine
+; ----------------------------------;
+            .word   lit,LINE,FETCH  ; -- f c-addr u line    fetch line number before set ECHO ON !
+            .word   ECHO            ;
+; ----------------------------------;
+            .word   OVER            ; -- f c-addr u line u
+            .word   QFBRAN,ABORT    ; --                    display nothing when ABORT" with empty string
+; ----------------------------------;
+            .word   XSQUOTE         ;
+            .byte   5,27,"[7m",'@'  ;
+            .word   TYPE            ;                       cmd "reverse video" + displays "@"
+            .word   LIT,I2CSLAVEADR ;
+            .word   FETCH,DOT       ;                       displays <I2C_Slave_Address>
+            .word   QDUP,QFBRAN     ;                       don't display line if line = 0 (ECHO was ON)
+            .word   ABORT_TYPE      ;
+            .word   XSQUOTE         ; -- f c-addr u line c-addr1 u1   displays the line where error occured
+            .byte   15,"LAST.4TH, line " ;
+            .word   TYPE            ; -- f c-addr u line
+            .word   UDOT            ; -- f c-addr u
+; ----------------------------------;
+; Display ABORT|WARM message        ; <== WARM jumps here
+; ----------------------------------;
+ABORT_TYPE  .word   TYPE            ; -- f              type abort message
+            .word   XSQUOTE         ; -- f c-addr u
+            .byte   4,27,"[0m"      ;
+            .word   TYPE            ; -- f              set normal video
+            .word   ABORT           ; -- f              no return
+; ----------------------------------;
 
+; ----------------------------------;
+INIT_TERM                           ; TOS = RSTIV_MEM
+; ----------------------------------;
+I2C_INIT_TERM
+        CMP #2,TOS                  ;
+        JNC I2C_INIT_TERM_END       ; no INIT_TERM if RSTIV_MEM U< 2 (WARM)
+; ----------------------------------;
+I2C_INIT_TERM_BODY
+        BIS #07C0h,&TERM_CTLW0      ; set I2C_Slave in RX mode to receive I2C_address
+        MOV &I2CSLAVEADR,Y          ; init value found in FRAM INFO
+        RRA Y                       ; I2C Slave address without R/W bit 
+        BIS #400h,Y                 ; enable I2COA0 Slave address
+        MOV Y,&TERM_I2COA0          ;
+        BIS.B #BUS_TERM,&TERM_SEL   ; Configure pins TERM_UART|TERM_I2C
+        BIC #1,&TERM_CTLW0          ; release UC_TERM from reset...
+        BIS #WAKE_UP,&TERM_IE       ; then enable interrupt for wake up on terminal input
+        BIC #LOCKLPM5,&PM5CTL0      ; activate all previous I/O settings.
+I2C_INIT_TERM_END
+; ----------------------------------;
+COLD_TERM                           ; nothing to do
+; ----------------------------------;
+        MOV @RSP+,PC                ;
+; ----------------------------------;
+
+
+; ----------------------------------;
+RXON                                ; send ctrl_char $00 as ACCEPT request
+; ----------------------------------;
+I2C_RXON    MOV.B #0,Y              ; ACCEPT request Ctrl_Char = $00
+; ----------------------------------;
+I2C_CTRL_CH                         ; send it to I2C_Master_RX to restart it in TX mode
+; ----------------------------------;
+        BIT #TX_TERM,&TERM_IFG      ;3
+        JZ I2C_CTRL_CH              ;2 wait TX buffer empty
+        MOV.B Y,&TERM_TXBUF         ;3 send Ctrl_Char
+WAITCHAREND 
+;        BIT #40h,&TERM_STATW        ; SCL held low (after I2C_Master (re)START) ?
+        BIT #4,&TERM_IFG            ; I2C_Master (re)START ?
+        JZ WAITCHAREND              ; no
+        MOV @RSP+,PC                ; yes
+; ----------------------------------;
+
+;===============================================================================
+            FORTHWORD "WIPE"        ; software DEEP_RESET
+;===============================================================================
+            MOV #-1,&RSTIV_MEM      ; negative value ==> DEEP_RESET
+            JMP COLD
+
+;===============================================================================
+            FORTHWORD "COLD"
+;===============================================================================
+;Z COLD     --      performs a software reset
+; as pin RST is replaced by pin NMI, RESET by pin activation is redirected here via USER NMI vector
+; that allows actions to be performed before executing software BOR.
+COLD        CALL @PC+               ; COLD first calls STOP_APP, in this instance: CALL #COLD_TERM by default
+PFACOLD     .word COLD_TERM         ; PFACOLD default value set by WIPE.
+BODYCOLD    BIT.B #IO_WIPE,&WIPE_IN ; hardware Deep_RESET request (low) ?
+            JNZ COLDEXE             ; no
+            MOV #-1,&RSTIV_MEM      ; yes, set negative value to force DEEP_RESET
+COLDEXE     MOV #0A504h,&PMMCTL0    ; performs software_BOR, see RESET in forthMSP430FR.asm
+; ----------------------------------;
+
+;===============================================================================
+            FORTHWORD "WARM"
+;===============================================================================
+;Z WARM     xi --                   ; the next of RESET
+WARM                                ;
+;-------------------------------------------------------------------------------
+; RESET 6.2: if RSTIV_MEM <> WARM, init TERM and enable I/O
+;-------------------------------------------------------------------------------
+            CALL @PC+               ; init TERM, only if TOS U>= 2 (RSTIV_MEM <> WARM)
+    .IFNDEF SD_CARD_LOADER          ;
+PFAWARM     .word INIT_TERM         ; default value, init TERM UC, unlock I/O's, TOS = RSTIV_MEM
+    .ELSE
+PFAWARM     .word INIT_SD           ; init TERM first then init SD Card
+    .ENDIF
+;-------------------------------------------------------------------------------
+; END OF RESET
+;-------------------------------------------------------------------------------
+    MOV.B  #3,Y                     ; WARM request Ctrl_Char = $03
+    CALL #I2C_CTRL_CH               ; send it to I2C_Master to reSTART in RX mode
+    ASMtoFORTH
+    .word   XSQUOTE
+    .byte   7,13,10,27,"[7m@"       ; CR + cmd "reverse video" + @
+    .word   TYPE
+    .word   LIT,I2CSLAVEADR,FETCH,DOT
+    .word   LIT,'#',EMIT
+    .word   DOT                     ; display signed RSTIV_MEM
+    .word   XSQUOTE
+    .byte   25,"FastForth ©J.M.Thoorens "
+    .word   TYPE
+    .word   LIT,FRAM_FULL,HERE,MINUS,UDOT
+    .word   XSQUOTE
+    .byte   10,"bytes free"
+    .word   BRAN,ABORT_TYPE         ; without return!
+
+
+;-------------------------------------------------------------------------------
+; INTERPRETER INPUT
+;-------------------------------------------------------------------------------
+            FORTHWORD "ACCEPT"
+;https://forth-standard.org/standard/core/ACCEPT
+;C ACCEPT  addr addr len -- addr len'  get line at addr to interpret len' chars
+ACCEPT      MOV @PC+,PC             ;3 Code Field Address (CFA) of ACCEPT
+PFAACCEPT   .word   BODYACCEPT      ;  Parameter Field Address (PFA) of ACCEPT
+BODYACCEPT                          ;  BODY of ACCEPT = default execution of ACCEPT
 ; ----------------------------------;
 ; ACCEPT part I prepare TERMINAL_INT;
 ; ----------------------------------;
@@ -25,9 +157,11 @@
             MOV #0Ah,T              ;2              T = 'LF' to speed up char loop in part II   > prepare stack and registers for TERMINAL_INT use
             MOV #20h,S              ;2              S = 'BL' to speed up char loop in part II   ) 
             PUSHM #4,IP             ;6              PUSH IP,S,T,W  r-- IP, 'BL', 'LF', buf_end  )
-;            BIC.B #LED1,&LED1_DIR   ;           Red led OFF, end of Slave TX
-;            BIC.B #LED1,&LED1_OUT   ;           Red led OFF, end of Slave TX
-            JMP SLEEP               ;           which calls RXON before goto sleep
+;vvvvvvvvvvvvv OPTION vvvvvvvvvvvvvv;
+;            BIC.B #LED1,&LED1_DIR   ;           Red led OFF,
+;            BIC.B #LED1,&LED1_OUT   ;           end of Slave TX
+;^^^^^^^^^^^^^ OPTION ^^^^^^^^^^^^^^;
+            JMP SLEEP               ;            which calls RXON before goto sleep
 ; ----------------------------------;
 
 ; **********************************;
@@ -40,13 +174,17 @@ TERMINAL_INT                        ; <--- START interrupt vector, bus is stalle
             BIT #10h,&TERM_CTLW0    ;4      test UCTR
             JNZ SLEEP               ;       if I2C_Master RX, loop back to SLEEP
             POPM #4,IP              ;6      POPM  IP=ret_IP,W=src_end,T=0Ah,S=20h
-;            BIS.B #LED2,&LED2_OUT   ;       green led ON, start of Slave RX
-;            BIS.B #LED2,&LED2_DIR   ;       green led ON, start of Slave RX
+;vvvvvvvvvvvvv OPTION vvvvvvvvvvvvvv;
+;            BIS.B #LED2,&LED2_OUT   ;       green led ON,
+;            BIS.B #LED2,&LED2_DIR   ;       start of Slave RX
+;^^^^^^^^^^^^^ OPTION ^^^^^^^^^^^^^^;
 QNEWCHAR    BIT #RX_TERM,&TERM_IFG  ;3      test RX BUF IFG
             JZ QNEWCHAR             ;2      wait RX BUF full
-            MOV.B &TERM_RXBUF,Y     ;3      read char into Y, RX_IFG is cleared, bus unstalled by I2C_Slave
-            CMP.B T,Y               ;1
-            JZ ENDACCEPT            ;2      jump if char = LF
+; ----------------------------------;
+AKEYREAD    MOV.B &TERM_RXBUF,Y     ;3      read char into Y, RX_IFG is cleared, bus unstalled by I2C_Slave
+; ----------------------------------;
+            CMP.B T,Y               ;1      char = LF ?
+            JZ LF_NEXT              ;2      jump if char = LF
             CMP.B S,Y               ;1      printable char ?
             JC ASTORETEST           ;2      jump if char U>= BL
 ; ----------------------------------;
@@ -66,50 +204,27 @@ ASTORETEST  CMP W,TOS               ; 1     end of buffer is reached ?
             ADD #1,TOS              ; 1     increment dst_Ptr
             JMP QNEWCHAR
 ; ----------------------------------;
-ENDACCEPT                           ; -- Org Ptr
-;            BIC.B #LED2,&LED2_DIR   ;       green led OFF, end of Slave RX
-;            BIC.B #LED2,&LED2_OUT   ;       green led OFF, end of Slave RX
-;            BIS.B #LED1,&LED1_DIR   ;       Red led ON, start of Slave TX
-;            BIS.B #LED1,&LED1_OUT   ;       Red led ON, start of Slave TX
-            CMP #0,&LINE            ;  
-            JZ ACCEPTEND            ;
-            ADD #1,&LINE            ;           increment LINE if <> 0
-ACCEPTEND   SUB @PSP+,TOS           ; -- len'
+LF_NEXT                             ; -- Org Ptr
 ; ----------------------------------;
-;           MOV #LPMx+GIE,&LPM_MODE ;           no need to redefine LPM_MODE because I2C START works down to LPM4 mode
+            SUB @PSP+,TOS           ; -- len'
 ; ----------------------------------;
-            CALL #WAITCHAREND       ;           wait SCL held low, i.e. I2C_Master RX waits first char;
-            MOV @IP+,PC             ;           we want to synchronize Slave TX with Master RX before running INTERPRET
+;           MOV #LPMx+GIE,&LPM_MODE ;       no need to redefine LPM_MODE because I2C START works down to LPM4 mode
+; ----------------------------------;       after the sent of 'LF', I2C_Master automaticaly reSTARTs in RX mode:
+            CALL #WAITCHAREND       ;       wait I2C_Master (re)START RX
+;vvvvvvvvvvvvv OPTION vvvvvvvvvvvvvv;
+;            BIC.B #LED2,&LED2_DIR   ;       green led OFF,
+;            BIC.B #LED2,&LED2_OUT   ;       end of Slave RX
+;            BIS.B #LED1,&LED1_DIR   ;       Red led ON,
+;            BIS.B #LED1,&LED1_OUT   ;       start of Slave TX
+;^^^^^^^^^^^^^ OPTION ^^^^^^^^^^^^^^;
+ACCEPT_EOL  CMP #0,&LINE            ;            
+            JZ ACCEPT_END           ;
+            ADD #1,&LINE            ;       if LINE <> 0 increment LINE
+ACCEPT_END  
+; ----------------------------------;
+            MOV S,Y                 ;       output a BL on TERMINAL (for the case of error occuring)
+            JMP YEMIT               ;       before interpret line
 ; **********************************;
-
-; ----------------------------------;
-RXON                                ;           send ctrl_char $00 as ACCEPT request
-; ----------------------------------;
-            MOV.B #0,Y              ;           Y = ctrl_char $00
-; ----------------------------------;
-CTRLCHARTX                          ;           send Y = ctrl_char
-; ----------------------------------;
-CTRLCH_WAIT BIT #TX_TERM,&TERM_IFG  ;3
-            JZ CTRLCH_WAIT          ;2          wait TX buffer empty
-            MOV.B Y,&TERM_TXBUF     ;
-WAITCHAREND BIT #40h,&TERM_STATW    ;
-            JZ WAITCHAREND          ;           wait SCL held low by Master RX, i.e. I2C_Master RX processes this Ctrl_char
-; ----------------------------------;
-RXOFF       MOV @RSP+,PC            ;           Calling RXOFF does nothing.
-; ----------------------------------;
-
-; ----------------------------------;
-COLD        MOV #5A4Fh,&WDTCTL      ;           start Watchdog Reset : XDTPW, WDTSSEL=VLOCLK, WDTCNTCL=1, WDTIS=2^6 (8ms)
-; ----------------------------------;
-COLD_TERM   BIT #TX_TERM,&TERM_IFG  ;3
-            JZ COLD_TERM            ;2          wait complete send of previous char
-; ----------------------------------;
-; send ctrl_char $03 (COLD request) ;
-; ----------------------------------;
-            MOV.B #3,&TERM_TXBUF    ;           send ctrl_char $03 to I2C_Master which will execute QABORT_TERM
-            CALL #WAITCHAREND       ;           
-            MOV #0A504h,&PMMCTL0    ;           performs BOR
-; ----------------------------------;
 
 ; ------------------------------------------------------------------------------
 ; TERMINAL I/O, input part
@@ -121,8 +236,8 @@ KEY         MOV @PC+,PC             ; Code Field Address (CFA) of KEY
 PFAKEY      .word BODYKEY           ; Param Field Address (PFA) of KEY, with its default value
 BODYKEY     SUB #2,PSP              ;           push old TOS..
             MOV TOS,0(PSP)          ;           ..onto stack
-            MOV.B #1,Y              ;           send $01 to I2C_Master RX as KEY request
-            CALL #CTRLCHARTX        ;
+            MOV.B #1,Y              ; KEY request Ctrl_Char = $01
+            CALL #I2C_CTRL_CH       ; send it to I2C_Master to restart UART in RX mode
 BKEYLOOP    BIT #RX_TERM,&TERM_IFG  ;           received char ?
             JZ BKEYLOOP             ;           wait char received
             MOV &TERM_RXBUF,TOS     ; -- char
@@ -138,26 +253,31 @@ EMIT        MOV @PC+,PC             ;3 Code Field Address (CFA) of EMIT
 PFAEMIT     .word BODYEMIT          ;  Parameter Field Address (PFA) of EMIT, with its default value
 BODYEMIT    MOV TOS,Y               ;1 sends character to the default output TERMINAL
             MOV @PSP+,TOS           ;2
-YEMIT1
-;            BIT #10h,&TERM_CTLW0    ;4      test UCTR
-;            JZ YEMITEND
-YEMIT2      BIT #TX_TERM,&TERM_IFG  ;3
-            JZ YEMIT2               ;2 wait TX buffer empty
-YEMIT       .word   4882h           ;3 4882h = MOV Y,&<next_adr>
+YEMIT       BIT #TX_TERM,&TERM_IFG  ;3
+            JZ YEMIT                ;2 wait TX buffer empty
+QYEMIT      .word   48C2h           ;3 48C2h = MOV.B Y,&<next_adr>
             .word   TERM_TXBUF      ;
 YEMITEND    MOV @IP+,PC             ;4 11 words
 
             FORTHWORD "ECHO"
 ;Z ECHO     --      connect EMIT to TERMINAL (default)
-ECHO        MOV #4882h,&YEMIT       ; 4882h = MOV Y,&<next_adr>
+ECHO        MOV #48C2h,&QYEMIT      ; 48C2h = MOV.B Y,&<next_adr>
             MOV #0,&LINE            ;
-            MOV #5,Y                ; tell I2C_Master to echo chars received from the TERMINAL
-ECHOEND     CALL #CTRLCHARTX
+            MOV #5,Y                ; ECHO request Ctrl_Char = $05
+ECHOEND     CALL #I2C_CTRL_CH       ; send it to I2C_Master to do it echo char to TERMINAL
             MOV @IP+,PC
 
             FORTHWORD "NOECHO"
 ;Z NOECHO   --      disconnect EMIT to TERMINAL
-NOECHO      MOV #NEXT,&YEMIT        ;  NEXT = 4030h = MOV @IP+,PC
+NOECHO      MOV #4D30h,&QYEMIT      ;  NEXT = 4D30h = MOV @IP+,PC
             MOV #1,&LINE            ;
-            MOV #4,Y                ; tell I2C_Master not to echo chars received from the TERMINAL
-            JMP ECHOEND
+            MOV #4,Y                ; NOECHO request Ctrl_Char = $04
+            JMP ECHOEND             ; send it to I2C_Master, to not do it echo to TERMINAL
+
+            FORTHWORD "OVER"
+;https://forth-standard.org/standard/core/OVER
+;C OVER    x1 x2 -- x1 x2 x1
+OVER        MOV TOS,-2(PSP) ; 3 -- x1 (x2) x2
+            MOV @PSP,TOS    ; 2 -- x1 (x2) x1
+            SUB #2,PSP      ; 1 -- x1 x2 x1
+            MOV @IP+,PC     ; 4

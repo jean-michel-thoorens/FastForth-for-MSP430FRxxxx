@@ -70,16 +70,6 @@ ENDCODE
 
 [THEN]
 
-[UNDEFINED] ! [IF]
-\ https://forth-standard.org/standard/core/Store
-\ !        x a-addr --   store cell in memory
-CODE !
-MOV @PSP+,0(TOS)    \ 4
-MOV @PSP+,TOS       \ 2
-MOV @IP+,PC         \ 4
-ENDCODE
-[THEN]
-
 [UNDEFINED] C@ [IF]
 \ https://forth-standard.org/standard/core/CFetch
 \ C@     c-addr -- char   fetch char from memory
@@ -176,25 +166,6 @@ SUB #2,PSP      \ 1
 MOV TOS,0(PSP)  \ 3
 MOV @RSP+,TOS   \ 2
 MOV @IP+,PC     \ 4
-ENDCODE
-[THEN]
-
-[UNDEFINED] @ [IF]
-\ https://forth-standard.org/standard/core/Fetch
-\ @     c-addr -- char   fetch char from memory
-CODE @
-MOV @TOS,TOS
-MOV @IP+,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] ! [IF]
-\ https://forth-standard.org/standard/core/Store
-\ !        x a-addr --   store cell in memory
-CODE !
-MOV @PSP+,0(TOS)    \ 4
-MOV @PSP+,TOS       \ 2
-MOV @IP+,PC         \ 4
 ENDCODE
 [THEN]
 

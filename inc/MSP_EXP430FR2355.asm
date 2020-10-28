@@ -244,25 +244,11 @@ LED2        .equ    40h         ;  P6.6 LED2 green
 ;    BIS.B #2,&P1SEL1
 ;    BIS.B #2,&P1DIR
 
-    .IF FREQUENCY = 0.5
-
-            MOV     #1ED1h,&CSCTL0       ; preset MOD=31, DCO = measured value @ 0x180 (209)
-            MOV     #00B0h,&CSCTL1      ; Set 1MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
-; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
-;            MOV     #100Dh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Dh
-                                        ; fCOCLKDIV = 32768 x (13+1) = 0.459 MHz ; measured :  MHz
-            MOV     #100Eh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Eh
-                                        ; fCOCLKDIV = 32768 x (14+1) = 0.491 MHz ; measured :  MHz
-;            MOV     #100Fh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Fh
-                                        ; fCOCLKDIV = 32768 x (15+1) = 0.524 MHz ; measured :  MHz
 ; =====================================
-            MOV     #8,X
-
-    .ELSEIF FREQUENCY = 1
-
+    .IF FREQUENCY = 1
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00B0h,&CSCTL1      ; Set 1MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
-; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
+; ------------------------------------- ;  fCOCLKDIV = REFO x (FLLN+1)
 ;            MOV     #001Dh,&CSCTL2        ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1Dh
                                         ; fCOCLKDIV = 32768 x (29+1) = 0.983 MHz ; measured : 0.989MHz
             MOV     #001Eh,&CSCTL2         ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1Eh
@@ -270,13 +256,10 @@ LED2        .equ    40h         ;  P6.6 LED2 green
 ;            MOV     #001Fh,&CSCTL2        ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1Fh
                                         ; fCOCLKDIV = 32768 x (31+1) = 1.049 MHz ; measured : 1.046MHz
 ; =====================================
-            MOV     #16,X
-
     .ELSEIF FREQUENCY = 2
-
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00B2h,&CSCTL1      ; Set 2MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
-; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
+; ------------------------------------- ;  fCOCLKDIV = REFO x (FLLN+1)
 ;            MOV     #003Bh,&CSCTL2        ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=3Bh
                                         ; fCOCLKDIV = 32768 x (59+1) = 1.966 MHz ; measured :  MHz
             MOV     #003Ch,&CSCTL2         ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=3Ch
@@ -284,44 +267,32 @@ LED2        .equ    40h         ;  P6.6 LED2 green
 ;            MOV     #003Dh,&CSCTL2        ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=3Dh
                                         ; fCOCLKDIV = 32768 x (61+1) = 2.031 MHz ; measured :  MHz
 ; =====================================
-            MOV     #32,X
-
     .ELSEIF FREQUENCY = 4
-
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00B4h,&CSCTL1      ; Set 4MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
-; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
+; ------------------------------------- ;  fCOCLKDIV = REFO x (FLLN+1)
 ;            MOV     #0078h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=78h
                                         ; fCOCLKDIV = 32768 x (120+1) = 3.965 MHz ; measured : 3.96MHz
-
             MOV     #0079h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=79h
                                         ; fCOCLKDIV = 32768 x (121+1) = 3.997 MHz ; measured : 3.99MHz
-
 ;            MOV     #007Ah,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=7Ah
                                         ; fCOCLKDIV = 32768 x (122+1) = 4.030 MHz ; measured : 4.020MHz
 ; =====================================
-            MOV     #64,X
-
     .ELSEIF FREQUENCY = 8
-
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00B6h,&CSCTL1      ; Set 8MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
-; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
+; ------------------------------------- ;  fCOCLKDIV = REFO x (FLLN+1)
             MOV     #00F3h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=F3h
                                         ; fCOCLKDIV = 32768 x (243+1) = 7.995 MHz ; measured : 7.976MHz
 ;            MOV     #00F4h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=F4h
                                         ; fCOCLKDIV = 32768 x (244+1) = 8.028 MHz ; measured : 8.009MHz
-
 ;            MOV     #00F5h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=F5h
                                         ; fCOCLKDIV = 32768 x (245+1) = 8.061 MHz ; measured : 8.042MHz
 ; =====================================
-            MOV     #128,X
-
     .ELSEIF FREQUENCY = 12
-
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00B8h,&CSCTL1      ; Set 12MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
-; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
+; ------------------------------------- ;  fCOCLKDIV = REFO x (FLLN+1)
             MOV     #016Dh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E7h
                                         ; fCOCLKDIV = 32768 x 365+1) = 11.993 MHz ; measured : 11.xxxMHz
 ;            MOV     #016Eh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E8h
@@ -329,13 +300,10 @@ LED2        .equ    40h         ;  P6.6 LED2 green
 ;            MOV     #016Fh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E9h
                                         ; fCOCLKDIV = 32768 x 367+1) = 12.058 MHz ; measured : 12.xxxMHz
 ; =====================================
-            MOV     #192,X
-
     .ELSEIF FREQUENCY = 16
-
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00BAh,&CSCTL1      ; Set 16MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
-; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
+; ------------------------------------- ;  fCOCLKDIV = REFO x (FLLN+1)
 ;            MOV     #01E7h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E7h
                                         ; fCOCLKDIV = 32768 x 487+1) = 15.991 MHz ; measured : 15.95MHz
             MOV     #01E8h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E8h
@@ -343,13 +311,10 @@ LED2        .equ    40h         ;  P6.6 LED2 green
 ;            MOV     #01E9h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E9h
                                         ; fCOCLKDIV = 32768 x 489+1) = 16.056 MHz ; measured : 16.02MHz
 ; =====================================
-            MOV     #256,X
-
     .ELSEIF FREQUENCY = 20
-
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00BCh,&CSCTL1      ; Set 20MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
-; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
+; ------------------------------------- ;  fCOCLKDIV = REFO x (FLLN+1)
 ;            MOV     #0261h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=261h
                                         ; fCOCLKDIV = 32768 x 609+1) = 19.988 MHz ; measured : 19.xxxMHz
             MOV     #0262h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=262h
@@ -357,13 +322,10 @@ LED2        .equ    40h         ;  P6.6 LED2 green
 ;            MOV     #0263h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=263h
                                         ; fCOCLKDIV = 32768 x 611+1) = 20.054 MHz ; measured : 20.xxxMHz
 ; =====================================
-            MOV     #320,X
-
     .ELSEIF FREQUENCY = 24
-
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
             MOV     #00BEh,&CSCTL1      ; Set 24MHZ DCORSEL,enable DCOFTRIM=3h ,enable Modulation to reduce EMI
-; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
+; ------------------------------------- ;  fCOCLKDIV = REFO x (FLLN+1)
 ;            MOV     #02DBh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=2DBh
                                         ; fCOCLKDIV = 32768 x 731+1) = 23.986 MHz ; measured : 23.xxxMHz
             MOV     #02DCh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=2DCh
@@ -371,12 +333,9 @@ LED2        .equ    40h         ;  P6.6 LED2 green
 ;            MOV     #02DDh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=2DDh
                                         ; fCOCLKDIV = 32768 x 733+1) = 24.051 MHz ; measured : 24.xxxMHz
 ; =====================================
-            MOV     #384,X
-
     .ELSEIF
     .error "bad frequency setting, only 0.5,1,2,4,8,12,16,20,24 MHz"
     .ENDIF
-
 
     .IFDEF LF_XTAL
 ; because LOCKLPM5 is ON, XT1 is replaced by REFO automaticaly until WARM clears LOCKLPM5
@@ -388,19 +347,9 @@ LED2        .equ    40h         ;  P6.6 LED2 green
 ;            MOV     #0100h,&CSCTL4      ; ACLOCK select REFOCLK, MCLK & SMCLK select DCOCLKDIV (default value)
     .ENDIF
 
-
-            BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV preserving a pending request for DEEP_RST
-;            MOV &SAVE_SYSRSTIV,TOS  ;
-;            CMP #2,TOS              ; POWER ON ?
-;            JZ      ClockWaitX      ; yes
-;            RRUM    #1,X            ; wait only 250 ms
-ClockWaitX  MOV     #5209,Y         ; wait 0.5s before starting after POR
-                                    ;       ...because FLL lock time = 280 ms
+            MOV     #92,X           ; 96* 3 ms = 288 ms delay, because FLL lock time = 200 ms
+ClockWaitX  MOV     &FREQ_KHZ,Y     ;
 ClockWaitY  SUB     #1,Y            ;1
-            JNZ     ClockWaitY      ;2 5209x3 = 15625 cycles delay = 15.625ms @ 1MHz
-            SUB     #1,X            ; x 32 @ 1 MHZ = 500ms
-            JNZ     ClockWaitX      ; time to stabilize power source ( 500ms )
-
-;WAITFLL     BIT #300h,&CSCTL7       ; wait FLL lock
-;            JNZ WAITFLL
-
+            JNZ     ClockWaitY      ;2 FREQ_KHZ x 3 ==> 3ms
+            SUB     #1,X            ;
+            JNZ     ClockWaitX      ;

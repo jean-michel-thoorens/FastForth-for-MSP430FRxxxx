@@ -1,20 +1,22 @@
 ::SendSourceFileToTarget.bat
 ::used as link in any folder to drag and drop file.f or file.4th on it.
 
+@ECHO OFF
+
 IF  /I "%~x1" == ".f" goto sendF
 
 :send4th
 
-start  SendSource.bat %1  ECHO
+start  %~d1\config\SendSource.bat %1  ECHO
 ::PAUSE > NUL
 exit
 
 
 :sendF
 
-call  Select.bat SelectTemplate
+call  %~d1\config\Select.bat SelectTemplate
 
-start  SendSource.bat %1 %~d1\inc\%template% ECHO
+start  %~d1\config\SendSource.bat %1 %~d1\inc\%template% ECHO
 
 ::PAUSE > NUL
 exit

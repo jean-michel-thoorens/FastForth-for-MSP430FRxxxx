@@ -1,15 +1,12 @@
 \ -*- coding: utf-8 -*-
 
-; ------------------------------------------------------------------------------
-; UTILITY.f
-; ------------------------------------------------------------------------------
 \
 \ to see kernel options, download FastForthSpecs.f
 \ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP
 \
 \ TARGET SELECTION ( = the name of \INC\target.pat file without the extension)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
-\ MSP_EXP430FR4133  MSP_EXP430FR2433    MSP_EXP430FR2355    CHIPSTICK_FR2433
+\ MSP_EXP430FR4133  MSP_EXP430FR2433    CHIPSTICK_FR2433    MSP_EXP430FR2355
 \ LP_MSP430FR2476
 \
 \ from scite editor : copy your target selection in (shift+F8) parameter 1:
@@ -41,8 +38,25 @@
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
+; ------------------------------------------------------------------------------
+; UTILITY.f
+; ------------------------------------------------------------------------------
 
-PWR_HERE
+\ first, we test for downloading driver only if UART TERMINAL target
+CODE ABORT_UTILITY
+SUB #2,PSP
+MOV TOS,0(PSP)
+MOV &VERSION,TOS
+SUB #307,TOS        \ FastForth V3.7
+COLON
+'CR' EMIT           \ return to column 1 without 'LF'
+ABORT" FastForth version = 3.7 please!"
+PWR_STATE           \ remove ABORT_UTILITY definition before resuming
+;
+
+ABORT_UTILITY
+
+PWR_STATE
 
 [DEFINED] {TOOLS} [IF]  {TOOLS} [THEN]
 
@@ -113,7 +127,7 @@ ENDCODE IMMEDIATE
 \ https://forth-standard.org/standard/core/BEGIN
 \ BEGIN    -- BEGINadr             initialize backward branch
 CODE BEGIN
-    MOV #HEREADR,PC
+    MOV #HEREXEC,PC
 ENDCODE IMMEDIATE
 
 \ https://forth-standard.org/standard/core/UNTIL
@@ -261,25 +275,6 @@ SUB #2,PSP      \ 1
 MOV TOS,0(PSP)  \ 3
 MOV @RSP+,TOS   \ 2
 MOV @IP+,PC     \ 4
-ENDCODE
-[THEN]
-
-[UNDEFINED] @ [IF]
-\ https://forth-standard.org/standard/core/Fetch
-\ @     c-addr -- char   fetch char from memory
-CODE @
-MOV @TOS,TOS
-MOV @IP+,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] ! [IF]
-\ https://forth-standard.org/standard/core/Store
-\ !        x a-addr --   store cell in memory
-CODE !
-MOV @PSP+,0(TOS)    \ 4
-MOV @PSP+,TOS       \ 2
-MOV @IP+,PC         \ 4
 ENDCODE
 [THEN]
 
@@ -500,11 +495,11 @@ ENDCODE
 : WORDS                         \ --            
 CR 
 CONTEXT @ PAD_ORG                   \ -- VOC_BODY PAD_ORG                  MOVE all threads of VOC_BODY in PAD_ORG
-INI_THREAD @ DUP +              \ -- VOC_BODY PAD_ORG THREAD*2
+THREADS @ DUP +                 \ -- VOC_BODY PAD_ORG THREAD*2
 MOVE                            \ -- vocabumary entries are copied in PAD_ORG
 BEGIN                           \ -- 
     0 DUP                       \ -- ptr=0 MAX=0                
-    INI_THREAD @ DUP + 0        \ -- ptr=0 MAX=0 THREADS*2 0
+    THREADS @ DUP + 0           \ -- ptr=0 MAX=0 THREADS*2 0
         DO                      \ -- ptr MAX            I =  PAD_ptr = thread*2
         DUP I PAD_ORG + @           \ -- ptr MAX MAX NFAx
             U< IF               \ -- ptr MAX            if MAX U< NFAx

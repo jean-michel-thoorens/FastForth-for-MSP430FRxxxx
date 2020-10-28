@@ -1,10 +1,4 @@
 \ -*- coding: utf-8 -*-
-
-; -----------------------------------------------------
-; CORE_ANS.f
-; -----------------------------------------------------
-\
-; words complement to pass CORETEST.4TH
 \
 \ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP
 \ to see FastForth kernel options, download FF_SPECS.f
@@ -20,6 +14,7 @@
 \
 \ drag and drop this file onto SendSourceFileToTarget.bat
 \ then select your TARGET when asked.
+\
 \
 \ REGISTERS USAGE
 \ rDODOES to rEXIT must be saved before use and restored after
@@ -37,7 +32,24 @@
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
 \ ASSEMBLER conditionnal usage with ?GOTO           S<  S>=  U<   U>=  0=  0<>  0<
 
-PWR_STATE
+CODE ABORT_CORE_ANS
+SUB #2,PSP
+MOV TOS,0(PSP)
+MOV &VERSION,TOS
+SUB #307,TOS        \ FastForth V3.7
+COLON
+$0D EMIT            \ return to column 1 without CR
+ABORT" FastForth version = 3.7 please!"
+PWR_STATE           \ remove ABORT_UARTI2CS before CORE_ANS downloading
+;
+
+ABORT_CORE_ANS
+
+; ---------------------------------
+; CORE_ANS.f
+; ---------------------------------
+\
+; words complement to pass CORETEST.4TH
 
 [DEFINED] {CORE_ANS} [IF]  {CORE_ANS} [THEN] \ remove it if defined out of kernel 
 
@@ -65,25 +77,6 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
-[UNDEFINED] @ [IF]
-\ https://forth-standard.org/standard/core/Fetch
-\ @     c-addr -- char   fetch char from memory
-CODE @
-MOV @TOS,TOS
-MOV @IP+,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] ! [IF]
-\ https://forth-standard.org/standard/core/Store
-\ !        x a-addr --   store cell in memory
-CODE !
-MOV @PSP+,0(TOS)    \ 4
-MOV @PSP+,TOS       \ 2
-MOV @IP+,PC         \ 4
-ENDCODE
-[THEN]
-
 [UNDEFINED] DUP [IF]
 \ https://forth-standard.org/standard/core/DUP
 \ DUP      x -- x x      duplicate top of stack
@@ -108,7 +101,7 @@ ENDCODE
 CODE EXIT
 MOV @RSP+,IP    \ 2 pop previous IP (or next PC) from return stack
 MOV @IP+,PC     \ 4 = NEXT
-                \ 6 (ITC-2)
+\               \ 6 (ITC-2)
 ENDCODE
 [THEN]
 
@@ -346,7 +339,7 @@ ENDCODE IMMEDIATE
 \ https://forth-standard.org/standard/core/BEGIN
 \ BEGIN    -- BEGINadr             initialize backward branch
 CODE BEGIN
-    MOV #HEREADR,PC
+    MOV #HEREXEC,PC
 ENDCODE IMMEDIATE
 
 \ https://forth-standard.org/standard/core/UNTIL
@@ -557,6 +550,28 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
+[UNDEFINED] NEGATE [IF]
+\ https://forth-standard.org/standard/core/NEGATE
+\ C NEGATE   x1 -- x2            two's complement
+CODE NEGATE
+XOR #-1,TOS
+ADD #1,TOS
+MOV @IP+,PC
+ENDCODE
+[THEN]
+
+[UNDEFINED] ABS [IF]
+\ https://forth-standard.org/standard/core/ABS
+\ C ABS     n1 -- +n2     absolute value
+CODE ABS
+CMP #0,TOS       \  1
+0>= IF
+    MOV @IP+,PC
+THEN
+MOV #NEGATE,PC
+ENDCODE
+[THEN]
+
 [UNDEFINED] LSHIFT [IF]
 \ https://forth-standard.org/standard/core/LSHIFT
 \ LSHIFT  x1 u -- x2    logical L shift u places
@@ -631,44 +646,46 @@ ENDCODE
 \ --------------------
 \ ARITHMETIC OPERATORS
 \ --------------------
-[UNDEFINED] M* [IF]
-
 TLV_ORG 4 + @ $81F3 U<
 $81EF TLV_ORG 4 + @ U< 
 = [IF]   ; MSP430FR2xxx|MSP430FR4xxx subfamilies without hardware_MPY
 
-\ https://forth-standard.org/standard/core/MTimes
-\ M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
-CODE M*
-MOV @PSP,S          \ S= n1
-CMP #0,S            \ n1 > -1 ?
-S< IF
-    XOR #-1,0(PSP)  \ n1 --> u1
-    ADD #1,0(PSP)   \
-THEN
-XOR TOS,S           \ S contains sign of result
-CMP #0,TOS          \ n2 > -1 ?
-S< IF
-    XOR #-1,TOS     \ n2 --> u2 
-    ADD #1,TOS      \
-THEN
-PUSHM #2,IP         \ UMSTAR use S,T,W,X,Y
-LO2HI               \ -- ud1 u2
-UM*       
-HI2LO
-POPM #2,IP           \ pop S,IP
-CMP #0,S            \ sign of result > -1 ?
-S< IF
-    XOR #-1,0(PSP)  \ ud --> d
-    XOR #-1,TOS
-    ADD #1,0(PSP)
-    ADDC #0,TOS
-THEN
-MOV @IP+,PC
-ENDCODE
+    [UNDEFINED] M* [IF]
+    
+    \ https://forth-standard.org/standard/core/MTimes
+    \ M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
+    CODE M*
+    MOV @PSP,S          \ S= n1
+    CMP #0,S            \ n1 > -1 ?
+    S< IF
+        XOR #-1,0(PSP)  \ n1 --> u1
+        ADD #1,0(PSP)   \
+    THEN
+    XOR TOS,S           \ S contains sign of result
+    CMP #0,TOS          \ n2 > -1 ?
+    S< IF
+        XOR #-1,TOS     \ n2 --> u2 
+        ADD #1,TOS      \
+    THEN
+    PUSHM #2,IP         \ UMSTAR use S,T,W,X,Y
+    LO2HI               \ -- ud1 u2
+    UM*       
+    HI2LO
+    POPM #2,IP           \ pop S,IP
+    CMP #0,S            \ sign of result > -1 ?
+    S< IF
+        XOR #-1,0(PSP)  \ ud --> d
+        XOR #-1,TOS
+        ADD #1,0(PSP)
+        ADDC #0,TOS
+    THEN
+    MOV @IP+,PC
+    ENDCODE
+    [THEN]
 
 [ELSE]  ; MSP430FRxxxx with hardware_MPY
 
+[UNDEFINED] UM* [IF]
 \ https://forth-standard.org/standard/core/UMTimes
 \ UM*     u1 u2 -- udlo udhi   unsigned 16x16->32 mult.
 CODE UM*
@@ -678,17 +695,18 @@ BW1 MOV TOS,&OP2        \ Load 2nd operand
     MOV &RES1,TOS       \ high result in TOS
     MOV @IP+,PC
 ENDCODE
+[THEN]
 
+[UNDEFINED] M* [IF]
 \ https://forth-standard.org/standard/core/MTimes
 \ M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
 CODE M*
     MOV @PSP,&MPYS      \ Load 1st operand for signed multiplication
     GOTO BW1
 ENDCODE
-
 [THEN]
 
-[THEN]
+[THEN]  \  endof hardware MPY
 
 [UNDEFINED] UM/MOD [IF]
 \ https://forth-standard.org/standard/core/UMDivMOD
@@ -701,10 +719,10 @@ ENDCODE
 
 [UNDEFINED] SM/REM [IF]
 \ https://forth-standard.org/standard/core/SMDivREM
-\ SM/REM   DVDlo DVDhi DIVlo -- r3 q4  symmetric signed div
+\ SM/REM   DVDlo DVDhi DIV -- r3 q4  symmetric signed div
 CODE SM/REM
-MOV TOS,S           \           S=DIVlo
-MOV @PSP,T          \           T=DVD_sign==>rem_sign
+MOV TOS,S           \           S=DIV
+MOV @PSP,T          \           T=DVDhi
 CMP #0,TOS          \           n2 >= 0 ?
 S< IF               \
     XOR #-1,TOS
@@ -722,40 +740,18 @@ LO2HI
     UM/MOD          \ -- uREMlo uQUOTlo
 HI2LO
 POPM #3,IP          \           restore T,S,IP
-CMP #0,T            \           T=rem_sign
+CMP #0,T            \           T=DVDhi --> REM_sign 
 S< IF
     XOR #-1,0(PSP)
     ADD #1,0(PSP)
 THEN
-XOR S,T             \           S=divisor T=quot_sign
+XOR S,T             \           S=DIV XOR T=DVDhi = Quot_sign
 CMP #0,T            \ -- n3 u4  T=quot_sign
 S< IF
     XOR #-1,TOS
     ADD #1,TOS
 THEN                \ -- n3 n4  S=divisor
 MOV @IP+,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] NEGATE [IF]
-\ https://forth-standard.org/standard/core/NEGATE
-\ C NEGATE   x1 -- x2            two's complement
-CODE NEGATE
-XOR #-1,TOS
-ADD #1,TOS
-MOV @IP+,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] ABS [IF]
-\ https://forth-standard.org/standard/core/ABS
-\ C ABS     n1 -- +n2     absolute value
-CODE ABS
-CMP #0,TOS       \  1
-0>= IF
-    MOV @IP+,PC
-THEN
-MOV #NEGATE,PC
 ENDCODE
 [THEN]
 
@@ -1039,7 +1035,7 @@ MOV @PSP+,X         \ X = addr1 = src
 MOV @PSP+,TOS       \ pop new TOS
 CMP #0,W            \ count = 0 ?
 0<> IF              \ if 0, already done !
-    CMP X,Y         \ Y-X \ dst - src
+    CMP X,Y         \ dst = src ?
     0<> IF          \ else already done !
         U< IF       \ U< if src > dst
             BEGIN   \ copy W bytes
@@ -1085,17 +1081,7 @@ ENDCODE
 
 [UNDEFINED] HERE [IF]
 CODE HERE
-MOV #HEREADR,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] ALLOT [IF]
-\ https://forth-standard.org/standard/core/ALLOT
-\ ALLOT   n --         allocate n bytes
-CODE ALLOT
-ADD TOS,&DP
-MOV @PSP+,TOS
-MOV @IP+,PC
+MOV #HEREXEC,PC
 ENDCODE
 [THEN]
 
@@ -1123,7 +1109,7 @@ ENDCODE
 \ https://forth-standard.org/standard/core/p
 \ (         --          skip input until char ) or EOL
 : ( 
-$29 WORD DROP
+')' WORD DROP
 ; IMMEDIATE
 [THEN]
 
@@ -1133,7 +1119,7 @@ $29 WORD DROP
 CODE .(         \ "
 MOV #0,&CAPS    \ CAPS OFF
 COLON
-$29 WORD
+')' WORD
 COUNT TYPE
 $20 CAPS !       \ CAPS ON
 ; IMMEDIATE
@@ -1168,7 +1154,7 @@ MOV @X+,T               \ 2 T = SOURCE_ORG
 MOV @X+,W               \ 2 W = TOIN
 PUSHM #4,IP             \ 6 PUSHM IP,S,T,W
 LO2HI
-TREAT
+INTERPRET
 HI2LO
 MOV @RSP+,&TOIN         \ 4
 MOV @RSP+,&SOURCE_ORG   \ 4
@@ -1206,7 +1192,7 @@ ENDCODE
 \ DOES>    --          set action for the latest CREATEd definition
 CODE DOES> 
 MOV &LAST_CFA,W         \ W = CFA of CREATEd word
-MOV #DODOES,0(W)        \ replace CFA (DOCON) by new CFA (DODOES)
+MOV #$1285,0(W)         \ replace CFA (CALL rDOCON) by new CFA (CALL rDODOES)
 MOV IP,2(W)             \ replace PFA by the address after DOES> as execution address
 MOV @RSP+,IP
 MOV @IP+,PC
@@ -1219,7 +1205,7 @@ ENDCODE
 : VARIABLE 
 CREATE
 HI2LO
-MOV #DOVAR,-4(W)        \   CFA = DOVAR
+MOV #$1287,-4(W)        \   CFA = CALL rDOVAR
 MOV @RSP+,IP
 MOV @IP+,PC
 ENDCODE
@@ -1272,7 +1258,7 @@ $20 CONSTANT BL
 \ https://forth-standard.org/standard/core/SPACE
 \ SPACE   --               output a space
 : SPACE
-$20 EMIT ;
+'SP' EMIT ;
 [THEN]
 
 [UNDEFINED] SPACES [IF]
@@ -1284,7 +1270,7 @@ CMP #0,TOS
     PUSH IP
     BEGIN
         LO2HI
-        $20 EMIT
+        'SP' EMIT
         HI2LO
         SUB #2,IP 
         SUB #1,TOS
@@ -1322,13 +1308,13 @@ CREATE ,
 DOES> 
 HI2LO
 MOV @RSP+,IP
-BIT #UF9,SR    \ see TO
-0= IF           \ execute @
-    MOV @TOS,TOS
-    MOV @IP+,PC
+BIT #UF9,SR         \ 2 see TO
+0= IF               \ 2 execute FETCH
+    MOV @TOS,TOS    \ 2
+    MOV @IP+,PC     \ 4
 THEN 
-BIC #UF9,SR        \ clear 'TO' flag
-MOV @PSP+,0(TOS)    \ 4 execute '!'
+BIC #UF9,SR         \ 2 clear 'TO' flag
+MOV @PSP+,0(TOS)    \ 4 execute STORE
 MOV @PSP+,TOS       \ 2
 MOV @IP+,PC         \ 4
 ENDCODE
@@ -1339,4 +1325,4 @@ RST_HERE
 [THEN]              \ end of [UNDEFINED] {CORE_ANS}
 
 ECHO
-; CORE_ANS.f loaded
+; CORE_ANS.f is loaded

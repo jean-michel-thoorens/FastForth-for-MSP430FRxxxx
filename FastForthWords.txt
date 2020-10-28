@@ -13,39 +13,22 @@ MAX-D	            = 2147483647    largest usable signed double number
 MAX-UD              = 4294967295    largest usable unsigned double number
 WoRdS aRe CaSe-InSeNsItIvE
 
-FORTH vocabulary
+FORTH word-set
 ----------------
-COLD            WARM            WIPE            RST_HERE        PWR_HERE        RST_STATE       PWR_STATE       CREATE          
-;               :               IMMEDIATE       POSTPONE        ]               [               \               '               
-[']             ?ID             ABORT"          ABORT           QUIT            TREAT           COUNT           LITERAL         
-ALLOT           ,               >NUMBER         FIND            WORD            ."              S"              .               
-U.              SIGN            HOLD            #>              #S              #               <#              CR              
-TYPE            NOECHO          ECHO            EMIT            KEY             ACCEPT
-
-COLD            Software reset
-
-WARM            DEFERed word, by default executes ABORT" <WARM_message>"
-
-WIPE            resets the program memory to its original state (Deep_RST adds same effect to COLD).
+RST_HERE        PWR_HERE        RST_STATE       PWR_STATE       CREATE          ;               :               IMMEDIATE       
+POSTPONE        ]               [               \               '               [']             ABORT"          INTERPRET       
+COUNT           LITERAL         ALLOT           ,               >NUMBER         FIND            WORD            ."              
+S"              .               U.              SIGN            HOLD            #>              #S              #               
+<#              !               @               CR              TYPE            NOECHO          ECHO            EMIT            
+KEY             ACCEPT          COLD            WARM            WIPE            
 
 RST_HERE        defines the bound of the program memory protected against COLD or hardware reset.
-
 PWR_HERE        defines the bound of the program memory protected against ON/OFF and also against any error occurring.
-
 RST_STATE       removes all words defined after RST_HERE (COLD or <reset> have same effet)
-
 PWR_STATE       removes all words defined after PWR_HERE (an error has same effect)
-
-?ID             %deviceID% ?ID -- 
-                String sent by Teraterm to target before downloading a file.4TH issued from a source file.f.
-                ?ID compare %deviceID% with target's value then performs ABORT" DeviceID mismatch!".
-
-TREAT           text interpreter, common part of EVALUATE and QUIT.
-
+INTERPRET       text interpreter, common part of EVALUATE and QUIT.
 NOECHO          stop display on output 
-
 ECHO            start display on output
-
 CREATE          https://forth-standard.org/standard/core/CREATE
 ;               https://forth-standard.org/standard/core/Semi
 :               https://forth-standard.org/standard/core/Colon
@@ -57,10 +40,9 @@ POSTPONE        https://forth-standard.org/standard/core/POSTPONE
 [']             https://forth-standard.org/standard/core/BracketTick
 '               https://forth-standard.org/standard/core/Tick
 ABORT"          https://forth-standard.org/standard/core/ABORTq
-ABORT           https://forth-standard.org/standard/core/ABORT
-QUIT            https://forth-standard.org/standard/core/QUIT
 COUNT           https://forth-standard.org/standard/core/COUNT
 LITERAL         https://forth-standard.org/standard/core/LITERAL
+ALLOT           https://forth-standard.org/standard/core/ALLOT
 ,               https://forth-standard.org/standard/core/Comma
 >NUMBER         https://forth-standard.org/standard/core/toNUMBER
 FIND            https://forth-standard.org/standard/core/FIND
@@ -75,46 +57,95 @@ HOLD            https://forth-standard.org/standard/core/HOLD
 #S              https://forth-standard.org/standard/core/numS
 #               https://forth-standard.org/standard/core/num
 <#              https://forth-standard.org/standard/core/num-start
-TYPE            https://forth-standard.org/standard/core/TYPE
+!               https://forth-standard.org/standard/core/Store
+@               https://forth-standard.org/standard/core/Fetch
 CR              DEFERed word, https://forth-standard.org/standard/core/CR
+TYPE            https://forth-standard.org/standard/core/TYPE
 EMIT            DEFERed word, https://forth-standard.org/standard/core/EMIT
 KEY             DEFERed word, https://forth-standard.org/standard/core/KEY
 ACCEPT          DEFERed word, https://forth-standard.org/standard/core/ACCEPT
+COLD            PFA of COLD content = STOP_APP subroutine address, by default --> STOP_TERM
+WARM            PFA of WARM content = INI_APP subroutine address, by default --> ENABLE_IO
+WIPE            resets the program memory to its original state (Deep_RST have same effect).
 
+words added by the option MSP430ASSEMBLER:
 
-ASSEMBLER vocabulary
+ASM             CODE            HI2LO
+
+CODE <word>     creates a word written in assembler. 
+                this defined <word> must be ended with ENDCODE unless COLON or LO2HI use.
+ASM <word>      creates a word written in assembler but not interpretable by FORTH (because ended by RET instr.).
+                this defined <word> must be ended with ENDASM. Visible only from assembler
+HI2LO           used to switch compilation from high level (FORTH) to low level (assembler).
+
+Other words are useable via the preprocessor GEMA and they address is in \inc\device.pat file :
+
+SLEEP               CODE_WITHOUT_RETURN: CPU shutdown
+LIT                 CODE compiled by LITERAL
+XSQUOTE             CODE compiled by S" and S_
+HEREXEC             CODE HERE and BEGIN execute address
+QFBRAN              CODE compiled by IF UNTIL
+BRAN                CODE compiled by ELSE REPEAT AGAIN
+NEXT_ADR            CODE NEXT instruction (MOV @IP+,PC)
+XDO                 CODE compiled by DO
+XPLOOP              CODE compiled by +LOOP
+XLOOP               CODE compiled by LOOP
+MUSMOD              ASM 32/16 unsigned division, used by ?NUMBER, UM/MOD
+MDIV1DIV2           ASM input for 48/16 unsigned division with DVDhi=0, see DOUBLE M*/
+MDIV1               ASM input for 48/16 unsigned division, see DOUBLE M*/
+RET_ADR             ASM content of INI_FORTH_PFA and MARKER+8 definitions,
+SETIB               CODE Set Input Buffer with org & len values, reset >IN pointer
+REFILL              CODE accept one line from input and leave org len of input buffer
+CIB_ADR             [CIB_ADR] = TIB_ORG by default; may be redirected to SDIB_ORG
+XDODOES             restore rDODOES: MOV #XDODOES,rDODOES
+XDOCON              restore rDOCON: MOV #XDOCON,rDOCON
+XDOVAR              restore rDOVAR: MOV #XDOVAR,rDOVAR
+!to find DTC value, download \MSP430-FORTH\FF_SPECS.4th
+!XDOCOL             if DTC = 1, restore rDOCOL as this: MOV #TYPE+-16,rDOCOL
+!XDOCOL             if DTC = 2, restore rDOCOL as this: MOV ##S+16,rDOCOL
+!                   if DTC = 3, nothing to do, R7 is free for use.
+INI_FORTH           CODE_WITHOUT_RETURN common part of RST and QABORT, starts FORTH engine
+QABORT              CODE_WITHOUT_RETURN run-time part of ABORT"
+3DROP               CODE 
+ABORT_TERM          CODE_WITHOUT_RETURN called by QREVEAL and INTERPRET   
+!-------------------------------------------------------------------------------
+UART_COLD_TERM      ASM, content of COLD_PFA by default
+UART_INIT_TERM      ASM, content of WARM_PFA by default
+UART_RXON           ASM, content of SLEEP_PFA by default
+UART_RXOFF          ASM, called by ACCEPT before RX char LF.
+!-------------------------------------------------------------------------------
+I2C_COLD_TERM       ASM, content of COLD_PFA by default
+I2C_INIT_TERM       ASM, content of WARM_PFA by default
+I2C_RXON            ASM, content of SLEEP_PFA by default
+I2C_CTRL_CH         ASM, used as is: MOV.B #CTRL_CHAR,Y
+!                                    CALL #I2C_CTRL_CH
+!-------------------------------------------------------------------------------
+
+MSP430ASSEMBLER word-set
 --------------------
 
 ?GOTO           GOTO            FW3             FW2             FW1             BW3             BW2             
-BW1             ?JMP            JMP             REPEAT          WHILE           AGAIN           UNTIL           
-ELSE            THEN            IF              0=              0<>             U>=             U<              
-0<              0>=             S<              S>=             RRUM            RLAM            RRAM            
-RRCM            POPM            PUSHM           CALL            PUSH.B          PUSH            SXT             
-RRA.B           RRA             SWPB            RRC.B           RRC             AND.B           AND             
-XOR.B           XOR             BIS.B           BIS             BIC.B           BIC             BIT.B           
-BIT             DADD.B          DADD            CMP.B           CMP             SUB.B           SUB             
-SUBC.B          SUBC            ADDC.B          ADDC            ADD.B           ADD             MOV.B           
-MOV             RETI            LO2HI           COLON           ENDASM          ENDCODE         SLEEP
-
-ASM             CODE            HI2LO           (added in forth vocabulary)
+BW1             REPEAT          WHILE           AGAIN           UNTIL           ELSE            THEN            
+IF              0=              0<>             U>=             U<              0<              0>=             
+S<              S>=             RRUM            RLAM            RRAM            RRCM            POPM            
+PUSHM           CALL            PUSH.B          PUSH            SXT             RRA.B           RRA             
+SWPB            RRC.B           RRC             AND.B           AND             XOR.B           XOR             
+BIS.B           BIS             BIC.B           BIC             BIT.B           BIT             DADD.B          
+DADD            CMP.B           CMP             SUB.B           SUB             SUBC.B          SUBC            
+ADDC.B          ADDC            ADD.B           ADD             MOV.B           MOV             RETI            
+LO2HI           COLON           ENDASM          ENDCODE
 
 see: http://www.ece.utep.edu/courses/web3376/Notes_files/ee3376-isa.pdf
      readme.md for symbolic alias of registers, symbolic jumps (IF ELSE THEN...),..
 
 ?GOTO           used after a conditionnal (0=,0<>,U>=,U<,0<,S<,S>=) to branch to a label FWx or BWx
 GOTO            used as unconditionnal branch to a label FWx or BWx
-
-BW3             BACKWARD branch destination n�3
-BW2                                         n�2
-BW1                                         N�1
-
-FW3             FORWARD branch destination  n�3
-FW2                                         n�2
-FW1                                         n�1
-
-?JMP            used after a conditionnal (0=,0<>,U>=,U<,0<,S<,S>=) to jump to a predefined word
-JMP             unconditionnal jump to a predefined word
-
+BW3             BACKWARD branch destination n째3
+BW2                                         n째2
+BW1                                         n째1
+FW3             FORWARD branch destination  n째3
+FW2                                         n째2
+FW1                                         n째1
 REPEAT          assembler version of the FORTH word REPEAT
 WHILE           idem
 AGAIN           idem
@@ -122,35 +153,18 @@ UNTIL           idem
 ELSE            idem
 THEN            idem
 IF              idem
-
 0=              conditionnal     
 0<>             conditionnal
 U>=             conditionnal
 U<              conditionnal
-0<              conditionnal, to use only with ?JMP ?GOTO
+0<              conditionnal, to use only with ?GOTO
 0>=             conditionnal, to use only with IF UNTIL WHILE
 S<              conditionnal
 S>=             conditionnal
-
 LO2HI           switches compilation between low level and high level modes without saving IP register.
 COLON           pushes IP then performs LO2HI, used as: CODE <word> ... assembler instr ... COLON ... FORTH words ... ;
 ENDASM          to end an ASM definition.
 ENDCODE         to end a CODE definition.
-SLEEP           DEFERed word which enables to create a background task, default SLEEP definition: MOV #GIE+LPM0,SR
-
-next assembler words are set in FORTH vocabulary:
-
-CODE <word>     creates a word written in assembler.
-                this defined <word> must be ended with ENDCODE unless COLON or LO2HI use.
-
-ASM <word>      creates a word written in assembler but not interpretable by FORTH (because ended by RET instr.).
-                this defined <word> must be ended with ENDASM. 
-                This word will be recognized only in assembler mode. 
-
-HI2LO           used to switch compilation from high level (FORTH) to low level (assembler).
-
-
-ASSEMBLER WORDS set:
 
 ADD     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=135
 ADDC    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=136
@@ -179,7 +193,17 @@ RRCM    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=214
 POPM    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=204
 PUSHM   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=205
 
-ASSEMBLER_EXTENDED WORDS set:
+EXTENDED_MEM WORDS set:
+
+POPM.A  http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=204
+PUSHM.A http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=205
+ADDA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=229
+CALLA   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=232
+CMPA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=235
+MOVA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=238
+SUBA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=241
+
+EXTENDED_ASM WORDS set:
 
 ADDX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=187
 ADDCX   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=188
@@ -199,12 +223,6 @@ SUBCX   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=222
 SWPBX   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=223
 SXTX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=225
 XORX    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=227
-
-ADDA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=229
-CALLA   http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=232
-CMPA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=235
-MOVA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=238
-SUBA    http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=241
 
 RPT     http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=219
 
@@ -295,8 +313,7 @@ I               +LOOP           LOOP            DO              REPEAT          
 UNTIL           ELSE            THEN            IF              >               <               U<              
 =               0<              0=              C,              C!              C@              R>              
 >R              NIP             DROP            SWAP            DEPTH           EXIT            ?DUP            
-DUP             !               @               -               +               DOES>           BEGIN           
-{CORE_COMP}
+DUP             -               +               DOES>           BEGIN           {CORE_COMP}
 
 VALUE           https://forth-standard.org/standard/core/VALUE
 TO              https://forth-standard.org/standard/core/TO
@@ -320,7 +337,6 @@ EXECUTE         https://forth-standard.org/standard/core/EXECUTE
 (               https://forth-standard.org/standard/core/p
 DECIMAL         https://forth-standard.org/standard/core/DECIMAL
 HEX             https://forth-standard.org/standard/core/HEX
-ALLOT           https://forth-standard.org/standard/core/ALLOT
 HERE            https://forth-standard.org/standard/core/HERE
 FILL            https://forth-standard.org/standard/core/FILL
 MOVE            https://forth-standard.org/standard/core/MOVE
@@ -400,8 +416,6 @@ DEPTH           https://forth-standard.org/standard/core/DEPTH
 EXIT            https://forth-standard.org/standard/core/EXIT
 ?DUP            https://forth-standard.org/standard/core/qDUP
 DUP             https://forth-standard.org/standard/core/DUP
-!               https://forth-standard.org/standard/core/Store
-@               https://forth-standard.org/standard/core/Fetch
 -               https://forth-standard.org/standard/core/Minus
 +               https://forth-standard.org/standard/core/Plus
 {CORE_COMP}
@@ -441,7 +455,7 @@ D.              https://forth-standard.org/standard/double/Dd
 2R>             https://forth-standard.org/standard/core/TwoRfrom
 2R@             https://forth-standard.org/standard/core/TwoRFetch
 2>R             https://forth-standard.org/standard/core/TwotoR
-{DOUBLE}
+{DOUBLE}        if you type {DOUBLE}, it and all subsequent words are removed
 
 
 FIXPOINT ADD-ON
@@ -459,7 +473,7 @@ F/              s15.16 division
 F-              s15.16 soustraction
 F+              s15.16 addition
 HOLDS           https://forth-standard.org/standard/core/HOLDS
-{FIXPOINT}      do nothing if compiled in core, else remove all FIXPOINT add-on.
+{FIXPOINT}      do nothing if compiled in core, else it and all subsequent loaded words are removed
 
 UTILITY ADD-ON
 --------------
@@ -484,6 +498,6 @@ DIR             dump first sector of current directory
 FAT             dump first sector of FAT1
 CLUSTER         .123 CLUSTER displays first sector of cluster 123
 SECTOR          .123456789 SECTOR displays sector 123456789
-{SD_TOOLS}      if you type {SD_TOOLS}  all subsequent loaded words are removed
+{SD_TOOLS}      if you type {SD_TOOLS}, it and all subsequent words are removed
 
 

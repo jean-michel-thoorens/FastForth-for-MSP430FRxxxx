@@ -53,6 +53,43 @@ T\{=T\{!
 
 U\.R=U\.R!
 
+! ASCII numbers interpreter complement
+\'NUL\'=\$00!
+\'SOH\'=\$01!
+\'STX\'=\$02!
+\'ETX\'=\$03!
+\'EOT\'=\$04!
+\'ENQ\'=\$05!
+\'ACK\'=\$06!
+\'BEL\'=\$07!
+\'BS\'=\$08!    Backspace
+\'HT\'=\$09!    Horizontal Tabulation
+\'LF\'=\$0A!
+\'VT\'=\$0B!
+\'FF\'=\$0C!    
+\'CR\'=\$0D!
+\'SO\'=\$0E!
+\'SI\'=\$0F!
+\'DLE\'=\$10!
+\'DC1\'=\$11!   XON
+\'DC2\'=\$12!
+\'DC3\'=\$13!   XOFF
+\'DC4\'=\$14!
+\'NAK\'=\$15!
+\'SYN\'=\$16!
+\'ETB\'=\$17!
+\'CAN\'=\$18!
+\'EM\'=\$19!
+\'SUB\'=\$1A!
+\'ESC\'=\$1B!
+\'FS\'=\$1C!
+\'GS\'=\$1D!
+\'RS\'=\$1E!
+\'US\'=\$1F!
+\'SP\'=\$20!
+\'\'\'=\$27!'  QNUMBER can't interpret ''' !
+\'DEL\'=\$7F!
+
 \(RTS\)=\(RTS\)!
 \(CTS\)=\(CTS\)!
 
@@ -115,6 +152,3 @@ NOP2=\$3C00 ,!      \ compile JMP 0  one word two cycles
 NOP3=MOV R0,R0!     \ MOV PC,PC      one word three cycles
 NEXT=MOV \@R13+,R0! \ MOV @IP+,PC   
 
-DOVAR=\$1287!       \ CALL rDOVAR
-DOCON=\$1286!       \ CALL rDOCON
-DODOES=\$1285!      \ CALL rDODOES

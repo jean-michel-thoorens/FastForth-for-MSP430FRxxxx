@@ -1,23 +1,5 @@
 ; -*- coding: utf-8 -*-
-; http://patorjk.com/software/taag/#p=display&f=Banner&t=Fast Forth
-
-; Fast Forth For Texas Instrument MSP430FRxxxx FRAM devices
-; Copyright (C) <2017>  <J.M. THOORENS>
 ;
-; This program is free software: you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation, either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License
-; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
 ; ----------------------------------------------------------------------
 ;forthMSP430FR_EXTD_ASM.asm
 ; ----------------------------------------------------------------------
@@ -66,33 +48,81 @@ SKIPEND     MOV TOS,W               ;
 ; DTCforthMSP430FR5xxx ASSEMBLER : search argument "xxxx", IP is free
 ; ----------------------------------------------------------------------
 
+; SearchARG                           ; separator -- n|d or abort" not found"
+; ; Search ARG of "#xxxx,"            ; <== PARAM10
+; ; Search ARG of "&xxxx,"            ; <== PARAM111
+; ; Search ARG of "xxxx(REG),"        ; <== PARAM130
+; ; Search ARG of ",&xxxx"            ; <== PARAM111 <== PARAM20
+; ; Search ARG of ",xxxx(REG)"        ; <== PARAM210
+;             PUSHM #2,S              ;                   PUSHM S,T as OPCODE, OPCODEADR
+;             ASMtoFORTH              ; -- separator      search word first
+;             .word   WORDD,FIND      ; -- addr
+;             .word   ZEROEQUAL
+;             .word   QFBRAN,ARGWORD  ; -- addr           if Word found
+;             .word   QNUMBER         ;
+;             .word   QFBRAN,NotFound ; -- addr           ABORT if not found
+; FSearchEnd  .word   SearchEnd       ; -- value          goto SearchEnd if number found
+; ARGWORD     .word   $+2             ; -- CFA
+;             MOV     @TOS+,S         ; -- PFA            S=DOxxx
+; QDOVAR      SUB     #DOVAR,S        ;                   DOxxx = 1287h = DOVAR
+; ISDOVAR     JZ      SearchEnd       ; -- addr           PFA = adr of VARIABLE
+; QDOCON      ADD     #1,S            ;                   DOxxx = 1286h = DOCON
+;             JNZ     ISOTHER         ;
+; ISDOCON     MOV     @TOS,TOS        ;
+;             JMP     SearchEnd       ; -- cte
+; ISOTHER     SUB     #2,TOS          ; -- CFA
+; SearchEnd   POPM    #2,S            ;                   POPM T,S
+;             MOV     @RSP+,PC        ; RET
+
 SearchARG                           ; separator -- n|d or abort" not found"
 ; Search ARG of "#xxxx,"            ; <== PARAM10
 ; Search ARG of "&xxxx,"            ; <== PARAM111
-; Search ARG of "xxxx(REG),"        ; <== PARAM130
+; Search ARG of "xxxx(REG),"        ; <== ComputeARGpREG <== PARAM130
 ; Search ARG of ",&xxxx"            ; <== PARAM111 <== PARAM20
-; Search ARG of ",xxxx(REG)"        ; <== PARAM210
-            PUSHM #2,S              ;                   PUSHM S,T as OPCODE, OPCODEADR
-            ASMtoFORTH              ; -- separator      search word first
-            .word   WORDD,FIND      ; -- addr
-            .word   QTBRAN,ARGWORD  ; -- addr           if Word found
+; Search ARG of ",xxxx(REG)"        ; <== ComputeARGpREG <== PARAM210
+            PUSHM #2,S              ;                   PUSHM S,T as OPCODE,OPCODEADR
+            PUSH TOS                ;                   push sep, for SrchARGPO
+            PUSH &TOIN              ;                   push TOIN, for SrchARGPO
+;-----------------------------------;
+            ASMtoFORTH              ; -- sep            sep =  ','|'('|' '
+            .word   WORDD,FIND      ; -- addr           search word first
+            .word   ZEROEQUAL
+            .word   QFBRAN,ARGWORD  ; -- addr           if Word found
             .word   QNUMBER         ;
-            .word   QFBRAN,NotFound ; -- addr           ABORT if not found
-FSearchEnd  .word   SearchEnd       ; -- value          goto SearchEnd if number found
-ARGWORD     .word   $+2             ; -- xt             xt = CFA
-            MOV     @TOS+,X         ; -- PFA
-QDOVAR      SUB     #DOVAR,X        ;                   DOVAR = 1286h
-ISDOVAR     JZ      SearchEnd       ;
-QDOCON      ADD     #1,X            ; -- PFA            DOCON = 1285h
-ISNOTDOCON  JNZ     QDODOES         ;
-ISDOCON     MOV     @TOS,TOS        ; -- cte
-            JMP     SearchEnd       ;
-QDODOES     ADD     #2,TOS          ; -- BODY           leave BODY address for DOES words
-            ADD     #1,X            ;                   DODOES = 1284h
-ISDODOES    JZ      SearchEnd       ;        
-ISOTHER     SUB     #4,TOS          ; -- CFA
-SearchEnd   POPM    #2,S            ;                   POPM T,S
-            MOV     @RSP+,PC        ; RET
+            .word   QFBRAN,SrchARGPO; -- addr           search ARG Plus Offset if not found
+            .word   SrchNext        ; -- value          goto SrchNext if number found
+ARGWORD     .word   $+2             ; -- CFA
+            MOV @TOS+,S             ; -- PFA            S=DOxxx
+QDOVAR      SUB #1287h,S            ;                   DOxxx = 1287h = CALL R7 = rDOVAR
+ISDOVAR     JZ SrchNext             ; -- addr           PFA = adr of VARIABLE
+QDOCON      ADD #1,S                ;                   DOxxx = 1286h = DOCON
+            JNZ ISOTHER             ;
+ISDOCON     MOV @TOS,TOS            ;
+            JMP SrchNext            ; -- cte
+ISOTHER     SUB #2,TOS              ; -- CFA
+SrchNext    ADD #4,RSP              ;                   remove TOIN,sep
+SearchEnd   POPM #2,S               ;                   POPM T,S
+            MOV @RSP+,PC            ; RET
+
+;-----------------------------------;
+; search for ARGUMENT16+OFFSET      ; up to $FFFF only (FORTH area)
+;-----------------------------------;
+SrchARGPO   .word $+2
+            MOV @RSP+,&TOIN         ;                   TOIN back
+            MOV @RSP+,TOS           ; -- sep
+            ASMtoFORTH              ;
+            .word   LIT,'+'         ; -- sep '+'        search argument
+            .word   WORDD,FIND      ; -- sep CFA
+            .word   ZEROEQUAL       ;
+            .word   QFBRAN,SrchOffst;
+            .word   QNUMBER         ; -- sep number
+            .word   QFBRAN,NotFound ;                   see INTERPRET
+SrchOffst   .word   SWAP            ; -- CFA|number sep
+            .word   WORDD,QNUMBER   ;                   Search 'Offset,'|'Offset('|'Offset'
+            .word   QFBRAN,NotFound ;                   see INTERPRET
+            .word   $+2             ; -- CFA|number offset
+            ADD @PSP+,TOS           ; -- (CFA|number + offset)
+            JMP SearchEnd           ;
 
 ; Arg_Double_to_single conversion needed only for OPCODE type V|VI, 2th pass.
 ARGD2S      BIT #UF9,SR             ; -- Lo Hi
@@ -204,7 +234,7 @@ PARAM110    MOV     #0210h,S        ; -- sep        set code type : xxxx(SR) wit
 ; case of ",&xxxx"                  ;               <== PARAM20
 PARAM111    ADD     #1,&TOIN        ; -- sep        skip "&" prefix
             CALL    #SearchARG      ; -- arg        abort if not found
-            CALL    #ARGD2S         ;               skip arg_hi of opcode type V
+            CALL    #ARGD2S         ;               skip argD_hi of opcode type V
             JMP     StoreArg        ; --            then ret
 ; ----------------------------------;
 PARAM12     CMP.B   #'@',W          ; -- sep
@@ -444,7 +474,7 @@ BOUNDERROR                          ; <== REG number error
             mDOCOL                  ; -- n      n = value out of bounds
             .word   DOT,XSQUOTE
             .byte 13,"out of bounds"
-            .word   QABORTYES
+            .word   ABORT_TERM
 
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER, CONDITIONAL BRANCHS

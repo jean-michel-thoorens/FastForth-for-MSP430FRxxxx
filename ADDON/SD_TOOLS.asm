@@ -1,22 +1,4 @@
 ; -*- coding: utf-8 -*-
-; http://patorjk.com/software/taag/#p=display&f=Banner&t=Fast Forth
-
-; Fast Forth For Texas Instrument MSP430FRxxxx FRAM devices
-; Copyright (C) <2015>  <J.M. THOORENS>
-;
-; This program is free software: you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation, either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License
-; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 
     .IFNDEF MAX
 
@@ -158,7 +140,7 @@ DUMP4       .word   II,CFETCH
 
 ; read logical sector and dump it 
 ; ----------------------------------;
-            FORTHWORD "SECTOR"      ; sector. --            don't forget to add decimal point to your sector number (if < 65536)
+            FORTHWORD "SECTOR."     ; sector. --            don't forget to add decimal point to your sector number (if < 65536)
 ; ----------------------------------;
 SECTOR      MOV TOS,X               ; X = SectorH
             MOV @PSP,W              ; W = sectorL
@@ -176,7 +158,7 @@ DisplaySector
 ; ----------------------------------;
 ; read first sector of Cluster and dump it
 ; ----------------------------------;
-            FORTHWORD "CLUSTER"     ; cluster.  --         don't forget to add decimal point to your sector number (if < 65536)
+            FORTHWORD "CLUSTR."     ; cluster.  --         don't forget to add decimal point to your sector number (if < 65536)
 ; ----------------------------------;
 CLUSTER     BIT.B #CD_SD,&SD_CDIN   ; test Card Detect: memory card present ?
             JZ CD_CLUST_OK          ;

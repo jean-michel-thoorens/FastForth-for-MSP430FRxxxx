@@ -73,77 +73,93 @@ lastasmword31   .equ asmlink31
 
     .ENDIF
 
-;    .org 0FF88h ; JTAG_PASSWORD, up to 0FFFEh
-;    .org 0FFE0h ; BSL_PASSWORD, 16 words
-    .org 0FF80h ; erase SIGNATURES area
-    .word -1
-    .word -1
-    .word -1
-    .word -1
-    .word -1
-    .word -1
-    .word -1
-    .word -1
-    .word -1
-    .word -1
-    .word -1
-    .word -1
-    .word -1
-    .word -1
-    .word -1
-    .word -1
+;----------------
+; 0FF40h = FRAM_FULL threshold = SIGNATURES - 40h
+;----------------
 
-    .org 0FFA0h ; MSP430FR2355/2476 BSL I2C Address, a good idea for I2C_SLAVE_ADR(s) area, isn't it?
-    .word 10h   ; --> BSL I2C
-    .word 10h   ; --> UCBxI2COA0
-    .word 20h   ; --> UCBxI2COA1
-    .word 30h   ; --> UCBxI2COA2
-    .word 40h   ; --> UCBxI2COA3
+;----------------
+; 0FF80h = SIGNATURES AREA, Deep_RST erases only 8 words from 0FF80h to 0FF90h
+;----------------
+    .org 0FF80h     ; JTAG signature (2 words)
+    .word -1   
+    .word -1
+;    .org 0FF84h    ; BSL signature (2 words)
+    .word -1        
+    .word -1
+;    .org 0FF88h    ; MSP430FR5xxx|MSP430FR6xxx JTAG_PASSWORD, up to 0FFFFh
+;    .org 0FF88h    ; MSP430FR5xxx|MSP430FR6xxx encapsulation signature (2 words)
+    .word -1
+    .word -1
+    .word -1
+    .word -1
+;    .org 0FF90h    ; free for 8 x I2C addresses UCBx
+    .word 0         ; I2C address mini = 10h, maxi = 0EEh (I2C-bus specification and user manual V6)
+    .word 0         ; (112 x I2C addresses with R/W flag = 0)
+    .word 0 
+    .word 0 
+    .word 0 
+    .word 0 
+    .word 0 
+    .word 0 
+
+;----------------
+; FFA0h =  MSP430FR2355/2476 BSL I2C Address, a good idea for I2C_SLAVE_ADR(s) area, isn't it?
+;----------------
+    .org 0FFA0h ;
+    .word 077h  ; --> MSP430FR2355/2476 BSL I2C 7 bits address (without R/W flag)
+    .word 10h   ; --> UCBxI2COA0 8 bits address (with R/W flag=0)
+    .word 12h   ; --> UCBxI2COA1
+    .word 14h   ; --> UCBxI2COA2
+    .word 16h   ; --> UCBxI2COA3
     .word 0
 
-;    .org 0FFACh ; lowest known vector interrupt
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4
-    .word RESET-4       ; USER NMI vestor, don't change this value !
-    .word RESET-4       ; SYS NMI vector
-    .word RESET         ; RST vector
+;----------------
+; FFACh = VECTORS AREA (lowest known vector interrupt)
+;----------------
+    .org 0FFACh
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+;    .org 0FFE0h ; BSL_PASSWORD, 32 bytes
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD
+    .word COLD          ; USER_NMI vector, don't change this value !
+    .word COLD          ; SYS_NMI vector
+    .word RESET         ; RST vector, used once after programming, because RESET code changes RST PIN to USER_NMI PIN
 
     .org TERM_VEC       ; will generate overlap warning, don't care
     .word TERMINAL_INT  ; TERMINAL vector (UART or I2C_Slave)

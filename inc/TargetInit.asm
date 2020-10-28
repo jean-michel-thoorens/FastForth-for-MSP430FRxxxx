@@ -31,8 +31,5 @@
     .listing off
 ; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 ; add here your target.asm item:
-; .IFDEF MY_MSP430FR5738_1
-; .include MY_MSP430FR5738_1.asm
-; .ENDIF
 ;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     .restore

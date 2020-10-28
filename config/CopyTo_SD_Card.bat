@@ -18,6 +18,11 @@ IF /I "%~x1" == ".4TH" GOTO 4TH
 :: %~d1 is the drive of arg %1
 :: %~n2 is your selected template by SelectTarget.bat or your scite $(1)
 
+::echo %1
+::echo %2
+::echo %3
+::pause
+
 IF "%~x1" == "" (
 echo no file to be preprocessed!
 goto badend
@@ -46,22 +51,21 @@ exit
 
 
 :preprocessF
-::@%~d1\prog\gema.exe -nobackup -line -t '\n=\r\n;\r\n=\r\n' -f  %~d1\inc\%~n2.pat %~dpn1.f %~dpn1.4TH
 @%~d1\prog\gema.exe -nobackup -line -t '-\r\n=\r\n' -f  %~d1\inc\%~n2.pat %~dpn1.f %~dpn1.4TH
-call  %~d1\config\Select.bat SelectDeviceId %~d1\inc\%~n2.pat
+@call  %~d1\config\Select.bat SelectDeviceId %~d1\inc\%~n2.pat
 
 :DownloadF
 @taskkill /F /IM ttermpro.exe 1> NUL 2>&1
 
 :win32F
-@"C:\Program Files\teraterm\ttpmacro.exe" /V %~d0\config\SendToSDf.ttl %~dpn1.4TH /C  %deviceid%  1> NUL 2>&1
+@"C:\Program Files\teraterm\ttpmacro.exe" /V %~d1\config\SendToSD.ttl %~dpn1.4TH /C %deviceid% 1> NUL 2>&1
 @IF NOT ERRORLEVEL 1 GOTO EndF
 
 :win64F
-@"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d0\config\SendToSDf.ttl %~dpn1.4TH /C  %deviceid%
+@"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d1\config\SendToSD.ttl %~dpn1.4TH /C %deviceid%
 
 :EndF
-@MOVE "%~dpn1.4TH" "%~dp1\LAST.4TH" > NUL
+MOVE "%~dpn1.4TH" "%~dp1\LAST.4TH" > NUL
 exit
 
 
@@ -98,13 +102,13 @@ goto badend
 @taskkill /F /IM ttermpro.exe 1> NUL 2>&1
 
 :win324th
-@"C:\Program Files\teraterm\ttpmacro.exe" /V %~d0\config\SendtoSD4th.ttl %~dpn1.4TH /C 0 1> NUL 2>&1
+@"C:\Program Files\teraterm\ttpmacro.exe" /V %~d0\config\SendtoSD.ttl %~dpn1.4TH /C 0 1> NUL 2>&1
 @IF NOT ERRORLEVEL 1 GOTO End4th
 
 :win644th
-@"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d0\config\SendtoSD4th.ttl %~dpn1.4TH /C 0
+@"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d0\config\SendtoSD.ttl %~dpn1.4TH /C 0
 
 :End4th
-::@COPY "%~dpn1.4TH" "%~dp1\LAST.4TH" > NUL
+@COPY "%~dpn1.4TH" "%~dp1\LAST.4TH" > NUL
 exit
 

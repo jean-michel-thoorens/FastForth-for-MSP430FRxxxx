@@ -298,47 +298,41 @@ LED1        .equ    40h     ;  P4.6 LED1 red
 
 ; DCOCLK: Internal digitally controlled oscillator (DCO).
 
-
-; CS code for MSP430FR5948
-            MOV.B   #CSKEY,&CSCTL0_H ;  Unlock CS registers
-
+            MOV.B   #CSKEY,&CSCTL0_H    ;  Unlock CS registers
     .IF FREQUENCY = 0.25
-;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
+;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1         ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_32 + DIVM_32,&CSCTL3
-            MOV     #4,X
 
     .ELSEIF FREQUENCY = 0.5
-            MOV     #0,&CSCTL1                  ; Set 1MHZ DCO setting
-            MOV     #DIVA_2 + DIVS_2 + DIVM_2,&CSCTL3             ; set all dividers as 2
-            MOV     #8,X
+            MOV     #0,&CSCTL1                          ; Set 1MHZ DCO setting
+            MOV     #DIVA_2 + DIVS_2 + DIVM_2,&CSCTL3   ; set all dividers as 2
 
     .ELSEIF FREQUENCY = 1
-            MOV     #0,&CSCTL1                  ; Set 1MHZ DCO setting
-            MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3             ; set all dividers as 0
-            MOV     #16,X
+            MOV     #0,&CSCTL1                          ; Set 1MHZ DCO setting
+            MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
 
     .ELSEIF FREQUENCY = 2
-            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1  ; Set 4MHZ DCO setting
+            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1          ; Set 4MHZ DCO setting
             MOV     #DIVA_0 + DIVS_2 + DIVM_2,&CSCTL3
-            MOV     #32,X
 
     .ELSEIF FREQUENCY = 4
-            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1  ; Set 4MHZ DCO setting
-            MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3             ; set all dividers as 0
-            MOV     #64,X
+            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1          ; Set 4MHZ DCO setting
+            MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
 
     .ELSEIF FREQUENCY = 8
-;            MOV     #DCOFSEL2+DCOFSEL1,&CSCTL1  ; Set 8MHZ DCO setting (default value)
-            MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3             ; set all dividers as 0
-            MOV     #128,X
+;            MOV     #DCOFSEL2+DCOFSEL1,&CSCTL1         ; Set 8MHZ DCO setting (default value)
+            MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
+
+    .ELSEIF FREQUENCY = 12
+            MOV     #DCORSEL+DCOFSEL2+DCOFSEL1,&CSCTL1  ; Set 24MHZ DCO setting
+            MOV     #DIVA_0 + DIVS_2 + DIVM_2,&CSCTL3   ;
 
     .ELSEIF FREQUENCY = 16
-            MOV     #DCORSEL+DCOFSEL2,&CSCTL1   ; Set 16MHZ DCO setting
-            MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3             ; set all dividers as 0
-            MOV     #256,X
+            MOV     #DCORSEL+DCOFSEL2,&CSCTL1           ; Set 16MHZ DCO setting
+            MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
 
     .ELSEIF
-    .error "bad frequency setting, only 0.5,1,2,4,8,16 MHz"
+    .error "bad frequency setting, only 0.5,1,2,4,8,12,16 MHz"
     .ENDIF
 
     .IFDEF LF_XTAL
@@ -348,16 +342,12 @@ LED1        .equ    40h     ;  P4.6 LED1 red
     .ENDIF
             MOV.B   #01h, &CSCTL0_H                               ; Lock CS Registers
 
-            BIS &SYSRSTIV,&SAVE_SYSRSTIV    ; store volatile SYSRSTIV preserving a pending request for DEEP_RST
-;            MOV &SAVE_SYSRSTIV,TOS  ;
-;            CMP #2,TOS              ; POWER ON ?
-;            JZ      ClockWaitX      ; yes
-;            RRUM    #2,X            ; wait only 125 ms
-ClockWaitX  MOV     #5209,Y         ; wait 0.5s before starting after POWER ON
+            MOV     #64,X           ; 64* 3 ms = 192 ms delay (by default of specification)
+ClockWaitX  MOV     &FREQ_KHZ,Y     ;
 ClockWaitY  SUB     #1,Y            ;1
-            JNZ     ClockWaitY      ;2 5209x3 = 15625 cycles delay = 15.625ms @ 1MHz
-            SUB     #1,X            ; x 32 @ 1 MHZ = 500ms
-            JNZ     ClockWaitX      ; time to stabilize power source ( 500ms )
+            JNZ     ClockWaitY      ;2 FREQ_KHZ x 3~ ==> 3ms
+            SUB     #1,X            ;
+            JNZ     ClockWaitX      ;
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : REF

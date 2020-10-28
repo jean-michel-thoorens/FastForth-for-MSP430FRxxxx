@@ -1,19 +1,11 @@
 \ -*- coding: utf-8 -*-
-
-; -----------------------------------------------------
-; FIXPOINT.f 
-; -----------------------------------------------------
-
-; -----------------------------------------------------------
-; requires FIXPOINT_INPUT kernel addon, see forthMSP430FR.asm
-; -----------------------------------------------------------
 \
 \ to see kernel options, download FastForthSpecs.f
 \ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP, FIXPOINT_INPUT
 \
 \ TARGET SELECTION ( = the name of \INC\target.pat file without the extension)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
-\ MSP_EXP430FR2433  MSP_EXP430FR4133    MSP_EXP430FR2355    CHIPSTICK_FR2433
+\ MSP_EXP430FR2433  MSP_EXP430FR4133    CHIPSTICK_FR2433    MSP_EXP430FR2355
 \ LP_MSP430FR2476
 \
 \ from scite editor : copy your target selection in (shift+F8) parameter 1:
@@ -45,11 +37,30 @@
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 \
 
-PWR_STATE
+CODE ABORT_FIXPOINT
+SUB #4,PSP
+MOV TOS,2(PSP)
+MOV &KERNEL_ADDON,TOS
+BIT #BIT10,TOS
+0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (FIXPOINT input), set TOS = 0  
+MOV TOS,0(PSP)
+MOV &VERSION,TOS
+SUB #307,TOS            \ FastForth V3.7
+COLON
+$0D EMIT    \ return to column 1 without CR
+ABORT" FastForth version = 3.7 please!"
+ABORT" buil FastForth with FIXPOINT_INPUT addon !"
+PWR_STATE           \ if no abort remove this word
+$1B EMIT $63 EMIT   \ send 'ESC c' (clear screen)
+;
+
+ABORT_FIXPOINT
+
+; -----------------------------------------------------
+; FIXPOINT.f 
+; -----------------------------------------------------
 
 [DEFINED] {FIXPOINT} [IF]  {FIXPOINT} [THEN]
-
-[UNDEFINED] {FIXPOINT} [IF]
 
 MARKER {FIXPOINT}
 
@@ -58,15 +69,6 @@ MARKER {FIXPOINT}
 \ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
 CODE +
 ADD @PSP+,TOS
-MOV @IP+,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] @ [IF]
-\ https://forth-standard.org/standard/core/Fetch
-\ @     c-addr -- char   fetch char from memory
-CODE @
-MOV @TOS,TOS
 MOV @IP+,PC
 ENDCODE
 [THEN]
@@ -215,72 +217,12 @@ THEN        COLON
             MOV @RSP+,IP
             MOV @PSP+,TOS       \ -- RES0 RES1 RES2
             MOV @PSP+,0(PSP)    \ -- RES1 RES2
-BW2         AND #-1,S           \ clear V, set N; process S sign
+            AND #-1,S           \ clear V, set N; process S sign
 S< IF       XOR #-1,0(PSP)      \ INV(QUOTlo)
             XOR #-1,TOS         \ INV(QUOThi)
             ADD #1,0(PSP)       \ INV(QUOTlo)+1
             ADDC #0,TOS         \ INV(QUOThi)+C
 THEN        MOV @IP+,PC
-ENDCODE
-
-CODE F/                         \ Q15.16 / Q15.16 --> Q15.16 result
-            PUSHM #4,rDOVAR     \ 6 save rDOVAR to rDOCOL regs to use M to R alias
-            MOV @PSP+,M         \ DVRlo
-            MOV @PSP+,X         \ DVDhi --> REMlo
-            MOV #0,W            \ REMhi = 0
-            MOV @PSP,Y          \ DVDlo --> DVDhi
-            MOV #0,T            \ DVDlo = 0
-            MOV X,S             \
-            XOR TOS,S           \ DVDhi XOR DVRhi --> S keep sign of result
-            AND #-1,X           \ DVD < 0 ? 
-S< IF       XOR #-1,Y           \ INV(DVDlo)
-            XOR #-1,X           \ INV(DVDhi)
-            ADD #1,Y            \ INV(DVDlo)+1
-            ADDC #0,X           \ INV(DVDhi)+C
-THEN        AND #-1,TOS         \ DVR < 0 ?
-S< IF       XOR #-1,M           \ INV(DVRlo)
-            XOR #-1,TOS         \ INV(DVRhi)
-            ADD #1,M            \ INV(DVRlo)+1
-            ADDC #0,TOS         \ INV(DVRhi)+C
-THEN
-\ don't uncomment lines below !
-\ ------------------------------------------------------------------------
-\           UD/MOD    DVDlo DVDhi DVRlo DVRhi -- REMlo REMhi QUOTlo QUOThi
-\ ------------------------------------------------------------------------
-\           MOV 4(PSP),T        \ DVDlo
-\           MOV 2(PSP),Y        \ DVDhi
-\           MOV #0,X            \ REMlo = 0
-\           MOV #0,W            \ REMhi = 0
-            MOV #32,P           \  init loop count
-BW1         CMP TOS,W           \ 1 REMhi = DVRhi ?
-    0= IF   CMP M,X             \ 1 REMlo U< DVRlo ?
-    THEN
-    U>= IF  SUB M,X             \ 1 no:  REMlo - DVRlo  (carry is set)
-            SUBC TOS,W          \ 1      REMhi - DVRhi
-    THEN
-    BEGIN   ADDC R,R            \ 1 RLC quotLO
-            ADDC Q,Q            \ 1 RLC quotHI
-            SUB #1,P            \ 1 Decrement loop counter
-            0< ?GOTO FW1        \ 2 out of loop if count<0    
-            ADD T,T             \ 1 RLA DVDlo
-            ADDC Y,Y            \ 1 RLC DVDhi
-            ADDC X,X            \ 1 RLC REMlo
-            ADDC W,W            \ 1 RLC REMhi
-            U< ?GOTO BW1        \ 2 15~ loop 
-            SUB M,X             \ 1 REMlo - DVRlo
-            SUBC TOS,W          \ 1 REMhi - DVRhi
-            BIS #1,SR           \ 1
-    AGAIN                       \ 2 16~ loop
-FW1
-\           MOV X,4(PSP)        \ REMlo    
-\           MOV W,2(PSP)        \ REMhi
-\           ADD #4,PSP          \ skip REMlo REMhi
-            MOV R,0(PSP)        \ QUOTlo
-            MOV Q,TOS           \ QUOThi
-            POPM #4,rDOVAR      \ 6 restore rDOCOL to rDOVAR
-\           MOV @IP+,PC         \ end of UD/MOD
-\ ------------------------------------------------------------------------
-            GOTO BW2            \ to process S sign
 ENDCODE
 
 [UNDEFINED] F#S [IF]
@@ -315,76 +257,24 @@ ENDCODE
 
 [ELSE] ; hardware multiplier
 
-CODE F/                         \ Q15.16 / Q15.16 --> Q15.16 result
-\ TOS = DVRhi
-\ 0(PSP) = DVRlo
-\ 2(PSP) = DVDhi
-\ 4(PSP) = DVDlo
-            PUSHM #4,rDOVAR     \ 6 PUSHM rDOVAR to rDOCOL to use M to R alias
-            MOV @PSP+,M         \ 2 DVRlo
-            MOV @PSP+,X         \ 2 DVDhi --> REMlo
-            MOV #0,W            \ 1 REMhi = 0
-            MOV @PSP,Y          \ 2 DVDlo --> DVDhi
-            MOV #0,T            \ 1 DVDlo = 0
-            MOV X,S             \ 1
-            XOR TOS,S           \ 1 DVDhi XOR DVRhi --> S keep sign of result
-            AND #-1,X           \ 1 DVD < 0 ? 
-S< IF       XOR #-1,Y           \ 1 INV(DVDlo)
-            XOR #-1,X           \ 1 INV(DVDhi)
-            ADD #1,Y            \ 1 INV(DVDlo)+1
-            ADDC #0,X           \ 1 INV(DVDhi)+C
-THEN        AND #-1,TOS         \ 1 DVRhi < 0 ?
-S< IF       XOR #-1,M           \ 1 INV(DVRlo)
-            XOR #-1,TOS         \ 1 INV(DVRhi)
-            ADD #1,M            \ 1 INV(DVRlo)+1
-            ADDC #0,TOS         \ 1 INV(DVRhi)+C
-THEN    
-\ don't uncomment lines below !
-\ ------------------------------------------------------------------------
-\           UD/MOD    DVDlo DVDhi DVRlo DVRhi -- REMlo REMhi QUOTlo QUOThi
-\ ------------------------------------------------------------------------
-\           MOV 4(PSP),T        \ DVDlo
-\           MOV 2(PSP),Y        \ DVDhi
-\           MOV #0,X            \ REMlo = 0
-\           MOV #0,W            \ REMhi = 0
-            MOV #32,P           \ 2 init loop count
-BW1         CMP TOS,W           \ 1 REMhi = DVRhi ?
-    0= IF   CMP M,X             \ 1 REMlo U< DVRlo ?
-    THEN
-    U>= IF  SUB M,X             \ 1 no:  REMlo - DVRlo  (carry is set)
-            SUBC TOS,W          \ 1      REMhi - DVRhi
-    THEN
-BW2         ADDC R,R            \ 1 RLC quotLO
-            ADDC Q,Q            \ 1 RLC quotHI
-            SUB #1,P            \ 1 Decrement loop counter
-            0< ?GOTO FW1        \ 2 out of loop if count<0    
-            ADD T,T             \ 1 RLA DVDlo
-            ADDC Y,Y            \ 1 RLC DVDhi
-            ADDC X,X            \ 1 RLC REMlo
-            ADDC W,W            \ 1 RLC REMhi
-            U< ?GOTO BW1        \ 2 19~ loop 
-            SUB M,X             \ 1 REMlo - DVRlo
-            SUBC TOS,W          \ 1 REMhi - DVRhi
-            BIS #1,SR           \ 1
-            GOTO BW2            \ 2 16~ loop
-FW1         AND #-1,S           \ 1 clear V, set N; QUOT < 0 ?
-S< IF       XOR #-1,R           \ 1 INV(QUOTlo)
-            XOR #-1,Q           \ 1 INV(QUOThi)
-            ADD #1,R            \ 1 INV(QUOTlo)+1
-            ADDC #0,Q           \ 1 INV(QUOThi)+C
-THEN        MOV R,0(PSP)        \ 3 QUOTlo
-            MOV Q,TOS           \ 1 QUOThi
-            POPM #4,rDOVAR      \ 6 restore rDOCOL to rDOVAR
-            MOV @IP+,PC         \ 4
+CODE F* \ signed s15.16 multiplication --> s15.16 result
+            MOV 4(PSP),&MPYS32L \ 5 Load 1st operand
+            MOV 2(PSP),&MPYS32H \ 5
+            MOV @PSP,&OP2L      \ 4 load 2nd operand
+            MOV TOS,&OP2H       \ 3
+            ADD #4,PSP          \ 1 remove 2 cells
+            MOV &RES1,0(PSP)    \ 5
+            MOV &RES2,TOS       \ 5
+            MOV @IP+,PC
 ENDCODE
 
 [UNDEFINED] F#S [IF]
-\ F#S    Qlo Qhi u -- Qhi 0   convert fractionnal part of Q15.16 fixed point number
-\                             with u digits
+\ F#S    Qlo Qhi len -- Qhi 0   convert fractionnal part of Q15.16 fixed point number
+\                             with len digits
 CODE F#S
-            MOV 2(PSP),X        \ -- Qlo Qhi u      X = Qlo
-            MOV @PSP,2(PSP)     \ -- Qhi Qhi u
-            MOV X,0(PSP)        \ -- Qhi Qlo u
+            MOV 2(PSP),X        \ -- Qlo Qhi len    X = Qlo
+            MOV @PSP,2(PSP)     \ -- Qhi Qhi len
+            MOV X,0(PSP)        \ -- Qhi Qlo len
             MOV TOS,T           \                   T = len
             MOV #0,S            \                   S = count
 BEGIN       MOV @PSP,&MPY       \                   Load 1st operand
@@ -404,18 +294,83 @@ BEGIN       MOV @PSP,&MPY       \                   Load 1st operand
 ENDCODE
 [THEN]
 
-CODE F* \ signed s15.16 multiplication --> s15.16 result
-            MOV 4(PSP),&MPYS32L \ 5 Load 1st operand
-            MOV 2(PSP),&MPYS32H \ 5
-            MOV @PSP,&OP2L      \ 4 load 2nd operand
-            MOV TOS,&OP2H       \ 3
-            ADD #4,PSP          \ 1 remove 2 cells
-            MOV &RES1,0(PSP)    \ 5
-            MOV &RES2,TOS       \ 5
-            MOV @IP+,PC
-ENDCODE
-
 [THEN]  \ end of hardware/software multiplier
+
+CODE F/                         \ Q15.16 / Q15.16 --> Q15.16 result
+            MOV TOS,Y           \ 1 Y=DVRhi
+            MOV @PSP+,W         \ 2 W=DVRlo
+            MOV @PSP+,X         \ 2 X=DVDhi
+            MOV @PSP,T          \ 2 T=DVDlo
+            PUSHM #5,X          \ 7 PUSHM DVDhi,DVRhi, M, P, Q
+            AND #-1,Y           \ 1 Y=DVRhi < 0 ?
+S< IF       XOR #-1,W           \ 1 W=INV(DVRlo)
+            XOR #-1,Y           \ 1 Y=INV(DVRhi)
+            ADD #1,W            \ 1 W=INV(DVRlo)+1
+            ADDC #0,Y           \ 1 Y=INV(DVRhi)+C
+THEN    
+            AND #-1,X           \ 1 X=DVDhi < 0 ? 
+S< IF       XOR #-1,T           \ 1 T=INV(DVDlo)
+            XOR #-1,X           \ 1 X=INV(DVDhi)
+            ADD #1,T            \ 1 T=INV(DVDlo)+1
+            ADDC #0,X           \ 1 X=INV(DVDhi)+C
+THEN        
+            MOV X,M             \ 1 DVDhi --> REMlo     to adjust Q15.16 division
+            MOV T,X             \ 1 DVDlo --> DVDhi
+            MOV #0,T            \ 1     0 --> DVDlo
+\ ------------------------------------------------------------------------
+\ don't uncomment lines below, don't rub out, please !
+\ ------------------------------------------------------------------------
+\           UD/MOD    DVDlo DVDhi DVRlo DVRhi -- REMlo REMhi QUOTlo QUOThi
+\ ------------------------------------------------------------------------
+\            MOV TOS,Y           \ 1 Y=DVRhi
+\            MOV @PSP+,W         \ 2 W=DVRlo
+\            MOV @PSP+,X         \ 2 X=DVDhi
+\            MOV @PSP,T          \ 2 T=DVDlo
+\            PUSHM #5,X          \ 7 PUSHM DVDhi,DVRhi, M, P, Q
+\            MOV #0,M            \ 1 M=REMlo = 0
+            MOV #0,P            \ 1 P=REMhi = 0
+            MOV #32,Q           \ 2 Q=count
+BW1         CMP Y,P             \ 1 REMhi = DVRhi ?
+    0= IF   CMP W,M             \ 1 REMlo U< DVRlo ?
+    THEN
+    U>= IF  SUB W,M             \ 1 no:  REMlo - DVRlo  (carry is set)
+            SUBC Y,P            \ 1      REMhi - DVRhi
+    THEN
+    BEGIN   ADDC S,S            \ 1 RLC quotLO
+            ADDC TOS,TOS        \ 1 RLC quotHI
+            SUB #1,Q            \ 1 Decrement loop counter
+    U>= WHILE                   \ 2 out of loop if count<0    
+            ADD T,T             \ 1 RLA DVDlo
+            ADDC X,X            \ 1 RLC DVDhi
+            ADDC M,M            \ 1 RLC REMlo
+            ADDC P,P            \ 1 RLC REMhi
+            U< ?GOTO BW1        \ 2 19~ loop 
+            SUB W,M             \ 1 REMlo - DVRlo
+            SUBC Y,P            \ 1 REMhi - DVRhi
+            BIS #1,SR           \ 1
+    REPEAT                      \ 2 16~ loop
+\            MOV M,T             \ 1 T=REMlo
+\            MOV P,W             \ 1 W=REMhi
+            POPM #5,X           \ 7 X=DVDhi, Y=DVRhi, system regs M,P,Q restored
+\            CMP #0,X            \ 1 sign of Rem ?
+\    S< IF   XOR #-1,T           \ 1 INV(REMlo)
+\            XOR #-1,W           \ 1 INV(REMhi)
+\            ADD #1,T            \ 1 INV(REMlo)+1 
+\            ADDC #0,W           \ 1 INV(REMhi)+C
+\    THEN
+\           SUB #4,PSP          \
+\           MOV T,4(PSP)        \   REMlo
+\           MOV W,2(PSP)        \   REMhi
+            XOR X,Y             \ Y = sign of Quot
+            CMP #0,Y            \ sign of Quot ?
+S< IF       XOR #-1,S           \ 1 INV(QUOTlo)
+            XOR #-1,TOS         \ 1 INV(QUOThi)
+            ADD #1,S            \ 1 INV(QUOTlo)+1
+            ADDC #0,TOS         \ 1 INV(QUOThi)+C
+THEN
+            MOV S,0(PSP)        \ 3 QUOTlo
+            MOV @IP+,PC         \ 4
+ENDCODE
 
 [UNDEFINED] F. [IF]
 CODE F. \ display a Q15.16 number with 4/5/16 digits after comma
@@ -450,10 +405,8 @@ ENDCODE
 
 RST_HERE
 
-[THEN] \ end of [UNDEFINED] {FIXPOINT}
-
 ; -----------------------
-; complements (volatile) for tests below
+; complement (volatile) for tests below
 ; -----------------------
 
 [UNDEFINED] ! [IF]
@@ -530,56 +483,58 @@ ECHO
 3,14159 2CONSTANT PI
 PI -1,0 F* 2CONSTANT -PI
 
-PI D.   ; D. is not appropriate -->
+PI D.   ; D. is not appropriate --> 
 -PI D.  ; D. is not appropriate -->
 
-PI F.   ; good value! ------------>
--PI F.  ; good value! ------------>
+PI F.   ; F. is a good choice! ---> 
+-PI F.  ; F. is a good choice! --->
 
-$10 BASE  !  PI F. 
+$10 BASE !   PI F. 
             -PI F.
-%10 BASE  !  PI F. 
+%10 BASE !   PI F. 
             -PI F.
-#10 BASE  !  PI F. 
+#10 BASE !   PI F. 
             -PI F.
 
-PI 2,0 F* F.      
-PI -2,0 F* F.    
--PI 2,0 F* F.    
--PI -2,0 F* F.    
+ PI  2,0 F* F.     
+ PI -2,0 F* F.    
+-PI  2,0 F* F.    
+-PI -2,0 F* F.     
 
-PI 2,0 F/ F.      
-PI -2,0 F/ F.    
--PI 2,0 F/ F.    
--PI -2,0 F/ F.    
+ PI  2,0 F/ F.     
+ PI -2,0 F/ F.    
+-PI  2,0 F/ F.    
+-PI -2,0 F/ F.     
 
-32768,0 1,0 F* F.   ; overflow! -->
-32768,0 1,0 F/ F.   ; overflow! -->
+ 32768,0  1,0 F* F. ; overflow! -->
+ 32768,0  1,0 F/ F. ; overflow! -->
 -32768,0 -1,0 F* F. ; overflow! -->
 -32768,0 -1,0 F/ F. ; overflow! -->
 
-32767,99999 1,0 F* F. 
-32767,99999 1,0 F/ F. 
-32767,99999 2,0 F/ F. 
-32767,99999 4,0 F/ F. 
-32767,99999 8,0 F/ F. 
-32767,99999 16,0 F/ F.
+32767,99999 1,0  F* F. 
+32767,99999 1,0  F/ F. 
+32767,99999 2,0  F/ F. 
+32767,99999 4,0  F/ F. 
+32767,99999 8,0  F/ F. 
+32767,99999 16,0 F/ F. 
 
--32768,0 -2,0 F/ F.   
--32768,0 -4,0 F/ F.   
--32768,0 -8,0 F/ F.   
--32768,0 -16,0 F/ F.  
--32768,0 -32,0 F/ F.  
--32768,0 -64,0 F/ F.  
+-32768,0 -2,0    F/ F. 
+-32768,0 -4,0    F/ F. 
+-32768,0 -8,0    F/ F. 
+-32768,0 -16,0   F/ F. 
+-32768,0 -32,0   F/ F. 
+-32768,0 -64,0   F/ F. 
 
--3276,80 -1,0 F/ F.   
--327,680 -1,0 F/ F.   
--32,7680 -1,0 F/ F.   
--3,27680 -1,0 F/ F.   
--0,32768 -1,0 F/ F.   
+-3276,80 -1,0    F/ F. 
+-327,680 -1,0    F/ F. 
+-32,7680 -1,0    F/ F. 
+-3,27680 -1,0    F/ F. 
+-0,32768 -1,0    F/ F. 
 
 ; SQRT(32768)^2 = 32768
-181,01933598375 181,01933598375 F* F.  
-181,01933598375 -181,01933598375 F* F.
--181,01933598375 181,01933598375 F* F.
+ 181,01933598375  181,01933598375 F* F. 
+ 181,01933598375 -181,01933598375 F* F.
+-181,01933598375  181,01933598375 F* F.
 -181,01933598375 -181,01933598375 F* F.
+ 
+RST_STATE

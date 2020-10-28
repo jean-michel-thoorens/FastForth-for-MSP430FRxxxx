@@ -80,7 +80,20 @@
 \
 \ rc5   <--- OUT IR_Receiver (1 TSOP32236)
 
-PWR_STATE
+\ first, we test for downloading driver only if UART TERMINAL target
+CODE ABORT_RC5TOLCD
+SUB #2,PSP
+MOV TOS,0(PSP)
+MOV &VERSION,TOS
+SUB #307,TOS        \ FastForth V3.7
+COLON
+'CR' EMIT            \ return to column 1 without 'LF'
+ABORT" FastForth version = 3.7 please!"
+PWR_STATE           \ remove ABORT_UARTI2CS definition before resuming
+;
+
+ABORT_RC5TOLCD
+
 
 [DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]     \ remove application
 

@@ -20,14 +20,17 @@
 \ then select your TARGET when asked.
 \
 \
-\ REGISTERS USAGE
-\ R4 to R7 must be saved before use and restored after
-\ scratch registers Y to S are free for use
-\ under interrupt, IP is free for use
-\ interrupts reset SR register !
+\ ================================================================================
+\ REGISTERS USAGE for embedded MSP430 ASSEMBLER
+\ ================================================================================
+\ don't use R2, R3, R4
+\ R5, R6, R7 must be PUSHed/POPed before/after use, OR restored after: MOV #{XDOCOL|XDOCON|R>},{rDODOES|rDOCON|rDOVAR}
+\ scratch registers Y to S are free,
+\ under interrupt, IP is free,
+\ use FORTH rules for reg. TOS, PSP, RSP.
 \
-\ PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
-\ PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
+\ PUSHM order : PSP,TOS, IP, S , T , W , X , Y ,rDOVAR,rDOCON,rDODOES,rDOCOL, R3, SR,RSP, PC
+\ PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5   ,  R4  , R3, R2, R1, R0
 \
 \ example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
 \
@@ -37,9 +40,8 @@
 \ example : POPM #6,IP   pop Y,X,W,T,S,IP registers from return stack
 \
 \ ASSEMBLER conditionnal usage after IF UNTIL WHILE : S< S>= U< U>= 0= 0<> 0>=
-\ ASSEMBLER conditionnal usage before ?JMP ?GOTO    : S< S>= U< U>= 0= 0<> 0< 
+\ ASSEMBLER conditionnal usage before      ?GOTO    : S< S>= U< U>= 0= 0<> 0< 
 \
-\ FORTH conditionnal    : 0= 0< = < > U<
 \
 \ display on a LCD 2x20 CHAR the code sent by an IR remote under philips RC5 protocol
 \ target : any TI MSP-EXP430FRxxxx launchpad (FRAM)
@@ -82,20 +84,28 @@
 \ rc5   <--- OUT IR_Receiver (1 TSOP32236)
 
 
-PWR_STATE
+\ first, we test for downloading driver only if UART TERMINAL target
+CODE ABORT_RC5TOLCD
+SUB #2,PSP
+MOV TOS,0(PSP)
+MOV &VERSION,TOS
+SUB #307,TOS        \ FastForth V3.7
+COLON
+'CR' EMIT            \ return to column 1 without 'LF'
+ABORT" FastForth version = 3.7 please!"
+PWR_STATE           \ remove ABORT_UARTI2CS definition before resuming
+;
+
+ABORT_RC5TOLCD
+
 
 [DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]     \ remove application
 
-MARKER {RC5TOLCD}
-
-[UNDEFINED] @ [IF]
-\ https://forth-standard.org/standard/core/Fetch
-\ @     c-addr -- char   fetch char from memory
-CODE @
-MOV @TOS,TOS
-MOV @IP+,PC
-ENDCODE
-[THEN]
+MARKER {RC5TOLCD}   \ restore the state before MARKER definition
+\                   \ {UARTI2CS}+8 = RET_ADR: by default MARKER_DOES does CALL #RET_ADR
+6 ALLOT             \ {UARTI2CS}+10: make room to save previous INI_APP address
+                    \ {RC5TOLCD}+12: make room to save previous WDT_TIM_0_VEC
+                    \ {RC5TOLCD}+14: make room to save previous IR_VEC
 
 [UNDEFINED] CONSTANT [IF]
 \ https://forth-standard.org/standard/core/CONSTANT
@@ -327,7 +337,6 @@ ELSE
         THEN                    \
     THEN                        \
 THEN                            \
-BW1                             \ <== truncated RC5 message, repeated RC5 command
 RETI                            \ 5
 ENDASM
 
@@ -384,7 +393,7 @@ MOV #%1011100100,&RC5_TIM_CTL   \ (re)start timer_A | SMCLK/8 time interval,free
         CMP Y,X                 \ 1                     |   cycle time out of bound ?
         U>= IF                  \ 2                 ^   |   yes:
         BIC #$30,&RC5_TIM_CTL   \                   |   |      stop timer
-        GOTO BW1                \                   |   |      quit on truncated RC5 message
+        RETI                    \                   |   |      quit on truncated RC5 message
         THEN                    \                   |   |
         BIT.B #RC5,&IR_IFG      \ 3                 |   |   n+1/2 cycles edge is always present
     0<> UNTIL                   \ 2                 |   |
@@ -413,7 +422,7 @@ THEN                            \ X =  0  C6 C5 C4 C3 C2 C1 C0
 RRUM    #3,T                    \ new toggle bit = T(13) ==> T(10)
 XOR     @RSP,T                  \ (new XOR old) Toggle bits
 BIT     #UF10,T                 \ repeated RC5_command ?
-0= ?GOTO BW1                    \ yes, RETI without UF10 change and without action !
+0= IF RETI THEN                 \ yes, RETI without UF10 change and without action !
 XOR #UF10,0(RSP)                \ 5 toggle bit memory
 \ ******************************\
 \ Display IR_RC5 code           \
@@ -436,61 +445,67 @@ MOV @PSP+,TOS                   \     -- TOS
 RETI
 ENDASM
 
-\ ******************************\
-ASM BACKGROUND                  \
-\ ******************************\
-BEGIN
-\     ...                         \ insert here your background task
-\     ...                         \
-\     ...                         \
-    CALL &RXON                  \ comment this line to disable TERMINAL_INPUT
-    BIS &LPM_MODE,SR            \
-\ ******************************\
-\ here start all interrupts     \
-\ ******************************\
-\ here return all interrupts    \
-\ ******************************\
-AGAIN                           \
-ENDASM                          \
-\ ******************************\
 
 \ ------------------------------\
-ASM SYS_OUT                     \ system OUT init, replaces WARM at the request of STOP.
+ASM STOP_R2L                    \ define new STOP_APP
 \ ------------------------------\
-\     ...                         \ init specific I/O sys as you want
-\     ...                         \ before executing default WARM
-    MOV #WARM,X                 \ ['] WARM 
-    ADD #4,X                    \ >BODY
-    MOV X,PC                    \ EXECUTE    (which activates IO and TERMINAL)
-ENDASM
-\ ------------------------------\
-
-\ ------------------------------\
-CODE STOP                       \ stops multitasking, must to be used before downloading app
-\ ------------------------------\
-BW1 MOV #SLEEP,X                \ the ASM word SLEEP is only visible in mode assembler. 
-    ADD #4,X                    \ X = BODY of SLEEP, X-2 = PFA of SLEEP
-    MOV X,-2(X)                 \ restore the default background: SLEEP
-    MOV #WARM,X
-    MOV #SYS_OUT,2(X)           \ default WARM is replaced by JMJ_BOX SYS_OUT (ended by default WARM)
-    BIC.B #RC5,&IR_IE           \ clear RC5_Int
-    BIC.B #RC5,&IR_IFG          \ clear RC5_Int flag
+CMP #RET_ADR,&{RC5TOLCD}+8      \
+0<> IF                          \ if previous START executing
+    BIC.B #RC5,&IR_IE           \ clear I/O RC5_Int
+    BIC.B #RC5,&IR_IFG          \ clear I/O RC5_Int flag
     MOV #0,&LCD_TIM_CTL         \ stop LCD_TIMER
     MOV #0,&WDT_TIM_CTL         \ stop WDT_TIMER
     MOV #0,&WDT_TIM_CCTL0       \ clear CCIFG0 disable CCIE0
-    MOV #COLD,X                 \ X = COLD adr = default vectors value
-    MOV X,&IR_VEC               \ 
-    MOV X,&WDT_TIM_0_VEC        \
+    MOV #RET_ADR,&{RC5TOLCD}+8  \ clear MARKER_DOES call
+    MOV &{RC5TOLCD}+10,&WARM+2          \ restore previous ini_APP
+    MOV &{RC5TOLCD}+12,&WDT_TIM_0_VEC   \ restore Vector previous value
+    MOV &{RC5TOLCD}+14,&IR_VEC          \ restore Vector previous value
+    MOV &{RC5TOLCD}+10,PC       \ run previous INI_APP, then RET
+THEN 
+MOV @RSP+,PC                    \ RET
+ENDASM
+
+\ ------------------------------\
+CODE STOP                       \
+\ ------------------------------\
+BW1                             \ <-- INI_R2L for some events
+CALL #STOP_R2L
 COLON                           \ restore default action of primary DEFERred word WARM (FORTH version)
 ECHO                            \
 ." RC5toLCD is removed,"
 ."  type START to restart"
- WARM                           \ performs reset to reset all interrupt vectors.    
+ABORT" "
 ;
 \ ------------------------------\
 
 \ ------------------------------\
-CODE SYS_INIT                   \ this routine completes the init of system, i.e. FORTH + this app.
+ASM INI_R2L                     \ this routine completes the init of system, i.e. FORTH + this app.
+\ ------------------------------\
+\ activate I/O                  \
+\ ------------------------------\
+BIC #1,&PM5CTL0                 \ activate I/O to enable SW2 test
+\ ------------------------------\
+\ RESET events handling         \ search "SYSRSTIV" in your MSP430FRxxxx datasheet to get listing
+\ ------------------------------\
+MOV &RSTIV_MEM,TOS              \ SYSRSTIV = $00|$02|$04|$0E|$xx = POWER_ON|RST|SVSH_threshold|SYS_failures
+CMP #$0E,TOS                    \ RSTIV_MEM = SVSHIFG SVSH event ?
+0<> IF                          \ if not
+    CMP #$0A,TOS                \   RSTIV_MEM >= violation memory protected areas ?
+    U>= ?GOTO BW1               \   execute STOP_R2L then RET to BODY of WARM
+THEN                            \
+BIT.B #SW2,&SW2_IN              \ hardware SW2+RST ?
+0= ?GOTO BW1                    \ hardware SW2+RST execute STOP_U2I then RET to BODY of WARM
+\ CMP #4,TOS                      \ hardware RST 
+\ 0= ?GOTO BW1                    \ hardware RST performs STOP.
+\ CMP #2,TOS                      \ Power_ON event
+\ 0= ?GOTO BW1                    \ uncomment if you want to loose application in this case...
+\ CMP #6,TOS                      \
+\ 0= ?GOTO BW1                    \ COLD event performs STOP... uncomment if it's that you want.
+\ CMP #$0A,TOS                    \
+\ 0= ?GOTO BW1                    \ fault event (violation memory protected areas) performs STOP
+\ CMP #$16,TOS                    \
+\ U>= ?GOTO BW1                   \ all other fault events + Deep Reset perform STOP
+MOV #0,&RSTIV_MEM               \ clear RSTIV_MEM after use and before next RST event!
 \ ------------------------------\
 \ LCD_TIM_CTL =  %0000 0010 1001 0100\$3C0
 \                    - -             \CNTL Counter lentgh \ 00 = 16 bits
@@ -549,7 +564,6 @@ MOV #%0110_0000,&LCD_TIM_CCTLn  \ output mode = set/reset \ clear CCIFG
 \ ******************************\
     BIS.B #RC5,&IR_IE           \ enable RC5_Int
     BIC.B #RC5,&IR_IFG          \ reset RC5_Int flag
-    MOV #RC5_INT,&IR_VEC        \ init interrupt vector
 \ ******************************\
 \ init WatchDog WDT_TIM_        \ eUSCI_A0 (FORTH terminal) has higher priority than WDT_TIM_
 \ ******************************\
@@ -575,31 +589,11 @@ MOV #%01_0001_0100,&WDT_TIM_CTL \ start WDT_TIM_, ACLK, up mode, disable int,
 \                             - \ CCIFGn
     MOV #%10000,&WDT_TIM_CCTL0  \ enable compare interrupt, clear CCIFG0
 \ ------------------------------\
-    MOV #WDT_INT,&WDT_TIM_0_VEC \ for only CCIFG0 int, this interrupt clears automatically CCIFG0
-\ ------------------------------\
 \ define LPM mode for ACCEPT    \
 \ ------------------------------\
 \    MOV #LPM4+GIE,&LPM_MODE    \ with MSP430FR59xx
 \    MOV #LPM2+GIE,&LPM_MODE    \ with MSP430FR57xx, terminal input don't work for LPMx > 2
 \                               \ with MSP430FR2xxx, terminal input don't work for LPMx > 0 ; LPM0 is the default value
-\ ------------------------------\
-\ activate I/O                  \
-\ ------------------------------\
-BIC #1,&PM5CTL0                 \ activate all previous I/O settings; if not activated, nothing works after reset !
-\ ------------------------------\
-\ RESET events handling         \ search "SYSRSTIV" in your MSP430FRxxxx datasheet
-\ ------------------------------\
-MOV &SAVE_SYSRSTIV,Y            \ Y = SYSRSTIV register memory
-\ CMP #2,Y                        \ Power_ON event
-\ 0= ?GOTO BW1                    \ uncomment if you want to loose application in this case...
-CMP #4,Y                        \
-0= ?GOTO BW1                    \ hardware RESET performs STOP. Should be mandatory...
-\ CMP #6,Y                        \
-\ 0= ?GOTO BW1                    \ COLD event performs STOP... uncomment if it's that you want.
-\ CMP #$0A,Y                      \
-\ 0= ?GOTO BW1                    \ fault event (violation memory protected areas) performs STOP
-\ CMP #$16,Y                      \
-\ U>= ?GOTO BW1                   \ all other fault events + Deep Reset perform STOP
 \ ------------------------------\
 COLON                           \
 \ ------------------------------\
@@ -626,18 +620,25 @@ COLON                           \
     ['] CR >BODY IS CR          \ CR executes its default value
     ['] EMIT >BODY IS EMIT      \ EMIT executes its defaulte value
     ." RC5toLCD is running. Type STOP to quit" \ display message on FastForth Terminal
-    PWR_STATE ABORT             \ init DP and continues with ABORT
+    ABORT" "                    \
 ;                               \
 \ ------------------------------\
 
 \ ------------------------------\
-CODE START                      \ this routine replaces WARM and SLEEP default values by these of this application.
+CODE START                      \ this routine replaces WARM and COLD default values by these of this application.
 \ ------------------------------\
-MOV #SLEEP,X                    \ replace default background process SLEEP
-MOV #BACKGROUND,2(X)            \ by RC5toLCD BACKGROUND
-MOV #WARM,X                     \ replace default WARM
-MOV #SYS_INIT,2(X)              \ by RC5toLCD SYS_INIT
-MOV X,PC                        \ then execute new WARM
+CMP #RET_ADR,&{RC5TOLCD}+8      \ init R2L once, only if MARKER_DOES is not initialized
+0= IF                           \ if not done, customizes MARKER_DOES
+    MOV #STOP_RTC,&{RC5TOLCD}+8 \ execution of {RC5TOLCD} will perform STOP_RTC.
+    MOV &WARM+2,&{RC5TOLCD}+10  \ save previous INI_APP subroutine
+    MOV #INI_R2L,&WARM+2        \ replace it by RC5toLCD INI_APP
+    MOV &WDT_TIM_0_VEC,&{RC5TOLCD}+12   \ save Vector previous value
+    MOV #WDT_INT,&WDT_TIM_0_VEC \ for only CCIFG0 int, this interrupt clears automatically CCIFG0
+    MOV &IR_VEC,&{RC5TOLCD}+14  \ save Vector previous value
+    MOV #RC5_INT,&IR_VEC        \ init interrupt vector
+    MOV #INI_R2L,PC             \ then execute new INI_APP, without return
+THEN
+MOV @IP+,PC 
 ENDCODE 
 \ ------------------------------\
 

@@ -33,87 +33,112 @@ INFO_LEN=\$0100!
 ! ============================================
 ! FastForth INFO(DCBA) memory map (256 bytes):
 ! ============================================
-
-INI_THREAD=\$1800!      .word THREADS
-TERMBRW_RST=\$1802!     .word TERMBRW_RST
-TERMMCTLW_RST=\$1804!   .word TERMMCTLW_RST
-FREQ_KHZ=\$1806!        .word FREQUENCY
-
-SAVE_SYSRSTIV=\$1808!   to enable SYSRSTIV read
-LPM_MODE=\$180A!        LPM0+GIE is the default mode
-INIDP=\$180C!           define RST_STATE, init by wipe
-INIVOC=\$180E!          define RST_STATE, init by wipe
-VERSION=\$1810!
+FREQ_KHZ=\$1800!        FREQUENCY (in kHz)
+TERMBRW_RST=\$1802!     TERMBRW_RST
+TERMMCTLW_RST=\$1804!   TERMMCTLW_RST
+I2CSLAVEADR=\$1802!     I2C_SLAVE address
+I2CSLAVEADR1=\$1804!    
+LPM_MODE=\$1806!        LPM_MODE value, LPM0+GIE is the default value
+RSTIV_MEM=\$1808!       SYSRSTIV memory, set to -1 to do Deep RESET
+RST_DP=\$180A!          RST value for DP
+RST_VOC=\$180C!         RST value for VOClink
+VERSION=\$180E!
+THREADS=\$1810!         THREADS
 KERNEL_ADDON=\$1812!
-RXON=\$1814!
-RXOFF=\$1816!
-ReadSectorWX=\$1818!    call with W = SectorLO  X = SectorHI
-WriteSectorWX=\$181A!   call with W = SectorLO  X = SectorHI
-TERMINAL_INT=\$181C!    value for TERMINAL vector
+
+WIPE_INI_=\$1814!       MOV #WIPE_INI,X
+WIPE_COLD=\$1814!       WIPE value for PFA_COLD
+WIPE_INI_FORTH=\$1816!  WIPE value for PFA_INI_FORTH
+WIPE_SLEEP=\$1818!      WIPE value for PFA_SLEEP
+WIPE_WARM=\$181A!       WIPE value for PFA_WARM
+WIPE_TERM_INT=\$181C!   WIPE value for TERMINAL vector
+WIPE_DP=\$182E!         WIPE value for RST_DP   
+WIPE_VOC=\$1820!        WIPE value for RST_VOC
+
+INI_FORTH_INI=\$1822!   MOV #INI_FORTH_INI,X    \ >BODY instruction of INI_FORTH subroutine
+INIT_ACCEPT=\$1822!     WIPE value for PFAACCEPT
+INIT_CR=\$1824!         WIPE value for PFACR
+INIT_EMIT=\$1826!       FORTH value for PFAEMIT
+INIT_KEY=\$1828!        WIPE value for PFAKEY
+INIT_CIB=\$182A!        WIPE value for CIB_ADR
+HALF_FORTH_INI=\$182C!  to preserve the state of DEFERed words, used by user INI_SOFT_APP as:
+!                       ADD #4,0(RSP)           \ skip INI_FORTH >BODY instruction "MOV #INI_FORTH_INI,X"
+!                       MOV #HALF_FORTH_INI,X   \ replace it by "MOV #HALF_FORTH_INI,X"
+!                       MOV @RSP+,PC            \ then RET
+INIT_DOCOL=\$182C!      FORTH value for rDOCOL   (R4)
+INIT_DODOES=\$182E!     FORTH value for rDODOES  (R5)
+INIT_DOCON=\$1830!      FORTH value for rDOCON   (R6)
+INIT_DOVAR=\$1832!      FORTH value for rDOVAR   (R7)
+INIT_CAPS=\$1834!       FORTH value for CAPS
+INIT_BASE=\$1836!       FORTH value for BASE
+
+ABORT_ADR=\$1838!       ABORT address
+QUIT4_ADR=\$183A!       QUIT4 used by BOOTLOADER
+!                       free EPROM
 
 ! ---------------------------------------
-! FAT16 FileSystemInfos 
+! FAT16 FileSystemInfos
 ! ---------------------------------------
-FATtype=\$182C!
-BS_FirstSectorL=\$182E!
-BS_FirstSectorH=\$1830!
-OrgFAT1=\$1832!
-FATSize=\$1834!
-OrgFAT2=\$1836!
-OrgRootDir=\$1838!
-OrgClusters=\$183A!         Sector of Cluster 0
-SecPerClus=\$183C!
+FATtype=\$185A!
+BS_FirstSectorL=\$185C!
+BS_FirstSectorH=\$185E!
+OrgFAT1=\$1860!
+FATSize=\$1862!
+OrgFAT2=\$1864!
+OrgRootDir=\$1866!
+OrgClusters=\$1868!         Sector of Cluster 0
+SecPerClus=\$186A!
 
 ! ---------------------------------------
 ! SD command
 ! ---------------------------------------
-SD_CMD_FRM=\$183E!  6 bytes SD_CMDx inverted frame \${CRC,ll,LL,hh,HH,CMD}
-SD_CMD_FRM0=\$183E! CRC:ll  word access
-SD_CMD_FRM1=\$183F! ll      byte access
-SD_CMD_FRM2=\$1840! LL:hh   word access
-SD_CMD_FRM3=\$1841! hh      byte access
-SD_CMD_FRM4=\$1842! HH:CMD  word access
-SD_CMD_FRM5=\$1843! CMD     byte access
-SectorL=\$1844!     2 words
-SectorH=\$1846!
+SD_CMD_FRM=\$186C!  6 bytes SD_CMDx inverted frame \${CRC,ll,LL,hh,HH,CMD}
+SD_CMD_FRM0=\$186C! CRC:ll  word access
+SD_CMD_FRM1=\$186D! ll      byte access
+SD_CMD_FRM2=\$186E! LL:hh   word access
+SD_CMD_FRM3=\$186F! hh      byte access
+SD_CMD_FRM4=\$1870! HH:CMD  word access
+SD_CMD_FRM5=\$1871! CMD     byte access
+SectorL=\$1872!     2 words
+SectorH=\$1874!
 
 ! ---------------------------------------
 ! BUFFER management
 ! ---------------------------------------
-BufferPtr=\$1848! 
-BufferLen=\$184A!
+BufferPtr=\$1876!
+BufferLen=\$1878!
 
 ! ---------------------------------------
 ! FAT entry
 ! ---------------------------------------
-ClusterL=\$184C!     16 bits wide (FAT16)
-ClusterH=\$184E!     16 bits wide (FAT16)
-NewClusterL=\$1850!  16 bits wide (FAT16) 
-NewClusterH=\$1852!  16 bits wide (FAT16) 
-CurFATsector=\$1854!
+ClusterL=\$187A!     16 bits wide (FAT16)
+ClusterH=\$187C!     16 bits wide (FAT16)
+NewClusterL=\$187E!  16 bits wide (FAT16)
+NewClusterH=\$1880!  16 bits wide (FAT16)
+CurFATsector=\$1882!
 
 ! ---------------------------------------
 ! DIR entry
 ! ---------------------------------------
-DIRclusterL=\$1856!  contains the Cluster of current directory ; 1 if FAT16 root directory
-DIRclusterH=\$1858!  contains the Cluster of current directory ; 1 if FAT16 root directory
-EntryOfst=\$185A!  
+DIRclusterL=\$1884!  contains the Cluster of current directory ; 1 if FAT16 root directory
+DIRclusterH=\$1886!  contains the Cluster of current directory ; 1 if FAT16 root directory
+EntryOfst=\$1888!
 
 ! ---------------------------------------
 ! Handle Pointer
 ! ---------------------------------------
-CurrentHdl=\$185C!  contains the address of the last opened file structure, or 0
+CurrentHdl=\$188A!  contains the address of the last opened file structure, or 0
 
 ! ---------------------------------------
 ! Load file operation
 ! ---------------------------------------
-pathname=\$185E!    address of pathname string
-EndOfPath=\$1860!
+pathname=\$188C!    address of pathname string
+EndOfPath=\$188E!
 
 ! ---------------------------------------
 ! Handle structure
 ! ---------------------------------------
-! three handle tokens : 
+! three handle tokens :
 ! token = 0 : free handle
 ! token = 1 : file to read
 ! token = 2 : file updated (write)
@@ -137,13 +162,13 @@ HDLW_PrevLEN=24!    previous LEN
 HDLW_PrevORG=26!    previous ORG
 
 !OpenedFirstFile     ; "openedFile" structure 
-HandleMax=5!
+HandleMax=4!
 HandleLenght=28!
-FirstHandle=\$1862!
-HandleEnd=\$18EE!
+FirstHandle=\$1890!
+HandleEnd=\$1900!
 
-SD_END=\$18EE!
-SD_LEN=\$C2!
+SD_END=\$1900!
+SD_LEN=\$A6!
 
 ! ============================================
 ! FRAM TLV
@@ -236,32 +261,47 @@ MAIN_ORG=\$C200!        Code space start
 MAIN_LEN=\$3E00!        15.5 k FRAM
 ! ----------------------------------------------
 
-SLEEP=\$C200! 
-BODYSLEEP=\$C204!
-LIT=\$C20E! 
-NEXT_ADR=\$C216!
-XSQUOTE=\$C218! 
-HEREADR=\$C22C!
-QTBRAN=\$C238! 
-BRAN=\$C23E! 
-QFBRAN=\$C242! 
-SKIPBRAN=\$C248! 
-XDO=\$C24C! 
-XPLOOP=\$C25C! 
-XLOOP=\$C26E! 
-MUSMOD=\$C274!          32/16 unsigned division
-MDIV1=\$C28E!           input for 48/16 unsigned division
-SETIB=\$C2BA!           Set Input Buffer with org len values, reset >IN 
-REFILL=\$C2CA!          accept one line from input and leave org len of input buffer
-CIB_ADR=\$C2D8!         contents currently TIB_ORG; may be redirected to SDIB_ORG
-XDODOES=\$C2E2!         restore rDODOES: MOV #XDODOES,rDODOES
-XDOCON=\$C2F0!          restore rDOCON: MOV #XDOCON,rDOCON
-XDOCOL=\$C2FC!          restore rDOCOL: MOV #XDOCOL,rDOCOL      only for DTC model = 1
+SLEEP=\$C200!               CODE_WITHOUT_RETURN: CPU shutdown
+LIT=\$C20A!                 CODE compiled by LITERAL
+XSQUOTE=\$C214!             CODE compiled by S" and S_
+HEREXEC=\$C228!             CODE HERE and BEGIN execute address
+QFBRAN=\$C234!              CODE compiled by IF UNTIL
+BRAN=\$C23A!                CODE compiled by ELSE REPEAT AGAIN
+NEXT_ADR=\$C23C!            CODE NEXT instruction (MOV @IP+,PC)
+XDO=\$C23E!                 CODE compiled by DO
+XPLOOP=\$C24E!              CODE compiled by +LOOP
+XLOOP=\$C260!               CODE compiled by LOOP
+MUSMOD=\$C266!              ASM 32/16 unsigned division, used by ?NUMBER, UM/MOD
+MDIV1DIV2=\$C278!           ASM input for 48/16 unsigned division with DVDhi=0, see DOUBLE M*/
+MDIV1=\$C280!               ASM input for 48/16 unsigned division, see DOUBLE M*/
+RET_ADR=\$C2AA!             ASM content of INI_FORTH_PFA and MARKER+8 definitions,
+SETIB=\$C2AC!               CODE Set Input Buffer with org & len values, reset >IN pointer
+REFILL=\$C2BC!              CODE accept one line from input and leave org len of input buffer
+CIB_ADR=\$C2CA!             [CIB_ADR] = TIB_ORG by default; may be redirected to SDIB_ORG
+XDODOES=\$C2D4!             restore rDODOES: MOV #XDODOES,rDODOES
+XDOCON=\$C2E2!              restore rDOCON: MOV #XDOCON,rDOCON
+XDOVAR=\$C2EE!              restore rDOVAR: MOV #XDOVAR,rDOVAR
+!to find DTC value, download \MSP430-FORTH\FF_SPECS.4th
+!XDOCOL=TYPE\+\-16          if DTC = 1, restore rDOCOL as this: MOV #TYPE+-16,rDOCOL
+!XDOCOL=\#S\+16             if DTC = 2, restore rDOCOL as this: MOV ##S+16,rDOCOL
+!                           if DTC = 3, nothing to do, R7 is free for use.
+INI_FORTH=\$C2F8!           CODE_WITHOUT_RETURN common part of RST and QABORT, starts FORTH engine
+QABORT=\$C32A!              CODE_WITHOUT_RETURN run-time part of ABORT"
+3DROP=\$C330!               CODE 
+ABORT_TERM=\$C336!          CODE_WITHOUT_RETURN, called by QREVEAL and INTERPRET   
+!-------------------------------------------------------------------------------
+UART_COLD_TERM=\$C394!      ASM, content of COLD_PFA by default
+UART_INIT_TERM=\$C39C!      ASM, content of WARM_PFA by default
+UART_RXON=\$C3C6!           ASM, content of SLEEP_PFA by default
+UART_RXOFF=\$C3C8!          ASM, called by ACCEPT before RX char LF.
+!-------------------------------------------------------------------------------
+I2C_COLD_TERM=\$C3B4!       ASM, content of COLD_PFA by default
+I2C_INIT_TERM=\$C38A!       ASM, content of WARM_PFA by default
+I2C_RXON=\$C3B6!            ASM, content of SLEEP_PFA by default
+I2C_CTRL_CH=\$C3B8!         ASM, used as is: MOV.B #CTRL_CHAR,Y
+!                                            CALL #I2C_CTRL_CH
+!-------------------------------------------------------------------------------
 
-! to find DTC value, download \MSP430-FORTH\FastForthSpecs.4th
-! if DTC = 1, restore rDOCOL as this : MOV #xdocol,rDOCOL
-! if DTC = 2, restore rDOCOL as this : MOV #EXIT,rDOCOL
-! if DTC = 3, nothing to do, R7 is free for use.
 ! ----------------------------------------------
 ! Interrupt Vectors and signatures - MSP430FR5739
 ! ----------------------------------------------

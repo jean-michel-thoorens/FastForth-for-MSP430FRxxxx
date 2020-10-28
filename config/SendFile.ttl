@@ -1,27 +1,39 @@
 ; macro called by SendSource.bat
 ; param1 = this macro
 ; param2 = file.4TH to send
-; param3 = "/C" i.e. connect to current COMx
-; param4 = "ECHO" | "NOECHO" | "HALF" | ""
-; param5 = deviceID, see select.bat
+; param3 = /C = default COMx saved in TERATERM.INI.
+; param4 = "ECHO" | "NOECHO" | "HALF"
+; param5 = %deviceID% from select.bat
 
 connect param3
 
 inputbox 'Send this file to the MSP430FR target:' ' ' param2
 
+setecho 0           ; no echo from Teraterm
+showtt 0            ; close teraterm windows
+
+
+;logfile = '\teraterm.log'
+;dirname logdir param2  ; logir = dir of file.4TH to be sent
+;strconcat logdir logfile
+;logopen logdir 1
+
+
+; DEVICE ID TEST
+; ==============
+
 sendln 'CODE ?ID';                              CODE ?ID
 sendln 'CMP #0,R14 0<> IF SUB &$1A04,R14 THEN'; CMP #0,TOS 0<> IF SUB &DEVICEID,TOS THEN
-sendln 'COLON $1B EMIT $63 EMIT';               COLON $1B EMIT $63 EMIT     \ send 'ESC c'
-sendln 'ABORT" DeviceID mismatch!" ';           ABORT" DeviceID mismatch!"
-sendln '[DEFINED] STOP [IF] STOP [THEN]';       compile STOP if defined
-sendln 'NOECHO ;';                              NOECHO ;
+sendln 'COLON ';                                COLON
+sendln '$1B EMIT $63 EMIT';                     $1B EMIT $63 EMIT   \ send 'ESC c' (clear screen)
+sendln 'CR ABORT" Device'39's ID mismatch!" ' ; CR ABORT" Device's ID mismatch!"
+sendln 'PWR_STATE ;' ;                          PWR_STATE ; 
 
-send param5 ' ?ID ' ;                           %deviceID% ?ID
+sendln param5 ' ?ID NOECHO'    ; send: %deviceID% ?ID NOECHO
 
 strcompare param4 'NOECHO'
 if result = 0 then
-    setecho 0           ; no echo from Teraterm
-    showtt 0
+    send 'NOECHO ' ; clear LINE again but doesn't send new line
     uptime timestart ; starts chrono...
     sendfile inputstr 0
     goto end
@@ -29,8 +41,7 @@ endif
 
 strcompare param4 'HALF'
 if result = 0 then
-    setecho 0
-    showtt 0
+    send 'NOECHO ' ; clear LINE again but doesn't send new line
     uptime timestart ; starts chrono...
     sendfile inputstr 0
     send #4
@@ -39,21 +50,21 @@ if result = 0 then
 endif
 
 ; default mode = ECHO
-    sendln 'ECHO'
-    setecho 0       ; no echo from Teraterm
-    showtt 0
+    sendln ' ECHO'
     uptime timestart ; starts chrono...
     sendfile inputstr 0
 
 :end
 
 uptime timeend  ; stops chrono...
-
-showtt 1
-
 diff = timeend - timestart
+
+showtt 1    ; display teraterm window
+
 sprintf2 resultat " %s download and execute: %d msec" param2 diff
 messagebox resultat "teraterm.exe"
+
+;logclose
 
 unlink
 ;end

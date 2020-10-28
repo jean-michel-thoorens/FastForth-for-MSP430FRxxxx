@@ -1,12 +1,20 @@
 
-; ------------------
+; ---------------------------------
 ; FF_SPECS.4th for MSP_EXP430FR5994
-; ------------------
+; ---------------------------------
 
-; displays all FastForth specifications
-
-
+CODE ABORT_FF_SPECS
+SUB #2,R15
+MOV R14,0(R15)
+MOV &$180E,R14
+SUB #307,R14
+COLON
+$0D EMIT
+ABORT" FastForth version = 3.7 please!"
 PWR_STATE
+;
+
+ABORT_FF_SPECS
 
 [UNDEFINED] AND [IF]
 CODE AND
@@ -129,7 +137,7 @@ SUB #2,R15
 MOV R14,0(R15)
 MOV &$1DC6,R14
 ADD #4,&$1DC6
-MOV #$4042,0(R14)
+MOV #$4034,0(R14)
 ADD #2,R14
 MOV @R13+,R0
 ENDCODE IMMEDIATE
@@ -145,7 +153,7 @@ ENDCODE IMMEDIATE
 CODE ELSE
 ADD #4,&$1DC6
 MOV &$1DC6,R10
-MOV #$403E,-4(R10)
+MOV #$403A,-4(R10)
 MOV R10,0(R14)
 SUB #2,R10
 MOV R10,R14
@@ -155,11 +163,13 @@ ENDCODE IMMEDIATE
 
 [UNDEFINED] BEGIN [IF]
 CODE BEGIN
-    MOV #$402C,R0
+    MOV #$4028,R0
 ENDCODE IMMEDIATE
+[THEN]
 
+[UNDEFINED] UNTIL [IF]
 CODE UNTIL
-    MOV #$4042,R9
+    MOV #$4034,R9
 BW1 ADD #4,&$1DC6
     MOV &$1DC6,R10
     MOV R9,-4(R10)
@@ -169,14 +179,18 @@ BW1 ADD #4,&$1DC6
 ENDCODE IMMEDIATE
 
 CODE AGAIN
-MOV #$403E,R9
+MOV #$403A,R9
 GOTO BW1
 ENDCODE IMMEDIATE
+[THEN]
 
+[UNDEFINED] WHILE [IF]
 : WHILE
 POSTPONE IF SWAP
 ; IMMEDIATE
+[THEN]
 
+[UNDEFINED] REPEAT [IF]
 : REPEAT
 POSTPONE AGAIN POSTPONE THEN
 ; IMMEDIATE
@@ -188,7 +202,7 @@ SUB #2,R15
 MOV R14,0(R15)
 ADD #2,&$1DC6
 MOV &$1DC6,R14
-MOV #$404C,-2(R14)
+MOV #$403E,-2(R14)
 ADD #2,&$1C00
 MOV &$1C00,R10
 MOV #0,0(R10)
@@ -196,7 +210,7 @@ MOV @R13+,R0
 ENDCODE IMMEDIATE
 
 CODE LOOP
-    MOV #$406E,R9
+    MOV #$4060,R9
 BW1 ADD #4,&$1DC6
     MOV &$1DC6,R10
     MOV R9,-4(R10)
@@ -214,7 +228,7 @@ REPEAT
 ENDCODE IMMEDIATE
 
 CODE +LOOP
-MOV #$405C,R9
+MOV #$404E,R9
 GOTO BW1
 ENDCODE IMMEDIATE
 [THEN]
@@ -231,22 +245,7 @@ ENDCODE
 
 [UNDEFINED] HERE [IF]
 CODE HERE
-MOV #$402C,R0
-ENDCODE
-[THEN]
-
-[UNDEFINED] @ [IF]
-CODE @
-MOV @R14,R14
-MOV @R13+,R0
-ENDCODE
-[THEN]
-
-[UNDEFINED] ! [IF]
-CODE !
-MOV @R15+,0(R14)
-MOV @R15+,R14
-MOV @R13+,R0
+MOV #$4028,R0
 ENDCODE
 [THEN]
 
@@ -309,7 +308,7 @@ ENDCODE
 [UNDEFINED] UM/MOD [IF]
 CODE UM/MOD
     PUSH #DROP
-    MOV #$4074,R0
+    MOV #$4066,R0
 ENDCODE
 [THEN]
 
@@ -349,11 +348,11 @@ ENDCODE
 : WORDS
 CR 
 $1DCA @ $1CE4
-$1800 @ 2*
+$1810 @ 2*
 MOVE
 BEGIN
     0 DUP
-    $1800 @ 2* 0
+    $1810 @ 2* 0
         DO
         DUP I $1CE4 + @
             U< IF
@@ -404,18 +403,11 @@ LOOP
 ; IMMEDIATE 
 [THEN]
 
-[UNDEFINED] >BODY [IF]
-CODE >BODY
-ADD #4,R14
-MOV @R13+,R0
-ENDCODE
-[THEN]
-
 [UNDEFINED] S_ [IF]
 CODE S_
 MOV #0,&$1DB4
 COLON
-$4018 ,
+$4014 ,
 $20 WORD
 HI2LO
 MOV.B @R14,R14
@@ -446,34 +438,36 @@ POSTPONE TYPE
 : SPECS
 PWR_STATE
 ECHO
-42 0 DO CR LOOP
+ESC [8;40;80t
+39 0 DO CR LOOP
 ESC [H
 ESC [7m
-CR ." FastForth V"
-$1810 @         
-0 <# #  8 HOLD # 46 HOLD #S #> TYPE
+$0D EMIT ." FastForth V"
+$180E @         
+0 <# # $08 HOLD # '.' HOLD #S #> TYPE
 ."  for MSP430FR"
 HERE
 $1A04 @
 CASE
-    $8102     OF      ." 5738,"   $C200   ENDOF 
-    $8103     OF      ." 5739,"   $C200   ENDOF
-    $8160     OF      ." 5948,"   $4400   ENDOF
-    $8169     OF      ." 5969,"   $4400   ENDOF
-    $81A8     OF      ." 6989,"   $4400   ENDOF
-    $810D     OF      ." 5986,"   $4400   ENDOF
-    $81F0     OF      ." 4133,"   $C400   ENDOF
-    $8240     OF      ." 2433,"   $C400   ENDOF
-    $82A1     OF      ." 5994,"   $4000   ENDOF
-    $82A6     OF      ." 5962,"   $4000   ENDOF
-    $830C     OF      ." 2355,"   $8000   ENDOF
-    $830D     OF      ." 2353,"   $C000   ENDOF
-    $831E     OF      ." 2155,"   $8000   ENDOF
-    $831D     OF      ." 2153,"   $C000   ENDOF
-    $832A     OF      ." 2476,"   $8000   ENDOF
-    $832B     OF      ." 2475,"   $8000   ENDOF
-    $833C     OF      ." 2633,"   $C400   ENDOF
-    $833D     OF      ." 2533,"   $C400   ENDOF
+    $8102   OF  ." 5738,"   $C200   ENDOF 
+    $8103   OF  ." 5739,"   $C200   ENDOF
+    $8160   OF  ." 5948,"   $4400   ENDOF
+    $8169   OF  ." 5969,"   $4400   ENDOF
+    $825D   OF  ." 5972,"   $4400   ENDOF
+    $81A8   OF  ." 6989,"   $4400   ENDOF
+    $810D   OF  ." 5986,"   $4400   ENDOF
+    $81F0   OF  ." 4133,"   $C400   ENDOF
+    $8240   OF  ." 2433,"   $C400   ENDOF
+    $82A1   OF  ." 5994,"   $4000   ENDOF
+    $82A6   OF  ." 5962,"   $4000   ENDOF
+    $830C   OF  ." 2355,"   $8000   ENDOF
+    $830D   OF  ." 2353,"   $C000   ENDOF
+    $831E   OF  ." 2155,"   $8000   ENDOF
+    $831D   OF  ." 2153,"   $C000   ENDOF
+    $832A   OF  ." 2476,"   $8000   ENDOF
+    $832B   OF  ." 2475,"   $8000   ENDOF
+    $833C   OF  ." 2633,"   $C400   ENDOF
+    $833D   OF  ." 2533,"   $C400   ENDOF
     ABORT" xxxx <-- unrecognized device!"
 ENDCASE
 ['] ['] DUP @ $1284 =
@@ -484,9 +478,9 @@ ELSE 2 + @ $1284 =
     THEN
 THEN
 $20 EMIT 
-$1800 @ U. #8 EMIT ." -Entry word sets, "
-$1806 @ 0 1000 UM/MOD U.
-?DUP IF #8 EMIT #44 EMIT U.
+$1810 @ U. $08 EMIT ." -Entry word sets, "
+$1800 @ 0 1000 UM/MOD U.
+?DUP IF $08 EMIT ',' EMIT U.
 THEN ." MHz, "
 - U. ." bytes"
 ESC [0m
@@ -509,39 +503,45 @@ ESC [7m ." KERNEL SPECS" ESC [0m
 CR
 $1812 @
     DUP 0< IF ." 32.768kHz XTAL" CR THEN
-2*  DUP 0< IF 2* ." (4/2) UART TERMINAL" CR
-        ELSE 2* DUP
+2*  DUP 0< IF ." (4/2) UART TERMINAL" CR 2*
+        ELSE  2* DUP
             0< IF ." (RTS) UART TERMINAL" CR
             THEN
         THEN
 2*  DUP 0< IF ." (XON/XOFF) UART TERMINAL" CR
-        ELSE  ." I2C SLAVE TERMINAL" CR
+        ELSE  ." I2C_Master TERMINAL" CR
         THEN
-2*  DUP 0< IF ." HALF-DUPLEX TERMINAL" CR THEN
-2*  DUP 0< IF ." ASM DATA ACCESS BEYOND $FFFF" CR THEN
-2*  DUP 0< IF ." BOOTLOADER" CR THEN
-2*  DUP 0< IF ." SD_CARD READ/WRITE" CR THEN
-2*  DUP 0< IF ." SD_CARD LOADER" CR THEN
-2*  DUP 0< IF ." FIXPOINT INPUT" CR THEN
-2*  DUP 0< IF ." DOUBLE INPUT" CR THEN
-2*  DUP 0< IF ." VOCABULARY SET" CR THEN
-2*  DUP 0< IF ." DEFERRED words" CR THEN
-2*  DUP 0< IF ." EXTENDED ASSEMBLER" CR THEN
-2*  DUP 0< IF ." ASSEMBLER" CR THEN
-2*  DUP 0< IF ." CONDITIONNAL COMPILATION" CR THEN
-0< IF
+2*  DUP 0< IF ." Half-Duplex TERMINAL" CR THEN
+2*  DUP 0< IF ." Q15.16 input" CR THEN
+2*  DUP 0< IF ." DOUBLE input" CR THEN
+2*  DUP 0< IF ." MSP430_X assembler" CR 2* 2* 
+        ELSE 2*  DUP
+            0< IF ." MSP430 Assembler"
+                2*  DUP 0< IF ."  with 20bits address" THEN
+                CR
+            ELSE 2*
+            THEN
+        THEN
+2* 2* 2* 2* 2*
+2* 0< IF
+    [DEFINED] DEFER [IF] ." DEFER word set" CR [THEN]
+    [DEFINED] ALSO  [IF] ." VOCABULARY word set" CR [THEN]
+    [DEFINED] BOOT  [IF] ." bootloader" CR [THEN]
+    [DEFINED] READ" [IF] ." SD_CARD Read/Write" CR [THEN]
+    [DEFINED] LOAD" [IF] ." SD_CARD Loader" CR [THEN]
     CR 
     ESC [7m ." OPTIONS" ESC [0m
     CR
-    [DEFINED] {CORE_ANS}  [IF] ." ANS94 CORE COMPLIANT" CR [THEN]
-    [DEFINED] {DOUBLE}    [IF] ." Double-Number word set" CR [THEN]
+    [DEFINED] {CORE_ANS}  [IF] ." ANS94 core" CR [THEN]
+    [DEFINED] {DOUBLE}    [IF] ." DOUBLE word set" CR [THEN]
     [DEFINED] {TOOLS}     [IF] ." UTILITY" CR [THEN]
-    [DEFINED] {FIXPOINT}  [IF] ." FIXPOINT" CR [THEN]
+    [DEFINED] {FIXPOINT}  [IF] ." Q15.16 ADD SUB MUL DIV" CR [THEN]
     [DEFINED] {CORDIC}    [IF] ." CORDIC engine" CR [THEN]
     [DEFINED] {SD_TOOLS}  [IF] ." SD_TOOLS" CR [THEN]
     [DEFINED] {RTC}       [IF] ." RTC utility" CR [THEN]
     [DEFINED] {UARTI2CS}  [IF] ." UART to I2C_FastForth bridge" CR [THEN]
-    [DEFINED] VOCABULARY  [IF] 
+    [DEFINED] ALSO
+    [IF] 
         CR 
         ESC [7m ." ASSEMBLER word set" ESC [0m
         ALSO ASSEMBLER WORDS PREVIOUS
@@ -552,7 +552,8 @@ CR
 ESC [7m ." FORTH word set"  ESC [0m
 WORDS
 CR
-WARM
-;
+HI2LO
+MOV #WARM+4,R0
+ENDCODE
 
 SPECS

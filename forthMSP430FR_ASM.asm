@@ -1,22 +1,4 @@
 ; -*- coding: utf-8 -*-
-; http://patorjk.com/software/taag/#p=display&f=Banner&t=Fast Forth
-
-; Fast Forth For Texas Instrument MSP430FRxxxx FRAM devices
-; Copyright (C) <2017>  <J.M. THOORENS>
-;
-; This program is free software: you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation, either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License
-; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 
 ; ----------------------------------------------------------------------
 ;forthMSP430FR_asm.asm
@@ -65,34 +47,55 @@ SKIPEND     MOV TOS,W               ;
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER : search argument "xxxx", IP is free
 ; ----------------------------------------------------------------------
-
 SearchARG                           ; separator -- n|d or abort" not found"
 ; Search ARG of "#xxxx,"            ; <== PARAM10
 ; Search ARG of "&xxxx,"            ; <== PARAM111
-; Search ARG of "xxxx(REG),"        ; <== PARAM130
+; Search ARG of "xxxx(REG),"        ; <== ComputeARGpREG <== PARAM130
 ; Search ARG of ",&xxxx"            ; <== PARAM111 <== PARAM20
-; Search ARG of ",xxxx(REG)"        ; <== PARAM210
-            PUSHM #2,S              ;                   PUSHM S,T as OPCODE, OPCODEADR
-            ASMtoFORTH              ; -- separator      search word first
-            .word   WORDD,FIND      ; -- addr
-            .word   QTBRAN,ARGWORD  ; -- addr           if Word found
+; Search ARG of ",xxxx(REG)"        ; <== ComputeARGpREG <== PARAM210
+            PUSHM #2,S              ;                   PUSHM S,T as OPCODE,OPCODEADR
+            PUSH TOS                ;                   push sep, for SrchARGPO
+            PUSH &TOIN              ;                   push TOIN, for SrchARGPO
+;-----------------------------------;
+            ASMtoFORTH              ; -- sep            sep =  ','|'('|' '
+            .word   WORDD,FIND      ; -- addr           search word first
+            .word   ZEROEQUAL
+            .word   QFBRAN,ARGWORD  ; -- addr           if Word found
             .word   QNUMBER         ;
-            .word   QFBRAN,NotFound ; -- addr           ABORT if not found
-            .word   SearchEnd       ; -- value          goto SearchEnd if number found
+            .word   QFBRAN,SrchARGPO; -- addr           search ARG Plus Offset if not found
+            .word   SrchNext        ; -- value          goto SrchNext if number found
 ARGWORD     .word   $+2             ; -- CFA
-            MOV     @TOS+,S         ; -- PFA            S=DOxxx
-QDOVAR      SUB     #DOVAR,S        ;                   DOVAR = 1287h
-ISDOVAR     JZ      SearchEnd       ; -- adr
-QDOCON      ADD     #1,S            ;                   DOCON = 1286h
-ISNOTDOCON  JNZ     QDODOES         ;
-ISDOCON     MOV     @TOS,TOS        ; -- cte
-            JMP     SearchEnd       ;
-QDODOES     ADD     #2,TOS          ;
-            ADD     #1,S            ;                   DODOES = 1285h
-ISDODOES    JZ      SearchEnd       ; -- BODY           leave BODY address for DOES words        
-ISOTHER     SUB     #4,TOS          ; -- CFA            leave execute adr
-SearchEnd   POPM    #2,S            ;                   POPM T,S
-            MOV     @RSP+,PC        ; RET
+            MOV @TOS+,S             ; -- PFA            S=DOxxx
+QDOVAR      SUB #1287h,S            ;                   DOxxx = 1287h = CALL R7 = rDOVAR
+ISDOVAR     JZ SrchNext             ; -- addr           PFA = adr of VARIABLE
+QDOCON      ADD #1,S                ;                   DOxxx = 1286h = DOCON
+            JNZ ISOTHER             ;
+ISDOCON     MOV @TOS,TOS            ;
+            JMP SrchNext            ; -- cte
+ISOTHER     SUB #2,TOS              ; -- CFA
+SrchNext    ADD #4,RSP              ;                   remove TOIN,sep
+SearchEnd   POPM #2,S               ;                   POPM T,S
+            MOV @RSP+,PC            ; RET
+
+;-----------------------------------;
+; search for ARGUMENT16+OFFSET      ; up to $FFFF only (FORTH area)
+;-----------------------------------;
+SrchARGPO   .word $+2
+            MOV @RSP+,&TOIN         ;                   TOIN back
+            MOV @RSP+,TOS           ; -- sep
+            ASMtoFORTH              ;
+            .word   LIT,'+'         ; -- sep '+'        search argument
+            .word   WORDD,FIND      ; -- sep CFA
+            .word   ZEROEQUAL       ;
+            .word   QFBRAN,SrchOffst;
+            .word   QNUMBER         ; -- sep number
+            .word   QFBRAN,NotFound ;                   see INTERPRET
+SrchOffst   .word   SWAP            ; -- CFA|number sep
+            .word   WORDD,QNUMBER   ;                   Search 'Offset,'|'Offset('|'Offset'
+            .word   QFBRAN,NotFound ;                   see INTERPRET
+            .word   $+2             ; -- CFA|number offset
+            ADD @PSP+,TOS           ; -- (CFA|number + offset)
+            JMP SearchEnd           ;
 
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER : search REG
@@ -108,6 +111,10 @@ ComputeARGpREG                      ; sep -- Rn
             MOV TOS,0(X)            ; -- xxxx       compile xxxx
             MOV #')',TOS            ; -- ")"        prepare separator to search REG of "xxxx(REG)"
 
+            CMP &SOURCE_LEN,&TOIN   ;               bad case of ,xxxx  (without prefix &)
+            JNZ SearchREG           ;
+            MOV #BAD_CSP,PC         ;               génère une erreur bidon
+
 ; search REG of "xxxx(REG),"    separator = ')' 
 ; search REG of ",xxxx(REG)"    separator = ')' 
 ; search REG of "@REG,"         separator = ',' <== PARAM120
@@ -116,10 +123,7 @@ ComputeARGpREG                      ; sep -- Rn
 ; search REG of ",REG"          separator = BL  <== PARAM21
 
 SearchREG   PUSHM #2,S              ;               PUSHM S,T as OPCODE, OPCODEADR
-            CMP &SOURCE_LEN,&TOIN   ;               bad case of ,xxxx without prefix &
-            JNZ SearchREG1          ;
-            MOV #BAD_CSP,PC         ;               génère une erreur bidon
-SearchREG1  PUSH &TOIN              ; -- sep        save >IN
+            PUSH &TOIN              ; -- sep        save >IN
             ADD #1,&TOIN            ;               skip "R"
             ASMtoFORTH              ;               search xx of Rxx
             .word WORDD,QNUMBER     ;
@@ -127,8 +131,8 @@ SearchREG1  PUSH &TOIN              ; -- sep        save >IN
             .word   $+2             ; -- Rn         number is found
             ADD #2,RSP              ;               remove >IN
             CMP #16,TOS             ; -- Rn       
-            JC  BOUNDERROR          ;               abort if Rn out of bounds
             JNC SearchEnd           ; -- Rn
+            JC  BOUNDERROR          ;               abort if Rn out of bounds
 
 NOTaREG     .word   $+2             ; -- addr       Z=1
             MOV @RSP+,&TOIN         ; -- addr       restore >IN
@@ -262,7 +266,7 @@ PARAM210    ADD     #0080h,S        ;               set AD=1
             JMP     PARAM124        ; -- 000R       REG of "(REG) found
 
 ; ----------------------------------------------------------------------
-; DTCforthMSP430FR5xxx ASSEMBLER: OPCODES TYPE 0 : zero operand     f:-)
+; DTCforthMSP430FR5xxx ASSEMBLER: OPCODES TYPE 0 : zero operand      :-)
 ; ----------------------------------------------------------------------
             asmword "RETI"
             mDOCOL
@@ -271,25 +275,24 @@ PARAM210    ADD     #0080h,S        ;               set AD=1
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER: OPCODES TYPE I : double operand
 ; ----------------------------------------------------------------------
-;                                               OPCODE(FEDC)
-; OPCODE(code) for TYPE I                          = 0bxxxx             opcode I
-;                                                   OPCODE(BA98)
-;                                                      = 0bxxxx         src register
-;                                                       OPCODE(7)       AD (dst addr type)
-;                                                          = 0b0        register
-;                                                          = 0b1        x(Rn),&adr
-;                                                        OPCODE(6)      size
-; OPCODE(B)  for TYPE I or TYPE II                          = 0b0       word
-;                                                           = 0b1       byte
-;                                                         OPCODE(54)    AS (src addr type)
-; OPCODE(AS) for TYPE I or OPCODE(AD) for TYPE II            = 0b00     register
-;                                                            = 0b01     x(Rn),&adr
-;                                                            = 0b10     @Rn
-;                                                            = 0b11     @Rn+
-;                                                           OPCODE(3210)
-; OPCODE(dst) for TYPE I or TYPE II                            = 0bxxxx dst register
+;               OPCODE(FEDC) 
+; OPCODE(code)     = 0bxxxx             opcode
+;                   OPCODE(BA98)
+;                      = 0bxxxx         src_register,
+;                       OPCODE(7)       AD (dst addr type)
+;                          = 0b0        ,register
+;                          = 0b1        ,x(Rn),&adr
+;                        OPCODE(6)      size
+; OPCODE(B)                 = 0b0       word
+;                           = 0b1       byte
+;                         OPCODE(54)    AS (src addr type)
+; OPCODE(AS)                 = 0b00     register,
+;                            = 0b01     x(Rn),&adr,
+;                            = 0b10     @Rn,
+;                            = 0b11     @Rn+,
+;                           OPCODE(3210)
+; OPCODE(dst)                  = 0bxxxx ,dst_register
 ; ----------------------------------------------------------------------
-
 TYPE1DOES   .word   lit,',',PARAM1  ; -- BODYDOES
             .word   PARAM2          ; -- BODYDOES           char separator (BL) included in PARAM2
             .word   $+2             ;
@@ -374,20 +377,19 @@ MAKEOPCODE  MOV     T,X             ; -- opcode             X= OPCODEADR to comp
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER, OPCODES TYPE II : single operand
 ; ----------------------------------------------------------------------
-;                                               OPCODE(FEDCBA987)       opcodeII
-; OPCODE(code) for TYPE II                         = 0bxxxxxxxxx
-;                                                        OPCODE(6)      size
-; OPCODE(B)  for TYPE I or TYPE II                          = 0b0       word
-;                                                           = 0b1       byte
-;                                                         OPCODE(54)    (dst addr type)
-; OPCODE(AS) for TYPE I or OPCODE(AD) for TYPE II            = 0b00     register
-;                                                            = 0b01     x(Rn),&adr
-;                                                            = 0b10     @Rn
-;                                                            = 0b11     @Rn+
-;                                                           OPCODE(3210)
-; OPCODE(dst) for TYPE I or TYPE II                            = 0bxxxx dst register
+;               OPCODE(FEDCBA987)
+; OPCODE(code)     = 0bxxxxxxxxx
+;                        OPCODE(6)      size
+; OPCODE(B)                 = 0b0       word
+;                           = 0b1       byte
+;                         OPCODE(54)    (dst addr type)
+; OPCODE(AS)                 = 0b00     register
+;                            = 0b01     x(Rn),&adr
+;                            = 0b10     @Rn
+;                            = 0b11     @Rn+
+;                           OPCODE(3210)
+; OPCODE(dst)                  = 0bxxxx dst register
 ; ----------------------------------------------------------------------
-
 TYPE2DOES   .word   FBLANK,PARAM1   ; -- BODYDOES
             .word   $+2             ;
             MOV     S,W             ;
@@ -431,12 +433,12 @@ BOUNDERROR                          ; <== REG number error
             mDOCOL                  ; -- n      n = value out of bounds
             .word   DOT,XSQUOTE
             .byte 13,"out of bounds"
-            .word   QABORTYES
+            .word   ABORT_TERM
 
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER, CONDITIONAL BRANCHS
 ; ----------------------------------------------------------------------
-;                       ASSEMBLER       FORTH         OPCODE(FEDC)
+;                       ASSEMBLER       FORTH  OPCODE(FEDC)
 ; OPCODE(code) for TYPE JNE,JNZ         0<>, <>     = 0x20xx + (offset AND 3FF) ; branch if Z = 0
 ; OPCODE(code) for TYPE JEQ,JZ          0=, =       = 0x24xx + (offset AND 3FF) ; branch if Z = 1
 ; OPCODE(code) for TYPE JNC,JLO         U<          = 0x28xx + (offset AND 3FF) ; branch if C = 0
@@ -689,7 +691,7 @@ TYPE3DOES   .word   FBLANK,SKIP     ;                       skip spaces if any
             MOV     #',',TOS        ; -- BODYDOES ","
             ASMtoFORTH
             .word   WORDD,QNUMBER
-            .word   QFBRAN,NotFound ;                       ABORT
+            .word   QFBRAN,NotFound ;                       see INTERPRET
             .word   PARAM3          ; -- BODYDOES 0x000N    S=OPCODE = 0x000R
             .word   $+2
             MOV     TOS,W           ; -- BODYDOES n         W = n
@@ -734,7 +736,6 @@ RxxMINSTRU  CMP     #4,W            ;
             .word   TYPE3DOES,1700h
 
     .IFDEF EXTENDED_MEM
-
             asmword "RRCM.A"
             CALL rDODOES
             .word   TYPE3DOES,0040h
@@ -762,7 +763,6 @@ RxxMINSTRU  CMP     #4,W            ;
 ; --------------------------------------------------------------------------------
 ; may be usefull to access ROM libraries beyond $FFFF
 ; --------------------------------------------------------------------------------
-
             asmword "CALLA"
             mDOCOL
             .word FBLANK,SKIP       ; -- addr
@@ -844,7 +844,8 @@ ACMS102     RLAM #4,TOS             ;               8<<src
 ACMS103     BIS S,TOS               ;               update opcode with src|dst
             MOV TOS,0(T)            ;               save opcode
             MOV T,TOS               ; -- OPCODE_addr
-            mSEMI                   ;
+            MOV @RSP+,IP            ;
+            MOV @IP+,PC             ;
 ;-----------------------------------;
 ACMS11      CMP.B #'#',X            ; -- ','        X=addr
             JNE MOVA12              ;
@@ -922,7 +923,6 @@ MOVA23      BIS #070h,S             ;               set ,xxxx(REG) opcode
 ; absolute and immediate instructions must be written as $x.xxxx  (DOUBLE numbers)
 ; indexed instructions must be written as $.xxxx(REG) (DOUBLE numbers)
 ; --------------------------------------------------------------------------------
-
 TYPE4DOES   .word   lit,','         ; -- BODYDOES ","        char separator for PARAM1
             .word   ACMS1           ; -- OPCODE_addr
             .word   ACMS2           ; -- OPCODE_addr
@@ -940,5 +940,4 @@ TYPE4DOES   .word   lit,','         ; -- BODYDOES ","        char separator for 
             asmword "SUBA"
             CALL rDODOES
             .word   TYPE4DOES,00F0h
-
     .ENDIF ; EXTENDED_MEM

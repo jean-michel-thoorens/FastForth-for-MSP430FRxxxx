@@ -211,7 +211,6 @@ CTS         .equ    4           ; P6.2
 ; ----------------------------------------------------------------------
 ; FRAM config
 ; ----------------------------------------------------------------------
-
     .IF  FREQUENCY > 8
             MOV.B   #0A5h,&FRCTL0_H ; enable FRCTL0 access
             MOV.B   #10h,&FRCTL0    ; 1 waitstate @ 16 MHz
@@ -221,7 +220,6 @@ CTS         .equ    4           ; P6.2
 ; ----------------------------------------------------------------------
 ; POWER ON RESET SYS config
 ; ----------------------------------------------------------------------
-
 ; SYS code                                  
 ;    BIC #1,&SYSCFG0 ; enable write program in FRAM
     MOV #0A500h,&SYSCFG0 ; enable write MAIN and INFO
@@ -229,7 +227,6 @@ CTS         .equ    4           ; P6.2
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : CLOCK SYSTEM
 ; ----------------------------------------------------------------------
-
 ; CS code for MSP430FR2476
 
 ; to measure REFO frequency, output ACLK on P2.2: 
@@ -237,8 +234,8 @@ CTS         .equ    4           ; P6.2
 ;    BIS.B #4,&P2DIR
 ; result : REFO = xx.xx kHz
 
+; =====================================
     .IF FREQUENCY = 0.5
-
 ;            MOV     #058h,&CSCTL0       ; preset DCO = measured value @ 0x180 (88)
 ;            MOV     #0001h,&CSCTL1      ; Set 1MHZ DCORSEL,disable DCOFTRIM,Modulation
             MOV     #1ED1h,&CSCTL0      ; preset MOD=31, DCO = measured value @ 0x180 (209)
@@ -251,10 +248,7 @@ CTS         .equ    4           ; P6.2
             MOV     #100Fh,&CSCTL2      ; Set FLLD=1 (DCOCLKCDIV=DCO/2),set FLLN=0Fh
                                         ; fCOCLKDIV = 32768 x (15+1) = 0.524 MHz ; measured :  MHz
 ; =====================================
-            MOV     #8,X
-
     .ELSEIF FREQUENCY = 1
-
 ;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
 ;            MOV     #00B1h,&CSCTL1      ; Set 1MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
@@ -267,10 +261,7 @@ CTS         .equ    4           ; P6.2
 ;            MOV     #001Fh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1Fh
                                         ; fCOCLKDIV = 32768 x (31+1) = 1.049 MHz ; measured : 1.046MHz
 ; =====================================
-            MOV     #16,X
-
     .ELSEIF FREQUENCY = 2
-
 ;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
 ;            MOV     #00B3h,&CSCTL1      ; Set 2MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
@@ -283,10 +274,7 @@ CTS         .equ    4           ; P6.2
 ;            MOV     #003Dh,&CSCTL2        ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=3Dh
                                         ; fCOCLKDIV = 32768 x (61+1) = 2.031 MHz ; measured :  MHz
 ; =====================================
-            MOV     #32,X
-
     .ELSEIF FREQUENCY = 4
-
 ;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
 ;            MOV     #00B5h,&CSCTL1      ; Set 4MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
@@ -294,17 +282,12 @@ CTS         .equ    4           ; P6.2
 ; ===================================== ;  fCOCLKDIV = REFO x (FLLN+1)
 ;            MOV     #0078h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=78h
                                         ; fCOCLKDIV = 32768 x (120+1) = 3.965 MHz ; measured : 3.96MHz
-
             MOV     #0079h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=79h
                                         ; fCOCLKDIV = 32768 x (121+1) = 3.997 MHz ; measured : 3.99MHz
-
 ;            MOV     #007Ah,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=7Ah
                                         ; fCOCLKDIV = 32768 x (122+1) = 4.030 MHz ; measured : 4.020MHz
 ; =====================================
-            MOV     #64,X
-
     .ELSEIF FREQUENCY = 8
-
 ;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
 ;            MOV     #00B7h,&CSCTL1      ; Set 8MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
@@ -316,18 +299,13 @@ CTS         .equ    4           ; P6.2
                                         ; fCOCLKDIV = 32768 x (243+1) = 7.995 MHz ; measured : 7.976MHz
             MOV     #00F4h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=F4h
                                         ; fCOCLKDIV = 32768 x (244+1) = 8.028 MHz ; measured : 8.009MHz
-
 ;            MOV     #00F5h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=F5h
                                         ; fCOCLKDIV = 32768 x (245+1) = 8.061 MHz ; measured : 8.042MHz
-
 ;            MOV     #00F8h,&CSCTL2      ; don't work with cp2102 (by low value)
 ;            MOV     #00FAh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=FAh
 
 ; =====================================
-            MOV     #128,X
-
     .ELSEIF FREQUENCY = 12
-
 ;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
 ;            MOV     #00B9h,&CSCTL1      ; Set 12MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
             MOV     #1EFFh,&CSCTL0       ; preset MOD=31, DCO=255  
@@ -342,10 +320,7 @@ CTS         .equ    4           ; P6.2
 ;            MOV     #016Fh,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E9h
                                         ; fCOCLKDIV = 32768 x 367+1) = 12.058 MHz ; measured : 12.xxxMHz
 ; =====================================
-            MOV     #192,X
-
     .ELSEIF FREQUENCY = 16
-
 ;            MOV     #100h,&CSCTL0       ; preset DCO = 256 
 ;            MOV     #00BBh,&CSCTL1      ; Set 16MHZ DCORSEL,enable DCOFTRIM=3h ,disable Modulation
             MOV     #1EFFh,&CSCTL0      ; preset MOD=31, DCO=255  
@@ -360,37 +335,22 @@ CTS         .equ    4           ; P6.2
 ;            MOV     #01E9h,&CSCTL2      ; Set FLLD=0 (DCOCLKCDIV=DCO),set FLLN=1E9h
                                         ; fCOCLKDIV = 32768 x 489+1) = 16.056 MHz ; measured : 16.02MHz
 ; =====================================
-            MOV     #256,X
-
     .ELSEIF
     .error "bad frequency setting, only 0.5,1,2,4,8,12,16 MHz"
     .ENDIF
 
-
     .IFDEF LF_XTAL
 ;            MOV     #0000h,&CSCTL3      ; FLL select XT1, FLLREFDIV=0 (default value)
             MOV     #0000h,&CSCTL4      ; ACLOCK select XT1, MCLK & SMCLK select DCOCLKDIV
-
             BIS.B   #03,&P2SEL0         ; P2.0 as XOUT, P2.1 as XIN
-
     .ELSE
             BIS     #0010h,&CSCTL3      ; FLL select REFCLOCK
             MOV     #0200h,&CSCTL4      ; ACLOCK select VLOCLK, MCLK & SMCLK select DCOCLKDIV (default value)
-
     .ENDIF
 
-            BIS &SYSRSTIV,&SAVE_SYSRSTIV; store volatile SYSRSTIV preserving a pending request for DEEP_RST
-;            MOV &SAVE_SYSRSTIV,TOS  ;
-;            CMP #2,TOS              ; POWER ON ?
-;            JZ      ClockWaitX      ; yes
-;            RRUM    #1,X            ; wait only 250 ms
-ClockWaitX  MOV     #5209,Y         ; wait 0.5s before starting after POR
-                                    ;       ...because FLL lock time = 280 ms
+            MOV     #92,X           ; 96* 3 ms = 288 ms delay, because FLL lock time = 200 ms
+ClockWaitX  MOV     &FREQ_KHZ,Y     ;
 ClockWaitY  SUB     #1,Y            ;1
-            JNZ     ClockWaitY      ;2 5209x3 = 15625 cycles delay = 15.625ms @ 1MHz
-            SUB     #1,X            ; x 32 @ 1 MHZ = 500ms
-            JNZ     ClockWaitX      ; time to stabilize power source ( 500ms )
-
-;WAITFLL     BIT #300h,&CSCTL7       ; wait FLL lock
-;            JNZ WAITFLL
-
+            JNZ     ClockWaitY      ;2 FREQ_KHZ x 3 ==> 3ms
+            SUB     #1,X            ;
+            JNZ     ClockWaitX      ;

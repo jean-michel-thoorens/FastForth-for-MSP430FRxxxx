@@ -37,7 +37,7 @@
 ::%1 = "SelectDevice"
 ::%2 = file.pat name
 
-set device=%~n2
+@set device=%~n2
 @if /I %device:~0,16%  == MSP_EXP430FR5739 set device=MSP430FR5739
 @if /I %device:~0,16%  == MSP_EXP430FR5969 set device=MSP430FR5969
 @if /I %device:~0,16%  == MSP_EXP430FR5994 set device=MSP430FR5994
@@ -54,7 +54,7 @@ set device=%~n2
 :: fonction called by SendSource.bat
 
 ::echo %~n2
-set deviceid=%~n2
+@set deviceid=%~n2
 @if /I %deviceid:~0,16%  == MSP_EXP430FR5739 set deviceid=$8103
 @if /I %deviceid:~0,16%  == MSP_EXP430FR5969 set deviceid=$8169
 @if /I %deviceid:~0,16%  == MSP_EXP430FR5994 set deviceid=$82A1

@@ -136,18 +136,29 @@
 
 
 ! ============================================
-! FORTH I/O :
+! FORTH TERMINAL I/O :
 ! ============================================
 !TERMINAL 
 BUS_TERM=\$0C!          P4.2 = RX, P4.3 = TX
 
 TERM_IN=\$221!          P4
 TERM_REN=\$227!
-TERM_SEL=\$22B!     \ SEL0
+TERM_SEL=\$22B!         SEL0
 
-TERM_VEC=\$FFE2!    \ UCA1
-WAKE_UP=1!          \ RX int
+RTS=1!                  P2.0
+CTS=2!                  P2.1
+HANDSHAKIN=\$201!
+HANDSHAKOUT=\$203!
 
+XT1_OUT=\$203!          P2
+XT1_DIR=\$205!          P2
+XT1_SEL=\$20D!          P2SEL1
+XIN=\$80!
+XOUT=\$40!
+
+! ============================================
+! FORTH TERMINAL hardware
+! ============================================
 TERM_CTLW0=\$580!   \ eUSCI_A1 control word 0
 TERM_CTLW1=\$582!   \ eUSCI_A1 control word 1
 TERM_BRW=\$586!
@@ -164,10 +175,14 @@ TERM_IE=\$59A!      \ eUSCI_A1 interrupt enable
 TERM_IFG=\$59C!     \ eUSCI_A1 interrupt flags
 TERM_IV=\$59E!      \ eUSCI_A1 interrupt vector word
 
-RTS=1!                  P2.0
-CTS=2!                  P2.1
-HANDSHAKIN=\$201!
-HANDSHAKOUT=\$203!
+WAKE_UP=1!          UART RX interrupt
+RX_TERM=1!          RX flag ifg
+TX_TERM=2!          Tx flag ifg
+
+! ============================================
+! FRAM MAIN
+! ============================================
+TERM_VEC=\$FFE2!        vector for eUSCI_A1
 
 ! ============================================
 ! APPLICATION I/O :

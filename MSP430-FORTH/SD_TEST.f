@@ -1,5 +1,19 @@
 \ -*- coding: utf-8 -*-
 
+\ first, we test for downloading driver only if UART TERMINAL target
+CODE ABORT_SD_TEST
+SUB #2,PSP
+MOV TOS,0(PSP)
+MOV &VERSION,TOS
+SUB #307,TOS        \ FastForth V3.7
+COLON
+'CR' EMIT            \ return to column 1 without 'LF'
+ABORT" FastForth version = 3.7 please!"
+PWR_STATE           \ remove ABORT_SD_TEST definition before resuming
+;
+
+ABORT_SD_TEST
+
 ; -----------
 ; SD_TEST.f
 ; -----------
@@ -165,7 +179,7 @@ ENDCODE IMMEDIATE
 \ https://forth-standard.org/standard/core/BEGIN
 \ BEGIN    -- BEGINadr             initialize backward branch
 CODE BEGIN
-    MOV #HEREADR,PC
+    MOV #HEREXEC,PC
 ENDCODE IMMEDIATE
 
 \ https://forth-standard.org/standard/core/UNTIL
@@ -292,31 +306,12 @@ FW1     MOV @PSP+,TOS
     ENDCODE
 [THEN]
 
-[UNDEFINED] @ [IF]
-\ https://forth-standard.org/standard/core/Fetch
-\ @     c-addr -- char   fetch char from memory
-CODE @
-MOV @TOS,TOS
-MOV @IP+,PC
-ENDCODE
-[THEN]
-
 [UNDEFINED] C@ [IF]
 \ https://forth-standard.org/standard/core/CFetch
 \ C@     c-addr -- char   fetch char from memory
 CODE C@
 MOV.B @TOS,TOS
 MOV @IP+,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] ! [IF]
-\ https://forth-standard.org/standard/core/Store
-\ !        x a-addr --   store cell in memory
-CODE !
-MOV @PSP+,0(TOS)    \ 4
-MOV @PSP+,TOS       \ 2
-MOV @IP+,PC         \ 4
 ENDCODE
 [THEN]
 
@@ -522,8 +517,8 @@ ELSE 1 - ?DUP
             LOAD" SD_TOOLS.4TH"
         ELSE 1 - ?DUP
             0= IF
-                ." LOAD CORECOMP.4TH" CR
-                LOAD" CORECOMP.4TH"
+                ." LOAD CORE_ANS.4TH" CR
+                LOAD" CORE_ANS.4TH"
             ELSE 1 - ?DUP
                 0= IF
                     ." LOAD CORETEST.4TH" CR
@@ -559,7 +554,7 @@ ELSE 1 - ?DUP
                                         ." LOAD TSTWORDS.4TH" CR
                                         LOAD" TSTWORDS.4TH"
                                     ELSE
-                                        ." abort" CR EXIT
+                                        ." abort" ABORT" "
                                     THEN                                        
                                 THEN
                             THEN

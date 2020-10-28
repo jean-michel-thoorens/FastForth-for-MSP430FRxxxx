@@ -1,26 +1,6 @@
  ; -*- coding: utf-8 -*-
 ; DTCforthMSP430FR5xxxSD_RW.asm
 
-; and only for FR5xxx and FR6xxx with RTC_B or RTC_C hardware if you want write file with date and time.
-
-; Tested with MSP-EXP430FR5969 launchpad
-; Copyright (C) <2015>  <J.M. THOORENS>
-;
-; This program is free software: you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation, either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License
-; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-
 ; ======================================================================
 ; READ" primitive as part of OpenPathName
 ; input from open:  S = OpenError, W = open_type, SectorHL = DIRsectorHL,
@@ -38,7 +18,7 @@ OPEN_READ                           ;
 ; ----------------------------------;
     CMP     #0,S                    ; open file happy end ?
     JNZ     OPEN_Error              ; no
-    MOV @IP+,PC                           ;
+    MOV @IP+,PC                     ;
 ; ----------------------------------;
 
 ;Z READ            -- f
@@ -56,7 +36,7 @@ READ
     CALL    #Read_File              ;SWX
 READ_END
     SUB     &CurrentHdl,TOS         ; -- fl     if fl <>0 (if Z=0) handle is closed
-    MOV @IP+,PC                           ;
+    MOV @IP+,PC                     ;
 ; ----------------------------------;
 
 
@@ -86,7 +66,9 @@ LoadFATsectorInBUF                  ; <== IncrementFATsector
     MOV     @RSP,W                  ; W = FATsector
     CMP     W,&FATSize              ;
     JZ      OPW_Error               ; FATsector = FATSize ===> abort disk full
-    CALL    #ReadFAT1SectorW        ;SWX
+    ADD     &OrgFAT1,W              ;
+    MOV     #0,X                    ;
+    CALL    #ReadSectorWX           ;SWX (< 65536)
     MOV     #0,X                    ; init FAToffset
 ; ----------------------------------;
 SearchFreeClustInBUF                ; <== SearchNextCluster
@@ -151,10 +133,12 @@ UpdateFATsSectorW                   ;
 ; ----------------------------------;
     PUSH    W                       ;
     ADD     &OrgFAT1,W              ; update FAT#1
-    CALL    #WriteSectorW           ; SWX
+    MOV     #0,X                    ;
+    CALL    #WriteSectorWX          ; write a logical sector
     MOV     @RSP+,W                 ;
     ADD     &OrgFAT2,W              ; update FAT#2
-    MOV     #WriteSectorW,PC        ; then ret
+    MOV     #0,X                    ;
+    CALL    #WriteSectorWX          ; write a logical sector
 ; ----------------------------------;
 
 
@@ -304,7 +288,7 @@ OPW_Error                           ; set ECHO, type Pathname, type #error, type
     mDOCOL                          ;
     .word   XSQUOTE                 ;
     .byte   12,"< WriteError",0     ;
-    .word   BRAN,SD_QABORTYES       ; to insert S error as flag, no return
+    .word   BRAN,ABORT_SD           ; to insert S error as flag, no return
 ; ----------------------------------;
 
 
@@ -442,7 +426,9 @@ GetNewCluster                       ; input : T=CurrentHdl
 UpdateNewClusterFATs                ;
     CALL    #UpdateFATsSectorW      ;SWX  no: UpdateFATsSectorW with buffer of new FATsector
     MOV     @RSP,W                  ; W = current FATsector
-    CALL    #ReadFAT1SectorW        ;SWX  reload current FATsector in buffer to link clusters
+    ADD     &OrgFAT1,W              ;
+    MOV     #0,X                    ;
+    CALL    #ReadSectorWX           ;SWX (< 65536)
 LinkClusters                        ;
     MOV     @RSP+,W                 ; W = current FATsector
     MOV     @RSP+,Y                 ; pop current FAToffset
@@ -464,7 +450,7 @@ Write_File_End
 ;Z WRITE            -- 
 ; sequentially write the entire SD_BUF in a file opened by WRITE"
 ; ----------------------------------;
-    FORTHWORD "WRITE"               ; in assembly : CALL #WRITE,X   CALL 2(X)
+    FORTHWORD "WRITE"               ; in assembly : CALL &WRITE+2
 ; ----------------------------------;
     CALL #Write_File                ;
     MOV @IP+,PC                     ;
@@ -586,7 +572,9 @@ ComputeClusterSectWofstY            ;
 LoadFAT1sector
 ; ----------------------------------;
     MOV     W,T                     ; T = W = current FATsector memory
-    CALL    #ReadFAT1SectorW        ;SWX
+    ADD     &OrgFAT1,W              ;
+    MOV     #0,X                    ;
+    CALL    #ReadSectorWX           ;SWX (< 65536)
 ; ----------------------------------;
 GetAndFreeClusterLo                 ;
 ; ----------------------------------;
@@ -634,10 +622,11 @@ DEL_END                             ;
 
 
 
+    .IFNDEF TERMINAL_I2C ; if UART_TERMINAL
+
 ; first TERATERM sends the command TERM2SD" file.ext" to FastForth which returns XOFF at the end of the line.
 ; then when XON is sent below, TERATERM sends "file.ext" up to XOFF sent by TERM2SD" (slices of 512 bytes),
-; then TERATERM sends char ETX that closes the file on SD_CARD.
-
+; then TERATERM sends char EOT that closes the file on SD_CARD.
 
     FORTHWORD "TERM2SD\34"
     mDOCOL
@@ -647,11 +636,10 @@ DEL_END                             ;
     .word   PARENOPEN               ;                   reopen same filepath but as write
     .word   $+2                     ;
     MOV     @RSP+,IP                ;
-    BIC     #RX_TERM,&TERM_IFG      ;   clean up UCRX buffer  
 ; ----------------------------------;
 T2S_GetSliceLoop                    ;   tranfert by slices of 512 bytes terminal input to file on SD_CARD via SD_BUF 
 ; ----------------------------------;
-    MOV     #0,Y                    ;1  reset Y = BufferPtr
+    MOV     #0,W                    ;1  reset W = BufferPtr
     CALL    #RXON                   ;   use no registers
 ; ----------------------------------;
 T2S_FillBufferLoop                  ;
@@ -659,15 +647,16 @@ T2S_FillBufferLoop                  ;
     BIT     #RX_TERM,&TERM_IFG      ;3 new char in TERMRXBUF ?
     JZ      T2S_FillBufferLoop      ;2
     MOV.B   &TERM_RXBUF,X           ;3
+    MOV.B   X,&TERM_TXBUF
     CMP.B   #4,X                    ;1 EOT sent by TERATERM ?
-    JZ      T2S_END                 ;2 yes
-    MOV.B   X,SD_BUF(Y)             ;3
-    ADD     #1,Y                    ;1
-    CMP     #BytsPerSec-1,Y         ;2
-    JNC     T2S_FillBufferLoop      ;2 Y < BytsPerSec-1    21 cycles char loop
-    JZ      T2S_XOFF                ;2 Y = BytsPerSec-1    send XOFF after RX 511th char
+    JZ      T2S_End_Of_File                 ;2 yes
+    MOV.B   X,SD_BUF(W)             ;3
+    ADD     #1,W                    ;1
+    CMP     #BytsPerSec-1,W         ;2
+    JNC     T2S_FillBufferLoop      ;2 W < BytsPerSec-1    21 cycles char loop
+    JZ      T2S_XOFF                ;2 W = BytsPerSec-1    send XOFF after RX 511th char
 ; ----------------------------------;
-T2S_WriteFile                       ;2 Y = BytsPerSec
+T2S_WriteFile                       ;2 W = BytsPerSec
 ; ----------------------------------;
     CALL    #Write_File             ;TSWXY write all the buffer
     JMP     T2S_GetSliceLoop        ;2 
@@ -677,12 +666,79 @@ T2S_XOFF                            ;  27 cycles between XON and XOFF
     CALL    #RXOFF                  ;4  use no registers
     JMP     T2S_FillBufferLoop      ;2  loop back once to get last char
 ; ----------------------------------;
-T2S_END                             ;
+T2S_End_Of_File                     ;
 ; ----------------------------------;
     CALL    #RXOFF                  ;4  use no registers
-    MOV     Y,&BufferPtr            ;3
+    MOV     W,&BufferPtr            ;3
     CALL    #CloseHandleT           ;4
-TERM2SD_END                         ;
     MOV @IP+,PC                     ;4
 ; ----------------------------------;
 
+    .ELSE ; if I2C_TERMINAL
+
+    FORTHWORD "TERM2SD\34"
+    CALL    #WAITCHAREND            ; wait I2C_Master (re)START RX
+    BIC     #WAKE_UP,&TERM_IFG      ; clear UCSTTIFG before next test
+    mDOCOL
+    .word   DELDQ                   ;                   DEL file if already exist
+    .word   lit,2                   ; -- open_type
+    .word   HERE,COUNT              ; -- open_type addr cnt
+    .word   PARENOPEN               ;                   reopen same filepath but as write
+    .word   $+2                     ;
+; ----------------------------------;
+    CALL    #RXON                   ;
+    BIC     #WAKE_UP,&TERM_IFG      ; clear UCSTTIFG before next test
+; ----------------------------------;
+T2S_ClearBuffer
+; ----------------------------------;
+    MOV     #0,W                    ;1  reset W = BufferPtr
+; ----------------------------------;
+T2S_FillBufferLoop                  ;   move by slices of 512 bytes from TERMINAL input to file on SD_CARD via SD_BUF 
+; ----------------------------------;
+    BIT     #RX_TERM,&TERM_IFG      ;3 new char in TERMRXBUF ?
+    JZ      T2S_FillBufferLoop      ;2 no
+    MOV.B   &TERM_RXBUF,X           ;3
+    CMP.B   #4,X                    ;1 EOT sent by TERATERM ?
+    JZ      T2S_End_Of_File         ;2 yes
+    MOV.B   X,SD_BUF(W)             ;3
+    ADD     #1,W                    ;1
+    CMP.B   #0Ah,X                  ;2 Char LF ?
+    JNZ     T2S_Q_BufferFull        ;2 no
+; ----------------------------------;
+T2S_GetNewLine                      ; after LF sent, I2C_Master automaticaly (re)STARTs in RX mode
+; ----------------------------------;
+    CALL    #WAITCHAREND            ; wait I2C_Master (re)START RX
+    BIC     #WAKE_UP,&TERM_IFG      ; clear UCSTTIFG before next test
+    ASMtoFORTH
+    .word   LIT,0Ah,EMIT            ; use Y reg
+    .word   $+2                     ;
+    CALL    #RXON                   ; tells I2C_Master to(re)START in TX mode and waits I2C_Master TX (re)STARTed,  use Y register
+    BIC     #WAKE_UP,&TERM_IFG      ; clear UCSTTIFG before next test
+; ----------------------------------;
+T2S_Q_BufferFull                    ;
+; ----------------------------------;
+    CMP     #BytsPerSec,W           ;2 buffer full ?
+    JNC     T2S_FillBufferLoop      ;2 no    21 cycles char loop
+; ----------------------------------;
+T2S_WriteFile                       ;2 yes
+; ----------------------------------;
+    CALL    #Write_File             ;4 TSWXY write all the buffer
+    JMP     T2S_ClearBuffer         ;2 
+; ----------------------------------;
+T2S_End_Of_File                     ;
+; ----------------------------------;
+    MOV     @RSP+,IP                ; before CloseHandleT
+    MOV     W,&BufferPtr            ;3
+    CALL    #CloseHandleT           ;4
+T2S_End_Of_EOT_Line                 ;
+    BIT     #RX_TERM,&TERM_IFG      ;3 new char in TERMRXBUF ?
+    JZ      T2S_End_Of_EOT_Line     ;2 no
+    MOV.B   &TERM_RXBUF,X           ;3 
+    CMP.B   #0Ah,X                  ;2 Char LF ?
+    JNZ     T2S_End_Of_EOT_Line     ;    
+    CALL    #WAITCHAREND            ; wait I2C_Master (re)START RX
+    BIC     #WAKE_UP,&TERM_IFG      ; clear UCSTTIFG before next test...
+    MOV     @IP+,PC                 ; ... i.e. ready for return to SLEEP via RXON.
+; ----------------------------------;
+
+    .ENDIF

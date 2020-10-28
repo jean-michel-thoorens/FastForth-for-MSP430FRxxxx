@@ -1,9 +1,5 @@
 \ -*- coding: utf-8 -*-
 
-; ---------------------------------------------------------------
-; SD_TOOLS.f : BASIC TOOLS for SD Card : DIR FAT SECTOR CLUSTER
-; ---------------------------------------------------------------
-\
 \ to see kernel options, download FastForthSpecs.f
 \ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP, DOUBLE_INPUT, SD_CARD_LOADER
 \
@@ -41,7 +37,24 @@
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
-PWR_STATE
+; ---------------------------------------------------------------
+; SD_TOOLS.f : BASIC TOOLS for SD Card : DIR FAT SECTOR CLUSTER
+; ---------------------------------------------------------------
+
+\ first, we test for downloading driver only if UART TERMINAL target
+CODE ABORT_SD_TOOLS
+SUB #2,PSP
+MOV TOS,0(PSP)
+MOV &VERSION,TOS
+SUB #307,TOS        \ FastForth V3.7
+COLON
+'CR' EMIT            \ return to column 1 without 'LF'
+ABORT" FastForth version = 3.7 please!"
+PWR_STATE           \ remove ABORT_UARTI2CS definition before resuming
+;
+
+ABORT_SD_TOOLS
+
 
 [DEFINED] {SD_TOOLS} [IF]  {SD_TOOLS} [THEN]
 
@@ -82,16 +95,6 @@ ENDCODE
 CODE C@
 MOV.B @TOS,TOS
 MOV @IP+,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] ! [IF]
-\ https://forth-standard.org/standard/core/Store
-\ !        x a-addr --   store cell in memory
-CODE !
-MOV @PSP+,0(TOS)    \ 4
-MOV @PSP+,TOS       \ 2
-MOV @IP+,PC         \ 4
 ENDCODE
 [THEN]
 
@@ -266,11 +269,11 @@ LO2HI
 
 \ display content of a sector
 \ ----------------------------------\
-CODE SECTOR                         \ sector. --     don't forget to add decimal point to your sector number
+CODE SECTOR.                        \ sector. --     don't forget to add decimal point to your sector number
 \ ----------------------------------\
 BW1 MOV     TOS,X                   \ X = SectorH
     MOV     @PSP,W                  \ W = sectorL
-    CALL    &ReadSectorWX           \ W = SectorLO  X = SectorHI
+    CALL    #READ_SWX               \ W = SectorLO  X = SectorHI
 COLON                               \
     <# #S #> TYPE SPACE             \ ud --            display the double number
     SD_BUF $200 DUMP CR ;           \ then dump the sector
@@ -278,7 +281,7 @@ COLON                               \
 
 \ display first sector of a Cluster
 \ ----------------------------------\
-CODE CLUSTER                        \ cluster.  --        don't forget to add decimal point to your cluster number
+CODE CLUSTR.                        \ cluster.  --        don't forget to add decimal point to your cluster number
 \ ----------------------------------\
 BW2 BIT.B   #CD_SD,&SD_CDIN         \ test Card Detect: memory card present ?
     0<> IF

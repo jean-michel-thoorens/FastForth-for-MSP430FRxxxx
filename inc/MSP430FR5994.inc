@@ -1,5 +1,8 @@
 ; MSP430FR5994.inc
 ; MSP430FR5994  minimal declarations for FastForth usage
+    .save
+    .listing off
+
 DEVICE = "MSP430FR5994"
 
 

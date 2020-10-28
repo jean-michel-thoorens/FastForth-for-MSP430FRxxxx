@@ -1,22 +1,4 @@
 ; -*- coding: utf-8 -*-
-; http://patorjk.com/software/taag/#p=display&f=Banner&t=Fast Forth
-
-; Fast Forth For Texas Instrument MSP430FRxxxx FRAM devices
-; Copyright (C) <2015>  <J.M. THOORENS>
-;
-; This program is free software: you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation, either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License
-; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 
     FORTHWORD "{CORE_ANS}"
     MOV @IP+,PC
@@ -570,9 +552,9 @@ PAD         CALL rDOCON
             MOV @RSP+,IP
             BIT #UF9,SR         ; see TO
             JNZ VALUENEXT  
-            MOV @TOS,TOS        ; execute @
+            MOV @TOS,TOS        ; execute Fetch
             MOV @IP+,PC
 VALUENEXT   BIC #UF9,SR         ; clear 'TO' flag
-            MOV @PSP+,0(TOS)    ; 4 execute '!'
+            MOV @PSP+,0(TOS)    ; 4 execute Store
             MOV @PSP+,TOS       ; 2
             MOV @IP+,PC         ; 4

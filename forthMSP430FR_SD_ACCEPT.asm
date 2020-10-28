@@ -1,23 +1,5 @@
 ; -*- coding: utf-8 -*-
-; http://patorjk.com/software/taag/#p=display&f=Banner&t=Fast Forth
-
-; Fast Forth For Texas Instrument MSP430FRxxxx FRAM devices
-; Copyright (C) <2017>  <J.M. THOORENS>
 ;
-; This program is free software: you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation, either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License
-; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
 ;Z SD_ACCEPT  addr addr len -- addr' len'  get line to interpret from a SD Card file
 ; no interrupt allowed
 ; defered word ACCEPT is redirected here by the word LOAD"
@@ -30,7 +12,6 @@
 
 ; used variables : BufferPtr, BufferLen
 
-
 ; ----------------------------------;
 ;    FORTHWORD "SD_ACCEPT"          ; CIB CIB CPL -- CIB len
 ; ----------------------------------;
@@ -41,7 +22,7 @@ SD_ACCEPT                           ; sequentially move from SD_BUF to SDIB (PAD
 ; ----------------------------------;
 StartNewLine                        ; -- CIB CIB CPL
 ; ----------------------------------;
-    MOV &CurrentHdl,T               ; prepare a link for the next LOADed file...
+    MOV &CurrentHdl,T               ; prepare a link for the next LOADed file, if any...
     MOV &BufferPtr,HDLW_BUFofst(T)  ; ...see usage : GetFreeHandle(CheckCaseOfLoadFileToken)
 ; ----------------------------------;
     MOV     @PSP+,W                 ; -- CIB CPL        W=dst_ptr
@@ -72,18 +53,19 @@ SDA_ComputeChar                     ; -- CIB cnt
 ; ----------------------------------;
 SDA_EndOfLine                       ; -- org cnt
 ; ----------------------------------;
-    MOV     S,&BufferPtr            ; yes  save BufferPtr for next line
     MOV     @RSP+,IP                ;
-    MOV     @IP+,PC                 ; ===> unique output
+    MOV     S,&BufferPtr            ; yes  save BufferPtr for next line
+    MOV     #32,S                   ; S = BL
+    JMP     ACCEPT_EOL              ; ==> output            
 ; ----------------------------------;
 SDA_MoveChar                        ;
 ; ----------------------------------;
     CMP     X,TOS                   ; 1 cnt = dst_len ?
-    JZ      YEMIT1                  ; 2 yes, don't move char to dst
+    JZ      YEMIT                   ; 2 yes, don't move char to dst
     MOV.B   Y,0(W)                  ; 3 move char to dst
     ADD     #1,W                    ; 1 increment dst addr
     ADD     #1,TOS                  ; 1 increment count of moved chars
-    JMP     YEMIT1                  ; 9/6~ send echo to terminal if ECHO, do nothing if NOECHO
+    JMP     YEMIT                   ; 9/6~ send echo to terminal if ECHO, do nothing if NOECHO
 ; ----------------------------------; 29/26~ char loop, add 14~ for readsectorW ==> 43/40~ ==> 186/200 kbytes/s @ 8MHz
 SDA_GetFileNextSector               ; CIB cnt --
 ; ----------------------------------;

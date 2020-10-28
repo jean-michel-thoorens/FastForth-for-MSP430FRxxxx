@@ -38,22 +38,48 @@ INFO_LEN=\$0200!
 ! ----------------------------------------------
 ! FastForth INFO
 ! ----------------------------------------------
-INI_THREAD=\$1800!      .word THREADS
-TERMBRW_RST=\$1802!     .word TERMBRW_RST
-TERMMCTLW_RST=\$1804!   .word TERMMCTLW_RST
-FREQ_KHZ=\$1806!        .word FREQUENCY
-
-SAVE_SYSRSTIV=\$1808!   to enable SYSRSTIV read
-LPM_MODE=\$180A!        LPM0+GIE is the default mode
-INIDP=\$180C!           define RST_STATE, init by wipe
-INIVOC=\$180E!          define RST_STATE, init by wipe
-VERSION=\$1810!
+FREQ_KHZ=\$1800!        FREQUENCY (in kHz)
+TERMBRW_RST=\$1802!     TERMBRW_RST
+TERMMCTLW_RST=\$1804!   TERMMCTLW_RST
+I2CSLAVEADR=\$1802!     I2C_SLAVE address
+I2CSLAVEADR1=\$1804!    
+LPM_MODE=\$1806!        LPM_MODE value, LPM0+GIE is the default value
+RSTIV_MEM=\$1808!       SYSRSTIV memory, set to -1 to do Deep RESET
+RST_DP=\$180A!          RST value for DP
+RST_VOC=\$180C!         RST value for VOClink
+VERSION=\$180E!
+THREADS=\$1810!         THREADS
 KERNEL_ADDON=\$1812!
-RXON=\$1814!
-RXOFF=\$1816!
-ReadSectorWX=\$1818!    call with W = SectorLO  X = SectorHI
-WriteSectorWX=\$181A!   call with W = SectorLO  X = SectorHI
-TERMINAL_INT=\$181C!    value for TERMINAL vector
+
+WIPE_INI_=\$1814!       MOV #WIPE_INI,X
+WIPE_COLD=\$1814!       WIPE value for PFA_COLD
+WIPE_INI_FORTH=\$1816!  WIPE value for PFA_INI_FORTH
+WIPE_SLEEP=\$1818!      WIPE value for PFA_SLEEP
+WIPE_WARM=\$181A!       WIPE value for PFA_WARM
+WIPE_TERM_INT=\$181C!   WIPE value for TERMINAL vector
+WIPE_DP=\$182E!         WIPE value for RST_DP   
+WIPE_VOC=\$1820!        WIPE value for RST_VOC
+
+INI_FORTH_INI=\$1822!   MOV #INI_FORTH_INI,X    \ >BODY instruction of INI_FORTH subroutine
+INIT_ACCEPT=\$1822!     WIPE value for PFAACCEPT
+INIT_CR=\$1824!         WIPE value for PFACR
+INIT_EMIT=\$1826!       FORTH value for PFAEMIT
+INIT_KEY=\$1828!        WIPE value for PFAKEY
+INIT_CIB=\$182A!        WIPE value for CIB_ADR
+HALF_FORTH_INI=\$182C!  to preserve the state of DEFERed words, used by user INI_SOFT_APP as:
+!                       ADD #4,0(RSP)           \ skip INI_FORTH >BODY instruction "MOV #INI_FORTH_INI,X"
+!                       MOV #HALF_FORTH_INI,X   \ replace it by "MOV #HALF_FORTH_INI,X"
+!                       MOV @RSP+,PC            \ then RET
+INIT_DOCOL=\$182C!      FORTH value for rDOCOL   (R4)
+INIT_DODOES=\$182E!     FORTH value for rDODOES  (R5)
+INIT_DOCON=\$1830!      FORTH value for rDOCON   (R6)
+INIT_DOVAR=\$1832!      FORTH value for rDOVAR   (R7)
+INIT_CAPS=\$1834!       FORTH value for CAPS
+INIT_BASE=\$1836!       FORTH value for BASE
+
+ABORT_ADR=\$1838!       ABORT address
+QUIT4_ADR=\$183A!       QUIT4 used by BOOTLOADER
+!                       free EPROM
 
 ! ============================================
 ! FRAM TLV
@@ -242,32 +268,47 @@ MAIN_ORG=\$4400!        Code space start
 MAIN_LEN=\$24000!       127 k FRAM
 ! ----------------------------------------------
 
-SLEEP=\$4400! 
-BODYSLEEP=\$4404!
-LIT=\$440E! 
-NEXT_ADR=\$4416!
-XSQUOTE=\$4418! 
-HEREADR=\$442C!
-QTBRAN=\$4438! 
-BRAN=\$443E! 
-QFBRAN=\$4442! 
-SKIPBRAN=\$4448! 
-XDO=\$444C! 
-XPLOOP=\$445C! 
-XLOOP=\$446E! 
-MUSMOD=\$4474!          32/16 unsigned division
-MDIV1=\$448E!           input for 48/16 unsigned division
-SETIB=\$44BA!           Set Input Buffer with org len values, reset >IN 
-REFILL=\$44CA!          accept one line from input and leave org len of input buffer
-CIB_ADR=\$44D8!         contents currently TIB_ORG; may be redirected to SDIB_ORG
-XDODOES=\$44E2!         restore rDODOES: MOV #XDODOES,rDODOES
-XDOCON=\$44F0!          restore rDOCON: MOV #XDOCON,rDOCON
-XDOCOL=\$44FC!          restore rDOCOL: MOV #XDOCOL,rDOCOL      only for DTC model = 1
+SLEEP=\$4400!               CODE_WITHOUT_RETURN: CPU shutdown
+LIT=\$440A!                 CODE compiled by LITERAL
+XSQUOTE=\$4414!             CODE compiled by S" and S_
+HEREXEC=\$4428!             CODE HERE and BEGIN execute address
+QFBRAN=\$4434!              CODE compiled by IF UNTIL
+BRAN=\$443A!                CODE compiled by ELSE REPEAT AGAIN
+NEXT_ADR=\$443C!            CODE NEXT instruction (MOV @IP+,PC)
+XDO=\$443E!                 CODE compiled by DO
+XPLOOP=\$444E!              CODE compiled by +LOOP
+XLOOP=\$4460!               CODE compiled by LOOP
+MUSMOD=\$4466!              ASM 32/16 unsigned division, used by ?NUMBER, UM/MOD
+MDIV1DIV2=\$4478!           ASM input for 48/16 unsigned division with DVDhi=0, see DOUBLE M*/
+MDIV1=\$4480!               ASM input for 48/16 unsigned division, see DOUBLE M*/
+RET_ADR=\$44AA!             ASM content of INI_FORTH_PFA and MARKER+8 definitions,
+SETIB=\$44AC!               CODE Set Input Buffer with org & len values, reset >IN pointer
+REFILL=\$44BC!              CODE accept one line from input and leave org len of input buffer
+CIB_ADR=\$44CA!             [CIB_ADR] = TIB_ORG by default; may be redirected to SDIB_ORG
+XDODOES=\$44D4!             restore rDODOES: MOV #XDODOES,rDODOES
+XDOCON=\$44E2!              restore rDOCON: MOV #XDOCON,rDOCON
+XDOVAR=\$44EE!              restore rDOVAR: MOV #XDOVAR,rDOVAR
+!to find DTC value, download \MSP430-FORTH\FF_SPECS.4th
+!XDOCOL=TYPE\+\-16          if DTC = 1, restore rDOCOL as this: MOV #TYPE+-16,rDOCOL
+!XDOCOL=\#S\+16             if DTC = 2, restore rDOCOL as this: MOV ##S+16,rDOCOL
+!                           if DTC = 3, nothing to do, R7 is free for use.
+INI_FORTH=\$44F8!           CODE_WITHOUT_RETURN common part of RST and QABORT, starts FORTH engine
+QABORT=\$452A!              CODE_WITHOUT_RETURN run-time part of ABORT"
+3DROP=\$4530!               CODE 
+ABORT_TERM=\$4536!          CODE_WITHOUT_RETURN, called by QREVEAL and INTERPRET   
+!-------------------------------------------------------------------------------
+UART_COLD_TERM=\$4594!      ASM, content of COLD_PFA by default
+UART_INIT_TERM=\$459C!      ASM, content of WARM_PFA by default
+UART_RXON=\$45C6!           ASM, content of SLEEP_PFA by default
+UART_RXOFF=\$45C8!          ASM, called by ACCEPT before RX char LF.
+!-------------------------------------------------------------------------------
+I2C_COLD_TERM=\$45B4!       ASM, content of COLD_PFA by default
+I2C_INIT_TERM=\$458A!       ASM, content of WARM_PFA by default
+I2C_RXON=\$45B6!            ASM, content of SLEEP_PFA by default
+I2C_CTRL_CH=\$45B8!         ASM, used as is: MOV.B #CTRL_CHAR,Y
+!                                            CALL #I2C_CTRL_CH
+!-------------------------------------------------------------------------------
 
-! to find DTC value, download \MSP430-FORTH\FastForthSpecs.4th
-! if DTC = 1, restore rDOCOL as this : MOV #xdocol,rDOCOL
-! if DTC = 2, restore rDOCOL as this : MOV #EXIT,rDOCOL
-! if DTC = 3, nothing to do, R7 is free for use.
 ! ----------------------------------------------
 ! Interrupt Vectors and signatures - MSP430FR6989
 ! ----------------------------------------------

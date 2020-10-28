@@ -90,12 +90,12 @@ TERMMCTLW_INI   .equ 0FE00h
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 04900h
 
-        .CASE 134400  ; PL2303TA baudrate
-; Configure UART_TERM @ 268800 bauds / 1MHz
-; N=1000000/134400=3.72024 ==> UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.72024)=0xBB
-; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
-TERMBRW_INI     .equ 3
-TERMMCTLW_INI   .equ 0BB00h
+;         .CASE 134400  ; PL2303TA baudrate
+; ; Configure UART_TERM @ 268800 bauds / 1MHz
+; ; N=1000000/134400=3.72024 ==> UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.72024)=0xBB
+; ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+; TERMBRW_INI     .equ 3
+; TERMMCTLW_INI   .equ 0BB00h
 
 ;        .CASE 161280  ; PL2303TA baudrate
 ;; Configure UART_TERM @ 161280 bauds / 500kHz
@@ -198,12 +198,12 @@ TERMMCTLW_INI   .equ 04900h
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 0000h
 
-        .CASE 268800  ; PL2303TA baudrate
-; Configure UART_TERM @ 268800 bauds / 1MHz
-; N=1000000/268800=3.72024 ==> UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.72024)=0xBB
-; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
-TERMBRW_INI     .equ 3
-TERMMCTLW_INI   .equ 0BB00h
+;        .CASE 268800  ; PL2303TA baudrate
+;; Configure UART_TERM @ 268800 bauds / 1MHz
+;; N=1000000/268800=3.72024 ==> UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.72024)=0xBB
+;; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+;TERMBRW_INI     .equ 3
+;TERMMCTLW_INI   .equ 0BB00h
 
 ;        .CASE 403200  ; PL2303TA baudrate
 ;; Configure UART_TERM @ 403200 bauds / 1MHz
@@ -214,6 +214,7 @@ TERMMCTLW_INI   .equ 0BB00h
         .ELSECASE
             .error "UART_TERM / 1 MHz : baudrate not implemented"
         .ENDCASE
+
     .ELSEIF FREQUENCY = 2
         .SWITCH TERMINALBAUDRATE
         .CASE 9600
@@ -283,32 +284,35 @@ TERMMCTLW_INI   .equ 0000h
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 7
 TERMMCTLW_INI   .equ 05500h
+
         .CASE 403200  ; PL2303TA baudrate
 ; Configure UART_TERM @ 201600 bauds / 1MHz
 ; N=1000000/201600=4.955401 ==> UCOS16=0, UCBR0=int(N)=4, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.200396)=0xFE
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 0FE00h
+
         .CASE 460800 ; CP2102 baudrate
 ; Configure UART_TERM @ 921600 bauds / 4MHz
 ; N = 4000000/460800 = 4.34027... ==> {UCOS16=0, UCBR1=int(N)=4, UCBRF1=dont_care=0  UCBRS1=fn(frac(N))=fn(0.34027)=0x49
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 04900h
-        .CASE 614400 ; PL2303TA baudrate
-; Configure UART_TERM @ 2457600 bauds / 8MHz
-; N = 8000000/2457600 = 3.25521... ==> {UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.25521)=0x44
-; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
-TERMBRW_INI     .equ 3
-TERMMCTLW_INI   .equ 04400h
 
-        .CASE 806400  ; PL2303TA baudrate
-; Configure UART_TERM @ 806400 bauds / 2MHz
-; Configure UART_TERM @ 403200 bauds / 1MHz
-; N=1000000/403200=2.48016 ==> UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.48016)=0x55
-; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
-TERMBRW_INI     .equ 2
-TERMMCTLW_INI   .equ 05500h
+;         .CASE 614400 ; PL2303TA baudrate
+; ; Configure UART_TERM @ 2457600 bauds / 8MHz
+; ; N = 8000000/2457600 = 3.25521... ==> {UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.25521)=0x44
+; ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+; TERMBRW_INI     .equ 3
+; TERMMCTLW_INI   .equ 04400h
+; 
+;         .CASE 806400  ; PL2303TA baudrate
+; ; Configure UART_TERM @ 806400 bauds / 2MHz
+; ; Configure UART_TERM @ 403200 bauds / 1MHz
+; ; N=1000000/403200=2.48016 ==> UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0, UCBRS0= fn(frac(N))=fn(0.48016)=0x55
+; ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+; TERMBRW_INI     .equ 2
+; TERMMCTLW_INI   .equ 05500h
 
 ;        .CASE 921600
 ;; Configure UART_TERM @ 921600 bauds / 2MHz
@@ -319,6 +323,7 @@ TERMMCTLW_INI   .equ 05500h
         .ELSECASE
             .error "UART_TERM / 2 MHz : baudrate not implemented"
         .ENDCASE
+
     .ELSEIF FREQUENCY = 4
         .SWITCH TERMINALBAUDRATE
         .CASE 9600
@@ -403,15 +408,16 @@ TERMMCTLW_INI   .equ 0FE00h
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 04900h
 
-        .CASE 1228800 ; PL2303TA baudrate
-; Configure UART_TERM @ 2457600 bauds / 8MHz
-; N = 8000000/1228800 = 3.25521... ==> {UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.25521)=0x44
-; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
-TERMBRW_INI     .equ 3
-TERMMCTLW_INI   .equ 04400h
+;         .CASE 1228800 ; PL2303TA baudrate
+; ; Configure UART_TERM @ 2457600 bauds / 8MHz
+; ; N = 8000000/1228800 = 3.25521... ==> {UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.25521)=0x44
+; ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+; TERMBRW_INI     .equ 3
+; TERMMCTLW_INI   .equ 04400h
         .ELSECASE
             .error "UART_TERM / 4 MHz : baudrate not implemented"
         .ENDCASE ; UART_TERM / 4 MHz baudrates
+
     .ELSEIF FREQUENCY = 8
         .SWITCH TERMINALBAUDRATE
         .CASE 9600
@@ -530,22 +536,23 @@ TERMMCTLW_INI   .equ 0DD00h
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 04900h
 
-        .CASE 2457600 ; PL2303TA baudrate
-; Configure UART_TERM @ 2457600 bauds / 8MHz
-; N = 8000000/1228800 = 3.25521... ==> {UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.25521)=0x44
-; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
-TERMBRW_INI     .equ 3
-TERMMCTLW_INI   .equ 04400h
-
-        .CASE 3000000 ; PL2303TA baudrate
-; Configure UART_TERM @ 3000000 bauds / 8MHz
-; Configure UART_TERM @ 6000000 bauds / 16MHz
-; N = 16000000/6000000 = 2.6666.. ==> {UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.6666)=0xB6
-TERMBRW_INI     .equ 2
-TERMMCTLW_INI   .equ 0B600h
+;         .CASE 2457600 ; PL2303TA baudrate
+; ; Configure UART_TERM @ 2457600 bauds / 8MHz
+; ; N = 8000000/1228800 = 3.25521... ==> {UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.25521)=0x44
+; ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+; TERMBRW_INI     .equ 3
+; TERMMCTLW_INI   .equ 04400h
+; 
+;         .CASE 3000000 ; PL2303TA baudrate
+; ; Configure UART_TERM @ 3000000 bauds / 8MHz
+; ; Configure UART_TERM @ 6000000 bauds / 16MHz
+; ; N = 16000000/6000000 = 2.6666.. ==> {UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.6666)=0xB6
+; TERMBRW_INI     .equ 2
+; TERMMCTLW_INI   .equ 0B600h
         .ELSECASE
             .error "UART_TERM / 8 MHz : baudrate not implemented"
         .ENDCASE ; UART_TERM / 8 MHz baudrates
+
     .ELSEIF FREQUENCY = 10
         .SWITCH TERMINALBAUDRATE
         .CASE 9600
@@ -679,12 +686,12 @@ TERMMCTLW_INI   .equ 09200h
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 00100h
 
-        .CASE 3000000 ; PL2303TA baudrate
-; Configure UART_TERM @ 3000000 bauds / 10MHz
-; Configure UART_TERM @ 6000000 bauds / 20MHz
-; N = 20000000/6000000 = 3.3333333 ==> {UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.33333)=0x49
-TERMBRW_INI     .equ 3
-TERMMCTLW_INI   .equ 04900h
+;         .CASE 3000000 ; PL2303TA baudrate
+; ; Configure UART_TERM @ 3000000 bauds / 10MHz
+; ; Configure UART_TERM @ 6000000 bauds / 20MHz
+; ; N = 20000000/6000000 = 3.3333333 ==> {UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.33333)=0x49
+; TERMBRW_INI     .equ 3
+; TERMMCTLW_INI   .equ 04900h
 
         .ELSECASE
             .error "UART_TERM / 10 MHz : baudrate not implemented"
@@ -787,8 +794,8 @@ TERMMCTLW_INI   .equ 0AA31h
 ; Configure UART_TERM @ 1843200 bauds / 24MHz
 ; N = 24000000/1843200 = 13.08203...  {UCOS16=0, UCBR0=int(N)=13, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.08203)=0x02
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
-TERMBRW_INI     .equ 17
-TERMMCTLW_INI   .equ 04A00h
+TERMBRW_INI     .equ 13
+TERMMCTLW_INI   .equ 00200h
 
         .CASE 1000000
 ; Configure UART_TERM @ 1000000 bauds / 12MHz
@@ -989,18 +996,18 @@ TERMMCTLW_INI   .equ 04900h
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 0
 
-        .CASE 5000000 ; PL203HXD baudrate
-; Configure UART_TERM @ 5000000 bauds / 16MHz
-; N = 16000000/5000000 = 3.2... ==> {UCOS16=0, UCBR0=int(N)=0, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.2)=0x11
-; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
-TERMBRW_INI     .equ 3
-TERMMCTLW_INI   .equ 02100h
-
-        .CASE 6000000 ; PL2303TA baudrate
-; Configure UART_TERM @ 6000000 bauds / 24MHz
-; N = 16000000/6000000 = 2.6666.. ==> {UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.6666)=0xB6
-TERMBRW_INI     .equ 2
-TERMMCTLW_INI   .equ 0B600h
+;         .CASE 5000000 ; PL203HXD baudrate
+; ; Configure UART_TERM @ 5000000 bauds / 16MHz
+; ; N = 16000000/5000000 = 3.2... ==> {UCOS16=0, UCBR0=int(N)=0, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.2)=0x11
+; ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
+; TERMBRW_INI     .equ 3
+; TERMMCTLW_INI   .equ 02100h
+; 
+;         .CASE 6000000 ; PL2303TA baudrate
+; ; Configure UART_TERM @ 6000000 bauds / 24MHz
+; ; N = 16000000/6000000 = 2.6666.. ==> {UCOS16=0, UCBR0=int(N)=2, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.6666)=0xB6
+; TERMBRW_INI     .equ 2
+; TERMMCTLW_INI   .equ 0B600h
 
         .ELSECASE
             .error "UART_TERM / 16 MHz : baudrate not implemented"
@@ -1143,11 +1150,11 @@ TERMMCTLW_INI   .equ 0
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 0
 
-        .CASE 6000000 ; PL2303TA baudrate
-; Configure UART_TERM @ 6000000 bauds / 20MHz
-; N = 20000000/6000000 = 3.3333333 ==> {UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.33333)=0x49
-TERMBRW_INI     .equ 3
-TERMMCTLW_INI   .equ 04900h
+;         .CASE 6000000 ; PL2303TA baudrate
+; ; Configure UART_TERM @ 6000000 bauds / 20MHz
+; ; N = 20000000/6000000 = 3.3333333 ==> {UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.33333)=0x49
+; TERMBRW_INI     .equ 3
+; TERMMCTLW_INI   .equ 04900h
 
         .ELSECASE
             .error "UART_TERM / 20 MHz : baudrate not implemented"
@@ -1285,7 +1292,7 @@ TERMMCTLW_INI   .equ 0
 
         .CASE 5000000 ; PL203HXD baudrate
 ; Configure UART_TERM @ 5000000 bauds / 24MHz
-; N = 24000000/5000000 = 4.8... ==> {UCOS16=0, UCBR0=int(N)=0, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.2)=0x11
+; N = 24000000/5000000 = 4.8... ==> {UCOS16=0, UCBR0=int(N)=0, UCBRF0=dont_care=0, UCBRS0=fn(frac(N))=fn(0.8)=0xEE
 ; TERMBRW=UCBR0, TERMMCTLW= (UCBRS0<<8)|(UCBRF0<<4)|UCOS16
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 0EE00h
@@ -1295,6 +1302,12 @@ TERMMCTLW_INI   .equ 0EE00h
 ; N = 24000000/6000000 = 4 ==> {UCOS16=0, UCBR0=int(N)=4, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.00000)=0x00
 TERMBRW_INI     .equ 4
 TERMMCTLW_INI   .equ 0
+
+;         .CASE 7500000 ; PL2303TA baudrate
+; ; Configure UART_TERM @ 7500000 bauds / 24MHz
+; ; N = 24000000/7500000 = 3.2 ==> {UCOS16=0, UCBR0=int(N)=3, UCBRF0=dont_care=0  UCBRS0=fn(frac(N))=fn(0.2)=0x11
+; TERMBRW_INI     .equ 3
+; TERMMCTLW_INI   .equ 01100h
 
         .ELSECASE
             .error "UART_TERM / 24 MHz : baudrate not implemented"

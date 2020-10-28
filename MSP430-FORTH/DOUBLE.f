@@ -1,12 +1,4 @@
 \ -*- coding: utf-8 -*-
-
-; -----------------------------------------------------
-; DOUBLE.f
-; -----------------------------------------------------
-
-; -----------------------------------------------------------
-; requires DOUBLE_INPUT kernel addon, see forthMSP430FR.asm
-; -----------------------------------------------------------
 \
 \ to see kernel options, download FastForthSpecs.f
 \ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP, DOUBLE_INPUT
@@ -36,7 +28,27 @@
 \ ASSEMBLER conditionnal usage with ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 \
 
-PWR_STATE
+CODE ABORT_DOUBLE
+SUB #4,PSP
+MOV TOS,2(PSP)
+MOV &KERNEL_ADDON,TOS
+BIT #BIT9,TOS
+0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (DOUBLE input), set TOS = 0  
+MOV TOS,0(PSP)
+MOV &VERSION,TOS
+SUB #307,TOS            \ FastForth V3.7
+COLON
+$0D EMIT    \ return to column 1 without CR
+ABORT" FastForth version = 3.7 please!"
+ABORT" build FastForth with DOUBLE_INPUT addon !"
+PWR_STATE           \ if no abort remove this word
+;
+
+ABORT_DOUBLE
+
+; -----------------------------------------------------
+; DOUBLE.f
+; -----------------------------------------------------
 
 [DEFINED] {DOUBLE} [IF]  {DOUBLE} [THEN]
 
@@ -197,7 +209,7 @@ ENDCODE IMMEDIATE
 [UNDEFINED] TO [IF]
 \ https://forth-standard.org/standard/core/TO
 CODE TO
-BIS #UF10,SR
+BIS #UF9,SR
 MOV @IP+,PC
 ENDCODE
 [THEN]
@@ -231,7 +243,7 @@ CMP #0,TOS
     MOV @RSP+,IP
 THEN
 MOV @PSP+,TOS           \ --         drop n
-NEXT              
+MOV @IP+,PC       
 ENDCODE
 [THEN]
 
@@ -419,7 +431,7 @@ MOV #0,TOS          \ 1
     THEN
 THEN
 ADD #6,PSP          \ 2
-NEXT                \ 4
+MOV @IP+,PC         \ 4
 ENDCODE
 [THEN]
 
@@ -439,7 +451,7 @@ THEN
     THEN
 THEN
 ADD #6,PSP          \ 2
-NEXT                \ 4
+MOV @IP+,PC         \ 4
 ENDCODE
 [THEN]
 
@@ -459,7 +471,7 @@ THEN
     THEN
 THEN
 ADD #6,PSP          \ 2
-NEXT                \ 4
+MOV @IP+,PC         \ 4
 ENDCODE
 [THEN]
 
@@ -468,7 +480,7 @@ ENDCODE
 CODE D+
 BW1 ADD @PSP+,2(PSP)
     ADDC @PSP+,TOS
-NEXT                \ 4
+MOV @IP+,PC         \ 4
 ENDCODE
 [THEN]
 
@@ -492,7 +504,7 @@ CODE D-
 SUB @PSP+,2(PSP)
 SUBC TOS,0(PSP)
 MOV @PSP+,TOS
-NEXT                \ 4
+MOV @IP+,PC         \ 4
 ENDCODE
 [THEN]
 
@@ -503,7 +515,7 @@ XOR #-1,0(PSP)
 XOR #-1,TOS
 ADD #1,0(PSP)
 ADDC #0,TOS
-NEXT                \ 4
+MOV @IP+,PC         \ 4
 ENDCODE
 [THEN]
 
@@ -524,7 +536,7 @@ ENDCODE
 CODE D2/
 RRA TOS
 RRC 0(PSP)
-NEXT                \ 4
+MOV @IP+,PC         \ 4
 ENDCODE
 [THEN]
 
@@ -533,7 +545,7 @@ ENDCODE
 CODE D2*
 ADD @PSP,0(PSP)
 ADDC TOS,TOS
-NEXT                \ 4
+MOV @IP+,PC         \ 4
 ENDCODE
 [THEN]
 
@@ -559,7 +571,7 @@ ELSE 2>R 2DROP 2R>  \ -- d1 d2
 THEN                \ -- d2 
 ;
 
-DEVICEID C@ $EF > [IF] ; test tag value for MSP430FR413x devices without hardware_MPY 
+DEVICEID C@ $EF > [IF] ; test for MSP430FR413x devices without hardware_MPY 
 
 [UNDEFINED] M*/ [IF]
 \ https://forth-standard.org/standard/double/MTimesDiv
@@ -601,28 +613,49 @@ BEGIN       BIT X,S                 \ 1 test actual bit in uMRlo
             ADDC rDODOES,rDODOES    \ 1 (RLA LSBs) uMDlo *2
             ADD X,X                 \ 1 (RLA) NEXT BIT TO TEST
 U>= UNTIL                           \ 1 IF BIT IN CARRY: FINISHED   W=uREShi
-MOV TOS,T                   \     T = +n2 
-MOV @PSP,TOS                \ -- uRESlo uRESmi uRESmi
-MOV 2(PSP),S                \ S=uRESlo, TOS=uRESmi, W=uREShi
-
-MOV #32,rDODOES             \ 2  init loop count
-CALL #MDIV1                 \ -- urem ud2lo ud2hi
-MOV @PSP+,0(PSP)            \ -- d2lo d2hi
-BIT #UF9,SR                 \ sign of RES is set ?
-0<> IF                      \ DNEGATE
+\ TOS     +n2
+\ W       REShi
+\ 0(PSP)  RESmi
+\ 2(PSP)  RESlo
+MOV TOS,T
+MOV @PSP,TOS
+MOV 2(PSP),S
+\ reg     division     output     
+\ --------------------------
+\ S     = DVD(15-0)         
+\ TOS   = DVD(31-16)        
+\ T     = DIV(15-0)         
+\ W     = 0|DVD(47-32)  REM    
+\ X     = 0             QUOTlo            
+\ Y     = 0             QUOThi 
+\ rDODOES = count
+\ 2(PSP)                REM
+\ 0(PSP)                QUOTlo
+\ TOS                   QUOThi
+MOV #32,rDODOES         \ 2  init loop count
+CMP #0,W                \ DVDhi = 0 ?
+0= IF                   \ if yes
+    MOV TOS,W           \ DVDmi --> DVDhi
+    CALL #MDIV1DIV2     \ with loop count / 2
+ELSE
+    CALL #MDIV1         \ -- urem ud2lo ud2hi
+THEN
+MOV @PSP+,0(PSP)        \ -- ud2lo ud2hi
+BIT #UF9,SR             \ sign is set ?
+0<> IF                  \ DNEGATE
     XOR #-1,0(PSP)
     XOR #-1,TOS
     ADD #1,0(PSP)
     ADDC #0,TOS
-    BIC #UF9,SR             \       clear sign flag
+    BIC #UF9,SR         \ clear sign flag
 \ now, make floored division, only used if rem<>0 and quot<0 :  
-    CMP #0,W                \ remainder <> 0 ?
+    CMP #0,W            \ remainder <> 0 ?
     0<> IF
-        SUB #1,0(PSP)       \ decrement quotient
+        SUB #1,0(PSP)   \ decrement quotient
         SUBC #0,TOS 
     THEN
 THEN                
-NEXT                \ 4
+MOV @IP+,PC             \ 4
 ENDCODE
 [THEN]
 
@@ -648,10 +681,28 @@ S< IF                   \ DABS if yes
     ADD #1,S
     ADDC #0,TOS
     ADDC #0,W
-    BIS #UF9,SR         \ set RES sign flag
+    BIS #UF9,SR         \ set sign flag
 THEN
+\ reg     division     output     
+\ --------------------------
+\ S     = DVD(15-0)         
+\ TOS   = DVD(31-16)        
+\ T     = DIV(15-0)         
+\ W     = 0|DVD(47-32)  REM    
+\ X     = 0             QUOTlo            
+\ Y     = 0             QUOThi 
+\ rDODOES = count
+\ 2(PSP)                REM
+\ 0(PSP)                QUOTlo
+\ TOS                   QUOThi
 MOV #32,rDODOES         \ 2  init loop count
-CALL #MDIV1             \ -- urem ud2lo ud2hi
+CMP #0,W                \ DVDhi = 0 ?
+0= IF                   \ if yes
+    MOV TOS,W           \ DVDmi --> DVDhi
+    CALL #MDIV1DIV2     \ with loop count / 2
+ELSE
+    CALL #MDIV1         \ -- urem ud2lo ud2hi
+THEN
 MOV @PSP+,0(PSP)        \ -- d2lo d2hi
 BIT #UF9,SR             \ RES sign is set ?
 0<> IF                  \ DNEGATE
@@ -667,7 +718,7 @@ BIT #UF9,SR             \ RES sign is set ?
         SUBC #0,TOS 
     THEN
 THEN                
-NEXT                    \ 52 words
+MOV @IP+,PC             \ 52 words
 ENDCODE
 [THEN]
 
@@ -701,12 +752,12 @@ CREATE , ,      \ compile Shi then Flo
 DOES>
 HI2LO
 MOV @RSP+,IP
-BIT #UF9,SR    \ see TO
+BIT #UF9,SR     \ flag set by TO
 0= IF
-   MOV #2@,PC
+   MOV #2@,PC   \ execute TwoFetch
 THEN 
-BIC #UF9,SR
-MOV #2!,PC
+BIC #UF9,SR     \ clear flag
+MOV #2!,PC      \ execute TwoStore
 ENDCODE
 [THEN]
 
@@ -731,11 +782,11 @@ R> OVER - SPACES TYPE
 
 RST_HERE
 
-\ --------------------------------------------------------------------------------
-\ --------------------------------------------------------------------------------
+\ ------------------------------------------------------------------------------
+\ ------------------------------------------------------------------------------
 \ Complement to test DOUBLE
-\ --------------------------------------------------------------------------------
-\ --------------------------------------------------------------------------------
+\ ------------------------------------------------------------------------------
+\ ------------------------------------------------------------------------------
 
 [UNDEFINED] VARIABLE [IF]
 \ https://forth-standard.org/standard/core/VARIABLE
@@ -1120,7 +1171,7 @@ ENDCODE
 
 [UNDEFINED] HERE [IF]
 CODE HERE
-MOV #HEREADR,PC
+MOV #HEREXEC,PC
 ENDCODE
 [THEN]
 
@@ -1226,20 +1277,20 @@ CREATE ACTUAL-RESULTS 20 CELLS ALLOT
 -1 CONSTANT 1S
 0 CONSTANT <FALSE>
 -1 CONSTANT <TRUE>
-0 INVERT 1 RSHIFT           CONSTANT MAX-INT    ; 011...1
-0 INVERT 1 RSHIFT INVERT    CONSTANT MIN-INT    ; 100...0
-MAX-INT 2/                  CONSTANT HI-INT     ; 001...1 
-MIN-INT 2/                  CONSTANT LO-INT     ; 110...0
--1 MAX-INT                  2CONSTANT MAX-2INT  ; 011...1 
-0 MIN-INT                   2CONSTANT MIN-2INT  ; 100...0 
-MAX-2INT 2/                 2CONSTANT HI-2INT   ; 001...1
-MIN-2INT 2/                 2CONSTANT LO-2INT   ; 110...0
+0 INVERT 1 RSHIFT           CONSTANT MAX-INT    ; %011...1
+0 INVERT 1 RSHIFT INVERT    CONSTANT MIN-INT    ; %100...0
+MAX-INT 2/                  CONSTANT HI-INT     ; %001...1 
+MIN-INT 2/                  CONSTANT LO-INT     ; %110...0
+-1 MAX-INT                  2CONSTANT MAX-2INT  ; %.011...1 
+0 MIN-INT                   2CONSTANT MIN-2INT  ; %.100...0 
+MAX-2INT 2/                 2CONSTANT HI-2INT   ; %.001...1
+MIN-2INT 2/                 2CONSTANT LO-2INT   ; %.110...0
 
 ECHO
 
-; --------------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
 ; DOUBLE tests
-; --------------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
 
 \ MAX-INT .
 \ MIN-INT .
@@ -1505,7 +1556,6 @@ T{ MIN-2INT  1 M+ -> MIN-2INT  1. D+ }T
 T{ LO-2INT  -1 M+ -> LO-2INT  -1. D+ }T
 
 \ M*/
--3 2 / . ; if floored you see -2 --> 
 : ?floored [ -3 2 / -2 = ] LITERAL IF 1. D- THEN ;
 
 T{       5.       7             11 M*/ ->  3. }T 
@@ -1514,8 +1564,8 @@ T{      -5.       7             11 M*/ -> -3. ?floored }T
 T{      -5.      -7             11 M*/ ->  3. }T 
 
 T{ MAX-2INT       8             16 M*/ -> HI-2INT }T 
+T{ MAX-2INT      -8             16 M*/ -> HI-2INT DNEGATE ?floored }T
 T{ MIN-2INT       8             16 M*/ -> LO-2INT }T 
-T{ MAX-2INT      -8             16 M*/ -> HI-2INT DNEGATE ?floored }T  \ actual-results = -1.
 T{ MIN-2INT      -8             16 M*/ -> LO-2INT DNEGATE }T
 
 T{ MAX-2INT MAX-INT        MAX-INT M*/ -> MAX-2INT }T 
@@ -1549,3 +1599,5 @@ dbl2 d>ascii 2CONSTANT "dbl2"
 ;
 
 T{ DoubleOutput -> }T
+
+RST_STATE

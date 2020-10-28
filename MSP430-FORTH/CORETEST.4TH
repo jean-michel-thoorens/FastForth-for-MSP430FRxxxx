@@ -3,19 +3,18 @@
 ; CORETEST.4TH for any FastForth target
 ; -------------------------------------
 
-: COMPNOTFOUND
+: ABORT_TEST
 $0D EMIT   \ return to column 1
-1 ABORT" {CORE_ANS} word set not found!"
+ABORT" {CORE_ANS} word set not found !"
 ;
 
-[UNDEFINED] {CORE_ANS} [IF] ; {CORE_ANS} is not found ?
-COMPNOTFOUND
-[THEN]
+[UNDEFINED] {CORE_ANS}
+ABORT_TEST
 
 : CORETESTSUCCESS
 $0A BASE !
 $0D EMIT   \ return to column 1
-1 ABORT" CORE tests success!"
+1 ABORT" CORE tests success!" \ that remove all test words 
 ;
 
 \ From: John Hayes S1I
@@ -1073,9 +1072,8 @@ CREATE ABUF 80 CHARS ALLOT
 : ACCEPT-TEST
     CR ." PLEASE TYPE UP TO 80 CHARACTERS: "
 ABUF 80 \ ACCEPT            \ JMT 
-['] ACCEPT DUP @ $4030 =    \ JMT: if CFA content = $4030 (MOV @PC+,PC), ACCEPT is deferred
-IF      >BODY               \ JMT: find default part of deferred ACCEPT
-THEN    EXECUTE             \ JMT: execute ACCEPT
+          ['] ACCEPT >BODY  \ JMT: find default part of deferred ACCEPT
+          EXECUTE           \ JMT: execute ACCEPT
     CR ." RECEIVED: " [CHAR] " EMIT
     ABUF SWAP TYPE [CHAR] " EMIT CR
 ;
@@ -1090,8 +1088,9 @@ T{ : GDX   123 ; : GDX   GDX 234 ; -> }T
 T{ GDX -> 123 234 }T
 
 \ ------------------------------------------------------------------------
-TESTING TO VALUE
+TESTING TO VALUE :NONAME IS DEFER
 
+[DEFINED] VALUE [IF]
 T{  111 VALUE v1 -> }T
 T{ -999 VALUE v2 -> }T
 T{ v1 ->  111 }T
@@ -1100,13 +1099,30 @@ T{ 222 TO v1 -> }T
 T{ v1 -> 222 }T
 T{ : vd1 v1 ; -> }T
 T{ vd1 -> 222 }T
-
 T{ : vd2 TO v2 ; -> }T
 T{ v2 -> -999 }T
 T{ -333 vd2 -> }T
 T{ v2 -> -333 }T
 T{ v1 ->  222 }T
+[THEN]
 
+[DEFINED] :NONAME [IF]
+VARIABLE nn1
+VARIABLE nn2
+T{ :NONAME 1234 ; nn1 ! -> }T
+T{ :NONAME 9876 ; nn2 ! -> }T
+T{ nn1 @ EXECUTE -> 1234 }T
+T{ nn2 @ EXECUTE -> 9876 }T
+[THEN]
+
+[DEFINED] IS [IF]
+T{ DEFER defer5 -> }T
+T{ : is-defer5 IS defer5 ; -> }T
+T{ ' * IS defer5 -> }T
+T{ 2 3 defer5 -> 6 }T
+T{ ' + is-defer5 -> }T
+T{ 1 2 defer5 -> 3 }T
+[THEN]
 
 CR .( End of Core word set tests)
 

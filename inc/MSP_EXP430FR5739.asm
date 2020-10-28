@@ -1,7 +1,7 @@
 ; -*- coding: utf-8 -*-
 
 ; ----------------------------------------------------------------------
-; MSP_EXP430FR739.inc 
+; MSP_EXP430FR739.asm 
 ; ----------------------------------------------------------------------
 ; ----------------------------------------------------------------------
 ; MSP430FR57xx BOOTSTRAP
@@ -291,32 +291,26 @@ LED2        .equ    2           ;  PJ.1 LED2 blue
     .IF FREQUENCY = 0.25
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_32 + DIVM_32,&CSCTL3
-            MOV     #4,X
 
     .ELSEIF FREQUENCY = 0.5
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_16 + DIVM_16,&CSCTL3
-            MOV     #8,X
 
     .ELSEIF FREQUENCY = 1
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_8 + DIVM_8,&CSCTL3
-            MOV     #16,X
 
     .ELSEIF FREQUENCY = 2
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_4 + DIVM_4,&CSCTL3
-            MOV     #32,X
 
     .ELSEIF FREQUENCY = 4
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1          ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_2 + DIVM_2,&CSCTL3
-            MOV     #64,X
 
     .ELSEIF FREQUENCY = 8
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1          ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
-            MOV     #128,X
 
     .ELSEIF FREQUENCY = 10
             MOV     #DCORSEL+DCOFSEL1,&CSCTL1           ; Set 20 MHZ DCO setting
@@ -326,22 +320,18 @@ LED2        .equ    2           ;  PJ.1 LED2 blue
     .ELSEIF FREQUENCY = 12
             MOV     #DCORSEL+DCOFSEL1+DCOFSEL0,&CSCTL1  ; Set 24 MHZ DCO setting
             MOV     #DIVA_0 + DIVS_2 + DIVM_2,&CSCTL3   ; then SMCLK/2 MCLK/2
-            MOV     #192,X
 
     .ELSEIF FREQUENCY = 16
             MOV     #DCORSEL,&CSCTL1                    ; Set 16MHZ DCO setting
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
-            MOV     #256,X
 
     .ELSEIF FREQUENCY = 20
             MOV     #DCORSEL+DCOFSEL1,&CSCTL1           ; Set 20 MHZ DCO setting
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
-            MOV     #320,X
 
     .ELSEIF FREQUENCY = 24
             MOV     #DCORSEL+DCOFSEL1+DCOFSEL0,&CSCTL1  ; Set 24 MHZ DCO setting
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
-            MOV     #384,X
 
     .ELSEIF
     .error "bad frequency setting, only 0.25,0.5,1,2,4,8,12,16,20,24 MHz"
@@ -354,24 +344,18 @@ LED2        .equ    2           ;  PJ.1 LED2 blue
     .ENDIF
             MOV.B   #01h, &CSCTL0_H                     ; Lock CS Registers
 
-            BIS &SYSRSTIV,&SAVE_SYSRSTIV    ; store volatile SYSRSTIV preserving a pending request for DEEP_RST
-;            MOV &SAVE_SYSRSTIV,TOS  ;
-;            CMP #2,TOS              ; POWER ON ?
-;            JZ      ClockWaitX      ; yes
-;            RRUM    #2,X            ; wait only 125 ms
-ClockWaitX  MOV     #5209,Y         ; wait 0.5s before starting after POWER ON
+            MOV     #64,X           ; 64* 3 ms = 192 ms delay (by default of specification)
+ClockWaitX  MOV     &FREQ_KHZ,Y     ;
 ClockWaitY  SUB     #1,Y            ;1
-            JNZ     ClockWaitY      ;2 5209x3 = 15625 cycles delay = 15.625ms @ 1MHz
-            SUB     #1,X            ; x 32 @ 1 MHZ = 500ms
-            JNZ     ClockWaitX      ; time to stabilize power source ( 500ms )
+            JNZ     ClockWaitY      ;2 FREQ_KHZ x 3 ==> 3ms
+            SUB     #1,X            ;
+            JNZ     ClockWaitX      ;
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : REF
 ; ----------------------------------------------------------------------
-
             BIS.W   #REFTCOFF, &REFCTL  ; Turn off temp.
             BIC.W   #REFON, &REFCTL
-
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : RTC REGISTERS

@@ -2,24 +2,6 @@
 ; forthMSP430FR_SD_INIT.asm
     .save
     .listing off
-; http://patorjk.com/software/taag/#p=display&f=Banner&t=Fast Forth
-
-; Fast Forth For Texas Instrument MSP430FRxxxx FRAM devices
-; Copyright (C) <2017>  <J.M. THOORENS>
-;
-; This program is free software: you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation, either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License
-; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 ; ===========================================================
 ; ABOUT INIT SD_CARD AND HOW TO SELECT FAT16/FAT32 FORMAT
 ; ===========================================================
@@ -137,18 +119,43 @@
 ; OrgDatas       = OrgRootDir + RootDirSize                     = 30336
 ; FirstSectorOfCluster(n) = OrgCluster + n*BPB_SecPerClus       ==> cluster(6) = 30368
 
-; ===========================================================
-; Init SD_Card
-; ===========================================================
     .restore
+
+; ===========================================================
+; Init hardware SD_Card, called by WARM
+; ===========================================================
+;-----------------------------------;
+INIT_SD     CALL @PC+               ; link to previous INI_APP
+INIT_SD_PFA .word INIT_TERM         ; which activates all previous I/O settings and set TOS = RSTIV_MEM.
+;-----------------------------------;
+            CMP #0,TOS              ; RSTIV_MEM = WARM ?
+            JZ INI_SD_END           ; no init if RSTIV_MEM = WARM
+;-----------------------------------;
+            BIT.B #CD_SD,&SD_CDIN   ; SD_memory in SD_Card module ?
+            JNZ INI_SD_END          ; no
+;-----------------------------------;
+            MOV #0A981h,&SD_CTLW0   ; UCxxCTL1  = CKPH, MSB, MST, SPI_3, SMCLK  + UCSWRST
+            MOV #FREQUENCY*3,&SD_BRW; UCxxBRW init SPI CLK = 333 kHz ( < 400 kHz) for SD_Card initialisation
+            BIS.B #CS_SD,&SD_CSDIR  ; SD Chip Select as output high
+            BIS #BUS_SD,&SD_SEL     ; Configure pins as SIMO, SOMI & SCK (PxDIR.y are controlled by eUSCI module)
+            BIC #1,&SD_CTLW0        ; release eUSCI from reset
+;-----------------------------------;
+        .IF RAM_LEN < 2048          ; case of MSP430FR57xx : SD datas are in FRAM not initialized by RESET.
+            MOV #SD_LEN,X           ; clear all SD datas                      
+ClearSDdata SUB #2,X                ; 1
+            MOV #0,SD_ORG(X)        ; 3 
+            JNZ ClearSDdata         ; 2
+        .ENDIF                      ;
+;-----------------------------------;
 SD_POWER_ON
+; ----------------------------------;
     MOV     #8,X                    ; send 64 clk on SD_clk
     CALL    #SPI_X_GET              ;
     BIC.B   #CS_SD,&SD_CSOUT        ; preset Chip Select output low to switch in SPI mode
-    MOV     #4,S                    ; preset error 4R1
 ; ----------------------------------;
 INIT_CMD0                           ; all SD area is 0 filled
 ; ----------------------------------;
+    MOV     #4,S                    ; preset error 4R1 for CMD0
     MOV     #95h,&SD_CMD_FRM        ; $(95 00 00 00 00 00)
     MOV     #4000h,&SD_CMD_FRM+4    ; $(95 00 00 00 00 40); send CMD0 
 ; ----------------------------------;
@@ -182,10 +189,10 @@ INIT_ACMD41                         ; no more CRC needed from here
 ;    MOV.B   #16,Y                   ; init 16 * ACMD41 repeats (power on fails with SanDisk ultra 8GB "HC I" and Transcend 2GB)
 ;    MOV.B   #32,Y                   ; init 32 * ACMD41 repeats ==> ~400ms time out
     MOV.B   #-1,Y                   ; init 255 * ACMD41 repeats ==> ~3 s time out
+    MOV     #8,S                    ; preset error 8R1 for ACMD41
 ; ----------------------------------;
 SEND_ACMD41                         ; send CMD55+CMD41
 ; ----------------------------------;
-    MOV     #8,S                    ; preset error 8R1 for ACMD41
 INIT_CMD55                          ;
     MOV     #7700h,&SD_CMD_FRM+4    ; $(01 00 00 00 00 77)
 SEND_CMD55                          ; CMD55 = APP_CMD; expected SPI_R1 response = 1 : idle
@@ -196,7 +203,7 @@ SEND_CMD41                          ; CMD41 = APP OPERATING CONDITION
     JZ      SetBLockLength          ; if SD_Card ready (R1=0)
     SUB.B   #1,Y                    ; else decr time out delay
     JNZ     INIT_CMD55              ; then loop back while count of repeat not reached
-    JMP     SD_INIT_ERROR           ; ReturnError on time out : unusable card
+    JMP     SD_INIT_ERROR           ; ReturnError on time out : unusable card  (or insufficient Vdd SD)
 ; ----------------------------------;
 setBLockLength                      ; set block = 512 bytes (buffer size), usefull only for FAT16 SD Cards
 ; ----------------------------------;
@@ -206,8 +213,8 @@ SEND_CMD16                          ; CMD16 = SET_BLOCKLEN
     MOV     #5000h,&SD_CMD_FRM+4    ; $(01 00 02 00 00 50) 
     CALL    #WaitIdleBeforeSendCMD  ; wait until idle then send CMD16
     JNZ     SD_INIT_ERROR           ; if W = R1 <> 0, ReturnError = $20R1 ; send command ko
-; ----------------------------------;
-SetHighSpeed                        ; end of SD init ==> SD_CLK = SMCLK
+; ----------------------------------; W = R1 = 0
+SwitchSPIhighSpeed                  ; end of SD init ==> SD_CLK = SMCLK
 ; ----------------------------------;
     BIS     #1,&SD_CTLW0            ; Software reset
     MOV     #0,&SD_BRW              ; UCxxBRW = 0 ==> SPI_CLK = MCLK
@@ -215,7 +222,8 @@ SetHighSpeed                        ; end of SD init ==> SD_CLK = SMCLK
 ; ----------------------------------;
 Read_EBP_FirstSector                ; W=0, BS_FirstSectorHL=0
 ; ----------------------------------;
-    CALL    #readSectorW            ; read physical first sector
+    MOV     #0,X                    ;
+    CALL    #readSectorWX           ; read physical first sector
     MOV     #SD_BUF,Y               ;
     MOV     454(Y),&BS_FirstSectorL ; so, sectors become logical
     MOV     456(Y),&BS_FirstSectorH ; 
@@ -245,8 +253,9 @@ FAT32_CHS_LBA_Test                  ;
     MOV     #SD_CARD_ID_ERROR,PC    ; S = ReturnError = $20xx with xx = partition ID 
 ; ----------------------------------; see: https://en.wikipedia.org/wiki/Partition_type
 Read_MBR_FirstSector                ; read first logical sector
-; ----------------------------------;
-    CALL    #readSectorW            ; ...with the good CMD17 bytes/sectors frame ! (good switch FAT16/FAT32)
+; ----------------------------------; W = 0
+    MOV     #0,X                    ;
+    CALL    #readSectorWX           ; ...with the good CMD17 bytes/sectors frame ! (good switch FAT16/FAT32)
 ; ----------------------------------;
 FATxx_SetFileSystem                 ;
 ; ----------------------------------;
@@ -272,4 +281,23 @@ FATxx_SetFileSystemNext             ;
     SUB     &SecPerClus,X           ; no borrow expected
     MOV     X,&OrgClusters          ; X = virtual cluster 0 address (clusters 0 and 1 don't exist)
     MOV     &FATtype,&DIRClusterL   ; init DIRcluster as RootDIR
-; ----------------------------------;
+INI_SD_END                          ;
+    MOV @RSP+,PC                    ; RET
+;-----------------------------------;
+
+; ===========================================================
+; Init FORTH SD_Card, called by ?ABORT|RST
+; ===========================================================
+;-----------------------------------; 
+INI_FORTH_SD                        ; common part of ?ABORT|RST
+;-----------------------------------;
+            CALL @PC+               ; link to previous INI_FORTH_APP
+RSAB_SD_PFA .word RET_ADR           ; which does nothing
+;-----------------------------------;
+            MOV #HandlesLen,X       ; clear all handles                      
+ClearHandle SUB #2,X                ; 1
+            MOV #0,FirstHandle(X)   ; 3 
+            JNZ ClearHandle         ; 2
+            MOV #0,&CurrentHdl      ;
+            MOV @RSP+,PC            ; RET
+;-----------------------------------;
