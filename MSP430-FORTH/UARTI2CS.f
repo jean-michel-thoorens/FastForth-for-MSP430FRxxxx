@@ -1,6 +1,6 @@
 \ -*- coding: utf-8 -*-
 \
-\ TARGET SELECTION ( = the name of \INC\target.pat file without the extension)
+\ TARGET SELECTION ( = the name of \INC\target.pat file without extension)
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133 (can't use LED1 because wired on UART TX)
 \ MSP_EXP430FR2433  CHIPSTICK_FR2433    MSP_EXP430FR2355
@@ -41,9 +41,9 @@
 \ ASSEMBLER conditionnal usage before          ?GOTO : S< S>= U< U>= 0= 0<> 0< 
 \
 \ ================================================================================
-\ coupled to a PL2303HXD cable, this driver enables a FastForth target to do an USB to I2C_Slave bridge,
+\ coupled to a PL2303HXD/TA cable, this driver enables a FastForth target to act as USB to I2C_Slave bridge,
 \ thus, from TERATERM.exe you can take the entire control of up to 112 I2C_FastForth targets.
-\ In addition, it simulates a full duplex communication while the I2C bus is half duplex.
+\ In addition, it simulates a full duplex communication while the I2C bus is only half duplex.
 \ Don't forget to wire 3k3 pull up resistors on wires SDA SCL!
 \ ================================================================================
 \ 
@@ -64,9 +64,11 @@
 \ test results :
 \ ------------
 \
-\ downloading (+ interpret + compile + execute) CORETEST.4TH to I2C Master target, best time = 531ms.
-\ downloading (+ interpret + compile + execute) CORETEST.4TH to I2C Slave target, best time = 844ms.
-\ the difference (313 ms) is the time of the I2C Half duplex exchange (we reach the speed of the I2C Fast-mode Plus (Fm+)).
+\ downloading (+ interpret + compile + execute) CORETEST.4TH to I2C Master target = 1016ms.
+\ downloading (+ interpret + compile + execute) CORETEST.4TH to I2C Slave target = 1422ms.
+\ the difference (406 ms) is the time of the I2C Half duplex exchange.
+\ [(45906 chars * 9 bits) + (1533 * 31)] / 0,406 = 1,135 MHz (9 bits / char + (2*START + 2*STOP + 2*addr + CTRL_Char) / line) 
+\ ==> 113 % of I2C Fast-mode Plus (Fm+)!
 \ 
 \ also connected to and tested with another I2C_FastForth target with MCLK = 1MHz (I2C CLK = MCLK ! ).
 \
@@ -125,8 +127,25 @@
 \
 \ the other interruption U2I_TERM_INT is used to communicate with TERMINAL, by replacing of the TERM_INT one.
 \
+\  Software              +----------------------------------+       Hardware
+\  I2C Master            |       +-------------------+      |       I2C Slave
+\                        |       |                   |      |   
+\ UART to I2C bridge    SCL     SDA   connected to: SDA    SCL    I2CFastForth target 
+\ -------------------   ----    ----                ----   ----   ------------------  
+\ MSP_EXP430FR5739      P4.1    P4.0                P1.6   P1.7   MSP_EXP430FR5739    
+\ MSP_EXP430FR5969      P1.3    P1.2                P1.6   P1.7   MSP_EXP430FR5969          
+\ MSP_EXP430FR5994      P8.1    P8.2                P7.0   P7.1   MSP_EXP430FR5994       
+\ MSP_EXP430FR6989      P1.5    P1.3                P1.6   P1.7   MSP_EXP430FR6989    
+\ MSP_EXP430FR4133      P8.3    P8.2                P5.2   P5.3   MSP_EXP430FR4133    
+\ CHIPSTICK_FR2433      P2.2    P2.0                P1.2   P1.3   CHIPSTICK_FR2433       
+\ MSP_EXP430FR2433      P3.1    P3.2                P1.2   P1.3   MSP_EXP430FR2433       
+\ MSP_EXP430FR2355      P3.3    P3.2                P1.2   P1.3   MSP_EXP430FR2355    
+\ LP_MSP430FR2476       P3.3    P3.2                P4.4   P4.3   LP_MSP430FR2476     
+\
+\ don't forget to link 3V3 and GND on each side and to add 3k3 pullup resistors on SDA and SCL.
+
 ; ----------------------------------------------------------------------
-; UARTI2CS.f
+; UARTI2CS.f (Software I2C Master)
 ; ----------------------------------------------------------------------
 
 \ first, we do some tests before downloading application
@@ -138,24 +157,23 @@ BIT #$7800,TOS
 0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (UART TERMINAL), set TOS = 0
 MOV TOS,0(PSP)
 MOV &VERSION,TOS
-SUB #307,TOS            \ FastForth V3.7
+SUB #308,TOS            \ FastForth V3.8
 COLON
 $0D EMIT            \ return to column 1 without CR
-ABORT" FastForth version = 3.7 please!"
+ABORT" FastForth V3.8 please!"
 ABORT" <-- Ouch! unexpected I2C_FastForth target!"
 PWR_STATE           \ remove the ABORT_UARTI2CS definition before continuing the download.
 ;
 
 ABORT_UARTI2CS      \ abort test
 
-[DEFINED] {UARTI2CS} 
-[IF] {UARTI2CS}     \ remove {UARTI2CS} if already defined
-[THEN]
+[DEFINED] {UARTI2CS} [IF] {UARTI2CS} [THEN] \ remove {UARTI2CS} if already defined
 
-MARKER {UARTI2CS}   \ {UARTI2CS}+8 = RET_ADR to do nothing by default
-6 ALLOT             \ {UARTI2CS}+10 <-- previous INI_APP
+MARKER {UARTI2CS}   \ {UARTI2CS}+8 = RET_ADR by default
+8 ALLOT             \ {UARTI2CS}+10 <-- previous INI_APP
 \                     {UARTI2CS}+12 <-- previous TERM_VEC
 \                     {UARTI2CS}+14 <-- previous Tx0_x_VEC
+\                     {UARTI2CS}+16 <-- Half_Duplex flag : 0=ECHO, <>0=NOECHO
 
 [UNDEFINED] CONSTANT [IF]
 \ https://forth-standard.org/standard/core/CONSTANT
@@ -171,12 +189,10 @@ ENDCODE
 [THEN]
 
 I2CSLA0 CONSTANT I2CS_ADR       \ I2CSLA0=$FFA2
-I2CSLA1 CONSTANT HALF_DUPLEX    \ I2CSLA1=$FFA4
-0 HALF_DUPLEX !                 \ =0 --> ECHO, <>0 --> NOECHO
 
-\ note: ASM definitions are hidden and cannot be executed from TERMINAL
+\ note: HDNCODE definitions are HiDdeN and cannot be executed from TERMINAL
 \---------------------------\
-ASM I2CSTOP                 \ sends a STOP on I2C_BUS
+HDNCODE I2CSTOP                 \ sends a STOP on I2C_BUS
 \---------------------------\     _
 BIS.B #SM_SCL,&I2CSM_DIR    \ 3 h  v_   force SCL as output (low)
 NOP3                        \ 3 l _
@@ -186,12 +202,11 @@ BIC.B #SM_SCL,&I2CSM_DIR    \ 3 l _^    release SCL (high)
 NOP3                        \ 3 h   _
 BIC.B #SM_SDA,&I2CSM_DIR    \ 3 h _^    relase SDA (high) when SCL is high = STOP
 MOV @RSP+,PC                \
-ENDASM                      \
+ENDCODE                      \
 \---------------------------\
 
-\ note: ASM definitions are hidden and cannot be executed from TERMINAL
 \---------------------------\
-ASM STOP_U2I                \ STOP_APP subroutine, the next of TERATERM(ALT+B)|SW2+RST|SYS_failures
+HDNCODE STOP_U2I                \ STOP_APP subroutine, the next of TERATERM(ALT+B)|SW2+RST|SYS_failures
 \ --------------------------\ UARTI2CS can't be stopped by any other means.
 BW1                         \ <-- I2C_MASTER_RX <-- TERATERM break (Alt+B)
 CMP #RET_ADR,&{UARTI2CS}+8  \
@@ -220,12 +235,12 @@ CMP #RET_ADR,&{UARTI2CS}+8  \
 THEN                        \
 \ --------------------------\ when STOP_U2I is the next of:  TERATERM(ALT+B)|SW2+RESET|SYS_failures
 MOV @RSP+,PC                \                       RET to:        WARM_BODY|WARM_BODY|WARM_BODY
-ENDASM                      \
+ENDCODE                      \
 \ --------------------------\
 
 
 \ \ vvvvvvvMulti-Master-Modevvvvvv\
-\ ASM DO_IDLE                     \ 
+\ HDNCODE DO_IDLE                     \ 
 \ MOV #4,W                        \ 1   wait bus idle time = 5 µs @ 16 MHz
 \ BEGIN
 \     BIT.B #SM_SCL,&I2CSM_IN     \ 3 
@@ -239,16 +254,15 @@ ENDASM                      \
 \     SUB #1,W                    \ 1
 \ 0= UNTIL                        \ 2
 \ MOV @RSP+,PC
-\ ENDASM
+\ ENDCODE
 \ \ ^^^^^^^Multi-Master-Mode^^^^^^\
 
-\ note: ASM definitions are hidden and cannot be executed from TERMINAL
 \ **************************************\
-ASM U2I_TERM_INT                        \ UART RX interrupt starts on first char of each line sent by TERMINAL
+HDNCODE U2I_TERM_INT                        \ UART RX interrupt starts on first char of each line sent by TERMINAL
 \ **************************************\
 ADD #4,RSP                              \ 1 remove unused PC_RET and SR_RET
 \ --------------------------------------\
-MOV &HALF_DUPLEX,W                      \ 3 W = HALF_DUPLEX = 0 if ECHO, -1 if NOECHO
+MOV &{UARTI2CS}+16,W                      \ 3 W = HALF_DUPLEX = 0 if ECHO, -1 if NOECHO
 MOV #PAD_ORG,T                          \ 2 T = buffer pointer for UART_TERMINAL input
 MOV #$0D,S                              \ 2 S = 'CR' = penultimate char of line to be RXed by UART
 BEGIN                                   \
@@ -360,13 +374,12 @@ GOTO FW1                                \   X > 4 ==> reSTART RX repeated every 
 \ ======================================\
 \ END OF I2C MASTER TX                  \ SCL is kept low until START RX  --┐
 \ ======================================\                                   |
-ENDASM                                  \                                   |
+ENDCODE                                 \                                   |
 \ **************************************\                                   v
 
 
-\ note: ASM definitions are hidden and cannot be executed from TERMINAL
 \ **************************************\
-ASM HALF_S_INT                          \ wakes up every 1/2s to listen I2C Slave or break from TERMINAL.
+HDNCODE HALF_S_INT                          \ wakes up every 1/2s to listen I2C Slave or break from TERMINAL.
 \ **************************************\
 ADD #4,RSP                              \ 1 remove PC_RET and SR_RET        |
 \ --------------------------------------\                                   |
@@ -505,9 +518,9 @@ BEGIN \   I2C MASTER START RX           \ ABORT|WARM loop back
 \       --------------------------------\           see forthMSP430FR_TERM_I2C.asm
         CMP.B #4,X                      \ 1         
         U>= IF                          \ 2
-            MOV #0,&HALF_DUPLEX         \           preset ECHO
+            MOV #0,&{UARTI2CS}+16         \           preset ECHO
             0= IF                       \ 2
-                MOV #-1,&HALF_DUPLEX    \ 3         set NOECHO if char $04
+                MOV #-1,&{UARTI2CS}+16    \ 3         set NOECHO if char $04
             THEN
             BIS.B #SM_SDA,&I2CSM_DIR    \ 3 l       prepare Ack for Ctrl_Chars $04 $05
         THEN
@@ -531,7 +544,7 @@ U>= WHILE                               \           $03 = Ctrl_Char for WARM req
 \   CTRL_Char $02|$03                   \   l       if ABORT|WARM requests, SDA is high, SCL is low
 \   ------------------------------------\
     0= IF                               \           if ABORT request:
-        MOV #0,&HALF_DUPLEX             \               set echo ON I2C_Master side
+        MOV #0,&{UARTI2CS}+16             \               set echo ON I2C_Master side
         CALL #UART_RXON                 \               resume UART downloading source file
         BEGIN                           \   
             BIC #UCRXIFG,&TERM_IFG      \               clear UCRXIFG
@@ -588,12 +601,11 @@ MOV #SLEEP,PC                           \ executes RXON (that enables TERMINAL t
 \ --------------------------------------\
 \ I2C_Master se réveillera au premier caractère saisi sur le TERMINAL ==> TERM_INT,
 \ ou en fin du temps TxIFG ==> HALF_S_INT\
-ENDASM                                  \ 
+ENDCODE                                 \ 
 \ **************************************\
 
-\ note: ASM definitions are hidden and cannot be executed from TERMINAL
 \---------------------------\
-ASM INI_U2I                 \ define INI_HARD_APP subroutine called by WARM
+HDNCODE INI_U2I             \ define INI_HARD_APP subroutine called by WARM
 \ --------------------------\
 CALL &{UARTI2CS}+10         \ previous INI_APP executing init TERM_UC, activates I/O and sets TOS = RSTIV_MEM.
 \ --------------------------\ TOS = SYSRSTIV = $00|$02|$04|$0E|$xx = POWER_ON|RST|SVSH_threshold|SYS_failures 
@@ -618,35 +630,35 @@ BIC.B #SM_BUS,&I2CSM_OUT    \ preset SDA + SCL output LOW
 \ --------------------------\ 
 GOTO BW3                    \ goto I2C_Master START RX loop, with no other return than ALT+B|SW2+RST 
 \ --------------------------\
-ENDASM                      \
+ENDCODE                     \
 \ --------------------------\
 \
-\
-\ ========================================================
-\ Driver UART to I2CM to do an USB to I2C_FastForth bridge
-\ ========================================================
+\ ==============================================================
+\ Driver UART to I2CM which does the bridge USB to I2C_FastForth
+\ ==============================================================
 
 \ I2C address mini = 10h, maxi = 0EEh (I2C-bus specification and user manual V6)
 \ type on TERMINAL "16 UARTI2CS" to link teraterm TERMINAL with FastForth I2C_Slave at address $10
 \ you can also link with last known I2C_Slave address : "I2CS_ADR @ UARTI2CS"
 \
-CODE UARTI2CS                       \ I2C_Slave_Address_%0 --
+: UARTI2CS                          \ I2C_Slave_Address_%0 --
+CR I2CS_ADR !                       \ --        save I2C_Slave_Address_%0
+HI2LO
 CMP #RET_ADR,&{UARTI2CS}+8          \
 0= IF                               \ save parameters only if MARKER_DOES is not initialized
     MOV #STOP_U2I,&{UARTI2CS}+8     \ MARKER_DOES of {UARTI2CS} will do CALL &{UARTI2CS}+8 = CALL #STOP_U2I
     MOV &WARM+2,&{UARTI2CS}+10      \ save previous INI_APP from WARM PFA to {UARTI2CS}+10
-    MOV #INI_U2I,&WARM+2            \ and replace it by new INI_APP
     MOV &TERM_VEC,&{UARTI2CS}+12    \ save previous TERM_VEC value to {UARTI2CS}+12, see target.pat
-    MOV #U2I_TERM_INT,&TERM_VEC     \ and replace it by U2I_TERM_INT
-    \ MOV &TA0_X_VEC,&{UARTI2CS}+14   \ save previous TA0_x_VEC value to {UARTI2CS}+14
-    \ MOV #HALF_S_INT,&TA0_X_VEC      \ and replace it by HALF_S_INT
-    MOV &TB0_X_VEC,&{UARTI2CS}+14   \ save previous TB0_x_VEC value to {UARTI2CS}+14
-    MOV #HALF_S_INT,&TB0_X_VEC      \ and replace it by HALF_S_INT
+    MOV &TB0_X_VEC,&{UARTI2CS}+14   \ save previous TB0_X_VEC value to {UARTI2CS}+14
+    \ MOV &TA0_X_VEC,&{UARTI2CS}+14   \ save previous TA0_X_VEC value to {UARTI2CS}+14
+    MOV #0,&{UARTI2CS}+16           \ reset Half_Duplex variable (set ECHO ON)
+    MOV #INI_U2I,&WARM+2            \ replace INI_APP by new INI_U2I
+    MOV #U2I_TERM_INT,&TERM_VEC     \ set TERM_VEC with U2I_TERM_INT
+    MOV #HALF_S_INT,&TB0_X_VEC      \ set TB0_X_VEC with HALF_S_INT
+    \ MOV #HALF_S_INT,&TA0_X_VEC      \ set TA0_X_VEC with HALF_S_INT
 THEN
-COLON   
-CR I2CS_ADR !                       \ --        save I2C_Slave_Address_%0
-WARM                                \           execute INI_U2I then goto BW3; abort with Alt-B or SW2+RST.
-;           
+MOV #WARM,PC                        \ execute INI_U2I then goto BW3; abort with Alt-B or SW2+RST.
+ENDCODE           
 
 RST_HERE ECHO
 18 UARTI2CS     ; TERATERM(Alt-B) or I2C_Master(SW2+RST) to quit

@@ -50,10 +50,10 @@ BIT #BIT15,TOS
 0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (FIXPOINT input), set TOS = 0  
 MOV TOS,0(PSP)
 MOV &VERSION,TOS
-SUB #307,TOS            \ FastForth V3.7
+SUB #308,TOS            \ FastForth V3.8
 COLON
 $0D EMIT    \ return to column 1 without CR
-ABORT" FastForth version = 3.7 please!"
+ABORT" FastForth V3.8 please!"
 ABORT" target without LF_XTAL !"
 PWR_STATE           \ if no abort remove this word
 ;
@@ -385,17 +385,24 @@ MOV @IP+,PC
 ENDCODE
 [THEN]
 
-[UNDEFINED] UM* [IF]    
+[UNDEFINED] UM* [IF]    \ case of hardware_MPY
 \ https://forth-standard.org/standard/core/UMTimes
-\ UM*     u1 u2 -- ud   unsigned 16x16->32 mult.
+\ UM*     u1 u2 -- udlo udhi   unsigned 16x16->32 mult.
 CODE UM*
     MOV @PSP,&MPY       \ Load 1st operand for unsigned multiplication
-    MOV TOS,&OP2        \ Load 2nd operand
+BW1 MOV TOS,&OP2        \ Load 2nd operand
     MOV &RES0,0(PSP)    \ low result on stack
     MOV &RES1,TOS       \ high result in TOS
     MOV @IP+,PC
 ENDCODE
-[THEN] 
+
+\ https://forth-standard.org/standard/core/MTimes
+\ M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
+CODE M*
+    MOV @PSP,&MPYS      \ Load 1st operand for signed multiplication
+    GOTO BW1
+ENDCODE
+[THEN]
 
 [UNDEFINED] UM/MOD [IF]
 \ https://forth-standard.org/standard/core/UMDivMOD
@@ -417,6 +424,13 @@ ENDCODE
 \ U/MOD   u1 u2 -- ur uq     unsigned division
 : U/MOD
 0 SWAP UM/MOD
+;
+[THEN]
+
+[UNDEFINED] UMOD [IF]
+\ UMOD   u1 u2 -- ur        unsigned division
+: UMOD
+U/MOD DROP
 ;
 [THEN]
 
@@ -460,7 +474,7 @@ ENDCODE
   >R  <# 0 # #S #>  
   R> OVER - 0 MAX SPACES TYPE
 ;
-[THEN]  \ U.R
+[THEN]
 
 $81EF DEVICEID @ U<     ; search device ID: MSP430FR4133 or...
 DEVICEID @ $8241 U<     ; ...MSP430FR2433
@@ -483,7 +497,7 @@ OR                      ; -- flag
     CREATE RTCYEAR 2 ALLOT
 
 \   ************************************\
-    CODE RTC_INT                        \ computes sec min hour day month year
+    HDNCODE RTC_INT                     \ computes sec min hour day month year
 \   ************************************\
     ADD #2,RSP                          \ remove previous_SR
     BIT #1,&RTCIV                       \ clear RTC_IFG
@@ -509,13 +523,13 @@ OR                      ; -- flag
 \               ------------------------\ here we compute leap year
                 0= IF                   \ yes
                     COLON
-                    RTCYEAR @ 4 MOD 
+                    RTCYEAR @ 4 UMOD 
                     IF 29
                     ELSE
-                        RTCYEAR @ 100 MOD 
+                        RTCYEAR @ 100 UMOD 
                         IF 30
                         ELSE
-                            RTCYEAR @ 400 MOD
+                            RTCYEAR @ 400 UMOD
                             IF 29
                             ELSE 30
                             THEN
@@ -555,7 +569,7 @@ OR                      ; -- flag
     ENDCODE    
 
 \   ------------------------\
-    ASM STOP_RTC            \ define STOP_RTC as new COLD_APP subroutine, called by {RTC}|WIPE|RST|COLD|SYS_failures.
+    HDNCODE STOP_RTC        \ define STOP_RTC as new COLD_APP subroutine, called by {RTC}|WIPE|RST|COLD|SYS_failures.
 \   ------------------------\ ------------------------------------------
     CMP #RET_ADR,&{RTC}+8   \ 
     0<> IF                  \ and only if RTC_APP is started by START_RTC
@@ -580,11 +594,11 @@ OR                      ; -- flag
 \   ------------------------\
     MOV &COLD+2,PC          \ 5 link (branch) to the previous STOP_APP subroutine,
 \   ------------------------\ then RET to MARKER_DOES  or to COLD+4
-    ENDASM                  \
+    ENDCODE                 \
 \   ------------------------\
 
 \   ----------------------------------------\ 
-    ASM INI_RTC                             \ define INI_HDWR_APP called first by START_RTC then by WARM
+    HDNCODE INI_RTC                         \ define INI_HDWR_APP called first by START_RTC then by WARM
 \   ----------------------------------------\ ---------------------------------------------------------
     CALL &{RTC}+14                          \ call previous INI_APP (which sets TOS = RSTIV_MEM)
     CMP #0,&RTCCTL                          \ if RTCCTL = 0 = reset state, app is STOPPED and must to be started
@@ -594,7 +608,7 @@ OR                      ; -- flag
         MOV #%0010_0110_0100_0010,&RTCCTL   \ starts RTC with XT1CLK/256, enables RTC_INT
     THEN
     MOV @RSP+,PC                            \ RET to BODYWARM|START_RTC
-    ENDASM                                  \
+    ENDCODE                                 \
 \   ----------------------------------------\
 
 \\  -------------------------------------------------------------------------------
@@ -603,13 +617,13 @@ OR                      ; -- flag
 \\  but if you manualy type a command, pending RTC_INT may not be executed during this time.
 \\  -------------------------------------------------------------------------------
 \\   --------------------\
-\\   ASM BACKGND_RTC     \ define BACKGND_RTC to replace actual BACKGND_APP
+\\   HDNCODE BACKGND_RTC \ define BACKGND_RTC to replace actual BACKGND_APP
 \\   --------------------\
 \    BEGIN               \
 \       MOV &LPM_MODE,SR \ enter to SLEEP mode, waiting RTC_INT
 \    AGAIN               \ loop back to BEGIN is executed before CPU shut down
 \\   --------------------\
-\    ENDASM              \
+\    ENDCODE             \
 \\   -------------------------------------------------------------------------------
 \\   WARNING! because unlinked, this BACKGND_APP doesn't execute XON, TERMINAL is MUTEd
 \\   but maybe that is what you want: RTC time keeps its accuracy.
@@ -653,7 +667,7 @@ OR                      ; -- flag
     ." it is " TIME? 
     ;
 
-    : DATE?                     \ display date
+    : DATE?                 \ display date
 
 [ELSE]
 
@@ -739,13 +753,13 @@ RTCYEAR @               \ -- day mon year
 \ 7 MOD                   \ -- weekday        = {0=Sat, ..., 6=Fri} 
 \ ------------------------------------------
 OVER 3 U<               \             
-IF 1- SWAP 12 + SWAP 
+IF 1 - SWAP 12 + SWAP 
 THEN                    \ -- d m' y'  with m' {3=March, ..., 14=february}
 100 U/MOD               \ -- d m' K J   with K = y' in century, J = century
 DUP 4 U/ SWAP 2* -      \ -- d m' K (J/4 - 2J) 
 SWAP DUP 4 U/ + +       \ -- d m' ((J/4 - 2J) + (K + K/4)) 
 SWAP 1+  13 5 U*/ + +   \ -- (d + (((J/4 - 2J) + (K + K/4)) + (m+1)*13/5))
-7 U/MOD DROP            \ -- weekday        = {0=Sat, ..., 6=Fri} 
+7 UMOD                  \ -- weekday        = {0=Sat, ..., 6=Fri} 
 \ ------------------------------------------
 RTCDOW C!               \ --
 ." we are on " DATE? 
@@ -825,18 +839,18 @@ ENDCODE
 [THEN]
 
 : SET_TIME
-ESC [8;42;96t       \ set terminal display 42L * 96C
-42 0 DO CR LOOP     \ to avoid erasing any line of source, create 42 empty lines
+ESC [8;40;80t       \ set terminal display 42L * 80C
+39 0 DO CR LOOP     \ to avoid erasing any line of source, create 42 empty lines
 ESC [H              \ then set cursor home
 CR ." DATE (DMY): "
 PAD_ORG DUP PAD_LEN
-['] ACCEPT >BODY    \ find default part of deferred ACCEPT (from terminal input)
+['] ACCEPT >BODY    \ find default part of deferred ACCEPT (terminal input)
 EXECUTE             \ wait human input for D M Y
 EVALUATE            \ interpret this input
 CR DATE!            \ set date
 CR ." TIME (HMS): "
 PAD_ORG DUP PAD_LEN
-['] ACCEPT >BODY    \ find default part of deferred ACCEPT (from terminal input)
+['] ACCEPT >BODY    \ find default part of deferred ACCEPT (terminal input)
 EXECUTE             \ wait human input for H M S
 EVALUATE            \ interpret this input
 CR TIME!            \ set time

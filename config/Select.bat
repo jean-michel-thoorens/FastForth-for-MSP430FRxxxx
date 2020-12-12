@@ -78,3 +78,17 @@
 @set PortCOM=COM%number%
 
 @exit /b
+
+
+:SelectBridge
+@echo select your bridge:
+@echo 1  USB to UART
+@echo 2  WIFI
+@set /p choice=your choice: 
+
+@if %choice% == 1    set bridge="C/ ECHO"
+@if %choice% == 2    set bridge="FastForth:3000 HALF"
+
+@exit /b
+
+

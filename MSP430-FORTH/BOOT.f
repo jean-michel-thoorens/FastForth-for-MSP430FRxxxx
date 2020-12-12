@@ -1,6 +1,6 @@
 
 ; --------
-; BOOT.4th
+; BOOT.f
 ; --------
 \
 \ to see kernel options, download FastForthSpecs.f
@@ -36,30 +36,38 @@
 \ #42 $2A MPUSEG1IFG segment 1 memory violation (PUC)               
 \ #44 $2C MPUSEG2IFG segment 2 memory violation (PUC)               
 \ #46 $2E MPUSEG3IFG segment 3 memory violation (PUC)   
-
-
-
-
-
-\ SYSRSTIV values added by FAST FORTH 
-\ -----------------------------------
-\ 05 reset after compilation of FAST FORTH kernel
-\ -1 hardware DEEP RESET: restores state of the lastest FastForth flashed   
-             
-
+\
+\ SYSRSTIV values added by FastForth 
+\ ----------------------------------
+\ -3 reset after FastForth "flashing".
+\ -1 Deep Reset: restores FastForth as it was "flashed".   
+\
 \ note
-\ Origin of reset is kept in SYSRSTIV register. Their values are device specific.
+\ --------------------------------------------------------------------------------
+\ any reset event is kept in SYSRSTIV register. Their values are device specific.
 \ WARM displays the content of SYSRSTIV register.
+\ --------------------------------------------------------------------------------
 \ When BOOT.4TH is called by the FastForth bootstrap, the SYSRSTIV value is on
-\ the paramater stack, ready to test
+\ the Top Of paramater Stack -TOS- ready to test.
+\ --------------------------------------------------------------------------------
+\ to enable bootstrap: ' BOOT IS WARM
+\ to disable bootstrap: ' BOOT [PFA] IS WARM
+\ --------------------------------------------------------------------------------
+\
+\ first, we test for downloading driver only if good FastForth version
 
-\ --------------------------------------------------------------------------------
-\ WARNING !
-\ --------------------------------------------------------------------------------
-\ it is not recommended to compile then execute a word to perform the bootstrap 
-\ because the risk of crushing thereafter. Interpreting mode as below is required: 
-\ --------------------------------------------------------------------------------
+CODE ABORT_BOOTSTRAP
+SUB #2,PSP
+MOV TOS,0(PSP)      \
+MOV &VERSION,TOS    \ -- sys_event version
+SUB #308,TOS        \                   FastForth V3.8
+COLON
+'CR' EMIT            \ return to column 1 without 'LF'
+ABORT" FastForth V3.8 please!"
+PWR_STATE           \ remove ABORT_BOOTSTRAP definition before resuming
+;
 
+ABORT_BOOTSTRAP
 
 [UNDEFINED] = [IF]
 \ https://forth-standard.org/standard/core/Equal
@@ -75,8 +83,16 @@ MOV @IP+,PC     \ 4
 ENDCODE
 [THEN]
 
+\ --------------------------------------------------------------------------------
+\ WARNING !
+\ --------------------------------------------------------------------------------
+\ it is not recommended here to compile then execute a word 
+\ because the risk of crushing thereafter. 
+\ Interpreting mode as below is required: 
+\ --------------------------------------------------------------------------------
+
 \ it's an example:
 
-$04 = [IF]      \ if origin of SYSRST is <reset>
+$04 = [IF]              \ if PUC event is <reset>
     LOAD" SD_TEST.4TH"
 [THEN]

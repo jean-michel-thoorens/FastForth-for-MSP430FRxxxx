@@ -38,10 +38,10 @@ CODE ABORT_TEST_ASM
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV &VERSION,TOS
-SUB #307,TOS        \ FastForth V3.7
+SUB #308,TOS        \ FastForth V3.8
 COLON
 'CR' EMIT            \ return to column 1 without 'LF'
-ABORT" FastForth version = 3.7 please!"
+ABORT" FastForth V3.8 please!"
 PWR_STATE           \ remove ABORT_TEST_ASM definition before resuming
 ;
 
@@ -129,7 +129,7 @@ ENDCODE
 : VARIABLE 
 CREATE
 HI2LO
-MOV #DOVAR,-4(W)        \   CFA = DOVAR
+MOV #$1287,-4(W)        \   CFA = CALL rDOVAR
 MOV @RSP+,IP
 MOV @IP+,PC
 ENDCODE

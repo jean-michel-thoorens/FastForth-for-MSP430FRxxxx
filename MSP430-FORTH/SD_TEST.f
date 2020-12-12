@@ -1,19 +1,5 @@
 \ -*- coding: utf-8 -*-
 
-\ first, we test for downloading driver only if UART TERMINAL target
-CODE ABORT_SD_TEST
-SUB #2,PSP
-MOV TOS,0(PSP)
-MOV &VERSION,TOS
-SUB #307,TOS        \ FastForth V3.7
-COLON
-'CR' EMIT            \ return to column 1 without 'LF'
-ABORT" FastForth version = 3.7 please!"
-PWR_STATE           \ remove ABORT_SD_TEST definition before resuming
-;
-
-ABORT_SD_TEST
-
 ; -----------
 ; SD_TEST.f
 ; -----------
@@ -91,6 +77,20 @@ ABORT_SD_TEST
 \   copy SD_TEST.f          to \SD_TEST.4TH
 \   copy PROG100k.f         to \PROG100k.4TH
 \   copy RTC.f              to \RTC.4TH             ( doesn't work with if FR2xxx or FR4xxx)
+
+\ first, we test for downloading driver only if UART TERMINAL target
+CODE ABORT_SD_TEST
+SUB #2,PSP
+MOV TOS,0(PSP)
+MOV &VERSION,TOS
+SUB #308,TOS        \ FastForth V3.8
+COLON
+'CR' EMIT            \ return to column 1 without 'LF'
+ABORT" FastForth V3.8 please!"
+PWR_STATE           \ remove ABORT_SD_TEST definition before resuming
+;
+
+ABORT_SD_TEST
 
 PWR_STATE
 
@@ -535,7 +535,7 @@ ELSE 1 - ?DUP
                             READ" PROG100K.4TH"
                             BEGIN
                                 READ    \ sequentially read 512 bytes
-                            UNTIL       \ prog10k.4TH is closed
+                            UNTIL       \ prog100k.4TH is closed
                         ELSE 1 - ?DUP
                             0= IF
                                 ." WRITE YOURFILE.TXT" CR

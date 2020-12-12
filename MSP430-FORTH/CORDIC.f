@@ -42,10 +42,10 @@ BIT #BIT10,TOS
 0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (FIXPOINT input), set TOS = 0  
 MOV TOS,0(PSP)
 MOV &VERSION,TOS
-SUB #307,TOS            \ FastForth V3.7
+SUB #308,TOS            \ FastForth V3.8
 COLON
 $0D EMIT    \ return to column 1 without CR
-ABORT" FastForth version = 3.7 please!"
+ABORT" FastForth V3.8 please!"
 ABORT" build FastForth with FIXPOINT_INPUT addon !"
 PWR_STATE           \ if no abort remove this word
 ;
@@ -219,7 +219,7 @@ U>= UNTIL   POPM #3,IP          \                       S=Qhi, T=len
 ENDCODE
 [THEN]
 
-ASM XSCALE              \ X --> X*Cordic_Gain
+HDNCODE XSCALE              \ X --> X*Cordic_Gain
 \ T.I. UNSIGNED MULTIPLY SUBROUTINE: U1 x U2 -> Ud
 \ https://forth-standard.org/standard/core/UMTimes
 \ UM*     u1 u2 -- ud   unsigned 16x16->32 mult.
@@ -238,7 +238,7 @@ U>= UNTIL                           \ S = RESlo, T=REShi
             MOV T,X                 \ 2 IF BIT IN CARRY: FINISHED    10~ loop
             MOV #XDOCON,rDOCON      \ restore rDOCON
             MOV @RSP+,PC            \ RET
-ENDASM
+ENDCODE
 
 [ELSE] ; hardware multiplier
 
@@ -268,13 +268,13 @@ BEGIN       MOV @PSP,&MPY       \                   Load 1st operand
 ENDCODE
 [THEN]
 
-ASM XSCALE                  \ X = X*Cordic_Gain
+HDNCODE XSCALE              \ X = X*Cordic_Gain
 MOV T_SCALE(W),&MPYS32L     \ 3     CORDIC Gain * 65536
 MOV #0,&MPYS32H
 MOV X,&OP2                  \ 3     Load 1st operand
 MOV &RES1,X                 \ 3     hi result
 MOV @RSP+,PC                \ RET
-ENDASM
+ENDCODE
 
 [THEN]  ; end of hardware multiplier
 

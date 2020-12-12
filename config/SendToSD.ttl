@@ -26,11 +26,12 @@ showtt 0            ; close teraterm windows
 sendln 'CODE ?ID';                              CODE ?ID
 sendln 'CMP #0,R14 0<> IF SUB &$1A04,R14 THEN'; CMP #0,TOS 0<> IF SUB &DEVICEID,TOS THEN
 sendln 'COLON ';                                COLON
-sendln '$1B EMIT $63 EMIT';                     $1B EMIT $63 EMIT   \ send 'ESC c' (clear screen)
+;sendln '$1B EMIT $63 EMIT';                     $1B EMIT $63 EMIT   \ send 'ESC c' (clear screen)
 sendln 'CR ABORT" Device'39's ID mismatch!" ' ; CR ABORT" Device's ID mismatch!"
 sendln 'PWR_STATE ;' ;                          PWR_STATE ;
 
-sendln param4 ' ?ID NOECHO'    ; send: %deviceID% ?ID
+;sendln param4 ' ?ID NOECHO'    ; send: %deviceID% ?ID
+sendln param4 ' ?ID ECHO'    ; send: %deviceID% ?ID
 
 sendln 'TERM2SD" ' inputstr '"'    ; send to FastForth the command TERM2SD" \file.4TH" ...with optionnal path added in inputbox
 
@@ -43,7 +44,7 @@ sendln #4               ; send ETX to ask TERM2SD" to close file
 uptime timeend  ; stops chrono...
 diff = timeend - timestart
 
-sendln 'ECHO'
+;sendln 'ECHO'
 
 showtt 1    ; display teraterm window
 

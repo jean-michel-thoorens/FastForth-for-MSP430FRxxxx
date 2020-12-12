@@ -46,10 +46,10 @@ CODE ABORT_SD_TOOLS
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV &VERSION,TOS
-SUB #307,TOS        \ FastForth V3.7
+SUB #308,TOS        \ FastForth V3.8
 COLON
 'CR' EMIT            \ return to column 1 without 'LF'
-ABORT" FastForth version = 3.7 please!"
+ABORT" FastForth V3.8 please!"
 PWR_STATE           \ remove ABORT_UARTI2CS definition before resuming
 ;
 

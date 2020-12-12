@@ -7,10 +7,10 @@ CODE ABORT_FF_SPECS
 SUB #2,R15
 MOV R14,0(R15)
 MOV &$180E,R14
-SUB #307,R14
+SUB #308,R14
 COLON
 $0D EMIT
-ABORT" FastForth version = 3.7 please!"
+ABORT" FastForth V3.8 please!"
 PWR_STATE
 ;
 
@@ -478,7 +478,7 @@ ELSE 2 + @ $1284 =
     THEN
 THEN
 $20 EMIT 
-$1810 @ U. $08 EMIT ." -Entry word sets, "
+$1810 @ U. $08 EMIT ." -Entry word set, "
 $1800 @ 0 1000 UM/MOD U.
 ?DUP IF $08 EMIT ',' EMIT U.
 THEN ." MHz, "
@@ -497,7 +497,7 @@ CR
 ." MAX-UD            = 4294967295" CR
 ." STACK-CELLS       = 48" CR
 ." RETURN-STACK-CELLS= 48" CR
-." WoRdS aRe CaSe-InSeNsItIvE" CR
+." DeFiNiTiOnS aRe CaSe-InSeNsItIvE" CR
 CR 
 ESC [7m ." KERNEL SPECS" ESC [0m
 CR
@@ -509,26 +509,29 @@ $1812 @
             THEN
         THEN
 2*  DUP 0< IF ." (XON/XOFF) UART TERMINAL" CR
-        ELSE  ." I2C_Master TERMINAL" CR
         THEN
 2*  DUP 0< IF ." Half-Duplex TERMINAL" CR THEN
+2*  DUP 0< IF ." I2C_Master TERMINAL" CR THEN
 2*  DUP 0< IF ." Q15.16 input" CR THEN
 2*  DUP 0< IF ." DOUBLE input" CR THEN
-2*  DUP 0< IF ." MSP430_X assembler" CR 2* 2* 
+2*  DUP 0< IF ." MSP430_X assembler" CR 2* 2*
         ELSE 2*  DUP
             0< IF ." MSP430 Assembler"
-                2*  DUP 0< IF ."  with 20bits address" THEN
-                CR
+                2*  DUP 0< IF ."  with 20bits address"
+                    THEN CR
             ELSE 2*
             THEN
         THEN
-2* 2* 2* 2* 2*
+2*
+2*
+2*
+2*
 2* 0< IF
     [DEFINED] DEFER [IF] ." DEFER word set" CR [THEN]
     [DEFINED] ALSO  [IF] ." VOCABULARY word set" CR [THEN]
+    [DEFINED] LOAD" [IF] ." SD_CARD Loader" CR [THEN]
     [DEFINED] BOOT  [IF] ." bootloader" CR [THEN]
     [DEFINED] READ" [IF] ." SD_CARD Read/Write" CR [THEN]
-    [DEFINED] LOAD" [IF] ." SD_CARD Loader" CR [THEN]
     CR 
     ESC [7m ." OPTIONS" ESC [0m
     CR

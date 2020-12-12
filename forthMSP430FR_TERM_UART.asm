@@ -1,5 +1,28 @@
 ; -*- coding: utf-8 -*-
 ;
+
+; ---------------------------------------
+; TERMINAL driver for FastForth target
+; ---------------------------------------
+;                     +---------------------------+
+; ------              |    +-----------------+    |
+; WIRING              |    |    +--------+   |    |
+; ------              |    |    |        |   |    |
+; FastForth target   TXD  RXD  RTS <--> CTS TXD  RXD  UARTtoUSB <--> COMx <--> TERMINAL
+; -----------------------------------------------------------------------------------------
+; MSP_EXP430FR5739   P2.0 P2.1 P2.2                   PL2303TA                 TERATERM.EXE
+; MSP_EXP430FR5969   P2.0 P2.1 P4.1                   PL2303HXD
+; MSP_EXP430FR5994   P2.0 P2.1 P4.2                   CP2102
+; MSP_EXP430FR6989   P3.4 P3.5 P3.0   
+; MSP_EXP430FR4133   P1.0 P1.1 P2.3   
+; CHIPSTICK_FR2433   P1.4 P1.5 P3.2       
+; MSP_EXP430FR2433   P1.4 P1.5 P1.0       
+; MSP_EXP430FR2355   P4.3 P4.2 P2.0
+; LP_MSP430FR2476    P1.4 P1.5 P6.1
+;
+;-------------------------------------------------------------------------------
+; UART TERMINAL: QABORT ABORT_TERM COLD_TERM INI_TERM RXON RXOFF
+;-------------------------------------------------------------------------------
 ; define run-time part of ABORT"
 ;Z ?ABORT   xi f c-addr u --      abort & print msg.
 ;            FORTHWORD "?ABORT"
@@ -22,6 +45,8 @@ A_USB_LOOPI SUB #1,X                ; 1~        <---+   |  ==> ((65*3)+5)*1000 =
             BIT #RX_TERM,&TERM_IFG  ; 4 new char in TERMRXBUF after A_USB_LOOPJ delay ?
             JNZ A_UART_LOOP         ; 2 yes, the input stream is still active: loop back
             CALL #INI_FORTH         ; common ?ABORT|RST, "hybrid" subroutine with return to FORTH interpreter
+; ----------------------------------;
+; display line of error if NOECHO   ;
 ; ----------------------------------;
             .word   lit,LINE,FETCH  ; -- f c-addr u line    fetch line number before set ECHO !
             .word   ECHO            ;
@@ -58,11 +83,11 @@ INIT_TERM                           ; TOS = RSTIV_MEM
 ; ----------------------------------;
 UART_INIT_TERM                      ;
     CMP #2,TOS                      ;
-    JNC UART_INIT_TERM_END          ; no INIT_TERM if RSTIV_MEM U< 2 (WARM)
+    JNC UART_INIT_TERM_END          ; no INIT_TERM if RSTIV_MEM U< 2 (WARM|ABORT)
 ; ----------------------------------;
     MOV #0081h,&TERM_CTLW0          ; UC SWRST + UCLK = SMCLK
-    MOV &TERMBRW_RST,&TERM_BRW      ; init value in FRAM
-    MOV &TERMMCTLW_RST,&TERM_MCTLW  ; init value in FRAM
+    MOV &TERMBRW_RST,&TERM_BRW      ; init value in FRAM INFO
+    MOV &TERMMCTLW_RST,&TERM_MCTLW  ; init value in FRAM INFO
     BIS.B #BUS_TERM,&TERM_SEL       ; Configure pins TERM_UART|TERM_I2C
     BIC #1,&TERM_CTLW0              ; release UC_TERM from reset...
     BIS #WAKE_UP,&TERM_IE           ; then enable interrupt for wake up on terminal input
@@ -72,8 +97,6 @@ UART_INIT_TERM_END
 ; ----------------------------------;
 
 
-; ----------------------------------;
-RXON                                ; default BACKGND_APP 
 ; ----------------------------------;
 UART_RXON   JMP RXON_EXE            ; Software and/or hardware flow control, to start Terminal UART for one line
 ; ----------------------------------;
@@ -88,11 +111,13 @@ RXOFF_LOOP  BIT #TX_TERM,&TERM_IFG  ;3      wait the sending of last char
             MOV #19,&TERM_TXBUF     ;4      move XOFF char into TX_buf
     .ENDIF                          ;
     .IFDEF TERMINAL4WIRES           ;   and hardware flow control after
-            BIS.B #RTS,&HANDSHAKOUT ;3     set RTS high
+            BIS.B #RTS,&HANDSHAKOUT ;3  set RTS high
     .ENDIF                          ;
             MOV @RSP+,PC            ;4 to CR_NEXT, ...or user defined
 ; ----------------------------------;
 
+; ----------------------------------;
+RXON                                ; default BACKGND_APP 
 ; ----------------------------------;
 RXON_EXE
 ; ----------------------------------;
@@ -108,15 +133,19 @@ RXON_LOOP   BIT #TX_TERM,&TERM_IFG  ;3      wait the sending of last char, usele
 ; ----------------------------------;   ... (get next line of file downloading), or user defined
 
 
-;===============================================================================
+;-------------------------------------------------------------------------------
+; UART TERMINAL : WIPE COLD WARM ACCEPT KEY EMIT ECHO NOECHO
+;-------------------------------------------------------------------------------
+
+;-----------------------------------;
             FORTHWORD "WIPE"        ; software DEEP_RESET
-;===============================================================================
-            MOV #-1,&RSTIV_MEM      ; negative value ==> DEEP_RESET
+;-----------------------------------;
+WIPE        MOV #-1,&RSTIV_MEM      ; negative value ==> DEEP_RESET
             JMP COLD
 
-;===============================================================================
+;-----------------------------------;
             FORTHWORD "COLD"
-;===============================================================================
+;-----------------------------------;
 ;Z COLD     --      performs a software RESET
 ; as pin RST is replaced by pin NMI, RESET by pin activation is redirected here via USER NMI vector
 ; that allows actions to be performed before executing software BOR.
@@ -125,26 +154,26 @@ PFACOLD     .word COLD_TERM         ; INI_COLD_DEF: default value set by WIPE. s
             BIT.B #IO_WIPE,&WIPE_IN ; hardware Deep_RESET request (low) ?
             JNZ COLDEXE             ; no
             MOV #-1,&RSTIV_MEM      ; yes, set negative value to force DEEP_RESET
-COLDEXE     MOV #0A504h,&PMMCTL0    ; performs software_BOR, see RESET in forthMSP430FR.asm
+COLDEXE     MOV #0A504h,&PMMCTL0    ; performs software_BOR --> RST_vector --> RESET in forthMSP430FR.asm
 ; ----------------------------------;
 
-;===============================================================================
-            FORTHWORD "WARM"
-;===============================================================================
-;Z WARM     xi --                   ; the next of RESET
+;-----------------------------------;
+            FORTHWORD "WARM"        ;
+;-----------------------------------;
+;Z WARM     xi --                   ; common part of WARM|PUC
+;-----------------------------------;
 WARM                                ;
 ;-------------------------------------------------------------------------------
-; RESET 6.2: if RSTIV_MEM <> WARM, init TERM and enable I/O
+; PUC 7: if RSTIV_MEM <> WARM, init TERM and enable I/O
 ;-------------------------------------------------------------------------------
             CALL @PC+               ; init TERM, only if TOS U>= 2 (RSTIV_MEM <> WARM)
     .IFNDEF SD_CARD_LOADER          ;
-PFAWARM     .word INIT_TERM         ; INI_HARD_DEF: default value, init TERM UC, unlock I/O's, TOS = RSTIV_MEM
+PFAWARM     .word INIT_TERM         ; INI_HARD_APP default value, init TERM UC, unlock I/O's, TOS = RSTIV_MEM
     .ELSE
-PFAWARM     .word INIT_SD           ; INI_HARD_SD : init TERM first then init SD Card
+PFAWARM     .word INI_HARD_SD       ; init SD Card + init TERM, see forthMSP430FR_SD_INIT.asm
     .ENDIF                          ; TOS = RSTIV_MEM
-;-------------------------------------------------------------------------------
-; END OF RESET
-;-------------------------------------------------------------------------------
+;-----------------------------------;
+WARM_DISPLAY                        ; TOS = RSTIV_MEM value
     ASMtoFORTH                      ; display a message then goto QUIT, without return
     .word   XSQUOTE
     .byte   7,13,10,27,"[7m#"       ; CR + cmd "reverse video" + #
@@ -159,10 +188,9 @@ PFAWARM     .word INIT_SD           ; INI_HARD_SD : init TERM first then init SD
     .word   BRAN,ABORT_TYPE
 ; ----------------------------------;
 
-;-------------------------------------------------------------------------------
-; INTERPRETER INPUT
-;-------------------------------------------------------------------------------
+;-----------------------------------;
             FORTHWORD "ACCEPT"
+;-----------------------------------;
 ;https://forth-standard.org/standard/core/ACCEPT
 ;C ACCEPT  addr addr len -- addr len'  from REFILL, get line at addr to interpret len' chars
 ACCEPT      MOV @PC+,PC             ;3 Code Field Address (CFA) of ACCEPT
@@ -251,10 +279,9 @@ ACCEPT_END
             JMP YEMIT               ;               before return to ABORT to interpret line
 ; **********************************;               UF9 to UF11 are reset.
 
-; ------------------------------------------------------------------------------
-; TERMINAL I/O, input part
-; ------------------------------------------------------------------------------
+;-----------------------------------;
             FORTHWORD "KEY"
+;-----------------------------------;
 ; https://forth-standard.org/standard/core/KEY
 ; KEY      -- c      wait character from input device ; primary DEFERred word
 KEY         MOV @PC+,PC             ;4  Code Field Address (CFA) of KEY
@@ -268,10 +295,9 @@ KEYLOOP     BIT #RX_TERM,&TERM_IFG  ; loop if bit0 = 0 in interupt flag register
             CALL #RXOFF             ;
             MOV @IP+,PC
 
-; ------------------------------------------------------------------------------
-; TERMINAL I/O, output part
-; ------------------------------------------------------------------------------
+;-----------------------------------;
             FORTHWORD "EMIT"
+;-----------------------------------;
 ; https://forth-standard.org/standard/core/EMIT
 ; EMIT     c --    output character to the selected output device ; primary DEFERred word
 EMIT        MOV @PC+,PC             ;4 Code Field Address (CFA) of EMIT
@@ -280,13 +306,17 @@ BODYEMIT    MOV TOS,Y               ;1 output character to the default output: T
             MOV @PSP+,TOS           ;2
             JMP YEMIT               ;2 + 12~
 
+;-----------------------------------;
             FORTHWORD "ECHO"
+;-----------------------------------;
 ;Z ECHO     --      connect terminal output (default)
 ECHO        MOV #48C2h,&QYEMIT      ; 48C2h = MOV.B Y,&<next_adr>
             MOV #0,&LINE            ;
             MOV @IP+,PC
 
+;-----------------------------------;
             FORTHWORD "NOECHO"
+;-----------------------------------;
 ;Z NOECHO   --      disconnect terminal output
 NOECHO      MOV #4D30h,&QYEMIT      ;  NEXT = 4D30h = MOV @IP+,PC
             MOV #1,&LINE            ;

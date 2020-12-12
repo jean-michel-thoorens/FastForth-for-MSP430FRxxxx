@@ -705,36 +705,36 @@ OPEN_Error                          ; S= error
 
 
     .IFDEF BOOTLOADER
-        .IFNDEF CORE_COMPLEMENT
-            FORTHWORD "+"
-; https://forth-standard.org/standard/core/Plus
-; +       n1/u1 n2/u2 -- n3/u3     add n1+n2
-            ADD @PSP+,TOS
+
+            FORTHWORD "[PFA]"       
+; [PFA]         CFA -- [PFA]        ; add source indirection to DEFERSTORE
+            ADD #2,TOS 
+            MOV @TOS,TOS
             MOV @IP+,PC
-        .ENDIF
+
+; to enable bootstrap:  ' BOOT IS WARM
+; to disable bootstrap: ' BOOT [PFA] IS WARM
 
             FORTHWORD "BOOT"
-; BOOT          RSTIV_MEM --        ; bootstrap on SD_CARD\BOOT.4th file
-;                                   ; called by WARM
-;  to enable bootstrap type: ' BOOT IS WARM
-; to disable bootstrap type: ' BOOT 2 + @ IS WARM
-            MOV @PC+,X
-PFA_BOOT   .word INIT_SD            ; X = INIT_SD
+; BOOT          RSTIV_MEM --
+; performs bootstrap from SD_CARD\BOOT.4th file
+BOOT        MOV @PC+,X
+PFA_BOOT    .word INI_HARD_SD       ; X = INI_HARD_SD addr, 2(X) = [PFA_X] = previous INI_HARD_APP (INIT_TERM) addr , see forthMSP430FR_SD_INIT.asm
             CMP #2,TOS              ; RSTIV_MEM <> WARM ?
             JC QSD_MEM              ; yes
             MOV @RSP+,PC            ; if RSTIV_MEM U< 2, return to BODYWARM
 QSD_MEM     BIT.B #CD_SD,&SD_CDIN   ; SD_memory in SD_Card socket ?
             JZ BOOT_YES             ;
-            MOV 2(X),PC             ; if no, goto previous INIT: INIT TERMINAL then ret to PFAWARM
+NO_BOOT     MOV 2(X),PC             ; if no, goto previous INIT: INIT TERMINAL then ret to PFAWARM
 ;---------------------------------------------------------------------------------
-; RESET 6: if RSTIV_MEM <> WARM, init TERM, init SD
+; RESET 7: if RSTIV_MEM <> WARM, init TERM, init SD
 ;---------------------------------------------------------------------------------
 BOOT_YES    CALL X                  ; init TERM UC first then init SD card, TOS = RSTIV_MEM
 ;---------------------------------------------------------------------------------
 ; END OF RESET
 ;---------------------------------------------------------------------------------
-            MOV #PSTACK-2,PSP       ; PUSH 0 on Stack
-            MOV #0,0(PSP)           ;
+            MOV #PSTACK-2,PSP       ;
+            MOV #0,0(PSP)           ; PUSH 0 on Stack
             MOV #0,&STATE           ; )
             MOV #LSTACK,&LEAVEPTR   ; > same as QUIT
             MOV #RSTACK,RSP         ; )

@@ -125,8 +125,8 @@
 ; Init hardware SD_Card, called by WARM
 ; ===========================================================
 ;-----------------------------------;
-INIT_SD     CALL @PC+               ; link to previous INI_APP
-INIT_SD_PFA .word INIT_TERM         ; which activates all previous I/O settings and set TOS = RSTIV_MEM.
+INI_HARD_SD CALL @PC+               ; link to previous INI_HARD_APP
+I_H_S_PFA   .word INIT_TERM         ; which activates all previous I/O settings and set TOS = RSTIV_MEM.
 ;-----------------------------------;
             CMP #0,TOS              ; RSTIV_MEM = WARM ?
             JZ INI_SD_END           ; no init if RSTIV_MEM = WARM
@@ -149,19 +149,19 @@ ClearSDdata SUB #2,X                ; 1
 ;-----------------------------------;
 SD_POWER_ON
 ; ----------------------------------;
-    MOV     #8,X                    ; send 64 clk on SD_clk
+    MOV     #8,X                    ; send 8*8 = 64 clk on SPI
     CALL    #SPI_X_GET              ;
-    BIC.B   #CS_SD,&SD_CSOUT        ; preset Chip Select output low to switch in SPI mode
+    BIC.B   #CS_SD,&SD_CSOUT        ; preset Chip Select output low to switch in SPI one wire mode
 ; ----------------------------------;
-INIT_CMD0                           ; all SD area is 0 filled
+INIT_CMD0                           ; after PUC, all SD variables area is 0 filled
 ; ----------------------------------;
     MOV     #4,S                    ; preset error 4R1 for CMD0
     MOV     #95h,&SD_CMD_FRM        ; $(95 00 00 00 00 00)
-    MOV     #4000h,&SD_CMD_FRM+4    ; $(95 00 00 00 00 40); send CMD0 
+    MOV     #4000h,&SD_CMD_FRM+4    ; $(95 00 00 00 00 40) = CMD0 
 ; ----------------------------------;
-SEND_CMD0                           ; CMD0 : GO_IDLE_STATE expected SPI_R1 response = 1 = idle state
+SEND_CMD0                           ; GO_IDLE_STATE, expected SPI_R1 response = 1 = idle state
 ; ----------------------------------;
-    CALL    #sendCommandIdleRet     ;X
+    CALL    #sendCommandIdleRet     ;X send command, see forthMSP430FR_SD_lowLvl.asm
     JZ      INIT_CMD8               ; if idle state
 SD_INIT_ERROR                       ;
     MOV     #SD_CARD_ERROR,PC       ; ReturnError = $04R1, case of defectuous card (or insufficient SD_POWER_ON clk)
@@ -175,7 +175,7 @@ INIT_CMD8                           ; mandatory if SD_Card >= V2.x     [11:8]sup
     MOV     #1,&SD_CMD_FRM+2        ; $(87 AA 01 00 ...)  (CRC:CHECK PATTERN:VHS set as 2.7to3.6V:0)
     MOV     #4800h,&SD_CMD_FRM+4    ; $(87 AA 01 00 00 48)
 ; ----------------------------------;
-SEND_CMD8                           ; CMD8 = SEND_IF_COND; expected R1 response (first byte of SPI R7) = 01h : idle state
+SEND_CMD8                           ; SEND_IF_COND; expected R1 response (first byte of SPI R7) = 01h : idle state
 ; ----------------------------------;
     CALL    #sendCommandIdleRet     ;X time out occurs with SD_Card V1.x (and all MMC_card) 
 ; ----------------------------------;
@@ -216,7 +216,7 @@ SEND_CMD16                          ; CMD16 = SET_BLOCKLEN
 ; ----------------------------------; W = R1 = 0
 SwitchSPIhighSpeed                  ; end of SD init ==> SD_CLK = SMCLK
 ; ----------------------------------;
-    BIS     #1,&SD_CTLW0            ; Software reset
+    BIS     #1,&SD_CTLW0            ; UC Software reset
     MOV     #0,&SD_BRW              ; UCxxBRW = 0 ==> SPI_CLK = MCLK
     BIC     #1,&SD_CTLW0            ; release from reset
 ; ----------------------------------;
@@ -286,10 +286,10 @@ INI_SD_END                          ;
 ;-----------------------------------;
 
 ; ===========================================================
-; Init FORTH SD_Card, called by ?ABORT|RST
+; Init SD_Card software, called by ?ABORT|RST
 ; ===========================================================
 ;-----------------------------------; 
-INI_FORTH_SD                        ; common part of ?ABORT|RST
+INI_SOFT_SD                         ; called by INI_FORTH common part of ?ABORT|RST
 ;-----------------------------------;
             CALL @PC+               ; link to previous INI_FORTH_APP
 RSAB_SD_PFA .word RET_ADR           ; which does nothing

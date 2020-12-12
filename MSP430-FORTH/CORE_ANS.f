@@ -36,10 +36,10 @@ CODE ABORT_CORE_ANS
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV &VERSION,TOS
-SUB #307,TOS        \ FastForth V3.7
+SUB #308,TOS        \ FastForth V3.8
 COLON
 $0D EMIT            \ return to column 1 without CR
-ABORT" FastForth version = 3.7 please!"
+ABORT" FastForth V3.8 please!"
 PWR_STATE           \ remove ABORT_UARTI2CS before CORE_ANS downloading
 ;
 
@@ -646,46 +646,8 @@ ENDCODE
 \ --------------------
 \ ARITHMETIC OPERATORS
 \ --------------------
-TLV_ORG 4 + @ $81F3 U<
-$81EF TLV_ORG 4 + @ U< 
-= [IF]   ; MSP430FR2xxx|MSP430FR4xxx subfamilies without hardware_MPY
+[UNDEFINED] UM* [IF]    ; case of hardware_MPY
 
-    [UNDEFINED] M* [IF]
-    
-    \ https://forth-standard.org/standard/core/MTimes
-    \ M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
-    CODE M*
-    MOV @PSP,S          \ S= n1
-    CMP #0,S            \ n1 > -1 ?
-    S< IF
-        XOR #-1,0(PSP)  \ n1 --> u1
-        ADD #1,0(PSP)   \
-    THEN
-    XOR TOS,S           \ S contains sign of result
-    CMP #0,TOS          \ n2 > -1 ?
-    S< IF
-        XOR #-1,TOS     \ n2 --> u2 
-        ADD #1,TOS      \
-    THEN
-    PUSHM #2,IP         \ UMSTAR use S,T,W,X,Y
-    LO2HI               \ -- ud1 u2
-    UM*       
-    HI2LO
-    POPM #2,IP           \ pop S,IP
-    CMP #0,S            \ sign of result > -1 ?
-    S< IF
-        XOR #-1,0(PSP)  \ ud --> d
-        XOR #-1,TOS
-        ADD #1,0(PSP)
-        ADDC #0,TOS
-    THEN
-    MOV @IP+,PC
-    ENDCODE
-    [THEN]
-
-[ELSE]  ; MSP430FRxxxx with hardware_MPY
-
-[UNDEFINED] UM* [IF]
 \ https://forth-standard.org/standard/core/UMTimes
 \ UM*     u1 u2 -- udlo udhi   unsigned 16x16->32 mult.
 CODE UM*
@@ -695,14 +657,46 @@ BW1 MOV TOS,&OP2        \ Load 2nd operand
     MOV &RES1,TOS       \ high result in TOS
     MOV @IP+,PC
 ENDCODE
-[THEN]
 
-[UNDEFINED] M* [IF]
 \ https://forth-standard.org/standard/core/MTimes
 \ M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
 CODE M*
     MOV @PSP,&MPYS      \ Load 1st operand for signed multiplication
     GOTO BW1
+ENDCODE
+
+[ELSE]  ; MSP430FRxxxx without hardware_MPY
+
+[UNDEFINED] M* [IF]
+
+\ https://forth-standard.org/standard/core/MTimes
+\ M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
+CODE M*
+MOV @PSP,S          \ S= n1
+CMP #0,S            \ n1 > -1 ?
+S< IF
+    XOR #-1,0(PSP)  \ n1 --> u1
+    ADD #1,0(PSP)   \
+THEN
+XOR TOS,S           \ S contains sign of result
+CMP #0,TOS          \ n2 > -1 ?
+S< IF
+    XOR #-1,TOS     \ n2 --> u2 
+    ADD #1,TOS      \
+THEN
+PUSHM #2,IP         \ UMSTAR use S,T,W,X,Y
+LO2HI               \ -- ud1 u2
+UM*       
+HI2LO
+POPM #2,IP           \ pop S,IP
+CMP #0,S            \ sign of result > -1 ?
+S< IF
+    XOR #-1,0(PSP)  \ ud --> d
+    XOR #-1,TOS
+    ADD #1,0(PSP)
+    ADDC #0,TOS
+THEN
+MOV @IP+,PC
 ENDCODE
 [THEN]
 
@@ -857,6 +851,12 @@ MOV TOS,0(PSP)
 MOV @RSP,TOS
 MOV @IP+,PC
 ENDCODE
+[THEN]
+
+[UNDEFINED] TUCK [IF]
+\ https://forth-standard.org/standard/core/TUCK
+\ TUCK  ( x1 x2 -- x2 x1 x2 )
+: TUCK SWAP OVER ;
 [THEN]
 
 \ ----------------------------------------------------------------------
@@ -1251,7 +1251,7 @@ PAD_ORG CONSTANT PAD
 [UNDEFINED] BL [IF]
 \ https://forth-standard.org/standard/core/BL
 \ BL      -- char            an ASCII space
-$20 CONSTANT BL
+'SP' CONSTANT BL
 [THEN]
 
 [UNDEFINED] SPACE [IF]

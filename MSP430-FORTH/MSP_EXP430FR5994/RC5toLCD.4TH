@@ -1,0 +1,352 @@
+
+; -----------------------------------
+; RC5TOLCD.4th for MSP_EXP430FR5994
+; -----------------------------------
+
+
+CODE ABORT_RC5TOLCD
+SUB #2,R15
+MOV R14,0(R15)
+MOV &$180E,R14
+SUB #308,R14
+COLON
+$0D EMIT
+ABORT" FastForth V3.8 please!"
+PWR_STATE
+;
+
+ABORT_RC5TOLCD
+
+
+[DEFINED] {RC5TOLCD} [IF] {RC5TOLCD} [THEN]
+
+MARKER {RC5TOLCD}
+6 ALLOT
+
+
+
+[UNDEFINED] CONSTANT [IF]
+: CONSTANT 
+CREATE
+HI2LO
+MOV R14,-2(R10)
+MOV @R15+,R14
+MOV @R1+,R13
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] STATE [IF]
+$1DBE CONSTANT STATE
+[THEN]
+
+[UNDEFINED] = [IF]
+CODE =
+SUB @R15+,R14
+0<> IF
+    AND #0,R14
+    MOV @R13+,R0
+THEN
+XOR #-1,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] IF [IF]
+CODE IF
+SUB #2,R15
+MOV R14,0(R15)
+MOV &$1DC6,R14
+ADD #4,&$1DC6
+MOV #$4034,0(R14)
+ADD #2,R14
+MOV @R13+,R0
+ENDCODE IMMEDIATE
+
+CODE THEN
+MOV &$1DC6,0(R14)
+MOV @R15+,R14
+MOV @R13+,R0
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] ELSE [IF]
+CODE ELSE
+ADD #4,&$1DC6
+MOV &$1DC6,R10
+MOV #$403A,-4(R10)
+MOV R10,0(R14)
+SUB #2,R10
+MOV R10,R14
+MOV @R13+,R0
+ENDCODE IMMEDIATE
+[THEN]
+
+[UNDEFINED] IS [IF]
+
+CODE DEFER!
+MOV @R15+,2(R14)
+MOV @R15+,R14
+MOV @R13+,R0
+ENDCODE
+
+
+: IS
+STATE @
+IF  POSTPONE ['] POSTPONE DEFER! 
+ELSE ' DEFER! 
+THEN
+; IMMEDIATE
+[THEN]
+
+[UNDEFINED] >BODY [IF]
+CODE >BODY
+ADD #4,R14
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+
+CODE 20_US
+BEGIN
+    BEGIN
+        BIT #1,&$3C0
+    0<> UNTIL
+    BIC #1,&$3C0
+    SUB #1,R14
+U< UNTIL
+MOV @R15+,R14
+MOV @R13+,R0
+ENDCODE
+
+CODE TOP_LCD
+    BIS.B #4,&$243
+    BIT.B #1,&$241
+0= IF
+    AND.B #$0F,R14
+    MOV.B R14,&$222
+    BIC.B #4,&$243
+    MOV @R15+,R14
+    MOV @R13+,R0
+THEN
+    SUB #2,R15
+    MOV R14,0(R15)
+    BIC.B #4,&$243
+    MOV.B &$220,R14
+    AND.B #$0F,R14
+    MOV @R13+,R0
+ENDCODE
+
+CODE LCD_WRC
+    BIS.B #2,&$243
+BW1 SUB #2,R15
+    MOV R14,0(R15)
+    RRUM #4,R14
+    BIC.B #1,&$243
+    BIS.B #$0F,&$224
+COLON
+    TOP_LCD 2 20_US
+    TOP_LCD 2 20_US 
+;
+
+CODE LCD_WRF
+    BIC.B #2,&$243
+    GOTO BW1
+ENDCODE
+
+: LCD_CLEAR $01 LCD_WRF 100 20_us ;
+: LCD_HOME $02 LCD_WRF 100 20_us ;
+
+
+
+HDNCODE WDT_INT
+BIT.B #$20,&$240
+0= IF
+    CMP #19,&$3D6
+    U< IF
+        ADD #1,&$3D6
+    THEN
+ELSE
+    BIT.B #$40,&$240
+    0= IF
+        CMP #3,&$3D6
+        U>= IF
+           SUB #1,&$3D6
+        THEN
+    THEN
+THEN
+RETI
+ENDCODE
+
+HDNCODE RC5_INT
+$1800 @ 16000 = [IF]
+    MOV #1,&$3A0
+[THEN]
+$1800 @ 24000 = [IF]
+    MOV #2,&$3A0
+[THEN]
+MOV #1778,R9
+MOV #14,R10
+BEGIN
+MOV #%1011100100,&$380
+    RRUM    #1,R9
+    MOV     R9,R8
+    RRUM    #1,R8
+    ADD     R9,R8
+    BEGIN   CMP R8,&$390
+    U>= UNTIL
+    BIT.B   #4,&$200
+    ADDC    R11,R11
+    MOV.B   &$200,&$208
+    BIC.B   #4,&$20C
+    SUB     #1,R10
+0<> WHILE
+    ADD R9,R8
+    BEGIN
+        MOV &$390,R9
+        CMP R8,R9
+        U>= IF
+        BIC #$30,&$380
+        GOTO FW1
+        THEN
+        BIT.B #4,&$20C
+    0<> UNTIL
+REPEAT
+BIC #$30,&$380
+RLAM    #1,R11
+MOV.B   R11,R9
+RRUM    #2,R9
+BIT     #$4000,R11
+0= IF   BIS #$40,R9
+THEN
+RRUM    #3,R11
+XOR     @R1,R11
+BIT     #$400,R11
+0= ?GOTO FW2
+XOR #$400,0(R1)
+SUB #8,R15
+MOV R14,6(R15)
+MOV &$1DDC,4(R15)
+MOV #$10,&$1DDC
+MOV R9,0(R15)
+MOV #0,R14
+LO2HI
+    LCD_CLEAR
+    <# # #S #36 HOLD #>
+    ['] LCD_WRC IS EMIT
+    TYPE
+    ['] EMIT >BODY IS EMIT
+HI2LO
+MOV @R15+,&$1DDC
+MOV @R15+,R14
+FW1 FW2
+    MOV @R1+,R2
+    BIC #%1111_1000,R2
+    MOV @R1+,R0
+ENDCODE
+
+
+HDNCODE STOP_R2L
+CMP #$40AA,&{RC5TOLCD}+8
+0<> IF
+    BIC.B #4,&$20A
+    BIC.B #4,&$20C
+    MOV #0,&$3C0
+    MOV #0,&$340
+    MOV #0,&$342
+    MOV #$40AA,&{RC5TOLCD}+8
+    MOV &{RC5TOLCD}+10,&WARM+2
+    MOV &{RC5TOLCD}+12,&$FFEA
+    MOV &{RC5TOLCD}+14,&$FFDE
+    MOV &{RC5TOLCD}+10,R0
+THEN 
+MOV @R1+,R0
+ENDCODE
+
+CODE STOP
+BW1
+CALL #STOP_R2L
+COLON
+ECHO
+." RC5toLCD is removed,"
+."  type START to restart"
+ABORT" "
+;
+
+HDNCODE INI_R2L
+BIC #1,&$130
+MOV &$1808,R14
+CMP #$0E,R14
+0<> IF
+    CMP #$0A,R14
+    U>= ?GOTO BW1
+THEN
+BIT.B #$20,&$240
+0= ?GOTO BW1
+MOV #0,&$1808
+MOV #%10_1101_0100,&$3C0
+$1800 @ 16000 = [IF]
+    MOV #1,&$3E0
+[THEN]
+$1800 @ 24000 = [IF]
+    MOV #2,&$3E0
+[THEN]
+    MOV #19,&$3D2
+MOV #%0110_0000,&$3C6
+    MOV #10,&$3D6
+    BIS.B #$20,&$204
+    BIS.B #$20,&$20A
+    BIS.B #7,&$245
+    BIC.B #7,&$247
+    BIS.B #$0F,&$224
+    BIC.B #$0F,&$226
+    BIS.B #4,&$20A
+    BIC.B #4,&$20C
+MOV #%01_0001_0100,&$340
+    MOV ##3276,&$352
+    MOV #%10000,&$342
+COLON
+    #1000 20_US
+    %011 TOP_LCD
+    #205 20_US
+    %011 TOP_LCD
+    #5 20_US
+    %011 TOP_LCD
+    #2 20_US
+    %010 TOP_LCD
+    #2 20_US
+    %00101000 LCD_WRF
+    %1000 LCD_WRF
+    LCD_CLEAR
+    %0110 LCD_WRF
+    %1100 LCD_WRF
+    LCD_CLEAR
+    ['] LCD_HOME IS CR
+    ['] LCD_WRC  IS EMIT
+    CR ." I love you"
+    ['] CR >BODY IS CR
+    ['] EMIT >BODY IS EMIT
+    ." RC5toLCD is running. Type STOP to quit"
+    ABORT" "
+;
+
+CODE START
+CMP #$40AA,&{RC5TOLCD}+8
+0= IF
+    MOV #STOP_R2L,&{RC5TOLCD}+8
+    MOV &WARM+2,&{RC5TOLCD}+10
+    MOV #INI_R2L,&WARM+2
+    MOV &$FFEA,&{RC5TOLCD}+12
+    MOV #WDT_INT,&$FFEA
+    MOV &$FFDE,&{RC5TOLCD}+14
+    MOV #RC5_INT,&$FFDE
+    MOV #INI_R2L,R0
+THEN
+MOV @R13+,R0 
+ENDCODE 
+
+ECHO
+            ; downloading RC5toLCD.4th is done
+RST_HERE    ; this app is protected against <reset>
+
+START

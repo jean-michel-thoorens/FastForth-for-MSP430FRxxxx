@@ -567,25 +567,16 @@ USE_MOVE
 USE_MOVE
         .ENDIF
     .ENDIF
-    .IFDEF FIXPOINT_INPUT
-        .IFNDEF DOUBLE_INPUT
-DOUBLE_INPUT
-        .ENDIF
-    .ENDIF
     .IFDEF SD_CARD_LOADER 
-; define if QUIT is DEFERed
         .IFNDEF DOUBLE_INPUT
 DOUBLE_INPUT
-        .ENDIF
-        .IFNDEF DEFER_ACCEPT
-DEFER_ACCEPT
         .ENDIF
         .IFDEF BOOTLOADER
             .IFNDEF CONDCOMP
 CONDCOMP                    ; mandatory for Bootstrap
             .ENDIF
-            .IFNDEF DEFER_QUIT
-DEFER_QUIT
+            .IFNDEF DEFERRED
+DEFERRED                    ; mandatory for Bootstrap
             .ENDIF
         .ENDIF
     .ENDIF
@@ -609,14 +600,14 @@ FIXPOINT_INPUT              ; to interpret fixpoint numbers
         .ENDIF
     .ENDIF
     .IFDEF FIXPOINT_INPUT
-    .IFNDEF DOUBLE_NUMBERS
+        .IFNDEF DOUBLE_NUMBERS
 DOUBLE_NUMBERS              ; to process double numbers
-    .ENDIF
+        .ENDIF
     .ENDIF
     .IFDEF DOUBLE_INPUT
-    .IFNDEF DOUBLE_NUMBERS
+        .IFNDEF DOUBLE_NUMBERS
 DOUBLE_NUMBERS              ; to process double numbers
-    .ENDIF
+        .ENDIF
     .ENDIF
 
 ; --------------------------
@@ -767,21 +758,24 @@ FADDON .SET FADDON | BIT12  ; UART XON/XOFF
 FADDON .SET FADDON | BIT11  ; UART Half Duplex
         .ENDIF
     .ENDIF ; TERMINAL UART
+        .IFDEF TERMINAL_I2C
+FADDON .SET FADDON | BIT10  ;I2C TERMINAL
+        .ENDIF
     .IFDEF FIXPOINT_INPUT
-FADDON .SET FADDON | BIT10  ; FIXPOINT INPUT
+FADDON .SET FADDON | BIT9   ; Q15.16 INPUT
     .ENDIF
     .IFDEF DOUBLE_INPUT
-FADDON .SET FADDON | BIT9   ; DOUBLE INPUT
+FADDON .SET FADDON | BIT8   ; DOUBLE INPUT
     .ENDIF
     .IFDEF EXTENDED_ASM     ; Assembler 20 bits
-FADDON .SET FADDON | BIT8
+FADDON .SET FADDON | BIT7
     .ENDIF
     .IFDEF MSP430ASSEMBLER
-FADDON .SET FADDON | BIT7   ; Assembler 16 bits
+FADDON .SET FADDON | BIT6   ; Assembler 16 bits
     .ENDIF
     .IFDEF EXTENDED_MEM
     .IFNDEF EXTENDED_ASM
-FADDON .SET FADDON | BIT6   ; Assembler 16 bits with Address access beyond $FFFF
+FADDON .SET FADDON | BIT5   ; Assembler 16 bits with Address access beyond $FFFF
     .ENDIF
     .ENDIF
     .IFDEF CONDCOMP

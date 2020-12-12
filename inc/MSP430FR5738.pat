@@ -67,9 +67,6 @@ INIT_DOCON=\$1830!      FORTH value for rDOCON   (R6)
 INIT_DOVAR=\$1832!      FORTH value for rDOVAR   (R7)
 INIT_CAPS=\$1834!       FORTH value for CAPS
 INIT_BASE=\$1836!       FORTH value for BASE
-
-ABORT_ADR=\$1838!       ABORT address
-QUIT4_ADR=\$183A!       QUIT4 used by BOOTLOADER
 !                       free EPROM
 
 ! ---------------------------------------
@@ -257,7 +254,7 @@ MAIN_ORG=\$C200!        Code space start
 MAIN_LEN=\$3E00!        15.5 k FRAM
 ! ----------------------------------------------
 
-SLEEP=\$C200!               CODE_WITHOUT_RETURN: CPU shutdown
+SLEEP=\$C200!               CODE_WITHOUT_RETURN, CPU shutdown
 LIT=\$C20A!                 CODE compiled by LITERAL
 XSQUOTE=\$C214!             CODE compiled by S" and S_
 HEREXEC=\$C228!             CODE HERE and BEGIN execute address
@@ -267,36 +264,33 @@ NEXT_ADR=\$C23C!            CODE NEXT instruction (MOV @IP+,PC)
 XDO=\$C23E!                 CODE compiled by DO
 XPLOOP=\$C24E!              CODE compiled by +LOOP
 XLOOP=\$C260!               CODE compiled by LOOP
-MUSMOD=\$C266!              ASM 32/16 unsigned division, used by ?NUMBER, UM/MOD
-MDIV1DIV2=\$C278!           ASM input for 48/16 unsigned division with DVDhi=0, see DOUBLE M*/
-MDIV1=\$C280!               ASM input for 48/16 unsigned division, see DOUBLE M*/
-RET_ADR=\$C2AA!             ASM content of INI_FORTH_PFA and MARKER+8 definitions,
+MUSMOD=\$C266!              ASM CODE 32/16 unsigned division, used by ?NUMBER, UM/MOD
+MDIV1DIV2=\$C278!           ASM CODE input for 48/16 unsigned division with DVDhi=0, see DOUBLE M*/
+MDIV1=\$C280!               ASM CODE input for 48/16 unsigned division, see DOUBLE M*/
+RET_ADR=\$C2AA!             ASM CODE of INI_FORTH_PFA and MARKER+8 definitions,
 SETIB=\$C2AC!               CODE Set Input Buffer with org & len values, reset >IN pointer
 REFILL=\$C2BC!              CODE accept one line from input and leave org len of input buffer
 CIB_ADR=\$C2CA!             [CIB_ADR] = TIB_ORG by default; may be redirected to SDIB_ORG
-XDODOES=\$C2D4!             restore rDODOES: MOV #XDODOES,rDODOES
-XDOCON=\$C2E2!              restore rDOCON: MOV #XDOCON,rDOCON
-XDOVAR=\$C2EE!              restore rDOVAR: MOV #XDOVAR,rDOVAR
-!to find DTC value, download \MSP430-FORTH\FF_SPECS.4th
-!XDOCOL=TYPE\+\-16          if DTC = 1, restore rDOCOL as this: MOV #TYPE+-16,rDOCOL
-!XDOCOL=\#S\+16             if DTC = 2, restore rDOCOL as this: MOV ##S+16,rDOCOL
-!                           if DTC = 3, nothing to do, R7 is free for use.
-INI_FORTH=\$C2F8!           CODE_WITHOUT_RETURN common part of RST and QABORT, starts FORTH engine
+XDODOES=\$C2D4!             to restore rDODOES: MOV #XDODOES,rDODOES
+XDOCON=\$C2E2!              to restore rDOCON: MOV #XDOCON,rDOCON
+XDOVAR=\$C2EE!              to restore rDOVAR: MOV #XDOVAR,rDOVAR
+!                           to restore rDOCOL: MOV &INIT_DOCOL,rDOCOL
+INI_FORTH=\$C2F8!           asm CODE common part of RST and QABORT, starts FORTH engine
 QABORT=\$C32A!              CODE_WITHOUT_RETURN run-time part of ABORT"
-3DROP=\$C330!               CODE 
-ABORT_TERM=\$C336!          CODE_WITHOUT_RETURN, called by QREVEAL and INTERPRET   
+ABORT_TERM=\$C336!          CODE_WITHOUT_RETURN, called by QREVEAL and INTERPRET  
 !-------------------------------------------------------------------------------
-UART_COLD_TERM=\$C394!      ASM, content of COLD_PFA by default
-UART_INIT_TERM=\$C39C!      ASM, content of WARM_PFA by default
-UART_RXON=\$C3C6!           ASM, content of SLEEP_PFA by default
-UART_RXOFF=\$C3C8!          ASM, called by ACCEPT before RX char LF.
+UART_COLD_TERM=\$C394!      ASM CODE, content of COLD+2 by default
+UART_INIT_TERM=\$C39C!      ASM CODE, content of WARM+2 by default
+UART_RXON=\$C3C6!           ASM CODE, content of SLEEP+2 by default
+UART_RXOFF=\$C3C8!          ASM CODE, called by ACCEPT before RX char LF.
 !-------------------------------------------------------------------------------
-I2C_COLD_TERM=\$C3B4!       ASM, content of COLD_PFA by default
-I2C_INIT_TERM=\$C38A!       ASM, content of WARM_PFA by default
-I2C_RXON=\$C3B6!            ASM, content of SLEEP_PFA by default
-I2C_CTRL_CH=\$C3B8!         ASM, used as is: MOV.B #CTRL_CHAR,Y
-!                                            CALL #I2C_CTRL_CH
+I2C_COLD_TERM=\$C3B8!       ASM CODE, content of COLD_PFA by default
+I2C_INIT_TERM=\$C38E!       ASM CODE, content of WARM_PFA by default
+I2C_RXON=\$C3BA!            ASM CODE, content of SLEEP_PFA by default
+I2C_CTRL_CH=\$C3BC!         ASM CODE, used as is: MOV.B #CTRL_CHAR,Y
+!                                                 CALL #I2C_CTRL_CH
 !-------------------------------------------------------------------------------
+
 
 ! ----------------------------------------------
 ! Interrupt Vectors and signatures - MSP430FR5738

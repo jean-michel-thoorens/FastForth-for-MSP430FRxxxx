@@ -237,21 +237,21 @@ RC5_TIM_CTL=\$380!       TA1CTL
 RC5_TIM_R=\$390!         TA1R
 RC5_TIM_EX0=\$3A0!       TA1EX0
 
-I2CSM_IN=\$200!
-I2CSM_OUT=\$202!
-I2CSM_DIR=\$204!
-I2CSM_REN=\$206!
-SM_SDA=\$40!             P1.6
-SM_SCL=\$80!             P1.7
-SM_BUS=\$C0!
+I2CSM_IN=\$221!
+I2CSM_OUT=\$223!
+I2CSM_DIR=\$225!
+I2CSM_REN=\$207!
+SM_SDA=1!               P4.0
+SM_SCL=2!               P4.1
+SM_BUS=3!
 
-I2CSMM_IN=\$200!
-I2CSMM_OUT=\$202!
-I2CSMM_DIR=\$204!
-I2CSMM_REN=\$206!
-SMM_SDA=\$40!            P1.6
-SMM_SCL=\$80!            P1.7
-SMM_BUS=\$C0!
+I2CSMM_IN=\$221!
+I2CSMM_OUT=\$223!
+I2CSMM_DIR=\$225!
+I2CSMM_REN=\$227!
+SMM_SDA=1!              P4.0
+SMM_SCL=2!              P4.1
+SMM_BUS=3!
 
 I2CMM_IN=\$200
 I2CMM_OUT=\$202

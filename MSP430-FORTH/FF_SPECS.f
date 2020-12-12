@@ -3,12 +3,15 @@
 \ displays all FastForth specifications
 \ 3 kb free mandatory.
 \
-\ TARGET ( = the name of \INC\target.pat file without the extension):
+\ FastForth kernel compilation minimal options:
+\ TERMINAL3WIRES, TERMINAL4WIRES
+\ MSP430ASSEMBLER, CONDCOMP
+
+\ TARGET ( = the name of \INC\target.pat file without extension):
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133  CHIPSTICK_FR2433    MSP_EXP430FR2433    MSP_EXP430FR2355
 \ LP_MSP430FR2476
 \ MY_MSP430FR5738_2
-\ COMPLEMENT: I2C
 \
 \ from scite editor : copy your TARGET selection in (shift+F8) parameter 1:
 \                     copy COMPLEMENT if used in (shift+F8) parameter 2:
@@ -18,23 +21,19 @@
 \ from file explorer :  drag and drop this file onto SendSourceFileToTarget.bat
 \                       then select your TARGET + COMPLEMENT when asked.
 \
-\ if you choice a bad target, you will obtain an error during downloading: "Device's ID mismatch!"
-\
-\ COLD            \ uncomment for this TEST which must not disrupt the downloading process
-
 ; ---------------------------------
 ; FF_SPECS.f
 ; ---------------------------------
 
-\ first, we test for downloading driver only if UART TERMINAL target
+\ first, we test for downloading driver only if good FastForth version
 CODE ABORT_FF_SPECS
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV &VERSION,TOS
-SUB #307,TOS        \ FastForth V3.7
+SUB #308,TOS        \ FastForth V3.8
 COLON
 'CR' EMIT            \ return to column 1 without 'LF'
-ABORT" FastForth version = 3.7 please!"
+ABORT" FastForth V3.8 please!"
 PWR_STATE           \ remove ABORT_FF_SPECS definition before resuming
 ;
 
@@ -579,7 +578,7 @@ ELSE 2 + @ $1284 =          \
     THEN
 THEN
 $20 EMIT 
-THREADS @ U. 'BS' EMIT ." -Entry word sets, "   \ number of Entry word sets,
+THREADS @ U. 'BS' EMIT ." -Entry word set, "   \ number of Entry word set,
 FREQ_KHZ @ 0 1000 UM/MOD U.                     \ frequency,
 ?DUP IF 'BS' EMIT ',' EMIT U.   \ if remainder
 THEN ." MHz, "                  \ MCLK
@@ -598,38 +597,41 @@ CR
 ." MAX-UD            = 4294967295" CR
 ." STACK-CELLS       = 48" CR
 ." RETURN-STACK-CELLS= 48" CR
-." WoRdS aRe CaSe-InSeNsItIvE" CR
+." DeFiNiTiOnS aRe CaSe-InSeNsItIvE" CR
 CR 
 ESC [7m ." KERNEL SPECS" ESC [0m   \ subtitle in reverse video
 CR
 KERNEL_ADDON @
-    DUP 0< IF ." 32.768kHz XTAL" CR THEN
-2*  DUP 0< IF ." (RTS/CTS) UART TERMINAL" CR 2*
-        ELSE  2* DUP
+    DUP 0< IF ." 32.768kHz XTAL" CR THEN            \ BIT15
+2*  DUP 0< IF ." (RTS/CTS) UART TERMINAL" CR 2*     \ BIT14 BIT13
+        ELSE  2* DUP                                \       BIT13
             0< IF ." (RTS) UART TERMINAL" CR
             THEN
         THEN
-2*  DUP 0< IF ." (XON/XOFF) UART TERMINAL" CR
-        ELSE  ." I2C_Master TERMINAL" CR
+2*  DUP 0< IF ." (XON/XOFF) UART TERMINAL" CR       \ BIT12
         THEN
-2*  DUP 0< IF ." Half-Duplex TERMINAL" CR THEN
-2*  DUP 0< IF ." Q15.16 input" CR THEN
-2*  DUP 0< IF ." DOUBLE input" CR THEN
-2*  DUP 0< IF ." MSP430_X assembler" CR 2* 2* 
-        ELSE 2*  DUP
+2*  DUP 0< IF ." Half-Duplex TERMINAL" CR THEN      \ BIT11
+2*  DUP 0< IF ." I2C_Master TERMINAL" CR THEN       \ BIT10
+2*  DUP 0< IF ." Q15.16 input" CR THEN              \ BIT9
+2*  DUP 0< IF ." DOUBLE input" CR THEN              \ BIT8
+2*  DUP 0< IF ." MSP430_X assembler" CR 2* 2*       \ BIT7 BIT6 BIT5
+        ELSE 2*  DUP                                \      BIT6
             0< IF ." MSP430 Assembler"
-                2*  DUP 0< IF ."  with 20bits address" THEN
-                CR
-            ELSE 2*
+                2*  DUP 0< IF ."  with 20bits address"  \       BIT5
+                    THEN CR
+            ELSE 2*                                     \       BIT5
             THEN
         THEN
-2* 2* 2* 2* 2*  \ 5 free flags
-2* 0< IF        \ true if COND. COMPILATION
+2*              \ BIT4 free flags
+2*              \ BIT3 free flags
+2*              \ BIT2 free flags
+2*              \ BIT1 free flags
+2* 0< IF        \ BIT0 true if COND. COMPILATION
     [DEFINED] DEFER [IF] ." DEFER word set" CR [THEN]
     [DEFINED] ALSO  [IF] ." VOCABULARY word set" CR [THEN]
+    [DEFINED] LOAD" [IF] ." SD_CARD Loader" CR [THEN]
     [DEFINED] BOOT  [IF] ." bootloader" CR [THEN]
     [DEFINED] READ" [IF] ." SD_CARD Read/Write" CR [THEN]
-    [DEFINED] LOAD" [IF] ." SD_CARD Loader" CR [THEN]
     CR 
     ESC [7m ." OPTIONS" ESC [0m \ subtitle in reverse video
     CR
@@ -654,7 +656,7 @@ ESC [7m ." FORTH word set"  ESC [0m \ subtitle in reverse video
 WORDS                               \ type FORTH word set 
 CR
 HI2LO
-MOV #WARM+4,PC  \ type count of bytes free without re-executing INI_APP
+MOV #WARM_DISPLAY,PC  \ type count of bytes free without re-executing INI_APP, no return
 ENDCODE
 
-SPECS \ here FastForth displays a (volatile) message with some informations
+SPECS \ here FastForth displays a message with some informations

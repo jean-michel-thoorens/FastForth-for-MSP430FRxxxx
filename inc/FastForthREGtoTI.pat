@@ -152,3 +152,7 @@ NOP2=\$3C00 ,!      \ compile JMP 0  one word two cycles
 NOP3=MOV R0,R0!     \ MOV PC,PC      one word three cycles
 NEXT=MOV \@R13+,R0! \ MOV @IP+,PC   
 
+ABORT=ALLOT\+8!             Empty the data stack and perform the function of QUIT
+QUIT=ALLOT\+\$0E!           interpret line by line the input stream
+ABORT\"=ABORT\"!
+

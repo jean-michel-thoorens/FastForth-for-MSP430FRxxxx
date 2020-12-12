@@ -89,10 +89,10 @@ CODE ABORT_RC5TOLCD
 SUB #2,PSP
 MOV TOS,0(PSP)
 MOV &VERSION,TOS
-SUB #307,TOS        \ FastForth V3.7
+SUB #308,TOS        \ FastForth V3.8
 COLON
 'CR' EMIT            \ return to column 1 without 'LF'
-ABORT" FastForth version = 3.7 please!"
+ABORT" FastForth V3.8 please!"
 PWR_STATE           \ remove ABORT_UARTI2CS definition before resuming
 ;
 
@@ -319,7 +319,7 @@ ENDCODE
 
 
 \ ******************************\
-ASM WDT_INT                     \ Watchdog interrupt routine, warning : not FORTH executable !
+HDNCODE WDT_INT                 \ Watchdog interrupt routine, warning : not FORTH executable !
 \ ******************************\
 \ XOR.B #LED1,&LED1_OUT           \ to visualise WDT
 BIT.B #SW2,&SW2_IN              \ test switch S2
@@ -338,10 +338,10 @@ ELSE
     THEN                        \
 THEN                            \
 RETI                            \ 5
-ENDASM
+ENDCODE
 
 \ ******************************\
-ASM RC5_INT                     \   wake up on Px.RC5 change interrupt
+HDNCODE RC5_INT                 \   wake up on Px.RC5 change interrupt
 \ ******************************\
 \ IR_RC5 driver                 \ IP,S,T,W,X,Y registers are free for use
 \ ******************************\
@@ -393,7 +393,7 @@ MOV #%1011100100,&RC5_TIM_CTL   \ (re)start timer_A | SMCLK/8 time interval,free
         CMP Y,X                 \ 1                     |   cycle time out of bound ?
         U>= IF                  \ 2                 ^   |   yes:
         BIC #$30,&RC5_TIM_CTL   \                   |   |      stop timer
-        RETI                    \                   |   |      quit on truncated RC5 message
+        GOTO FW1                \                   |   |      quit on truncated RC5 message
         THEN                    \                   |   |
         BIT.B #RC5,&IR_IFG      \ 3                 |   |   n+1/2 cycles edge is always present
     0<> UNTIL                   \ 2                 |   |
@@ -422,7 +422,7 @@ THEN                            \ X =  0  C6 C5 C4 C3 C2 C1 C0
 RRUM    #3,T                    \ new toggle bit = T(13) ==> T(10)
 XOR     @RSP,T                  \ (new XOR old) Toggle bits
 BIT     #UF10,T                 \ repeated RC5_command ?
-0= IF RETI THEN                 \ yes, RETI without UF10 change and without action !
+0= ?GOTO FW2                    \ yes, RETI without UF10 change and without action !
 XOR #UF10,0(RSP)                \ 5 toggle bit memory
 \ ******************************\
 \ Display IR_RC5 code           \
@@ -442,12 +442,15 @@ LO2HI                           \                                               
 HI2LO                           \     --                                        switch from FORTH to assembler
 MOV @PSP+,&BASEADR              \     -- Save_TOS TOS                           restore current BASE
 MOV @PSP+,TOS                   \     -- TOS
-RETI
-ENDASM
+FW1 FW2
+    MOV @RSP+,SR                \ restore SR flags
+    BIC #%1111_1000,SR          \ but force CPU Active Mode
+    RET                         \ (instead of RETI)
+ENDCODE
 
 
 \ ------------------------------\
-ASM STOP_R2L                    \ define new STOP_APP
+HDNCODE STOP_R2L                \ define new STOP_APP
 \ ------------------------------\
 CMP #RET_ADR,&{RC5TOLCD}+8      \
 0<> IF                          \ if previous START executing
@@ -463,7 +466,7 @@ CMP #RET_ADR,&{RC5TOLCD}+8      \
     MOV &{RC5TOLCD}+10,PC       \ run previous INI_APP, then RET
 THEN 
 MOV @RSP+,PC                    \ RET
-ENDASM
+ENDCODE
 
 \ ------------------------------\
 CODE STOP                       \
@@ -479,7 +482,7 @@ ABORT" "
 \ ------------------------------\
 
 \ ------------------------------\
-ASM INI_R2L                     \ this routine completes the init of system, i.e. FORTH + this app.
+HDNCODE INI_R2L                 \ this routine completes the init of system, i.e. FORTH + this app.
 \ ------------------------------\
 \ activate I/O                  \
 \ ------------------------------\
@@ -629,7 +632,7 @@ CODE START                      \ this routine replaces WARM and COLD default va
 \ ------------------------------\
 CMP #RET_ADR,&{RC5TOLCD}+8      \ init R2L once, only if MARKER_DOES is not initialized
 0= IF                           \ if not done, customizes MARKER_DOES
-    MOV #STOP_RTC,&{RC5TOLCD}+8 \ execution of {RC5TOLCD} will perform STOP_RTC.
+    MOV #STOP_R2L,&{RC5TOLCD}+8 \ execution of {RC5TOLCD} will perform STOP_R2L.
     MOV &WARM+2,&{RC5TOLCD}+10  \ save previous INI_APP subroutine
     MOV #INI_R2L,&WARM+2        \ replace it by RC5toLCD INI_APP
     MOV &WDT_TIM_0_VEC,&{RC5TOLCD}+12   \ save Vector previous value

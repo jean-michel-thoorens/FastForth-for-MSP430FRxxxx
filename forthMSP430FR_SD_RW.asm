@@ -649,7 +649,7 @@ T2S_FillBufferLoop                  ;
     MOV.B   &TERM_RXBUF,X           ;3
     MOV.B   X,&TERM_TXBUF
     CMP.B   #4,X                    ;1 EOT sent by TERATERM ?
-    JZ      T2S_End_Of_File                 ;2 yes
+    JZ      T2S_End_Of_File         ;2 yes
     MOV.B   X,SD_BUF(W)             ;3
     ADD     #1,W                    ;1
     CMP     #BytsPerSec-1,W         ;2
@@ -676,9 +676,11 @@ T2S_End_Of_File                     ;
 
     .ELSE ; if I2C_TERMINAL
 
-    FORTHWORD "TERM2SD\34"
-    CALL    #WAITCHAREND            ; wait I2C_Master (re)START RX
-    BIC     #WAKE_UP,&TERM_IFG      ; clear UCSTTIFG before next test
+; first TERATERM sends the command TERM2SD" file.ext" to I2C_FastForth.
+; then when RXON is sent below, I2C_Master sends "file.ext" line by line
+; then TERATERM sends char EOT that closes the file on SD_CARD.
+
+    FORTHWORD "TERM2SD\34"          ; here, I2C_Master is reSTARTed in RX mode
     mDOCOL
     .word   DELDQ                   ;                   DEL file if already exist
     .word   lit,2                   ; -- open_type
@@ -686,10 +688,9 @@ T2S_End_Of_File                     ;
     .word   PARENOPEN               ;                   reopen same filepath but as write
     .word   $+2                     ;
 ; ----------------------------------;
-    CALL    #RXON                   ;
-    BIC     #WAKE_UP,&TERM_IFG      ; clear UCSTTIFG before next test
+    CALL    #RXON                   ; send I2C Ctrl_Char $00 to I2C_Master
 ; ----------------------------------;
-T2S_ClearBuffer
+T2S_ClearBuffer                     ;
 ; ----------------------------------;
     MOV     #0,W                    ;1  reset W = BufferPtr
 ; ----------------------------------;
@@ -698,22 +699,19 @@ T2S_FillBufferLoop                  ;   move by slices of 512 bytes from TERMINA
     BIT     #RX_TERM,&TERM_IFG      ;3 new char in TERMRXBUF ?
     JZ      T2S_FillBufferLoop      ;2 no
     MOV.B   &TERM_RXBUF,X           ;3
-    CMP.B   #4,X                    ;1 EOT sent by TERATERM ?
+    CMP.B   #4,X                    ;1 EOT sent by TERMINAL (teraterm.exe) ?
     JZ      T2S_End_Of_File         ;2 yes
     MOV.B   X,SD_BUF(W)             ;3
     ADD     #1,W                    ;1
     CMP.B   #0Ah,X                  ;2 Char LF ?
     JNZ     T2S_Q_BufferFull        ;2 no
 ; ----------------------------------;
-T2S_GetNewLine                      ; after LF sent, I2C_Master automaticaly (re)STARTs in RX mode
-; ----------------------------------;
-    CALL    #WAITCHAREND            ; wait I2C_Master (re)START RX
-    BIC     #WAKE_UP,&TERM_IFG      ; clear UCSTTIFG before next test
-    ASMtoFORTH
-    .word   LIT,0Ah,EMIT            ; use Y reg
+T2S_GetNewLine                      ; here I2C_Master automatically (re)START in RX mode, one char must be sent to
+; ----------------------------------; clear I2C_Slave UCSTTIFG, so we must send LF a minima
+    ASMtoFORTH                      ;
+    .word   CR                      ; (CR+LF instead of LF is sent to beautify TERMINAL display, if ECHO is ON obviously)
     .word   $+2                     ;
-    CALL    #RXON                   ; tells I2C_Master to(re)START in TX mode and waits I2C_Master TX (re)STARTed,  use Y register
-    BIC     #WAKE_UP,&TERM_IFG      ; clear UCSTTIFG before next test
+    CALL    #RXON                   ; send I2C Ctrl_Char $00 to I2C_Master
 ; ----------------------------------;
 T2S_Q_BufferFull                    ;
 ; ----------------------------------;
@@ -727,18 +725,15 @@ T2S_WriteFile                       ;2 yes
 ; ----------------------------------;
 T2S_End_Of_File                     ;
 ; ----------------------------------;
-    MOV     @RSP+,IP                ; before CloseHandleT
+    BIT     #RX_TERM,&TERM_IFG      ;3 new char in TERMRXBUF ?
+    JZ      T2S_End_Of_File         ;2 no
+    CMP.B   #0Ah,&TERM_RXBUF        ;4 Char LF ?
+    JNZ     T2S_End_Of_File         ;    
+; ----------------------------------;
     MOV     W,&BufferPtr            ;3
     CALL    #CloseHandleT           ;4
-T2S_End_Of_EOT_Line                 ;
-    BIT     #RX_TERM,&TERM_IFG      ;3 new char in TERMRXBUF ?
-    JZ      T2S_End_Of_EOT_Line     ;2 no
-    MOV.B   &TERM_RXBUF,X           ;3 
-    CMP.B   #0Ah,X                  ;2 Char LF ?
-    JNZ     T2S_End_Of_EOT_Line     ;    
-    CALL    #WAITCHAREND            ; wait I2C_Master (re)START RX
-    BIC     #WAKE_UP,&TERM_IFG      ; clear UCSTTIFG before next test...
-    MOV     @IP+,PC                 ; ... i.e. ready for return to SLEEP via RXON.
+    MOV     @RSP+,IP                ; moved here because ASMtoFORTH use above
+    MOV     @IP+,PC                 ;
 ; ----------------------------------;
 
     .ENDIF

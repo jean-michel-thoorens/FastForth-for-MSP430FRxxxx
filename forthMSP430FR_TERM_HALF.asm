@@ -1,5 +1,28 @@
 ; -*- coding: utf-8 -*-
 
+; ---------------------------------------
+; TERMINAL driver for FastForth target
+; ---------------------------------------
+;                     +---------------------------+
+; ------              |    +-----------------+    |
+; WIRING              |    |    +--------+   |    |
+; ------              |    |    |        |   |    |
+; FastForth target   TXD  RXD  RTS <--> CTS TXD  RXD  UARTtoUSB <--> COMx <--> TERMINAL
+; -----------------------------------------------------------------------------------------
+; MSP_EXP430FR5739   P2.0 P2.1 P2.2                   PL2303TA                 TERATERM.EXE
+; MSP_EXP430FR5969   P2.0 P2.1 P4.1                   PL2303HXD
+; MSP_EXP430FR5994   P2.0 P2.1 P4.2                   CP2102
+; MSP_EXP430FR6989   P3.4 P3.5 P3.0   
+; MSP_EXP430FR4133   P1.0 P1.1 P2.3   
+; CHIPSTICK_FR2433   P1.4 P1.5 P3.2       
+; MSP_EXP430FR2433   P1.4 P1.5 P1.0       
+; MSP_EXP430FR2355   P4.3 P4.2 P2.0
+; LP_MSP430FR2476    P1.4 P1.5 P6.1
+
+
+;-------------------------------------------------------------------------------
+; UART TERMINAL: QABORT ABORT_TERM COLD_TERM INI_TERM RXON RXOFF
+;-------------------------------------------------------------------------------
 ; define run-time part of ABORT"
 ;Z ?ABORT   xi f c-addr u --      abort & print msg.
 ;            FORTHWORD "?ABORT"
@@ -115,7 +138,7 @@ RXON_LOOP   BIT #TX_TERM,&TERM_IFG  ;3      wait the sending of last char, usele
 ;===============================================================================
             FORTHWORD "WIPE"        ; software DEEP_RESET
 ;===============================================================================
-            MOV #-1,&RSTIV_MEM      ; negative value ==> DEEP_RESET
+WIPE        MOV #-1,&RSTIV_MEM      ; negative value ==> DEEP_RESET
             JMP COLD
 
 ;===============================================================================
@@ -132,23 +155,23 @@ PFACOLD     .word COLD_TERM         ; INI_COLD_DEF: default value set by WIPE. s
 COLDEXE     MOV #0A504h,&PMMCTL0    ; performs software_BOR, see RESET in forthMSP430FR.asm
 ; ----------------------------------;
 
-;===============================================================================
-            FORTHWORD "WARM"
-;===============================================================================
-;Z WARM     xi --                   ; the next of RESET
+;-----------------------------------;
+            FORTHWORD "WARM"        ;
+;-----------------------------------;
+;Z WARM     xi --                   ; the end of RESET
+;-----------------------------------;
 WARM                                ;
 ;-------------------------------------------------------------------------------
-; RESET 6.2: if RSTIV_MEM <> WARM, init TERM and enable I/O
+; RESET 7: if RSTIV_MEM <> WARM, init TERM and enable I/O
 ;-------------------------------------------------------------------------------
             CALL @PC+               ; init TERM, only if TOS U>= 2 (RSTIV_MEM <> WARM)
     .IFNDEF SD_CARD_LOADER          ;
-PFAWARM     .word INIT_TERM         ; default value, init TERM UC, unlock I/O's, TOS = RSTIV_MEM
+PFAWARM     .word INIT_TERM         ; INI_HARD_APP default value, init TERM UC, unlock I/O's, TOS = RSTIV_MEM
     .ELSE
-PFAWARM     .word INIT_SD           ; init TERM first then init SD Card
-    .ENDIF
-;-------------------------------------------------------------------------------
-; END OF RESET
-;-------------------------------------------------------------------------------
+PFAWARM     .word INI_HARD_SD       ; init SD Card + init TERM, see forthMSP430FR_SD_INIT.asm
+    .ENDIF                          ; TOS = RSTIV_MEM
+;-----------------------------------;
+WARM_DISPLAY                        ; TOS = RSTIV_MEM value
     ASMtoFORTH
     .word   XSQUOTE
     .byte   7,13,10,27,"[7m#"       ; CR + cmd "reverse video" + #

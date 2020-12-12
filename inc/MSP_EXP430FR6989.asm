@@ -291,8 +291,8 @@ TERM_IN     .equ    P3IN   ;
 TERM_REN    .equ    P3REN
 TERM_SEL    .equ    P3SEL0
 TXD         .equ    10h    ; P3.4 = TXD
-RXD         .equ    20h    ; P3.4 = RXD
-BUS_TERM    .equ    30h    ; P3.5 = RX
+RXD         .equ    20h    ; P3.5 = RXD
+BUS_TERM    .equ    30h    ;
     .ENDIF ;UCA1_TERM
 
 ; PORT4 usage

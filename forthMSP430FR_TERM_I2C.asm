@@ -1,5 +1,30 @@
 ; -*- coding: utf-8 -*-
 
+
+; ---------------------------------------------------
+; TERMINAL driver for I2CFastForth target (I2C Slave)
+; ---------------------------------------------------
+
+;      hardware                                                         Software                 
+;      I2C Slave                                                        I2C Master
+;     
+; I2CFastForth target SCL     SDA   connected to:   SCL     SDA  of  UART to I2C bridge
+; ------------------  ----    ----                  ----    ----     ------------------
+; MSP_EXP430FR5739    P1.7    P1.6                  P4.1    P4.0     MSP_EXP430FR5739  
+; MSP_EXP430FR5969    P1.7    P1.6                  P1.3    P1.2     MSP_EXP430FR5969  
+; MSP_EXP430FR5994    P7.1    P7.0                  P8.1    P8.2     MSP_EXP430FR5994  
+; MSP_EXP430FR6989    P1.7    P1.6                  P1.5    P1.3     MSP_EXP430FR6989  
+; MSP_EXP430FR4133    P5.3    P5.2                  P8.3    P8.2     MSP_EXP430FR4133  
+; CHIPSTICK_FR2433    P1.3    P1.2                  P2.2    P2.0     CHIPSTICK_FR2433  
+; MSP_EXP430FR2433    P1.3    P1.2                  P3.1    P3.2     MSP_EXP430FR2433  
+; MSP_EXP430FR2355    P1.3    P1.2                  P3.3    P3.2     MSP_EXP430FR2355  
+; LP_MSP430FR2476     P4.3    P4.4                  P3.3    P3.2     LP_MSP430FR2476   
+;
+; don't forget to link 3V3 and GND on each side and to add 3k3 pullup resistors on SDA and SCL.
+
+;-------------------------------------------------------------------------------
+; I2C TERMINAL: QABORT ABORT_TERM INI_TERM COLD_TERM RXON I2C_CTRL_CH
+;-------------------------------------------------------------------------------
 ; define run-time part of ABORT"
 ;Z ?ABORT   xi f c-addr u --           abort & print msg.
 ;            FORTHWORD "?ABORT"
@@ -11,17 +36,19 @@ THREEDROP   ADD #4,PSP              ; -- u
 ; ----------------------------------;
 ABORT_TERM                          ; exit from downloading then reinit some variables via INI_FORTH
 ; ----------------------------------;
-            MOV.B #2,Y              ; ABORT request Ctrl_Char = $02
-            CALL #I2C_CTRL_CH       ; send it to I2C_Master to run QABORT_TERM on its side
-            CALL #INI_FORTH         ; common ?ABORT|RST subroutine
+            MOV.B #2,Y              ; -- f c-addr u         ABORT request Ctrl_Char = $02
+            CALL #I2C_CTRL_CH       ;                       send it to I2C_Master which will run QABORT_TERM on its side
 ; ----------------------------------;
-            .word   lit,LINE,FETCH  ; -- f c-addr u line    fetch line number before set ECHO ON !
+            PUSH TOS                ;
+            CALL #INI_FORTH         ;
+; ----------------------------------;
+; display line of error if NOECHO   ;
+; ----------------------------------;
+            .word   lit,LINE,FETCH  ; -- f c-addr u line    fetch line number before set ECHO !
             .word   ECHO            ;
-; ----------------------------------;
-            .word   OVER            ; -- f c-addr u line u
-            .word   QFBRAN,ABORT    ; --                    display nothing when ABORT" with empty string
-; ----------------------------------;
-            .word   XSQUOTE         ;
+            .word   RFROM           ; -- f c-addr u line u 
+            .word   QFBRAN,ABORT_END;                       display nothing if ABORT" with empty string
+            .word   XSQUOTE         ; -- f c-addr u line 
             .byte   5,27,"[7m",'@'  ;
             .word   TYPE            ;                       cmd "reverse video" + displays "@"
             .word   LIT,I2CSLAVEADR ;
@@ -35,11 +62,11 @@ ABORT_TERM                          ; exit from downloading then reinit some var
 ; ----------------------------------;
 ; Display ABORT|WARM message        ; <== WARM jumps here
 ; ----------------------------------;
-ABORT_TYPE  .word   TYPE            ; -- f              type abort message
+ABORT_TYPE  .word   TYPE            ; -- f              display abort|warm message
             .word   XSQUOTE         ; -- f c-addr u
             .byte   4,27,"[0m"      ;
             .word   TYPE            ; -- f              set normal video
-            .word   ABORT           ; -- f              no return
+ABORT_END   .word   ABORT           ; -- f              no return
 ; ----------------------------------;
 
 ; ----------------------------------;
@@ -49,13 +76,12 @@ I2C_INIT_TERM
         CMP #2,TOS                  ;
         JNC I2C_INIT_TERM_END       ; no INIT_TERM if RSTIV_MEM U< 2 (WARM)
 ; ----------------------------------;
-I2C_INIT_TERM_BODY
         BIS #07C0h,&TERM_CTLW0      ; set I2C_Slave in RX mode to receive I2C_address
         MOV &I2CSLAVEADR,Y          ; init value found in FRAM INFO
         RRA Y                       ; I2C Slave address without R/W bit 
         BIS #400h,Y                 ; enable I2COA0 Slave address
         MOV Y,&TERM_I2COA0          ;
-        BIS.B #BUS_TERM,&TERM_SEL   ; Configure pins TERM_UART|TERM_I2C
+        BIS.B #BUS_TERM,&TERM_SEL   ; Configure pins TERM_I2C
         BIC #1,&TERM_CTLW0          ; release UC_TERM from reset...
         BIS #WAKE_UP,&TERM_IE       ; then enable interrupt for wake up on terminal input
         BIC #LOCKLPM5,&PM5CTL0      ; activate all previous I/O settings.
@@ -71,6 +97,7 @@ COLD_TERM                           ; nothing to do
 RXON                                ; send ctrl_char $00 as ACCEPT request
 ; ----------------------------------;
 I2C_RXON    MOV.B #0,Y              ; ACCEPT request Ctrl_Char = $00
+
 ; ----------------------------------;
 I2C_CTRL_CH                         ; send it to I2C_Master_RX to restart it in TX mode
 ; ----------------------------------;
@@ -78,54 +105,59 @@ I2C_CTRL_CH                         ; send it to I2C_Master_RX to restart it in 
         JZ I2C_CTRL_CH              ;2 wait TX buffer empty
         MOV.B Y,&TERM_TXBUF         ;3 send Ctrl_Char
 WAITCHAREND 
-;        BIT #40h,&TERM_STATW        ; SCL held low (after I2C_Master (re)START) ?
-        BIT #4,&TERM_IFG            ; I2C_Master (re)START ?
+        BIT #4,&TERM_IFG            ; I2C_Master (re)STARTed ?
         JZ WAITCHAREND              ; no
-        MOV @RSP+,PC                ; yes
+        MOV @RSP+,PC                ;
 ; ----------------------------------;
+; I2C_CTRL_CHAR sends a CTRL_Char that asks I2C_Master RX to (re)START in TX mode.
+; As TI tells nothing about I2C_Slave UCSTTIFG ON --> OFF,
+; it is assumed that the Slave clears itself UCSTTIFG after the first character has been exchanged.
 
-;===============================================================================
+;-------------------------------------------------------------------------------
+; I2C TERMINAL : WIPE COLD WARM ACCEPT KEY EMIT ECHO NOECHO
+;-------------------------------------------------------------------------------
+
+;-----------------------------------;
             FORTHWORD "WIPE"        ; software DEEP_RESET
-;===============================================================================
-            MOV #-1,&RSTIV_MEM      ; negative value ==> DEEP_RESET
+;-----------------------------------;
+WIPE        MOV #-1,&RSTIV_MEM      ; negative value forces DEEP_RESET
             JMP COLD
 
-;===============================================================================
-            FORTHWORD "COLD"
-;===============================================================================
-;Z COLD     --      performs a software reset
+; ----------------------------------;
+            FORTHWORD "COLD"        ; performs a software reset
+; ----------------------------------;
 ; as pin RST is replaced by pin NMI, RESET by pin activation is redirected here via USER NMI vector
-; that allows actions to be performed before executing software BOR.
+; that allows specific actions before executing software BOR.
 COLD        CALL @PC+               ; COLD first calls STOP_APP, in this instance: CALL #COLD_TERM by default
 PFACOLD     .word COLD_TERM         ; PFACOLD default value set by WIPE.
 BODYCOLD    BIT.B #IO_WIPE,&WIPE_IN ; hardware Deep_RESET request (low) ?
             JNZ COLDEXE             ; no
             MOV #-1,&RSTIV_MEM      ; yes, set negative value to force DEEP_RESET
-COLDEXE     MOV #0A504h,&PMMCTL0    ; performs software_BOR, see RESET in forthMSP430FR.asm
+COLDEXE     MOV #0A504h,&PMMCTL0    ; performs software_BOR --> RST_vector --> RESET in forthMSP430FR.asm
 ; ----------------------------------;
 
-;===============================================================================
-            FORTHWORD "WARM"
-;===============================================================================
-;Z WARM     xi --                   ; the next of RESET
+;-----------------------------------;
+            FORTHWORD "WARM"        ;
+;-----------------------------------;
+;Z WARM     xi --                   ; the end of RESET
+;-----------------------------------;
 WARM                                ;
 ;-------------------------------------------------------------------------------
-; RESET 6.2: if RSTIV_MEM <> WARM, init TERM and enable I/O
+; RESET 7: if RSTIV_MEM <> WARM, init TERM and enable I/O
 ;-------------------------------------------------------------------------------
             CALL @PC+               ; init TERM, only if TOS U>= 2 (RSTIV_MEM <> WARM)
     .IFNDEF SD_CARD_LOADER          ;
-PFAWARM     .word INIT_TERM         ; default value, init TERM UC, unlock I/O's, TOS = RSTIV_MEM
+PFAWARM     .word INIT_TERM         ; INI_HARD_APP default value, init TERM UC, unlock I/O's, TOS = RSTIV_MEM
     .ELSE
-PFAWARM     .word INIT_SD           ; init TERM first then init SD Card
-    .ENDIF
-;-------------------------------------------------------------------------------
-; END OF RESET
-;-------------------------------------------------------------------------------
+PFAWARM     .word INI_HARD_SD       ; init SD Card + init TERM, see forthMSP430FR_SD_INIT.asm
+    .ENDIF                          ; TOS = RSTIV_MEM
+;-----------------------------------;
+WARM_DISPLAY                        ; TOS = RSTIV_MEM value
     MOV.B  #3,Y                     ; WARM request Ctrl_Char = $03
     CALL #I2C_CTRL_CH               ; send it to I2C_Master to reSTART in RX mode
     ASMtoFORTH
     .word   XSQUOTE
-    .byte   7,13,10,27,"[7m@"       ; CR + cmd "reverse video" + @
+    .byte   7,13,10,27,"[7m@"       ; CR+LF + cmd "reverse video" + @
     .word   TYPE
     .word   LIT,I2CSLAVEADR,FETCH,DOT
     .word   LIT,'#',EMIT
@@ -138,11 +170,9 @@ PFAWARM     .word INIT_SD           ; init TERM first then init SD Card
     .byte   10,"bytes free"
     .word   BRAN,ABORT_TYPE         ; without return!
 
-
-;-------------------------------------------------------------------------------
-; INTERPRETER INPUT
-;-------------------------------------------------------------------------------
+; ----------------------------------;
             FORTHWORD "ACCEPT"
+; ----------------------------------;
 ;https://forth-standard.org/standard/core/ACCEPT
 ;C ACCEPT  addr addr len -- addr len'  get line at addr to interpret len' chars
 ACCEPT      MOV @PC+,PC             ;3 Code Field Address (CFA) of ACCEPT
@@ -170,7 +200,7 @@ TERMINAL_INT                        ; <--- START interrupt vector, bus is stalle
 ; (ACCEPT) part II under interrupt  ; Org Ptr --
 ; ----------------------------------;
             ADD #4,RSP              ;1      remove SR and PC from stack, SR flags are lost (unused by FORTH interpreter)
-            BIC #WAKE_UP,&TERM_IFG  ;       clear UCSTTIFG before return to SLEEP
+            BIC #WAKE_UP,&TERM_IFG  ;       clear UCSTTIFG before return to SLEEP (because not cleared by RX_TERM reading)
             BIT #10h,&TERM_CTLW0    ;4      test UCTR
             JNZ SLEEP               ;       if I2C_Master RX, loop back to SLEEP
             POPM #4,IP              ;6      POPM  IP=ret_IP,W=src_end,T=0Ah,S=20h
@@ -220,16 +250,15 @@ LF_NEXT                             ; -- Org Ptr
 ACCEPT_EOL  CMP #0,&LINE            ;            
             JZ ACCEPT_END           ;
             ADD #1,&LINE            ;       if LINE <> 0 increment LINE
-ACCEPT_END  
+ACCEPT_END                          ;
 ; ----------------------------------;
             MOV S,Y                 ;       output a BL on TERMINAL (for the case of error occuring)
-            JMP YEMIT               ;       before interpret line
+            JMP YEMIT               ;       before line interpreting
 ; **********************************;
 
-; ------------------------------------------------------------------------------
-; TERMINAL I/O, input part
-; ------------------------------------------------------------------------------
+; ----------------------------------;
             FORTHWORD "KEY"
+; ----------------------------------;
 ; https://forth-standard.org/standard/core/KEY
 ; KEY      -- c      wait character from input device ; primary DEFERred word
 KEY         MOV @PC+,PC             ; Code Field Address (CFA) of KEY
@@ -243,10 +272,9 @@ BKEYLOOP    BIT #RX_TERM,&TERM_IFG  ;           received char ?
             MOV &TERM_RXBUF,TOS     ; -- char
 BKEYEND     MOV @IP+,PC             ; -- char
 
-; ------------------------------------------------------------------------------
-; TERMINAL I/O, output part
-; ------------------------------------------------------------------------------
+; ----------------------------------;
             FORTHWORD "EMIT"
+; ----------------------------------;
 ; https://forth-standard.org/standard/core/EMIT
 ; EMIT     c --    output character to an output device ; primary DEFERred word
 EMIT        MOV @PC+,PC             ;3 Code Field Address (CFA) of EMIT
@@ -259,7 +287,9 @@ QYEMIT      .word   48C2h           ;3 48C2h = MOV.B Y,&<next_adr>
             .word   TERM_TXBUF      ;
 YEMITEND    MOV @IP+,PC             ;4 11 words
 
+; ----------------------------------;
             FORTHWORD "ECHO"
+; ----------------------------------;
 ;Z ECHO     --      connect EMIT to TERMINAL (default)
 ECHO        MOV #48C2h,&QYEMIT      ; 48C2h = MOV.B Y,&<next_adr>
             MOV #0,&LINE            ;
@@ -267,17 +297,12 @@ ECHO        MOV #48C2h,&QYEMIT      ; 48C2h = MOV.B Y,&<next_adr>
 ECHOEND     CALL #I2C_CTRL_CH       ; send it to I2C_Master to do it echo char to TERMINAL
             MOV @IP+,PC
 
+; ----------------------------------;
             FORTHWORD "NOECHO"
+; ----------------------------------;
 ;Z NOECHO   --      disconnect EMIT to TERMINAL
 NOECHO      MOV #4D30h,&QYEMIT      ;  NEXT = 4D30h = MOV @IP+,PC
             MOV #1,&LINE            ;
             MOV #4,Y                ; NOECHO request Ctrl_Char = $04
             JMP ECHOEND             ; send it to I2C_Master, to not do it echo to TERMINAL
 
-            FORTHWORD "OVER"
-;https://forth-standard.org/standard/core/OVER
-;C OVER    x1 x2 -- x1 x2 x1
-OVER        MOV TOS,-2(PSP) ; 3 -- x1 (x2) x2
-            MOV @PSP,TOS    ; 2 -- x1 (x2) x1
-            SUB #2,PSP      ; 1 -- x1 x2 x1
-            MOV @IP+,PC     ; 4

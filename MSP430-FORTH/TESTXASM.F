@@ -30,7 +30,18 @@
 \
 \ FORTH conditionnal    : 0= 0< = < > U<
 
-PWR_STATE
+CODE ABORT_TEST_ASMX
+SUB #2,PSP
+MOV TOS,0(PSP)
+MOV &VERSION,TOS
+SUB #308,TOS        \ FastForth V3.8
+COLON
+'CR' EMIT            \ return to column 1 without 'LF'
+ABORT" FastForth V3.8 please!"
+PWR_STATE           \ remove ABORT_TEST_ASM definition before resuming
+;
+
+ABORT_TEST_ASMX      \ abort test
 
 [UNDEFINED] + [IF]
 \ https://forth-standard.org/standard/core/Plus
@@ -258,7 +269,7 @@ LO2HI
 
 [UNDEFINED] HERE [IF]
 CODE HERE
-MOV #HEREADR,PC
+MOV #HEREXEC,PC
 ENDCODE
 [THEN]
 

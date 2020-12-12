@@ -1,4 +1,5 @@
 #!/bin/bash
+
 device=$1
 if   [ ${device:0:16}  == "MSP_EXP430FR5739" ]; then
     device=MSP430FR5739
@@ -18,6 +19,6 @@ elif [ ${device:0:16}  == "MSP_EXP430FR2355" ]; then
     device=MSP430FR2355
 fi
 echo $device
-
-MSP430Flasher -s -m SBW2 -n $device -v -w $1.txt  -z [RESET,VCC]
+echo $1
+/usr/local/MSPFlasher/MSP430Flasher -s  -n $device -v -w "$FF/binaries/$1.hex"  -z [RESET,VCC]
 

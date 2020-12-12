@@ -14,9 +14,10 @@
 ;-------------------------------------------------------------------------------
     .listing purecode   ; reduce listing to true conditionnal parts
     MACEXP_DFT noif     ; reduce macros listing to true part
+    .PAGE  0            ; 
 ;-------------------------------------------------------------------------------
 
-VER .equ "V307"     ; FORTH version
+VER .equ "V308"     ; FORTH version
 
 ;===============================================================================
 ; before assembling or programming you must set TARGET in scite param1 (SHIFT+F8)
@@ -28,16 +29,15 @@ VER .equ "V307"     ; FORTH version
 ; kernel size below are for 8MHz, DTC=1, THREADS=1, 4WIRES (RTS) options
 ;===============================================================================
 ;    TARGET        ;                                        ;INFO+VECTORS+ MAIN bytes
-;MSP_EXP430FR5739  ; compile for MSP-EXP430FR5739 launchpad ; 64 +  128  + 2778 bytes 
-;MSP_EXP430FR5969  ; compile for MSP-EXP430FR5969 launchpad ; 64 +  128  + 2768 bytes 
-MSP_EXP430FR5994  ; compile for MSP-EXP430FR5994 launchpad ; 64 +  128  + 2790 bytes 
-;MSP_EXP430FR6989  ; compile for MSP-EXP430FR6989 launchpad ; 64 +  128  + 2792 bytes 
-;MSP_EXP430FR4133  ; compile for MSP-EXP430FR4133 launchpad ; 64 +  128  + 2832 bytes 
-;MSP_EXP430FR2355  ; compile for MSP-EXP430FR2355 launchpad ; 64 +  128  + 2766 bytes
-;MSP_EXP430FR2433  ; compile for MSP-EXP430FR2433 launchpad ; 64 +  128  + 2758 bytes 
-;LP_MSP430FR2476   ; compile for LP_MSP430FR2476  launchpad ; 64 +  128  + 2770 bytes 
-;CHIPSTICK_FR2433  ; compile for "CHIPSTICK" of M. Ken BOAK ; 64 +  128  + 2758 bytes  
-;MSP_EXP430FR5972  ; compile for a virtual launchpad        ; 64 +  128  + 2804 bytes 
+;MSP_EXP430FR5739  ; compile for MSP-EXP430FR5739 launchpad ; 64 +  128  + 2768 bytes 
+;MSP_EXP430FR5969  ; compile for MSP-EXP430FR5969 launchpad ; 64 +  128  + 2760 bytes 
+;MSP_EXP430FR5994  ; compile for MSP-EXP430FR5994 launchpad ; 64 +  128  + 2780 bytes 
+;MSP_EXP430FR6989  ; compile for MSP-EXP430FR6989 launchpad ; 64 +  128  + 2782 bytes 
+;MSP_EXP430FR4133  ; compile for MSP-EXP430FR4133 launchpad ; 64 +  128  + 2822 bytes 
+;MSP_EXP430FR2355  ; compile for MSP-EXP430FR2355 launchpad ; 64 +  128  + 2756 bytes
+;MSP_EXP430FR2433  ; compile for MSP-EXP430FR2433 launchpad ; 64 +  128  + 2746 bytes 
+;LP_MSP430FR2476   ; compile for LP_MSP430FR2476  launchpad ; 64 +  128  + 2760 bytes 
+CHIPSTICK_FR2433;  ; compile for "CHIPSTICK" of M. Ken BOAK ; 64 +  128  + 2748 bytes  
 
 ; choose DTC model (Direct Threaded Code); if you don't know, choose 2, because DOCOL routine without using scratch register
 DTC .equ 2  ; DTC model 1 : DOCOL = CALL rDOCOL           14 cycles 1 word      shortest DTC model
@@ -54,7 +54,7 @@ FREQUENCY   .equ 1 ; fully tested at 1,2,4,8,16,24 MHz (24 MHz for MSP430FR57xx,
 TERMINAL_I2C  ; uncomment to select I2C_Master TERMINAL instead of UART TERMINAL
 ;===============================================================================
     .IFDEF TERMINAL_I2C
-MYSLAVEADR   .equ 18 ; 
+MYSLAVEADR   .equ 18
 ;===============================================================================
     .ELSE ; UART TERMINAL
 ;===============================================================================
@@ -80,13 +80,13 @@ MSP430ASSEMBLER     ; + 1812 bytes : adds embedded assembler with TI syntax; wit
 CONDCOMP            ; +  306 bytes : adds conditionnal compilation [IF] [ELSE] [THEN] [DEFINED] [UNDEFINED]
 DOUBLE_INPUT        ; +   56 bytes : adds the interpretation engine for double numbers (numbers with dot)
 FIXPOINT_INPUT      ; +   74 bytes : adds the interpretation engine for Q15.16 numbers (numbers with comma)
-DEFERRED            ; +  124 bytes : adds DEFER IS :NONAME CODENNM (CODE_No_NaMe), useful for interrupts start and stop.
-VOCABULARY_SET      ; +  174 bytes : adds words: VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83)
-EXTENDED_MEM        ; +  740 bytes : allows assembler to execute code up to 1MB (LARGE_CODE).
-EXTENDED_ASM        ; + 1260 bytes : extended assembler to 20 bits datas (LARGE_DATA + LARGE_CODE).
-SD_CARD_LOADER      ; + 1766 bytes : to load source files from SD_card
-SD_CARD_READ_WRITE  ; + 1148 bytes : to read, create, write and del files + copy text files from PC to target SD_Card
-BOOTLOADER          ; +  132 bytes : includes in WARM process the bootloader SD_CARD\BOOT.4TH.
+;DEFERRED            ; +  124 bytes : adds DEFER IS :NONAME CODENNM (CODE_No_NaMe), useful for interrupts start and stop.
+;EXTENDED_MEM        ; +  740 bytes : allows assembler to execute code up to 1MB (LARGE_CODE).
+;EXTENDED_ASM        ; + 1260 bytes : extended assembler to 20 bits datas (LARGE_DATA + LARGE_CODE).
+;SD_CARD_LOADER      ; + 1766 bytes : to load source files from SD_card
+;SD_CARD_READ_WRITE  ; + 1148 bytes : to read, create, write and del files + copy text files from PC to target SD_Card
+;BOOTLOADER          ; +  132 bytes : includes in WARM process the bootloader SD_CARD\BOOT.4TH.
+;VOCABULARY_SET      ; +  174 bytes : adds words: VOCABULARY FORTH ASSEMBLER ALSO PREVIOUS ONLY DEFINITIONS (FORTH83)
 ;PROMPT              ; +   22 bytes : to display prompt "ok "
 ;------------------------------------------------------------------------------- 
 
@@ -371,9 +371,9 @@ WIPE_SLEEP      .word RXON              ; MOV @X+,&PFASLEEP     ; RXON          
 WIPE_WARM       .word INIT_TERM         ; MOV @X+,&PFAWARM      ; INIT_TERM     --> PFAWARM
     .ELSE
 WIPE_COLD       .word COLD_TERM         ; MOV @X+,&PFACOLD      ; COLD_TERM     --> PFACOLD
-WIPE_INI_FORTH  .word INI_FORTH_SD      ; MOV @X+,&PFA_INI_FORTH; INI_FORTH_SD  --> PFA_INI_FORTH 
+WIPE_INI_FORTH  .word INI_SOFT_SD       ; MOV @X+,&PFA_INI_FORTH; INI_SOFT_SD   --> PFA_INI_FORTH 
 WIPE_SLEEP      .word RXON              ; MOV @X+,&PFASLEEP     ; RXON          --> PFASLEEP
-WIPE_WARM       .word INIT_SD           ; MOV @X+,&PFAWARM      ; INIT_SD       --> PFAWARM
+WIPE_WARM       .word INI_HARD_SD       ; MOV @X+,&PFAWARM      ; INI_HARD_SD   --> PFAWARM
     .ENDIF
 WIPE_TERM_INT   .word TERMINAL_INT      ; MOV @X+,&TERM_VEC     ; TERMINAL_INT  --> TERM_VEC
 WIPE_DP         .word ROMDICT           ; MOV @X+,&RST_DP       ; ROMDICT       --> RST_DP   
@@ -381,11 +381,11 @@ WIPE_VOC        .word lastvoclink       ; MOV @X+,&RST_VOC      ; lastvoclink   
 ; --------------------------------------;
 INI_FORTH_INI                           ; MOV #INI_FORTH_INI,X, to reset all kernel variables
 ; --------------------------------------;
-WIPE_ACCEPT     .word BODYACCEPT        ; MOV @X+,&PFAACCEPT    ; BODYACCEPT    --> PFAACCEPT
-WIPE_CR         .word BODYCR            ; MOV @X+,&PFACR        ; BODYCR        --> PFACR
-INI_FORTH_EMIT  .word BODYEMIT          ; MOV @X+,&PFAEMIT      ; BODYEMIT      --> PFAEMIT
-WIPE_KEY        .word BODYKEY           ; MOV @X+,&PFAKEY       ; BODYKEY       --> PFAKEY
-WIPE_CIB        .word TIB_ORG           ; MOV @X+,&CIB_ADR      ; TIB_ORG       --> CIB_ADR
+INI_FORTH_ACCEPT    .word BODYACCEPT    ; MOV @X+,&PFAACCEPT    ; BODYACCEPT    --> PFAACCEPT
+INI_FORTH_CR        .word BODYCR        ; MOV @X+,&PFACR        ; BODYCR        --> PFACR
+INI_FORTH_EMIT      .word BODYEMIT      ; MOV @X+,&PFAEMIT      ; BODYEMIT      --> PFAEMIT
+INI_FORTH_KEY       .word BODYKEY       ; MOV @X+,&PFAKEY       ; BODYKEY       --> PFAKEY
+INI_FORTH_CIB       .word TIB_ORG       ; MOV @X+,&CIB_ADR      ; TIB_ORG       --> CIB_ADR
 ; --------------------------------------;
 HALF_FORTH_INI                          ; MOV #HALF_FORTH_INI,X to preserve defered words
 ; --------------------------------------;
@@ -403,10 +403,10 @@ INI_FORTH_VAR   .word RFROM             ; MOV @X+,rDOVAR        ; init rDOVAR   
 INI_FORTH_CAPS  .word 32                ; MOV @X+,&CAPS         ; 32            --> CAPS
 INI_FORTH_BASE  .word 10                ; MOV @X+,&BASE         ; 10            --> BASE
 ; --------------------------------------;
-ABORT_ADR       .word ABORT             ; user use, QUIT_ADR = ABORT_ADR + 6
-QUIT4_ADR       .word QUIT4             ; used by BOOTLOADER
-                .word 0                 ; use free
-                .word 0                 ; use free
+USER_END        .word 0
+                .word 0
+                .word 0
+                .word 0
 
 
     .IFDEF SD_CARD_LOADER
@@ -538,12 +538,20 @@ SLEEP
 ; here, FAST FORTH sleeps, waiting any interrupt. With LPM4, supply current is below 1uA.
 ; IP,S,T,W,X,Y registers (R13 to R8) are free...
 ; ...and so TOS, PSP and RSP stacks within their rules of use.
-; remember: in any interrupt routine you must include : BIC #0xF8,0(RSP) before RETI to force SLEEP execution. 
-;           or simply : ADD #2 RSP, then RET instead of RETI (but previous SR flags will be lost)
-            CALL @PC+           ; SLEEP first calls BACKGND_APP 
-PFASLEEP    .word RXON          ; BACKGND_DEF = RXON as default BACKGND_APP; value set by WIPE.
-            BIS &LPM_MODE,SR    ; enter in LPMx mode with GIE=1 (after next instruction executing).
-            JMP SLEEP           ;
+;
+; remember: to force SLEEP execution, you must end any interrupt routine with :
+;               MOV @RSP+,SR        ; 2~
+;               BIC #%1111_1000,SR  ; 2~
+;               RET                 ; 3~    4 words
+;
+;           or faster (but return SR flags will be lost) with: 
+;               ADD #2 RSP          ; 1~
+;               RET                 ; 3~    2 words
+;
+            CALL @PC+           ;4  SLEEP first calls BACKGND_APP 
+PFASLEEP    .word RXON          ;   BACKGND_DEF = RXON as default BACKGND_APP; value set by WIPE.
+            BIS &LPM_MODE,SR    ;2  enter in LPMx mode with GIE=1
+            JMP SLEEP           ;2  instruction always executed before CPU asleeping.
 ;                                                                                   
 ;###############################################################################
 
@@ -587,7 +595,7 @@ QFBRAN      CMP #0,TOS      ; 1  test TOS value
 ; Primitive BRAN
 ;Z branch   --              ;
 BRAN        MOV @IP,IP      ; 2  take the branch destination
-            MOV @IP+,PC     ; 4  ==> branch taken = 11 cycles
+            MOV @IP+,PC     ; 4  ==> branch taken
 
 ;-------------------------------------------------------------------------------
 ; LOOP run-time
@@ -598,7 +606,7 @@ BRAN        MOV @IP,IP      ; 2  take the branch destination
 XDO         MOV #8000h,X    ;2 compute 8000h-limit = "fudge factor"
             SUB @PSP+,X     ;2
             MOV TOS,Y       ;1 loop ctr = index+fudge
-            MOV @PSP+,TOS   ;2 pop new TOS
+            MOV @PSP+,TOS   ;2
             ADD X,Y         ;1 Y = INDEX
             PUSHM #2,X      ;4 PUSHM X,Y, i.e. PUSHM LIMIT, INDEX
             MOV @IP+,PC     ;4
@@ -626,17 +634,19 @@ XLOOP       ADD #1,0(RSP)   ;4 increment INDEX
             JMP XLOOPNEXT   ;2
 
 ; primitive MUSMOD; compiled by ?NUMBER UM/MOD
+; MUSMOD    UDVDlo UDVDhi UDIVlo -- UREMlo UQUOTlo UQUOThi
 ;-------------------------------------------------------------------------------
 ; unsigned 32-BIT DiViDend : 16-BIT DIVisor --> 32-BIT QUOTient, 16-BIT REMainder
 ;-------------------------------------------------------------------------------
+
 ; 2 times faster if DVDhi = 0 (it's the general case)
 
 ; reg     division            MU/MOD      NUM
 ; ---------------------------------------------
 ; S     = DVD(15-0)         = ud1lo     = ud1lo
 ; TOS   = DVD(31-16)        = ud1hi     = ud1hi
-; T     = DIV(15-0)         = BASE
 ; W     = DVD(47-32)/REM    = rem       = digit --> char --> -[HP]
+; T     = DIV(15-0)         = BASE      = BASE
 ; X     = QUOTlo            = ud2lo     = ud2lo
 ; Y     = QUOThi            = ud2hi     = ud2hi
 ; rDODOES = count
@@ -654,9 +664,9 @@ MDIV1DIV2   RRA rDODOES             ;1  yes:loop count / 2
             MOV #0,S                ;1      DVDlo <-- 0
             MOV #0,X                ;1      QUOTlo <-- 0 (to do QUOThi = 0 at the end of division)
 ; -----------------------------------------
-MDIV1       CMP T,W                 ;1  REMlo U>= DIV ?
+MDIV1       CMP T,W                 ;1  REMlo U>= DIVlo ?
             JNC MDIV2               ;2  no : carry is reset
-            SUB T,W                 ;1  yes: REMlo - DIV ; carry is set
+            SUB T,W                 ;1  yes: REMlo - DIVlo ; carry is set
 MDIV2       ADDC X,X                ;1  RLC quotLO
             ADDC Y,Y                ;1  RLC quotHI
             SUB #1,rDODOES          ;1  Decrement loop counter
@@ -665,7 +675,7 @@ MDIV2       ADDC X,X                ;1  RLC quotLO
             ADDC TOS,TOS            ;1  RLC DVDhi
             ADDC W,W                ;1  RLC REMlo
             JNC MDIV1               ;2
-            SUB T,W                 ;1  REMlo - DIV
+            SUB T,W                 ;1  REMlo - DIVlo
             BIS #1,SR               ;1  SETC
             JMP MDIV2               ;2
 ENDMDIV     MOV #XDODOES,rDODOES    ;2  restore rDODOES
@@ -719,15 +729,15 @@ XDOVAR                              ; 4 for CALL rDOVAR    ADR -- VAR
             MOV @IP+,PC             ;+4 = 14~ = ITC+4
 
 ;-----------------------------------; 
-; RESET 6.1: init Forth engine      ; common part of QABORT|RESET
+; PUC 6.1: init Forth engine        ; common part of QABORT|WARM
 ;-----------------------------------; 
 INI_FORTH                           ;
             CALL @PC+               ;
 PFA_INI_FORTH
     .IFNDEF SD_CARD_LOADER
-            .word RET_ADR           ; INI_SOFT_DEF: default value, to do nothing
+            .word RET_ADR           ; INI_SOFT_APP default value
     .ELSE
-            .word INI_FORTH_SD      ; INI_SOFT_SD : close all handles, set default ACCEPT and TIB
+            .word INI_SOFT_SD       ; init software SD_Card : close all handles
     .ENDIF
             MOV #INI_FORTH_INI,X    ; in FRAM INFO
             MOV @X+,&PFAACCEPT      ; BODYACCEPT    --> PFAACCEPT
@@ -742,11 +752,8 @@ PFA_INI_FORTH
             MOV @X+,&CAPS           ; 32            --> CAPS            init CAPS ON
             MOV @X+,&BASE           ; 10            --> BASE            init decimal base
             MOV @RSP+,IP            ; init IP with RET_ADR = LIT|WARM from resp. QABORT|RESET
-            MOV #SEL_P_R_D,PC       ; goto RESET 6.2 to select PWR_STATE|RST_STATE|DEEP_RESET
+            MOV #SEL_P_R_D,PC       ; goto PUC 6.2 to select PWR_STATE|RST_STATE|DEEP_RESET
 
-;-------------------------------------------------------------------------------
-; SELECT TERMINAL: I2C_SLave, UART, HalfDuplex; ACCEPT KEY EMIT WIPE COLD WARM
-;-------------------------------------------------------------------------------
     .IFDEF TERMINAL_I2C
         .include "forthMSP430FR_TERM_I2C.asm"
     .ELSE
@@ -1639,13 +1646,6 @@ COMMA       MOV &DDP,W              ;3
             MOV @PSP+,TOS           ;2
             MOV @IP+,PC             ;4 15~
 
-            FORTHWORD "ALLOT"
-; https://forth-standard.org/standard/core/ALLOT
-; ALLOT   n --         allocate n bytes
-            ADD TOS,&DDP
-            MOV @PSP+,TOS
-            MOV @IP+,PC
-
         .IFDEF CORE_COMPLEMENT
             FORTHWORD "EXECUTE"
 ; https://forth-standard.org/standard/core/EXECUTE
@@ -1753,13 +1753,20 @@ EVALUATE    MOV #SOURCE_LEN,X       ;2
 FBLANK       CALL rDOCON
             .word   20h
 
+            FORTHWORD "ALLOT"
+; https://forth-standard.org/standard/core/ALLOT
+; ALLOT   n --         allocate n bytes
+ALLOT       ADD TOS,&DDP
+            MOV @PSP+,TOS
+            MOV @IP+,PC
+
 ;            FORTHWORD "ABORT"
 ; https://forth-standard.org/standard/core/ABORT
 ; Empty the data stack and perform the function of QUIT, 
 ; which includes emptying the return stack, without displaying a message.
 ; ABORT is the common next of WARM and ABORT"
 ABORT       MOV #PSTACK,PSP         ;
-            MOV #0,TOS              ; to set first PSP cell = 0, used next by WARM
+            MOV #0,TOS              ; to reset first PSP cell (TOS), used next by WARM
 ; https://forth-standard.org/standard/core/QUIT
 ; QUIT  --     interpret line by line the input stream
 QUIT        MOV #RSTACK,RSP         ;
@@ -1767,7 +1774,7 @@ QUIT        MOV #RSTACK,RSP         ;
             MOV #0,&STATE           ;
             ASMtoFORTH
     .IFDEF PROMPT
-QUIT1       .word   XSQUOTE         ;
+QUIT1       .word   XSQUOTE         ; background interpret loop
             .byte   5,13,10,"ok "   ; CR+LF + Forth prompt
 QUIT2       .word   TYPE            ; display it
     .ELSE
@@ -1796,7 +1803,7 @@ QUIT4       .word   INTERPRET       ; interpret this line|string
 ; https://forth-standard.org/standard/core/ABORTq
 ; ABORT"  i*x flag -- i*x   R: j*x -- j*x  flag=0
 ;         i*x flag --       R: j*x --      flag<>0
-; ABORT" " displays nothing
+; ABORT" " (empty string) displays nothing
 ABORTQUOTE  mDOCOL
             .word   SQUOTE
             .word   lit,QABORT,COMMA    ; see QABORT in forthMSP430FR_TERM_xxx.asm
@@ -2010,7 +2017,7 @@ HEADERLESS  SUB #2,PSP              ; common part of :NONAME and CODENNM
 
 ; DEFER! ( xt CFA_DEFERed_WORD -- ) 
 ;            FORTHWORD "DEFER!"
-DEFERSTORE  MOV @PSP+,2(TOS)        ; -- CFA_DEFERed_WORD          xt --> [CFA_DEFERed_WORD+2]
+DEFERSTORE  MOV @PSP+,2(TOS)        ; -- CFA_DEFERed_WORD          xt --> [PFA_DEFERed_WORD]
             MOV @PSP+,TOS           ; --
             MOV @IP+,PC             ;
 
@@ -2035,9 +2042,10 @@ IS_EXEC     ASMtoFORTH
     .ENDIF ; DEFERRED
 
     .IFDEF MSP430ASSEMBLER
+
            FORTHWORD "CODE"         ; a CODE word must be finished with ENDCODE
-ASMCODE     CALL #HEADER            ; (that makes room for CFA and PFA)
-ASMCODE1    SUB #4,&DDP             ; remove default room for CFA and PFA
+ASMCODE     CALL #HEADER            ; (that sets CFA and PFA)
+ASMCODE1    SUB #4,&DDP             ; remove default CFA and PFA
 ASMCODE2
     .IFDEF EXTENDED_ASM
             MOV #0,&RPT_WORD        ; clear RPT instruction
@@ -2045,32 +2053,28 @@ ASMCODE2
             mDOCOL
             .word   ALSO,ASSEMBLER,EXIT
 
+; HDNCODE (hidden CODE) is used to define a CODE word which must not to be executed by FORTH interpreter
+; i.e. typically an assembler word called by CALL and ended by RET, or an interrupt routine ended by RETI.
+; ASM words are only usable in ASSEMBLER defined words
+            FORTHWORD "HDNCODE"
+            MOV #BODYASSEMBLER,&CURRENT ; select ASSEMBLER word set to link this HDNCODE definition
+            JMP ASMCODE
+
+            asmword "ENDCODE"       ; test PSP balancing then restore previous CONTEXT
+ENDCODE     mDOCOL                  ; and set CURRENT = CONTEXT (to also end ASM definitions)
+            .word   QREVEAL
+ENDCODE1    .word   PREVIOUS,DEFINITIONS,EXIT
+
         .IFDEF DEFERRED
             FORTHWORD "CODENNM"     ; CODENoNaMe is the assembly counterpart of :NONAME
 CODENNM     PUSH #ASMCODE1          ; define HEADERLESS return
             JMP HEADERLESS          ; that makes room for CFA and PFA
         .ENDIF
 
-            asmword "ENDCODE"       ; test PSP balancing then restore previous context
-ENDCODE     mDOCOL
-            .word   QREVEAL,PREVIOUS,EXIT
+; here are 3 words used to switch FORTH <--> ASSEMBLER
 
-; ASM and ENDASM are used to define an assembler word which is not executable by FORTH interpreter
-; i.e. typically an assembler word called by CALL and ended by RET, or an interrupt routine ended by RETI.
-; ASM words are only usable in another ASSEMBLER words
-; any ASM word must be finished with ENDASM. 
-; The template " ASM ... COLON ... ; " or any other finishing by SEMICOLON is 
-; prohibited because it doesn't restore CURRENT.
-            FORTHWORD "ASM"
-            MOV #BODYASSEMBLER,&CURRENT ; select ASSEMBLER word set to link this ASM word
-            JMP ASMCODE
-
-            asmword "ENDASM"        ; end of an ASM word
-            mDOCOL                  ; select PREVIOUS word set as CURRENT word set
-            .word   ENDCODE,DEFINITIONS,EXIT
-
-; here are words used to switch from/to FORTH to/from ASSEMBLER
-            asmword "COLON"         ; compile DOCOL, remove ASSEMBLER from CONTEXT, switch to compilation state
+; COLON --      compile DOCOL, remove ASSEMBLER from CONTEXT and CURRENT, switch to compilation state
+            asmword "COLON"
             MOV &DDP,W
     .SWITCH DTC
     .CASE 1
@@ -2089,9 +2093,11 @@ COLON1      MOV #400Dh,2(W)         ; compile MOV PC,IP
     .ENDCASE ; DTC
 
 COLON2      MOV #-1,&STATE          ; enter in compile state
-            MOV #PREVIOUS,PC        ; restore previous state of CONTEXT (remove ASSEMBLER)
+            mDOCOL
+            .word   PREVIOUS,DEFINITIONS,EXIT ; restore previous CONTEXT and set CURRENT = CONTEXT
 
-            asmword "LO2HI"         ; same as COLON but without saving IP
+; LO2HI --       same as COLON but without saving IP
+            asmword "LO2HI"
     .SWITCH DTC
     .CASE 1                         ; compile 2 words
             MOV &DDP,W
@@ -2105,7 +2111,8 @@ COLON2      MOV #-1,&STATE          ; enter in compile state
             JMP COLON1
     .ENDCASE
 
-            FORTHWORDIMM "HI2LO"    ; immediate, switch to low level, set interpretation state, add ASSEMBLER context
+; HI2LO --       immediate, switch to low level, set interpretation state, add ASSEMBLER to CONTEXT
+            FORTHWORDIMM "HI2LO"    ;
             mDOCOL
             .word   HERE,CELLPLUS,COMMA ; compile HERE+2
             .word   LEFTBRACKET         ; switch to interpret state
@@ -2478,7 +2485,7 @@ ONLY        MOV #0,&CONTEXT+2
 DEFINITIONS MOV &CONTEXT,&CURRENT
             MOV @IP+,PC
 
-    .IFDEF USE_MOVE
+    .IFDEF USE_MOVE ; if UTILITY.asm|ANS_COMP.asm
             FORTHWORD "MOVE"
 ; https://forth-standard.org/standard/core/MOVE
 ; MOVE    addr1 addr2 u --     smart move
@@ -2574,7 +2581,7 @@ RST_HERE    MOV &DDP,&RST_DP
             JMP PWR_HERE            ; and obviously the same for POWER_ON...
 
 ;-------------------------------------------------------------------------------
-; RESET 6.2: SELECT PWR_STATE|RST_STATE|DEEP_RESET       <== INI_FORTH
+; PUC 6.2: SELECT PWR_STATE|RST_STATE|DEEP_RESET       <== INI_FORTH
 ;-------------------------------------------------------------------------------
 SEL_P_R_D   CMP #0Eh,TOS            ;
             JZ PWR_STATE            ; if RSTIV_MEM = 14 (SYSSVSH event)
@@ -2626,38 +2633,38 @@ INIVECLOOP  SUB #2,X                ;
 ;===============================================================================
 RESET
 ;===============================================================================
-; RESET 1: replace pin RESET by pin NMI, stops WDT_RESET
+; PUC 1: replace pin RESET by pin NMI, stops WDT_RESET
 ;-------------------------------------------------------------------------------
             BIS #3,&SFRRPCR         ; pin RST becomes pin NMI with falling edge, so SYSRSTIV = 4 
             BIS #10h,&SFRIE1        ; enable NMI interrupt ==> hardware RESET is redirected to COLD.
             MOV #5A80h,&WDTCTL      ; disable WDT RESET
 ;-------------------------------------------------------------------------------
-; RESET 2: INIT STACKS
+; PUC 2: INIT STACKS
 ;-------------------------------------------------------------------------------
             MOV #RSTACK,RSP         ; init return stack
             MOV #PSTACK,PSP         ; init parameter stack
 ;-------------------------------------------------------------------------------
-; RESET 3: init RAM to 0
+; PUC 3: init RAM to 0
 ;-------------------------------------------------------------------------------
             MOV #RAM_LEN,X
 INITRAMLOOP SUB #2,X                ; 1
             MOV #0,RAM_ORG(X)       ; 3
             JNZ INITRAMLOOP         ; 2     6 cycles loop !
 ;-------------------------------------------------------------------------------
-; RESET 4: I/O, RAM, RTC, CS, SYS initialisation limited to FastForth usage.
+; PUC 4: I/O, RAM, RTC, CS, SYS initialisation limited to FastForth usage.
 ;          All unused I/O are set as input with pullup resistor.
 ;-------------------------------------------------------------------------------
             .include "TargetInit.asm"   ; include target specific init code
 ;-------------------------------------------------------------------------------
-; RESET 5: GET SYSRSTIV
+; PUC 5: GET SYSRSTIV
 ;-------------------------------------------------------------------------------
             MOV &RSTIV_MEM,TOS      ; get RSTIV_MEM = Soft_SYSRSTIV
             MOV #0,&RSTIV_MEM       ; clear RSTIV_MEM
             BIS &SYSRSTIV,TOS       ; hard_SYSRSTIV|soft_SYSRSTIV --> TOS; SYSRSTIV = 0
 ;-------------------------------------------------------------------------------
-; RESET 6: START FORTH engine
+; PUC 6: START FORTH engine
 ;-------------------------------------------------------------------------------
-            CALL #INI_FORTH         ; common ?ABORT|RESET "hybrid" subroutine with return to FORTH interpreter
+            CALL #INI_FORTH         ; common ?ABORT|PUC "hybrid" subroutine with return to FORTH interpreter
             .word   WARM            ; goto WARM, without return. See forthMSP430FR_TERM_xxx.asm
 ;-----------------------------------; 
 

@@ -45,10 +45,10 @@ BIT #BIT10,TOS
 0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (FIXPOINT input), set TOS = 0  
 MOV TOS,0(PSP)
 MOV &VERSION,TOS
-SUB #307,TOS            \ FastForth V3.7
+SUB #308,TOS            \ FastForth V3.8
 COLON
 $0D EMIT    \ return to column 1 without CR
-ABORT" FastForth version = 3.7 please!"
+ABORT" FastForth V3.8 please!"
 ABORT" buil FastForth with FIXPOINT_INPUT addon !"
 PWR_STATE           \ if no abort remove this word
 $1B EMIT $63 EMIT   \ send 'ESC c' (clear screen)
