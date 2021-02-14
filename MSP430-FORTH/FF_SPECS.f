@@ -656,7 +656,7 @@ ESC [7m ." FORTH word set"  ESC [0m \ subtitle in reverse video
 WORDS                               \ type FORTH word set 
 CR
 HI2LO
-MOV #WARM+4,PC  \ type count of bytes free without re-executing INI_APP, no return
+MOV #WARM_DISPLAY,PC  \ type count of bytes free without re-executing INI_APP, no return
 ENDCODE
 
 SPECS \ here FastForth displays a message with some informations
