@@ -1,0 +1,14 @@
+#!/bin/bash
+
+echo $1
+echo $2
+echo $3
+
+#gema -nobackup -line -t '\r\n=\n'  -f  ../inc/$2.pat $1.f $FF/MSP430-FORTH/$1.4th 
+gema -nobackup -line -t '\r\n=\n'  -f  ../inc/$2.pat $1.f $1.4th 
+gema -line -t '\n=\r\n'  ../MSP430-FORTH/$1.4th ../MSP430-FORTH/LAST.4th
+#rm ../MSP430-FORTH/$1.4th
+
+
+cat LAST.4th > /dev/ttyUSB0
+#cp LAST.4th  /dev/ttyUSB0

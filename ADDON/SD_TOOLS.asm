@@ -1,5 +1,13 @@
 ; -*- coding: utf-8 -*-
 
+    .IFNDEF ANDD
+;https://forth-standard.org/standard/core/AND
+;C AND    x1 x2 -- x3           logical AND
+            FORTHWORD "AND"
+ANDD        AND @PSP+,TOS    
+            MOV @IP+,PC
+    .ENDIF
+
     .IFNDEF MAX
 
 ;https://forth-standard.org/standard/core/MAX
@@ -113,6 +121,7 @@ DUMP        PUSH IP
             ADD @PSP,TOS                    ; -- ORG END
             ASMtoFORTH
             .word   SWAP                    ; -- END ORG
+            .word   LIT,FFF0h,AND           ; -- END ORG_modulo_16
             .word   xdo                     ; --
 DUMP1       .word   CR
             .word   II,lit,4,UDOTR,SPACE    ; generate address
@@ -158,7 +167,7 @@ DisplaySector
 ; ----------------------------------;
 ; read first sector of Cluster and dump it
 ; ----------------------------------;
-            FORTHWORD "CLUSTR."     ; cluster.  --         don't forget to add decimal point to your sector number (if < 65536)
+            FORTHWORD "CLUSTER."    ; cluster.  --         don't forget to add decimal point to your sector number (if < 65536)
 ; ----------------------------------;
 CLUSTER     BIT.B #CD_SD,&SD_CDIN   ; test Card Detect: memory card present ?
             JZ CD_CLUST_OK          ;
@@ -196,11 +205,6 @@ CLUSTER1    RRA W                   ; shift one right multiplicator
             MOV TOS,2(PSP)          ;           save TOS
             MOV &DIRclusterL,0(PSP) ;
             MOV &DIRclusterH,TOS    ;
-            CMP #0,TOS
-            JNZ CLUSTER
-            CMP #1,0(PSP)           ; cluster 1 ?
-            JNZ CLUSTER       
-            MOV &OrgRootDir,0(PSP)  ; if yes, special case of FAT16 OrgRootDir        
-            JMP SECTOR
+            JMP CLUSTER
 ; ----------------------------------;
 

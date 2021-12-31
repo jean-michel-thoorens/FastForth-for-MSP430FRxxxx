@@ -14,7 +14,7 @@ exit
 
 call  %~d1\config\Select.bat SelectTemplate
 
-@start  %~d1\config\CopyTo_SD_Card.bat %1 %~d1\inc\%template% %2
+@start  %~d1\config\CopyTo_SD_Card.bat %1 %~dp1inc\%template% %2
 
 ::PAUSE > NUL
 exit

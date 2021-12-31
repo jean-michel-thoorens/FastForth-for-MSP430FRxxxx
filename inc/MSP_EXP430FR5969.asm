@@ -108,7 +108,7 @@
 
 ; P4.5 - Switch S1              <--- LCD contrast + (finger :-)
 ; P1.1 - Switch S2              <--- LCD contrast - (finger ;-)
-                                    
+
 ;  GND -                 J1.2   <-------+---0V0---------->  1 LCD_Vss
 ;  VCC -                 J1.3   >------ | --3V6-----+---->  2 LCD_Vdd
 ;                                       |           |
@@ -125,23 +125,23 @@
 ; PJ.1 -                 J3.3   <---------red------------> 12 LCD_DB5
 ; PJ.2 -                 J3.5   <---------orange---------> 13 LCD_DB5
 ; PJ.3 -                 J3.7   <---------yellow---------> 14 LCD_DB7
-         
-;                                 +--4k7-< DeepRST <-- GND 
+
+;                                 +--4k7-< DeepRST <-- GND
 ;                                 |
 ; P2.0 - UCA0 TXD        J13.8  <-+->white--> RX   UARTtoUSB bridge
 ; P2.1 - UCA0 RXD        J13.10 <----green--- TX   UARTtoUSB bridge
 ; P4.1 - RTS             J13.14 -----blue---> CTS  UARTtoUSB bridge (optional hardware control flow)
 ;  VCC -                 J13.16 <---- VCC  (optional supply from UARTtoUSB bridge - WARNING ! 3.3V !)
 ;  GND -                 J13.20 <---> GND  (optional supply from UARTtoUSB bridge)
-         
+
 ;  VCC -                 J11.1  ----> VCC  SD_CardAdapter
 ;  GND -                 J12.3  <---> GND  SD_CardAdapter
-; P2.4 - UCA1 CLK        J4.6   ----> CLK  SD_CardAdapter (SCK)  
+; P2.4 - UCA1 CLK        J4.6   ----> CLK  SD_CardAdapter (SCK)
 ; P2.5 - UCA1 TXD/SIMO   J4.4   ----> SDI  SD_CardAdapter (MOSI)
 ; P2.6 - UCA1 RXD/SOMI   J4.3   <---- SDO  SD_CardAdapter (MISO)
 ; P4.3 -                 J4.5   ----> CS   SD_CardAdapter (Card Select)
 ; P4.2 -                 J4.2   <---- CD   SD_CardAdapter (Card Detect)
-;                                                                    
+;
 ; P4.0 use is not compatible with core option "TERMINAL5WIRES"
 ; P4.0 -                 J3.10  <---- OUT  IR_Receiver (1 TSOP32236) ───┐
 ;                                                                       └┌───┐
@@ -157,11 +157,11 @@
 ; P1.6 - UCB0 SDA/SIMO   J5.15  <---> SDA  I2C MASTER/SLAVE
 ; P3.0 -                 J5.7   <---- free
 
-; PJ.4 - LFXI 32768Hz quartz  
-; PJ.5 - LFXO 32768Hz quartz  
-; PJ.6 - HFXI 
-; PJ.7 - HFXO 
-  
+; PJ.4 - LFXI 32768Hz quartz
+; PJ.5 - LFXO 32768Hz quartz
+; PJ.6 - HFXI
+; PJ.7 - HFXO
+
 ; P2.3 - NC
 ; P2.7 - NC
 ; P3.1 - NC
@@ -209,8 +209,8 @@ BUS_TERM    .equ    0C0h
     .ENDIF
 
     .IFDEF UCA0_TERM
-; P2.0  UCA0-TXD    --> USB2UART RXD    
-; P2.1  UCA0-RXD    <-- USB2UART TXD 
+; P2.0  UCA0-TXD    --> USB2UART RXD
+; P2.1  UCA0-RXD    <-- USB2UART TXD
 TERM_IN     .equ P2IN
 TERM_SEL    .equ P2SEL1
 TERM_REN    .equ P2REN
@@ -245,13 +245,10 @@ SD_CDIN     .equ    P4IN
 SD_CSOUT    .equ    P4OUT
 SD_CSDIR    .equ    P4DIR
 CD_SD       .equ    4       ; P4.2 as Card Detect
-CS_SD       .equ    8       ; P4.3 as Chip Select    
+CS_SD       .equ    8       ; P4.3 as Chip Select
 
 SW1_IN      .equ    P4IN
 SW1         .equ    20h     ; P4.5 = S1
-
-WIPE_IN     .equ    P4IN
-IO_WIPE     .equ    20h     ; P4.5 = S1 = FORTH Deep_RST pin
 
 LED1_OUT    .equ    P4OUT
 LED1_DIR    .equ    P4DIR
@@ -261,11 +258,11 @@ LED1        .equ    40h     ;  P4.6 LED1 red
             MOV #0BFFFh,&PBOUT  ; all pins as input with pull up resistor else P4.6
 
     .IFDEF TERMINAL4WIRES
-; RTS output is wired to the CTS input of UART2USB bridge 
+; RTS output is wired to the CTS input of UART2USB bridge
 ; configure RTS as output high to disable RX TERM during start FORTH
             BIS.B #RTS,&P4DIR   ; RTS as output high
         .IFDEF TERMINAL5WIRES
-; CTS input must be wired to the RTS output of UART2USB bridge 
+; CTS input must be wired to the RTS output of UART2USB bridge
 ; configure CTS as input low (true) to avoid lock when CTS is not wired
             BIC.B #CTS,&P4OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES

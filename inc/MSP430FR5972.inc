@@ -59,7 +59,7 @@ JTAG_SIG2       .equ 0FF82h      ; if JTAG_SIG1=0xAAAA, length of password strin
 BSL_SIG1        .equ 0FF84h      ;
 BSL_SIG2        .equ 0FF86h      ;
 JTAG_PASSWORD   .equ 0FF86h      ; up to 0FFC5h : 256 bits
-I2CSLA0         .equ 0FFA2h      ; UCBxI2COA0 default value address 
+I2CSLA0         .equ 0FFA2h      ; UCBxI2COA0 default value address
 I2CSLA1         .equ 0FFA4h      ; UCBxI2COA1 default value address
 I2CSLA2         .equ 0FFA6h      ; UCBxI2COA2 default value address
 I2CSLA3         .equ 0FFA8h      ; UCBxI2COA3 default value address
@@ -233,7 +233,7 @@ P1SELC      .equ PA_SFR + 16h    ; Port 1 SELection Complement
 P1IES       .equ PA_SFR + 18h    ; Port 1 Interrupt Edge Select
 P1IE        .equ PA_SFR + 1Ah    ; Port 1 Interrupt Enable
 P1IFG       .equ PA_SFR + 1Ch    ; Port 1 Interrupt FlaG
-P1IV        .equ PA_SFR + 0Eh    ; Port 1 Interrupt Vector word 
+P1IV        .equ PA_SFR + 0Eh    ; Port 1 Interrupt Vector word
 
 P2IN        .equ PA_SFR + 01h    ; Port 2 INput
 P2OUT       .equ PA_SFR + 03h    ; Port 2 OUTput
@@ -245,7 +245,7 @@ P2SELC      .equ PA_SFR + 17h    ; Port 2 SELection Complement
 P2IES       .equ PA_SFR + 19h    ; Port 2 Interrupt Edge Select
 P2IE        .equ PA_SFR + 1Bh    ; Port 2 Interrupt Enable
 P2IFG       .equ PA_SFR + 1Dh    ; Port 2 Interrupt FlaG
-P2IV        .equ PA_SFR + 1Eh    ; Port 2 Interrupt Vector word 
+P2IV        .equ PA_SFR + 1Eh    ; Port 2 Interrupt Vector word
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4
@@ -272,7 +272,7 @@ P3SELC      .equ PB_SFR + 16h    ; Port 3 Complement Selection
 P3IES       .equ PB_SFR + 18h    ; Port 3 Interrupt Edge Select
 P3IE        .equ PB_SFR + 1Ah    ; Port 3 Interrupt Enable
 P3IFG       .equ PB_SFR + 1Ch    ; Port 3 Interrupt Flag
-P3IV        .equ PB_SFR + 0Eh    ; Port 3 Interrupt Vector word 
+P3IV        .equ PB_SFR + 0Eh    ; Port 3 Interrupt Vector word
 
 P4IN        .equ PB_SFR + 01h    ; Port 4 Input */
 P4OUT       .equ PB_SFR + 03h    ; Port 4 Output
@@ -284,7 +284,7 @@ P4SELC      .equ PB_SFR + 17h    ; Port 4 Complement Selection
 P4IES       .equ PB_SFR + 19h    ; Port 4 Interrupt Edge Select
 P4IE        .equ PB_SFR + 1Bh    ; Port 4 Interrupt Enable
 P4IFG       .equ PB_SFR + 1Dh    ; Port 4 Interrupt Flag
-P4IV        .equ PB_SFR + 1Eh    ; Port 4 Interrupt Vector word 
+P4IV        .equ PB_SFR + 1Eh    ; Port 4 Interrupt Vector word
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT5/6
@@ -364,7 +364,7 @@ RTCPS1CTL     .set RTC_C_SFR + 0Ah
 RTCPS         .set RTC_C_SFR + 0Ch ; = RT1PS:RT0PS
 RTCIV         .set RTC_C_SFR + 0Eh
 RTCSEC        .set RTC_C_SFR + 10h
-RTCCNT1       .set RTC_C_SFR + 10h     
+RTCCNT1       .set RTC_C_SFR + 10h
 RTCMIN        .set RTC_C_SFR + 11h
 RTCCNT2       .set RTC_C_SFR + 11h
 RTCHOUR       .set RTC_C_SFR + 12h
@@ -407,14 +407,14 @@ RES3      .equ MPY_SFR + 2Ah    ; 32x32-bit result 3 */
 MPY32CTL0 .equ MPY_SFR + 2Ch    ; MPY32 control register 0
 
 
-MPUCTL0     .equ MPU_SFR + 00h  ; MPU control 0             
-MPUCTL1     .equ MPU_SFR + 02h  ; MPU control 1             
-MPUSEGB2    .equ MPU_SFR + 04h  ; MPU Segmentation Border 2 
-MPUSEGB1    .equ MPU_SFR + 06h  ; MPU Segmentation Border 1 
-MPUSAM      .equ MPU_SFR + 08h  ; MPU access management     
-MPUIPC0     .equ MPU_SFR + 0Ah  ; MPU IP control 0                      
-MPUIPSEGB2  .equ MPU_SFR + 0Ch  ; MPU IP Encapsulation Segment Border 2 
-MPUIPSEGB1  .equ MPU_SFR + 0Eh  ; MPU IP Encapsulation Segment Border 1 
+MPUCTL0     .equ MPU_SFR + 00h  ; MPU control 0
+MPUCTL1     .equ MPU_SFR + 02h  ; MPU control 1
+MPUSEGB2    .equ MPU_SFR + 04h  ; MPU Segmentation Border 2
+MPUSEGB1    .equ MPU_SFR + 06h  ; MPU Segmentation Border 1
+MPUSAM      .equ MPU_SFR + 08h  ; MPU access management
+MPUIPC0     .equ MPU_SFR + 0Ah  ; MPU IP control 0
+MPUIPSEGB2  .equ MPU_SFR + 0Ch  ; MPU IP Encapsulation Segment Border 2
+MPUIPSEGB1  .equ MPU_SFR + 0Eh  ; MPU IP Encapsulation Segment Border 1
 
 ; ----------------------------------------------------------------------
 ; eUSCI_A0
@@ -497,7 +497,7 @@ TERM_STATW      .equ eUSCI_B0_SFR + 08h     ; USCI_B0 Status Word
 TERM_RXBUF      .equ eUSCI_B0_SFR + 0Ch     ; USCI_B0 Receive Buffer 8
 TERM_TXBUF      .equ eUSCI_B0_SFR + 0Eh     ; USCI_B0 Transmit Buffer 8
 TERM_I2COA0     .equ eUSCI_B0_SFR + 14h     ; USCI_B0 I2C Own Address 0
-TERM_ADDRX      .equ eUSCI_B0_SFR + 1Ch     ; USCI_B0  Received Address Register 
+TERM_ADDRX      .equ eUSCI_B0_SFR + 1Ch     ; USCI_B0  Received Address Register
 TERM_I2CSA      .equ eUSCI_B0_SFR + 20h     ; USCI_B0 I2C Slave Address
 TERM_IE         .equ eUSCI_B0_SFR + 2Ah     ; USCI_B0 Interrupt Enable
 TERM_IFG        .equ eUSCI_B0_SFR + 2Ch     ; USCI_B0 Interrupt Flags Register

@@ -47,42 +47,67 @@ FREQ_KHZ=\$1800!        FREQUENCY (in kHz)
 TERMBRW_RST=\$1802!     TERMBRW_RST
 TERMMCTLW_RST=\$1804!   TERMMCTLW_RST
 I2CSLAVEADR=\$1802!     I2C_SLAVE address
-I2CSLAVEADR1=\$1804!    
+I2CSLAVEADR1=\$1804!
 LPM_MODE=\$1806!        LPM_MODE value, LPM0+GIE is the default value
-RSTIV_MEM=\$1808!       SYSRSTIV memory, set to -1 to do Deep RESET
-RST_DP=\$180A!          RST value for DP
-RST_VOC=\$180C!         RST value for VOClink
-VERSION=\$180E!
-THREADS=\$1810!         THREADS
-KERNEL_ADDON=\$1812!
-
-WIPE_INI_=\$1814!       MOV #WIPE_INI,X
-WIPE_COLD=\$1814!       WIPE value for PFA_COLD
-WIPE_INI_FORTH=\$1816!  WIPE value for PFA_INI_FORTH
-WIPE_SLEEP=\$1818!      WIPE value for PFA_SLEEP
-WIPE_WARM=\$181A!       WIPE value for PFA_WARM
-WIPE_TERM_INT=\$181C!   WIPE value for TERMINAL vector
-WIPE_DP=\$182E!         WIPE value for RST_DP   
-WIPE_VOC=\$1820!        WIPE value for RST_VOC
-
-INI_FORTH_INI=\$1822!   MOV #INI_FORTH_INI,X    \ >BODY instruction of INI_FORTH subroutine
-INIT_ACCEPT=\$1822!     WIPE value for PFAACCEPT
-INIT_CR=\$1824!         WIPE value for PFACR
-INIT_EMIT=\$1826!       FORTH value for PFAEMIT
-INIT_KEY=\$1828!        WIPE value for PFAKEY
-INIT_CIB=\$182A!        WIPE value for CIB_ADR
-HALF_FORTH_INI=\$182C!  to preserve the state of DEFERed words, used by user INI_SOFT_APP as:
-!                       ADD #4,0(RSP)           \ skip INI_FORTH >BODY instruction "MOV #INI_FORTH_INI,X"
-!                       MOV #HALF_FORTH_INI,X   \ replace it by "MOV #HALF_FORTH_INI,X"
-!                       MOV @RSP+,PC            \ then RET
-INIT_DOCOL=\$182C!      FORTH value for rDOCOL   (R4)
-INIT_DODOES=\$182E!     FORTH value for rDODOES  (R5)
-INIT_DOCON=\$1830!      FORTH value for rDOCON   (R6)
-INIT_DOVAR=\$1832!      FORTH value for rDOVAR   (R7)
-INIT_CAPS=\$1834!       FORTH value for CAPS
-INIT_BASE=\$1836!       FORTH value for BASE
-!                       free EPROM
-
+USERSTIV=\$1808!        user SYS variable, defines software RESET, DEEP_RST, INIT_HARWARE, etc.
+VERSION=\$180A!
+THREADS=\$180C!         THREADS
+KERNEL_ADDON=\$180E!    BIT15=FLOORED DIVISION
+!                       BIT14=LF_XTAL
+!                       BIT13=UART CTS
+!                       BIT12=UART RTS
+!                       BIT11=UART XON/XOFF
+!                       BIT10=UART half duplex
+!                       BIT9=I2C_TERMINAL
+!                       BIT8=Q15.16 input
+!                       BIT7=DOUBLE input
+!                       BIT6=assembler 20 bits
+!                       BIT5=assembler 16 bits
+!                       BIT4=assembler 16 bits with 20 bits addr
+!                       BIT3=vocabulary set
+!                       BIT2=
+!                       BIT1=
+!                       BIT0=
+!
+DEEP_ORG=\$1810!        MOV #DEEP_ORG,X
+DEEP_TERM_VEC=\$1810!   to DEEP_INIT TERMINAL vector
+DEEP_COLD=\$1812!       to DEEP_INIT COLD_APP
+DEEP_SOFT=\$1814!       to DEEP_INIT SOFT_APP
+DEEP_HARD=\$1816!       to DEEP_INIT HARD_APP
+DEEP_SLEEP=\$1818!      to DEEP_INIT SLEEP_APP
+DEEP_DP=\$181A!         to DEEP_INIT RST_DP
+DEEP_LASTVOC=\$181C!    to DEEP_INIT RST_LASTVOC
+DEEP_CURRENT=\$181E!    to DEEP_INIT RST_CURRENT
+DEEP_CONTEXT=\$1820!    to DEEP_INIT RST_CONTEXT
+!
+PUC_ABORT_ORG=\$1822!   MOV #PUC_ABORT_ORG,X
+INIT_ACCEPT=\$1822!     to INIT PFA_ACCEPT
+INIT_EMIT=\$1824!       to INIT PFA_EMIT
+INIT_KEY=\$1826!        to INIT PFA_KEY
+INIT_CIB=\$1828!        to INIT CIB_ORG
+FORTH_ORG=\$182A!       MOV #FORTH_ORG,X        \to preserve the state of DEFERed words
+INIT_RSP=\$182A!        to INIT RSP
+INIT_DOCOL=\$182C!      to INIT rDOCOL   (R4) to restore rDOCOL: MOV &INIT_DOCOL,rDOCOL
+INIT_DODOES=\$182E!     to INIT rDODOES  (R5)
+INIT_DOCON=\$1830!      to INIT rDOCON   (R6)
+INIT_DOVAR=\$1832!      to INIT rDOVAR   (R7)
+INIT_CAPS=\$1834!       to INIT CAPS
+INIT_BASE=\$1836!       to INIT BASE
+INIT_LEAVE=\$1838!      to INIT LEAVEPTR
+!
+RST_ORG=\$183A!
+RST_LEN=\$10!
+COLD_APP=\$183A!        COLD_APP
+SOFT_APP=\$183C!        SOFT_APP
+HARD_APP=\$183E!        HARD_APP
+SLEEP_APP=\$1840!       SLEEP_APP
+RST_DP=\$1842!          RST_RET value for (RAM) DDP
+RST_LASTVOC=\$1844!     RST_RET value for (RAM) LASTVOC
+RST_CURRENT=\$1846!     RST_RET value for (RAM) CURRENT
+RST_CONTEXT=\$1848!     RST_RET value for (RAM) CONTEXT (8 CELLS)
+!
+! $185A = free EPROM
+!
 ! ============================================
 ! FRAM TLV
 ! ============================================
@@ -103,52 +128,47 @@ LSTACK_SIZE=\#16! words
 PSTACK_SIZE=\#48! words
 RSTACK_SIZE=\#48! words
 PAD_LEN=\#84! bytes
-TIB_LEN=\#84! bytes
+CIB_LEN=\#84! bytes
 HOLD_SIZE=\#34! bytes
 
 ! ----------------------------------------------
 ! FastForth RAM memory map (>= 1k):
 ! ----------------------------------------------
-LEAVEPTR=\$2000!    \ Leave-stack pointer, init by QUIT
-LSATCK=\$2000!      \ leave stack,      grow up
-PSTACK=\$2080!      \ parameter stack,  grow down
-RSTACK=\$20E0!      \ Return stack,     grow down
-
-PAD_I2CADR=\$20E0!  \ RX I2C address
-PAD_I2CCNT=\$20E2!  \ count max
-PAD_ORG=\$20E4!     \ user scratch pad buffer, 84 bytes, grow up
-
-TIB_I2CADR=\$2138!  \ TX I2C address 
-TIB_I2CCNT=\$213A!  \ count of bytes
-TIB_ORG=\$213C!     \ Terminal input buffer, 84 bytes, grow up
-
-HOLDS_ORG=\$2190!   \ a good address for HOLDS
-HOLD_BASE=\$21B2!   \ BASE HOLD area, grow down
-
-! ----------------------
-! NOT SAVED VARIABLES
-! ----------------------
-
+LEAVEPTR=\$2000!        Leave-stack pointer, init by QUIT
+LSATCK=\$2000!          leave stack,      grow up
+PSTACK=\$2080!          parameter stack,  grow down
+RSTACK=\$20E0!          Return stack,     grow down
+!
+PAD_I2CADR=\$20E0!      RX I2C address
+PAD_I2CCNT=\$20E2!      count max
+PAD_ORG=\$20E4!         user scratch pad buffer, 84 bytes, grow up
+!
+TIB_I2CADR=\$2138!      TX I2C address
+TIB_I2CCNT=\$213A!      count of bytes
+TIB_ORG=\$213C!         Terminal input buffer, 84 bytes, grow up
+!
+HOLDS_ORG=\$2190!       base address for HOLDS
+HOLD_BASE=\$21B2!       BASE HOLD area, grow down
+!
 HP=\$21B2!              HOLD ptr
-CAPS=\$21B4!            CAPS ON/OFF flag, must be set to -1 before first reset !
-LAST_NFA=\$21B6!
-LAST_THREAD=\$21B8!
-LAST_CFA=\$21BA!
-LAST_PSP=\$21BC!
-
-STATEADR=\$21BE!           Interpreter state
-
-SOURCE_LEN=\$21C0!      len of input stream
-SOURCE_ORG=\$21C2!      adr of input stream
-TOIN=\$21C4!            >IN
-DP=\$21C6!              dictionary ptr
-
-LASTVOC=\$21C8!         keep VOC-LINK
-CONTEXT=\$21CA!         CONTEXT dictionnary space (8 CELLS)
-CURRENT=\$21DA!         CURRENT dictionnary ptr
-
-BASEADR=\$21DC!           numeric base, must be defined before first reset !
-LINE=\$21DE!            line in interpretation, activated with NOECHO, desactivated with ECHO
+LAST_NFA=\$21B4!
+LAST_THREAD=\$21B6!
+LAST_CFA=\$21B8!
+LAST_PSP=\$21BA!
+!
+STATEADR=\$21BC!        Interpreter state
+BASEADR=\$21BE!
+CAPS=\$21C0 !
+!
+SOURCE_LEN=\$21C2!      len of input stream
+SOURCE_ORG=\$21C4!      adr of input stream
+TOIN=\$21C6!            >IN
+DP=\$21C8!              dictionary ptr
+!
+LASTVOC=\$21CA!         keep VOC-LINK
+CURRENT=\$21CC!         CURRENT dictionnary ptr
+CONTEXT=\$21CE!         CONTEXT dictionnary space (8 CELLS)
+!
 ! ---------------------------------------
 !21E0! 28 RAM bytes free
 ! ---------------------------------------
@@ -162,7 +182,7 @@ SD_BUF=\$2200!      \ SD_Card buffer
 BUFEND=\$2400!
 
 ! ---------------------------------------
-! FAT16 FileSystemInfos 
+! FAT16 FileSystemInfos
 ! ---------------------------------------
 FATtype=\$2402!
 BS_FirstSectorL=\$2404!
@@ -190,7 +210,7 @@ SectorH=\$241C!
 ! ---------------------------------------
 ! BUFFER management
 ! ---------------------------------------
-BufferPtr=\$241E! 
+BufferPtr=\$241E!
 BufferLen=\$2420!
 
 ! ---------------------------------------
@@ -198,8 +218,8 @@ BufferLen=\$2420!
 ! ---------------------------------------
 ClusterL=\$2422!     16 bits wide (FAT16)
 ClusterH=\$2424!     16 bits wide (FAT16)
-NewClusterL=\$2426!  16 bits wide (FAT16) 
-NewClusterH=\$2428!  16 bits wide (FAT16) 
+NewClusterL=\$2426!  16 bits wide (FAT16)
+NewClusterH=\$2428!  16 bits wide (FAT16)
 CurFATsector=\$242A!
 
 ! ---------------------------------------
@@ -207,7 +227,7 @@ CurFATsector=\$242A!
 ! ---------------------------------------
 DIRclusterL=\$242C!  contains the Cluster of current directory ; 1 if FAT16 root directory
 DIRclusterH=\$242E!  contains the Cluster of current directory ; 1 if FAT16 root directory
-EntryOfst=\$2430!  
+EntryOfst=\$2430!
 
 ! ---------------------------------------
 ! Handle Pointer
@@ -223,7 +243,7 @@ EndOfPath=\$2436!
 ! ---------------------------------------
 ! Handle structure
 ! ---------------------------------------
-! three handle tokens : 
+! three handle tokens :
 ! token = 0 : free handle
 ! token = 1 : file to read
 ! token = 2 : file updated (write)
@@ -247,7 +267,7 @@ HDLW_PrevLEN=24!    previous LEN
 HDLW_PrevORG=26!    previous ORG
 
 
-!OpenedFirstFile     ; "openedFile" structure 
+!OpenedFirstFile     ; "openedFile" structure
 HandleMax=8!
 HandleLenght=28!
 FirstHandle=\$2438!
@@ -268,41 +288,49 @@ MAIN_ORG=\$8000!            Code space start
 
 SLEEP=\$8000!               CODE_WITHOUT_RETURN, CPU shutdown
 LIT=\$800A!                 CODE compiled by LITERAL
-XSQUOTE=\$8014!             CODE compiled by S" and S_
-HEREXEC=\$8028!             CODE HERE and BEGIN execute address
-QFBRAN=\$8034!              CODE compiled by IF UNTIL
-BRAN=\$803A!                CODE compiled by ELSE REPEAT AGAIN
-NEXT_ADR=\$803C!            CODE NEXT instruction (MOV @IP+,PC)
-XDO=\$803E!                 CODE compiled by DO
-XPLOOP=\$804E!              CODE compiled by +LOOP
-XLOOP=\$8060!               CODE compiled by LOOP
-MUSMOD=\$8066!              ASM CODE 32/16 unsigned division, used by ?NUMBER, UM/MOD
-MDIV1DIV2=\$8078!           ASM CODE input for 48/16 unsigned division with DVDhi=0, see DOUBLE M*/
-MDIV1=\$8080!               ASM CODE input for 48/16 unsigned division, see DOUBLE M*/
-RET_ADR=\$80AA!             ASM CODE of INI_FORTH_PFA and MARKER+8 definitions,
-SETIB=\$80AC!               CODE Set Input Buffer with org & len values, reset >IN pointer
-REFILL=\$80BC!              CODE accept one line from input and leave org len of input buffer
-CIB_ADR=\$80CA!             [CIB_ADR] = TIB_ORG by default; may be redirected to SDIB_ORG
-XDODOES=\$80D4!             to restore rDODOES: MOV #XDODOES,rDODOES
-XDOCON=\$80E2!              to restore rDOCON: MOV #XDOCON,rDOCON
-XDOVAR=\$80EE!              to restore rDOVAR: MOV #XDOVAR,rDOVAR
+XSQUOTE=\$801E!             CODE compiled by S" and S_
+HEREXEC=\$8032!             CODE HERE and BEGIN execute address
+MUSMOD=\$803E!              asm CODE 32/16 unsigned division, used by ?NUMBER, UM/MOD
+MDIV1DIV2=\$8050!           asm CODE input for 48/16 unsigned division with DVDhi=0, see DOUBLE M*/
+MDIV1=\$8058!               asm CODE input for 48/16 unsigned division, see DOUBLE M*/
+RET_ADR=\$8082!             asm CODE of INIT_SOFT_PFA and MARKER+8 definitions,
+SETIB=\$8084!               CODE Set Input Buffer with org & len values, reset >IN pointer
+REFILL=\$8094!              CODE accept one line from input and leave org len of input buffer
+CIB_ORG=\$80A0!             [CIB_ORG] = TIB_ORG by default; may be redirected to SDIB_ORG
+QFBRAN=\$80AC!              CODE compiled by IF UNTIL
+BRAN=\$80B2!                CODE compiled by ELSE REPEAT AGAIN
+NEXT_ADR=\$80B4!            CODE NEXT instruction (MOV @IP+,PC)
+XDODOES=\$80B6!             to restore rDODOES: MOV #XDODOES,rDODOES
+XDOCON=\$80C4!              to restore rDOCON: MOV #XDOCON,rDOCON
+!                           to restore rDOVAR: MOV &INIT_DOVAR,rDOVAR
 !                           to restore rDOCOL: MOV &INIT_DOCOL,rDOCOL
-INI_FORTH=\$80F8!           asm CODE common part of RST and QABORT, starts FORTH engine
-QABORT=\$812A!              CODE_WITHOUT_RETURN run-time part of ABORT"
-ABORT_TERM=\$8136!          CODE_WITHOUT_RETURN, called by QREVEAL and INTERPRET  
+INIT_FORTH=\$80D0!          asm CODE common part of RST and QABORT, starts FORTH engine
+QABORT=\$8108!              CODE_WITHOUT_RETURN run-time part of ABORT"
+ABORT_TERM=\$8112!          CODE_WITHOUT_RETURN, called by QREVEAL and INTERPRET
 !-------------------------------------------------------------------------------
-UART_COLD_TERM=\$8194!      ASM CODE, content of COLD+2 by default
-UART_INIT_TERM=\$819C!      ASM CODE, content of WARM+2 by default
-UART_RXON=\$81C6!           ASM CODE, content of SLEEP+2 by default
-UART_RXOFF=\$81C8!          ASM CODE, called by ACCEPT before RX char LF.
+! UART FASTFORTH
 !-------------------------------------------------------------------------------
-I2C_COLD_TERM=\$81B8!       ASM CODE, content of COLD_PFA by default
-I2C_INIT_TERM=\$818E!       ASM CODE, content of WARM_PFA by default
-I2C_RXON=\$81BA!            ASM CODE, content of SLEEP_PFA by default
-I2C_CTRL_CH=\$81BC!         ASM CODE, used as is: MOV.B #CTRL_CHAR,Y
+UART_INIT_TERM=\$8154!      asm CODE, content of WARM+2 by default (WARM starts with: CALL #UART_INIT_TERM)
+UART_COLD_TERM=\$817E!      asm CODE, content of COLD+2 by default (COLD starts with: CALL #UART_COLD_TERM)
+UART_INIT_SOFT=\$8184!      asm CODE, content of INIT_FORTH+2 (by default, INIT_FORTH starts with: CALL #RET_ADR)
+UART_RXON=\$8186!           asm CODE, content of SLEEP+2 (by default, SLEEP starts with: CALL #UART_RXON)
+UART_RXON=KEY\+\$8!         asm CODE, content of SLEEP+2 (by default, SLEEP starts with: CALL #UART_RXON)
+UART_RXOFF=ACCEPT\+\$2A!    asm CODE, called by ACCEPT after 'CR' and before 'LF'.
+!-------------------------------------------------------------------------------
+! I2C FASTFORTH
+!-------------------------------------------------------------------------------
+I2C_ACCEPT=\$8144!          asm CODE, content of SLEEP+2 by default
+I2C_CTRL_CH=\$8146!         asm CODE, used as is: MOV.B #CTRL_CHAR,Y
 !                                                 CALL #I2C_CTRL_CH
+I2C_COLD_TERM=\$8156!       asm CODE, content of COLD+2, RET address by default
+I2C_INIT_SOFT=\$8156!       asm CODE, content of INIT_FORTH+2, RET address by default
+I2C_INIT_TERM=\$8158!       asm CODE, content of WARM+2 by default
+I2C_WARM=\$8180!            WARM address
 !-------------------------------------------------------------------------------
-
+NOPUC=SYS\+\$0A!            NOPUC               with FORTH: ' SYS 10 +
+COLD=SYS\+\$16!             COLD address                    ' SYS 22 +
+ABORT=ALLOT\+\$8!           CODE_WITHOUT_RETURN             ' ALLOT 8 +
+QUIT=ALLOT\+\$0E!           CODE_WITHOUT_RETURN             ' ALLOT 14 +
 
 ! ----------------------------------------------
 ! Interrupt Vectors and signatures - MSP430FR2476
@@ -311,8 +339,8 @@ FRAM_FULL=\$FF40!       64 bytes are sufficient considering what can be compiled
 SIGNATURES=\$FF80!      JTAG/BSL signatures
 JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW ; reset by wipe and by S1+<reset>
 JTAG_SIG2=\$FF82!       if JTAG_SIG <> |\$FFFFFFFF, \$00000000|, SBW and JTAG are locked
-BSL_SIG1=\$FF84!        
-BSL_SIG2=\$FF86!        
+BSL_SIG1=\$FF84!
+BSL_SIG2=\$FF86!
 BSL_I2C_ADRE=\$FFA0!
 I2CSLA0=\$FFA2!         UCBxI2COA0 default value address
 I2CSLA1=\$FFA4!         UCBxI2COA1 default value address
@@ -323,38 +351,6 @@ BSL_PASSWORD=\$FFE0!    256 bits
 VECT_ORG=\$FFDA!        FFDA-FFFF
 VECT_LEN=\$38!
 ! ----------------------------------------------
-
-
-;   .org    INTVECT         ; FFDA-FFFF 26 vectors + reset
-;
-;           .word  reset        ; FFCAh - eCOMP0       
-;           .word  reset        ; FFCCh - P6       
-;           .word  reset        ; FFCEh - P5       
-;           .word  reset        ; FFD0h - P4       
-;           .word  reset        ; FFD2h - P3       
-;           .word  reset        ; FFD4h - P2       
-;           .word  reset        ; FFD6h - P1       
-;           .word  reset        ; FFD8h - ADC10    
-;           .word  reset        ; FFDAh - eUSCI_B1 
-;           .word  reset        ; FFDCh - eUSCI_B0 
-;           .word  reset        ; FFDEh - eUSCI_A1 
-;           .word  reset        ; FFE0h - eUSCI_A0 
-;           .word  reset        ; FFE2h - WDT      
-;           .word  reset        ; FFE4h - RTC      
-;           .word  reset        ; FFE6h - TB0_x    
-;           .word  reset        ; FFE8h - TB0_0    
-;           .word  reset        ; FFEAh - TA3_x    
-;           .word  reset        ; FFECh - TA3_0    
-;           .word  reset        ; FFEEh - TA2_x    
-;           .word  reset        ; FFF0h - TA2_0    
-;           .word  reset        ; FFF2h - TA1_x    
-;           .word  reset        ; FFF4h - TA1_0    
-;           .word  reset        ; FFF6h - TA0_x    
-;           .word  reset        ; FFF8h - TA0_0    
-;           .word  reset        ; FFFAh - UserNMI  
-;           .word  reset        ; FFFCh - SysNMI  
-
-    
 ECOMP0_VEC=\$FFCA!
 P6_VEC=\$FFCC!
 P5_VEC=\$FFCE!
@@ -383,10 +379,6 @@ U_NMI_VEC=\$FFFA!
 S_NMI_VEC=\$FFFC!
 RST_VEC=\$FFFE!
 
-
-
-
-
 ! ----------------------------------------------------------------------
 ! MSP430FR2433 Peripheral File Map
 ! ----------------------------------------------------------------------
@@ -404,6 +396,7 @@ RST_VEC=\$FFFE!
 !TA1_SFR         .equ 03C0h
 !TA2_SFR         .equ 0400h
 !TA3_SFR         .equ 0440h
+!TB0_SFR         .equ 0480h
 !MPY_SFR         .equ 04C0h
 !eUSCI_A0_SFR    .equ 0500h           ; eUSCI_A0
 !eUSCI_A1_SFR    .equ 0520h           ; eUSCI_A1
@@ -418,41 +411,41 @@ SFRRPCR=\$104!      \ SFR reset pin control
 PMMCTL0=\$120!      \ PMM Control 0
 PMMCTL1=\$122!      \ PMM Control 0
 PMMCTL2=\$124!      \ PMM Control 0
-PMMIFG=\$12A!       \ PMM interrupt flags 
+PMMIFG=\$12A!       \ PMM interrupt flags
 PM5CTL0=\$130!      \ PM5 Control 0
 
-SYSCTL=\$140!       \ System control 
-SYSBSLC=\$142!      \ Bootstrap loader configuration area             
-SYSJMBC=\$146!      \ JTAG mailbox control        
-SYSJMBI0=\$148!     \ JTAG mailbox input 0        
-SYSJMBI1=\$14A!     \ JTAG mailbox input 1        
-SYSJMBO0=\$14C!     \ JTAG mailbox output 0       
-SYSJMBO1=\$14E!     \ JTAG mailbox output 1       
-SYSUNIV=\$15A!      \ User NMI vector generator   
-SYSSNIV=\$15C!      \ System NMI vector generator 
-SYSRSTIV=\$15E!     \ Reset vector generator      
-SYSCFG0=\$160!      \ System configuration 0 
-SYSCFG1=\$162!      \ System configuration 1 
-SYSCFG2=\$164!      \ System configuration 2 
+SYSCTL=\$140!       \ System control
+SYSBSLC=\$142!      \ Bootstrap loader configuration area
+SYSJMBC=\$146!      \ JTAG mailbox control
+SYSJMBI0=\$148!     \ JTAG mailbox input 0
+SYSJMBI1=\$14A!     \ JTAG mailbox input 1
+SYSJMBO0=\$14C!     \ JTAG mailbox output 0
+SYSJMBO1=\$14E!     \ JTAG mailbox output 1
+SYSUNIV=\$15A!      \ User NMI vector generator
+SYSSNIV=\$15C!      \ System NMI vector generator
+SYSRSTIV=\$15E!     \ Reset vector generator
+SYSCFG0=\$160!      \ System configuration 0
+SYSCFG1=\$162!      \ System configuration 1
+SYSCFG2=\$164!      \ System configuration 2
 
-CSCTL0=\$180!       \ CS control 0 
-CSCTL1=\$182!       \ CS control 1 
-CSCTL2=\$184!       \ CS control 2 
-CSCTL3=\$186!       \ CS control 3 
-CSCTL4=\$188!       \ CS control 4 
-CSCTL5=\$18A!       \ CS control 5 
-CSCTL6=\$18C!       \ CS control 6 
-CSCTL7=\$18E!       \ CS control 7 
-CSCTL8=\$190!       \ CS control 8 
+CSCTL0=\$180!       \ CS control 0
+CSCTL1=\$182!       \ CS control 1
+CSCTL2=\$184!       \ CS control 2
+CSCTL3=\$186!       \ CS control 3
+CSCTL4=\$188!       \ CS control 4
+CSCTL5=\$18A!       \ CS control 5
+CSCTL6=\$18C!       \ CS control 6
+CSCTL7=\$18E!       \ CS control 7
+CSCTL8=\$190!       \ CS control 8
 
-FRCTLCTL0=\$1A0!    \ FRAM control 0    
-GCCTL0=\$1A4!       \ General control 0 
-GCCTL1=\$1A6!       \ General control 1 
+FRCTLCTL0=\$1A0!    \ FRAM control 0
+GCCTL0=\$1A4!       \ General control 0
+GCCTL1=\$1A6!       \ General control 1
 
-CRC16DI=\$1C0!      \ CRC data input                  
-CRCDIRB=\$1C2!      \ CRC data input reverse byte     
-CRCINIRES=\$1C4!    \ CRC initialization and result   
-CRCRESR=\$1C6!      \ CRC result reverse byte  
+CRC16DI=\$1C0!      \ CRC data input
+CRCDIRB=\$1C2!      \ CRC data input reverse byte
+CRCINIRES=\$1C4!    \ CRC initialization and result
+CRCRESR=\$1C6!      \ CRC result reverse byte
 
 WDTCTL=\$1CC!        \ WDT control register
 
@@ -547,77 +540,77 @@ P6IE=\$25B!
 P6IFG=\$25D!
 P6IV=\$25E!
 
-RTCCTL=\$300!       \ RTC control                                  
-RTCIV=\$304!        \ RTC interrupt vector word                       
-RTCMOD=\$308!       \ RTC modulo                                       
-RTCCNT=\$30C!       \ RTC counter register    
+RTCCTL=\$300!       \ RTC control
+RTCIV=\$304!        \ RTC interrupt vector word
+RTCMOD=\$308!       \ RTC modulo
+RTCCNT=\$30C!       \ RTC counter register
 
 TACLR=4!
 TAIFG=1!
 CCIFG=1!
 
-TA0CTL=\$380!       \ TA0 control                 
-TA0CCTL0=\$382!     \ Capture/compare control 0   
-TA0CCTL1=\$384!     \ Capture/compare control 1   
-TA0CCTL2=\$386!     \ Capture/compare control 2   
-TA0R=\$390!         \ TA0 counter register        
-TA0CCR0=\$392!      \ Capture/compare register 0  
-TA0CCR1=\$394!      \ Capture/compare register 1  
-TA0CCR2=\$396!      \ Capture/compare register 2  
-TA0EX0=\$3A0!       \ TA0 expansion register 0    
-TA0IV=\$3AE!        \ TA0 interrupt vector        
+TA0CTL=\$380!       \ TA0 control
+TA0CCTL0=\$382!     \ Capture/compare control 0
+TA0CCTL1=\$384!     \ Capture/compare control 1
+TA0CCTL2=\$386!     \ Capture/compare control 2
+TA0R=\$390!         \ TA0 counter register
+TA0CCR0=\$392!      \ Capture/compare register 0
+TA0CCR1=\$394!      \ Capture/compare register 1
+TA0CCR2=\$396!      \ Capture/compare register 2
+TA0EX0=\$3A0!       \ TA0 expansion register 0
+TA0IV=\$3AE!        \ TA0 interrupt vector
 
-TA1CTL=\$3C0!       \ TA1 control                 
-TA1CCTL0=\$3C2!     \ Capture/compare control 0   
-TA1CCTL1=\$3C4!     \ Capture/compare control 1   
-TA1CCTL2=\$3C6!     \ Capture/compare control 2   
-TA1R=\$3D0!         \ TA1 counter register        
-TA1CCR0=\$3D2!      \ Capture/compare register 0  
-TA1CCR1=\$3D4!      \ Capture/compare register 1  
-TA1CCR2=\$3D6!      \ Capture/compare register 2  
-TA1EX0=\$3E0!       \ TA1 expansion register 0    
-TA1IV=\$3EE!        \ TA1 interrupt vector        
+TA1CTL=\$3C0!       \ TA1 control
+TA1CCTL0=\$3C2!     \ Capture/compare control 0
+TA1CCTL1=\$3C4!     \ Capture/compare control 1
+TA1CCTL2=\$3C6!     \ Capture/compare control 2
+TA1R=\$3D0!         \ TA1 counter register
+TA1CCR0=\$3D2!      \ Capture/compare register 0
+TA1CCR1=\$3D4!      \ Capture/compare register 1
+TA1CCR2=\$3D6!      \ Capture/compare register 2
+TA1EX0=\$3E0!       \ TA1 expansion register 0
+TA1IV=\$3EE!        \ TA1 interrupt vector
 
-TA2CTL=\$400!       \ TA2 control                 
-TA2CCTL0=\$402!     \ Capture/compare control 0   
-TA2CCTL1=\$404!     \ Capture/compare control 1   
-TA2CCTL2=\$406!     \ Capture/compare control 2   
-TA2R=\$410!         \ TA2 counter register        
-TA2CCR0=\$412!      \ Capture/compare register 0  
-TA2CCR1=\$414!      \ Capture/compare register 1  
-TA2CCR1=\$416!      \ Capture/compare register 2  
-TA2EX0=\$420!       \ TA2 expansion register 0    
-TA2IV=\$42E!        \ TA2 interrupt vector        
+TA2CTL=\$400!       \ TA2 control
+TA2CCTL0=\$402!     \ Capture/compare control 0
+TA2CCTL1=\$404!     \ Capture/compare control 1
+TA2CCTL2=\$406!     \ Capture/compare control 2
+TA2R=\$410!         \ TA2 counter register
+TA2CCR0=\$412!      \ Capture/compare register 0
+TA2CCR1=\$414!      \ Capture/compare register 1
+TA2CCR1=\$416!      \ Capture/compare register 2
+TA2EX0=\$420!       \ TA2 expansion register 0
+TA2IV=\$42E!        \ TA2 interrupt vector
 
-TA3CTL=\$440!       \ TA3 control                 
-TA3CCTL0=\$442!     \ Capture/compare control 0   
-TA3CCTL1=\$444!     \ Capture/compare control 1   
-TA3CCTL1=\$446!     \ Capture/compare control 2   
-TA3R=\$450!         \ TA3 counter register        
-TA3CCR0=\$452!      \ Capture/compare register 0  
-TA3CCR1=\$454!      \ Capture/compare register 1  
-TA3CCR1=\$456!      \ Capture/compare register 2  
-TA3EX0=\$460!       \ TA3 expansion register 0    
-TA3IV=\$46E!        \ TA3 interrupt vector        
+TA3CTL=\$440!       \ TA3 control
+TA3CCTL0=\$442!     \ Capture/compare control 0
+TA3CCTL1=\$444!     \ Capture/compare control 1
+TA3CCTL1=\$446!     \ Capture/compare control 2
+TA3R=\$450!         \ TA3 counter register
+TA3CCR0=\$452!      \ Capture/compare register 0
+TA3CCR1=\$454!      \ Capture/compare register 1
+TA3CCR1=\$456!      \ Capture/compare register 2
+TA3EX0=\$460!       \ TA3 expansion register 0
+TA3IV=\$46E!        \ TA3 interrupt vector
 
-TB0CTL=\$480!       \ TB0 control                 
-TB0CCTL0=\$482!     \ Capture/compare control 0   
-TB0CCTL1=\$484!     \ Capture/compare control 1   
-TB0CCTL2=\$486!     \ Capture/compare control 2   
-TB0CCTL3=\$488!     \ Capture/compare control 3   
-TB0CCTL4=\$48A!     \ Capture/compare control 4   
-TB0CCTL5=\$48C!     \ Capture/compare control 5   
-TB0CCTL6=\$48E!     \ Capture/compare control 6   
-TB0R=\$490!         \ TB0 counter register        
-TB0CCR0=\$492!      \ Capture/compare register 0  
-TB0CCR1=\$494!      \ Capture/compare register 1  
-TB0CCR2=\$496!      \ Capture/compare register 2  
-TB0CCR3=\$498!      \ Capture/compare register 3  
-TB0CCR5=\$49A!      \ Capture/compare register 4 
-TB0CCR5=\$49C!      \ Capture/compare register 5  
-TB0CCR6=\$49E!      \ Capture/compare register 6  
-TB0EX0=\$4A0!       \ TB0 expansion register 0    
-TB0IV=\$4AE!        \ TB0 interrupt vector        
+TB0CTL=\$480!       \ TB0 control
+TB0CCTL0=\$482!     \ Capture/compare control 0
+TB0CCTL1=\$484!     \ Capture/compare control 1
+TB0CCTL2=\$486!     \ Capture/compare control 2
+TB0CCTL3=\$488!     \ Capture/compare control 3
+TB0CCTL4=\$48A!     \ Capture/compare control 4
+TB0CCTL5=\$48C!     \ Capture/compare control 5
+TB0CCTL6=\$48E!     \ Capture/compare control 6
+TB0R=\$490!         \ TB0 counter register
+TB0CCR0=\$492!      \ Capture/compare register 0
+TB0CCR1=\$494!      \ Capture/compare register 1
+TB0CCR2=\$496!      \ Capture/compare register 2
+TB0CCR3=\$498!      \ Capture/compare register 3
+TB0CCR5=\$49A!      \ Capture/compare register 4
+TB0CCR5=\$49C!      \ Capture/compare register 5
+TB0CCR6=\$49E!      \ Capture/compare register 6
+TB0EX0=\$4A0!       \ TB0 expansion register 0
+TB0IV=\$4AE!        \ TB0 interrupt vector
 
 MPY=\$4C0!          \ 16-bit operand 1 - multiply
 MPYS=\$4C2!         \ 16-bit operand 1 - signed multiply
@@ -644,110 +637,110 @@ RES3=\$4EA!         \ 32 x 32 result 3 - most significant word
 MPY32CTL0=\$4EC!    \ MPY32 control register 0
 
 
-UCA0CTLW0=\$500!    \ eUSCI_A control word 0        
-UCA0CTLW1=\$502!    \ eUSCI_A control word 1        
-UCA0BRW=\$506!         
-UCA0BR0=\$506!      \ eUSCI_A baud rate 0           
-UCA0BR1=\$507!      \ eUSCI_A baud rate 1           
-UCA0MCTLW=\$508!    \ eUSCI_A modulation control    
-UCA0STAT=\$50A!     \ eUSCI_A status                
-UCA0RXBUF=\$50C!    \ eUSCI_A receive buffer        
-UCA0TXBUF=\$50E!    \ eUSCI_A transmit buffer       
-UCA0ABCTL=\$510!    \ eUSCI_A LIN control           
-UCA0IRTCTL=\$512!   \ eUSCI_A IrDA transmit control 
-UCA0IRRCTL=\$513!   \ eUSCI_A IrDA receive control  
-UCA0IE=\$51A!       \ eUSCI_A interrupt enable      
-UCA0IFG=\$51C!      \ eUSCI_A interrupt flags       
-UCA0IV=\$51E!       \ eUSCI_A interrupt vector word 
+UCA0CTLW0=\$500!    \ eUSCI_A control word 0
+UCA0CTLW1=\$502!    \ eUSCI_A control word 1
+UCA0BRW=\$506!
+UCA0BR0=\$506!      \ eUSCI_A baud rate 0
+UCA0BR1=\$507!      \ eUSCI_A baud rate 1
+UCA0MCTLW=\$508!    \ eUSCI_A modulation control
+UCA0STAT=\$50A!     \ eUSCI_A status
+UCA0RXBUF=\$50C!    \ eUSCI_A receive buffer
+UCA0TXBUF=\$50E!    \ eUSCI_A transmit buffer
+UCA0ABCTL=\$510!    \ eUSCI_A LIN control
+UCA0IRTCTL=\$512!   \ eUSCI_A IrDA transmit control
+UCA0IRRCTL=\$513!   \ eUSCI_A IrDA receive control
+UCA0IE=\$51A!       \ eUSCI_A interrupt enable
+UCA0IFG=\$51C!      \ eUSCI_A interrupt flags
+UCA0IV=\$51E!       \ eUSCI_A interrupt vector word
 
-UCA1CTLW0=\$520!    \ eUSCI_A control word 0        
-UCA1CTLW1=\$522!    \ eUSCI_A control word 1        
-UCA1BRW=\$526!         
-UCA1BR0=\$526!      \ eUSCI_A baud rate 0           
-UCA1BR1=\$527!      \ eUSCI_A baud rate 1           
-UCA1MCTLW=\$528!    \ eUSCI_A modulation control    
-UCA1STAT=\$52A!     \ eUSCI_A status                
-UCA1RXBUF=\$52C!    \ eUSCI_A receive buffer        
-UCA1TXBUF=\$52E!    \ eUSCI_A transmit buffer       
-UCA1ABCTL=\$530!    \ eUSCI_A LIN control           
-UCA1IRTCTL=\$532!   \ eUSCI_A IrDA transmit control 
-UCA1IRRCTL=\$533!   \ eUSCI_A IrDA receive control  
-UCA1IE=\$53A!       \ eUSCI_A interrupt enable      
-UCA1IFG=\$53C!      \ eUSCI_A interrupt flags       
-UCA1IV=\$53E!       \ eUSCI_A interrupt vector word 
+UCA1CTLW0=\$520!    \ eUSCI_A control word 0
+UCA1CTLW1=\$522!    \ eUSCI_A control word 1
+UCA1BRW=\$526!
+UCA1BR0=\$526!      \ eUSCI_A baud rate 0
+UCA1BR1=\$527!      \ eUSCI_A baud rate 1
+UCA1MCTLW=\$528!    \ eUSCI_A modulation control
+UCA1STAT=\$52A!     \ eUSCI_A status
+UCA1RXBUF=\$52C!    \ eUSCI_A receive buffer
+UCA1TXBUF=\$52E!    \ eUSCI_A transmit buffer
+UCA1ABCTL=\$530!    \ eUSCI_A LIN control
+UCA1IRTCTL=\$532!   \ eUSCI_A IrDA transmit control
+UCA1IRRCTL=\$533!   \ eUSCI_A IrDA receive control
+UCA1IE=\$53A!       \ eUSCI_A interrupt enable
+UCA1IFG=\$53C!      \ eUSCI_A interrupt flags
+UCA1IV=\$53E!       \ eUSCI_A interrupt vector word
 
-UCB0CTLW0=\$540!    \ eUSCI_B control word 0          
-UCB0CTLW1=\$542!    \ eUSCI_B control word 1 
-UCB0BRW=\$546!         
-UCB0BR0=\$546!      \ eUSCI_B bit rate 0              
-UCB0BR1=\$547!      \ eUSCI_B bit rate 1              
-UCB0STATW=\$548!    \ eUSCI_B status word 
-UCBCNT0=\$549!      \ eUSCI_B hardware count           
-UCB0TBCNT=\$54A!    \ eUSCI_B byte counter threshold  
-UCB0RXBUF=\$54C!    \ eUSCI_B receive buffer          
-UCB0TXBUF=\$54E!    \ eUSCI_B transmit buffer         
-UCB0I2COA0=\$554!   \ eUSCI_B I2C own address 0       
-UCB0I2COA1=\$556!   \ eUSCI_B I2C own address 1       
-UCB0I2COA2=\$558!   \ eUSCI_B I2C own address 2       
-UCB0I2COA3=\$55A!   \ eUSCI_B I2C own address 3       
-UCB0ADDRX=\$55C!    \ eUSCI_B received address        
-UCB0ADDMASK=\$55E!  \ eUSCI_B address mask            
-UCB0I2CSA=\$560!    \ eUSCI I2C slave address         
-UCB0IE=\$56A!       \ eUSCI interrupt enable          
-UCB0IFG=\$56C!      \ eUSCI interrupt flags           
-UCB0IV=\$56E!       \ eUSCI interrupt vector word     
+UCB0CTLW0=\$540!    \ eUSCI_B control word 0
+UCB0CTLW1=\$542!    \ eUSCI_B control word 1
+UCB0BRW=\$546!
+UCB0BR0=\$546!      \ eUSCI_B bit rate 0
+UCB0BR1=\$547!      \ eUSCI_B bit rate 1
+UCB0STATW=\$548!    \ eUSCI_B status word
+UCBCNT0=\$549!      \ eUSCI_B hardware count
+UCB0TBCNT=\$54A!    \ eUSCI_B byte counter threshold
+UCB0RXBUF=\$54C!    \ eUSCI_B receive buffer
+UCB0TXBUF=\$54E!    \ eUSCI_B transmit buffer
+UCB0I2COA0=\$554!   \ eUSCI_B I2C own address 0
+UCB0I2COA1=\$556!   \ eUSCI_B I2C own address 1
+UCB0I2COA2=\$558!   \ eUSCI_B I2C own address 2
+UCB0I2COA3=\$55A!   \ eUSCI_B I2C own address 3
+UCB0ADDRX=\$55C!    \ eUSCI_B received address
+UCB0ADDMASK=\$55E!  \ eUSCI_B address mask
+UCB0I2CSA=\$560!    \ eUSCI I2C slave address
+UCB0IE=\$56A!       \ eUSCI interrupt enable
+UCB0IFG=\$56C!      \ eUSCI interrupt flags
+UCB0IV=\$56E!       \ eUSCI interrupt vector word
 
-UCB1CTLW0=\$580!    \ eUSCI_B control word 0          
-UCB1CTLW1=\$582!    \ eUSCI_B control word 1 
-UCB1BRW=\$586!         
-UCB1BR0=\$586!      \ eUSCI_B bit rate 0              
-UCB1BR1=\$587!      \ eUSCI_B bit rate 1              
-UCB1STATW=\$588!    \ eUSCI_B status word 
-UCB1NT0=\$589!      \ eUSCI_B hardware count           
-UCB1TBCNT=\$58A!    \ eUSCI_B byte counter threshold  
-UCB1RXBUF=\$58C!    \ eUSCI_B receive buffer          
-UCB1TXBUF=\$58E!    \ eUSCI_B transmit buffer         
-UCB1I2COA0=\$594!   \ eUSCI_B I2C own address 0       
-UCB1I2COA1=\$596!   \ eUSCI_B I2C own address 1       
-UCB1I2COA2=\$598!   \ eUSCI_B I2C own address 2       
-UCB1I2COA3=\$59A!   \ eUSCI_B I2C own address 3       
-UCB1ADDRX=\$59C!    \ eUSCI_B received address        
-UCB1ADDMASK=\$59E!  \ eUSCI_B address mask            
-UCB1I2CSA=\$5A0!    \ eUSCI I2C slave address         
-UCB1IE=\$5AA!       \ eUSCI interrupt enable          
-UCB1IFG=\$5AC!      \ eUSCI interrupt flags           
-UCB1IV=\$5AE!       \ eUSCI interrupt vector word     
+UCB1CTLW0=\$580!    \ eUSCI_B control word 0
+UCB1CTLW1=\$582!    \ eUSCI_B control word 1
+UCB1BRW=\$586!
+UCB1BR0=\$586!      \ eUSCI_B bit rate 0
+UCB1BR1=\$587!      \ eUSCI_B bit rate 1
+UCB1STATW=\$588!    \ eUSCI_B status word
+UCB1NT0=\$589!      \ eUSCI_B hardware count
+UCB1TBCNT=\$58A!    \ eUSCI_B byte counter threshold
+UCB1RXBUF=\$58C!    \ eUSCI_B receive buffer
+UCB1TXBUF=\$58E!    \ eUSCI_B transmit buffer
+UCB1I2COA0=\$594!   \ eUSCI_B I2C own address 0
+UCB1I2COA1=\$596!   \ eUSCI_B I2C own address 1
+UCB1I2COA2=\$598!   \ eUSCI_B I2C own address 2
+UCB1I2COA3=\$59A!   \ eUSCI_B I2C own address 3
+UCB1ADDRX=\$59C!    \ eUSCI_B received address
+UCB1ADDMASK=\$59E!  \ eUSCI_B address mask
+UCB1I2CSA=\$5A0!    \ eUSCI I2C slave address
+UCB1IE=\$5AA!       \ eUSCI interrupt enable
+UCB1IFG=\$5AC!      \ eUSCI interrupt flags
+UCB1IV=\$5AE!       \ eUSCI interrupt vector word
 
 UCTXACK=\$20!
 UCTR=\$10!
 
-BAKMEM0=\$660!      \ Backup Memory 0     
-BAKMEM1=\$662!      \ Backup Memory 1     
-BAKMEM2=\$664!      \ Backup Memory 2     
-BAKMEM3=\$666!      \ Backup Memory 3     
-BAKMEM4=\$668!      \ Backup Memory 4     
-BAKMEM5=\$66A!      \ Backup Memory 5     
-BAKMEM6=\$66C!      \ Backup Memory 6     
-BAKMEM7=\$66E!      \ Backup Memory 7     
-BAKMEM8=\$670!      \ Backup Memory 8     
-BAKMEM9=\$672!      \ Backup Memory 9     
-BAKMEM10=\$674!     \ Backup Memory 10    
-BAKMEM11=\$676!     \ Backup Memory 11    
-BAKMEM12=\$678!     \ Backup Memory 12    
-BAKMEM13=\$67A!     \ Backup Memory 13    
-BAKMEM14=\$67C!     \ Backup Memory 14    
-BAKMEM15=\$67E!     \ Backup Memory 15    
+BAKMEM0=\$660!      \ Backup Memory 0
+BAKMEM1=\$662!      \ Backup Memory 1
+BAKMEM2=\$664!      \ Backup Memory 2
+BAKMEM3=\$666!      \ Backup Memory 3
+BAKMEM4=\$668!      \ Backup Memory 4
+BAKMEM5=\$66A!      \ Backup Memory 5
+BAKMEM6=\$66C!      \ Backup Memory 6
+BAKMEM7=\$66E!      \ Backup Memory 7
+BAKMEM8=\$670!      \ Backup Memory 8
+BAKMEM9=\$672!      \ Backup Memory 9
+BAKMEM10=\$674!     \ Backup Memory 10
+BAKMEM11=\$676!     \ Backup Memory 11
+BAKMEM12=\$678!     \ Backup Memory 12
+BAKMEM13=\$67A!     \ Backup Memory 13
+BAKMEM14=\$67C!     \ Backup Memory 14
+BAKMEM15=\$67E!     \ Backup Memory 15
 
-ADC10CTL0=\$700!    \ ADC10_B Control register 0               
-ADC10CTL1=\$702!    \ ADC10_B Control register 1               
-ADC10CTL2=\$704!    \ ADC10_B Control register 2               
-ADC10LO=\$706!      \ ADC10_B Window Comparator Low Threshold  
-ADC10HI=\$708!      \ ADC10_B Window Comparator High Threshold 
-ADC10MCTL0=\$70A!   \ ADC10_B Memory Control Register 0        
-ADC10MEM0=\$712!    \ ADC10_B Conversion Memory Register       
-ADC10IE=\$71A!      \ ADC10_B Interrupt Enable                 
-ADC10IFG=\$71C!     \ ADC10_B Interrupt Flags                  
-ADC10IV=\$71E!      \ ADC10_B Interrupt Vector Word            
+ADC10CTL0=\$700!    \ ADC10_B Control register 0
+ADC10CTL1=\$702!    \ ADC10_B Control register 1
+ADC10CTL2=\$704!    \ ADC10_B Control register 2
+ADC10LO=\$706!      \ ADC10_B Window Comparator Low Threshold
+ADC10HI=\$708!      \ ADC10_B Window Comparator High Threshold
+ADC10MCTL0=\$70A!   \ ADC10_B Memory Control Register 0
+ADC10MEM0=\$712!    \ ADC10_B Conversion Memory Register
+ADC10IE=\$71A!      \ ADC10_B Interrupt Enable
+ADC10IFG=\$71C!     \ ADC10_B Interrupt Flags
+ADC10IV=\$71E!      \ ADC10_B Interrupt Vector Word
 
 ADCON=\$10!
 ADCSTART=\$03!

@@ -30,7 +30,7 @@
 ; P2 - P9.2 ESICH2
 ; P3 - P4.3 UCA0 RXD
 ; P4 - P4.2 UCA0 TXD
-; P5 - P3.2 UCB1 SCL    
+; P5 - P3.2 UCB1 SCL
 ; P6 - P9.3 ESICH3
 ; P7 - P1.4 UCB0 CLK
 ; P8 - P2.0 TB0.6
@@ -106,7 +106,7 @@
 
 ; P1.1 - Switch S1              <--- LCD contrast + (finger :-)
 ; P1.2 - Switch S2              <--- LCD contrast - (finger ;-)
-                                    
+
 ;  GND                          <-------+---0V0---------->  1 LCD_Vss
 ;  VCC                          >------ | --3V3-----+---->  2 LCD_Vdd
 ;                                       |           |
@@ -124,7 +124,7 @@
 ; P9.5/A13/C13                  ------------------------->  5 LCD_R/W
 ; P9.6/A14/C14                  ------------------------->  6 LCD_EN
 
-;                                 +--4k7-< DeepRST <-- GND 
+;                                 +--4k7-< DeepRST <-- GND
 ;                                 |
 ; P3.4 - UCA1 TXD               <-+-> RX  UARTtoUSB bridge
 ; P3.5 - UCA1 RXD               <---- TX  UARTtoUSB bridge
@@ -134,7 +134,7 @@
 
 ;  VCC -                        ----> VCC SD_CardAdapter
 ;  GND -                        <---> GND SD_CardAdapter
-; P2.2 -  UCA0 CLK              ----> CLK SD_CardAdapter (SCK)  
+; P2.2 -  UCA0 CLK              ----> CLK SD_CardAdapter (SCK)
 ; P2.6 -                        ----> CS  SD_CardAdapter (Card Select)
 ; P2.0 -  UCA0 TXD/SIMO         ----> SDI SD_CardAdapter (MOSI)
 ; P2.1 -  UCA0 RXD/SOMI         <---- SDO SD_CardAdapter (MISO)
@@ -157,11 +157,11 @@
 ; P3.2 -UCB1 SCL/SOMI           ----> free
 ; P3.3 -         TA1.1          <---> free
 
-; PJ.4 - LFXI 32768Hz quartz  
-; PJ.5 - LFXO 32768Hz quartz  
-; PJ.6 - HFXI 
-; PJ.7 - HFXO 
-  
+; PJ.4 - LFXI 32768Hz quartz
+; PJ.5 - LFXO 32768Hz quartz
+; PJ.6 - HFXI
+; PJ.7 - HFXO
+
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : I/O
@@ -215,7 +215,7 @@ BUS_TERM    .equ    0C0h
 SD_CDIN     .equ P2IN
 SD_CSOUT    .equ P2OUT
 SD_CSDIR    .equ P2DIR
-CS_SD       .equ 40h    ; P2.6 Chip Select  
+CS_SD       .equ 40h    ; P2.6 Chip Select
 CD_SD       .equ 80h    ; P2.7 Card Detect
 
 ; PORTx default wanted state : pins as input with pullup resistor
@@ -256,11 +256,11 @@ BUS_TERM    .equ    30h    ; P3.5 = RX
             MOV #-1,&PBOUT  ; all pins as input with resistor
 
     .IFDEF TERMINAL4WIRES
-; RTS output is wired to the CTS input of UART2USB bridge 
+; RTS output is wired to the CTS input of UART2USB bridge
 ; configure RTS as output high to disable RX TERM during start FORTH
             BIS.B #RTS,&P3DIR   ; RTS as output high
         .IFDEF TERMINAL5WIRES
-; CTS input must be wired to the RTS output of UART2USB bridge 
+; CTS input must be wired to the RTS output of UART2USB bridge
 ; configure CTS as input low (true) to avoid lock when CTS is not wired
             BIC.B #CTS,&P3OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
@@ -313,7 +313,7 @@ LED2        .equ    80h        ;  P9.7 LED2 green
 
 
 ; PORT10 usage
-    
+
 ; PORTx default wanted state : pins as input with pullup resistor
 
             MOV.B   #-1,&P9REN  ; all pins with pull resistors else P9.7

@@ -22,9 +22,9 @@ FR2_FAMILY
 ; ----------------------------------------------
 PAGESIZE        .equ 512         ; MPU unit
 ; ----------------------------------------------
-; BSL                           
+; BSL
 ; ----------------------------------------------
-BSL1            .equ 01000h 
+BSL1            .equ 01000h
 BSL2            .equ 0FFC00h
 ; ----------------------------------------------
 ; FRAM                          ; INFO B, TLV
@@ -52,7 +52,7 @@ BSL_SIG1        .equ 0FF84h      ;
 BSL_SIG2        .equ 0FF86h      ;
 JTAG_PASSWORD   .equ 0FF88h      ; 256 bits
 BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
-I2CSLA0         .equ 0FFA2h      ; UCBxI2COA0 default value address 
+I2CSLA0         .equ 0FFA2h      ; UCBxI2COA0 default value address
 I2CSLA1         .equ 0FFA4h      ; UCBxI2COA1 default value address
 I2CSLA2         .equ 0FFA6h      ; UCBxI2COA2 default value address
 I2CSLA3         .equ 0FFA8h      ; UCBxI2COA3 default value address
@@ -72,25 +72,25 @@ VECT_LEN        .equ 26h
 
 ;   .org    INTVECT         ; FFDA-FFFF 18 vectors + reset
 ;
-;           .word  reset        ; FFDAh - P2       
-;           .word  reset        ; FFDCh - P1       
-;           .word  reset        ; FFDEh - ADC10    
-;           .word  reset        ; FFE0h - eUSCI_B0 
-;           .word  reset        ; FFE2h - eUSCI_A1 
-;           .word  reset        ; FFE4h - eUSCI_A0 
-;           .word  reset        ; FFE6h - WDT      
-;           .word  reset        ; FFE8h - RTC      
-;           .word  reset        ; FFEAh - TA3_x    
-;           .word  reset        ; FFECh - TA3_0    
-;           .word  reset        ; FFEEh - TA2_x    
-;           .word  reset        ; FFF0h - TA2_0    
-;           .word  reset        ; FFF2h - TA1_x    
-;           .word  reset        ; FFF4h - TA1_0    
-;           .word  reset        ; FFF6h - TA0_x    
-;           .word  reset        ; FFF8h - TA0_0    
-;           .word  reset        ; FFFAh - UserNMI  
-;           .word  reset        ; FFFCh - SysNMI   
-;           .word  reset        ; FFFEh - Reset    
+;           .word  reset        ; FFDAh - P2
+;           .word  reset        ; FFDCh - P1
+;           .word  reset        ; FFDEh - ADC10
+;           .word  reset        ; FFE0h - eUSCI_B0
+;           .word  reset        ; FFE2h - eUSCI_A1
+;           .word  reset        ; FFE4h - eUSCI_A0
+;           .word  reset        ; FFE6h - WDT
+;           .word  reset        ; FFE8h - RTC
+;           .word  reset        ; FFEAh - TA3_x
+;           .word  reset        ; FFECh - TA3_0
+;           .word  reset        ; FFEEh - TA2_x
+;           .word  reset        ; FFF0h - TA2_0
+;           .word  reset        ; FFF2h - TA1_x
+;           .word  reset        ; FFF4h - TA1_0
+;           .word  reset        ; FFF6h - TA0_x
+;           .word  reset        ; FFF8h - TA0_0
+;           .word  reset        ; FFFAh - UserNMI
+;           .word  reset        ; FFFCh - SysNMI
+;           .word  reset        ; FFFEh - Reset
 ; ----------------------------------------------------------------------
 ; MSP430FR2433 Peripheral File Map
 ; ----------------------------------------------------------------------
@@ -131,21 +131,21 @@ LOCKLPM5    .equ 1               ; bit position
 ; ----------------------------------------------------------------------
 ; POWER ON RESET SYS config
 ; ----------------------------------------------------------------------
-SYSCTL      .equ SYS_SFR + 00h  ;   System control                      
-SYSBSLC     .equ SYS_SFR + 02h  ;   Bootstrap loader configuration area 
-SYSJMBC     .equ SYS_SFR + 06h  ;   JTAG mailbox control                
-SYSJMBI0    .equ SYS_SFR + 08h  ;   JTAG mailbox input 0                
-SYSJMBI1    .equ SYS_SFR + 0Ah  ;   JTAG mailbox input 1                
-SYSJMBO0    .equ SYS_SFR + 0Ch  ;   JTAG mailbox output 0               
-SYSJMBO1    .equ SYS_SFR + 0Eh  ;   JTAG mailbox output 1               
-SYSBERRIV   .equ SYS_SFR + 18h  ;   Bus Error vector generator          
-SYSUNIV     .equ SYS_SFR + 1Ah  ;   User NMI vector generator           
-SYSSNIV     .equ SYS_SFR + 1Ch  ;   System NMI vector generator         
-SYSRSTIV    .equ SYS_SFR + 1Eh  ;   Reset vector generator              
-SYSCFG0     .equ SYS_SFR + 20h  ;   System configuration 0              
-SYSCFG1     .equ SYS_SFR + 22h  ;   System configuration 1              
-SYSCFG2     .equ SYS_SFR + 24h  ;   System configuration 2        
-      
+SYSCTL      .equ SYS_SFR + 00h  ;   System control
+SYSBSLC     .equ SYS_SFR + 02h  ;   Bootstrap loader configuration area
+SYSJMBC     .equ SYS_SFR + 06h  ;   JTAG mailbox control
+SYSJMBI0    .equ SYS_SFR + 08h  ;   JTAG mailbox input 0
+SYSJMBI1    .equ SYS_SFR + 0Ah  ;   JTAG mailbox input 1
+SYSJMBO0    .equ SYS_SFR + 0Ch  ;   JTAG mailbox output 0
+SYSJMBO1    .equ SYS_SFR + 0Eh  ;   JTAG mailbox output 1
+SYSBERRIV   .equ SYS_SFR + 18h  ;   Bus Error vector generator
+SYSUNIV     .equ SYS_SFR + 1Ah  ;   User NMI vector generator
+SYSSNIV     .equ SYS_SFR + 1Ch  ;   System NMI vector generator
+SYSRSTIV    .equ SYS_SFR + 1Eh  ;   Reset vector generator
+SYSCFG0     .equ SYS_SFR + 20h  ;   System configuration 0
+SYSCFG1     .equ SYS_SFR + 22h  ;   System configuration 1
+SYSCFG2     .equ SYS_SFR + 24h  ;   System configuration 2
+
 ; SYS Control Bits
 ; ...
 
@@ -198,7 +198,7 @@ P1DIR       .equ PA_SFR + 04h    ; Port 1 Direction
 P1REN       .equ PA_SFR + 06h    ; Port 1 Resistor Enable
 P1SEL0      .equ PA_SFR + 0Ah    ; Port 1 Selection 0
 P1SEL1      .equ PA_SFR + 0Ch    ; Port 1 Selection 1
-P1IV        .equ PA_SFR + 0Eh    ; Port 1 Interrupt Vector word 
+P1IV        .equ PA_SFR + 0Eh    ; Port 1 Interrupt Vector word
 P1IES       .equ PA_SFR + 18h    ; Port 1 Interrupt Edge Select
 P1IE        .equ PA_SFR + 1Ah    ; Port 1 Interrupt Enable
 P1IFG       .equ PA_SFR + 1Ch    ; Port 1 Interrupt Flag
@@ -212,7 +212,7 @@ P2SEL1      .equ PA_SFR + 0Dh    ; Port 2 Selection 1
 P2IES       .equ PA_SFR + 19h    ; Port 2 Interrupt Edge Select
 P2IE        .equ PA_SFR + 1Bh    ; Port 2 Interrupt Enable
 P2IFG       .equ PA_SFR + 1Dh    ; Port 2 Interrupt Flag
-P2IV        .equ PA_SFR + 1Eh    ; Port 2 Interrupt Vector word 
+P2IV        .equ PA_SFR + 1Eh    ; Port 2 Interrupt Vector word
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3
@@ -227,10 +227,10 @@ P3SEL1      .equ PB_SFR + 0Ch    ; Port 3 Selection 1
 ; ----------------------------------------------------------------------
 RTC
 ; ----------------------------------------------------------------------
-RTCCTL      .equ RTC_SFR + 00h  ; Real-Time Clock Control 
-RTCIV       .equ RTC_SFR + 04h  ; Real-Time Clock Interrupt Vector 
-RTCMOD      .equ RTC_SFR + 08h  ; Real-Timer Clock Modulo 
-RTCCNT      .equ RTC_SFR + 0Ch  ; Real-Time Clock Counter 
+RTCCTL      .equ RTC_SFR + 00h  ; Real-Time Clock Control
+RTCIV       .equ RTC_SFR + 04h  ; Real-Time Clock Interrupt Vector
+RTCMOD      .equ RTC_SFR + 08h  ; Real-Timer Clock Modulo
+RTCCNT      .equ RTC_SFR + 0Ch  ; Real-Time Clock Counter
 
 ; ----------------------------------------------------------------------
 MPY_32
@@ -313,7 +313,7 @@ TERM_STATW      .equ eUSCI_B0_SFR + 08h     ; USCI_B0 Status Word
 TERM_RXBUF      .equ eUSCI_B0_SFR + 0Ch     ; USCI_B0 Receive Buffer 8
 TERM_TXBUF      .equ eUSCI_B0_SFR + 0Eh     ; USCI_B0 Transmit Buffer 8
 TERM_I2COA0     .equ eUSCI_B0_SFR + 14h     ; USCI_B0 I2C Own Address 0
-TERM_ADDRX      .equ eUSCI_B0_SFR + 1Ch     ; USCI_B0  Received Address Register 
+TERM_ADDRX      .equ eUSCI_B0_SFR + 1Ch     ; USCI_B0  Received Address Register
 TERM_I2CSA      .equ eUSCI_B0_SFR + 20h     ; USCI_B0 I2C Slave Address
 TERM_IE         .equ eUSCI_B0_SFR + 2Ah     ; USCI_B0 Interrupt Enable
 TERM_IFG        .equ eUSCI_B0_SFR + 2Ch     ; USCI_B0 Interrupt Flags Register

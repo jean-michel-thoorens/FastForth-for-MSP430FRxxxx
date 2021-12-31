@@ -30,7 +30,7 @@
 ; P2 - P9.2 ESICH2
 ; P3 - P4.3 UCA0 RXD
 ; P4 - P4.2 UCA0 TXD
-; P5 - P3.2 UCB1 SCL    
+; P5 - P3.2 UCB1 SCL
 ; P6 - P9.3 ESICH3
 ; P7 - P1.4 UCB0 CLK
 ; P8 - P2.0 TB0.6
@@ -149,7 +149,7 @@
 
 ; P1.1 - Switch S1              <--- LCD contrast + (finger :-)
 ; P1.2 - Switch S2              <--- LCD contrast - (finger ;-)
-                                    
+
 ; note : ESI1.1 = lowest left pin
 ; note : ESI1.2 is not connected to 3.3V
 ;  GND/ESIVSS -          ESI1.3 <-------+---0V0---------->  1 LCD_Vss
@@ -169,7 +169,7 @@
 ; P9.5/ESICI1 -         ESI1.9  ------------------------->  5 LCD_R/W
 ; P9.6/ESICI2 -         ESI1.8  ------------------------->  6 LCD_EN
 
-;                                 +--4k7-< DeepRST <-- GND 
+;                                 +--4k7-< DeepRST <-- GND
 ;                                 |
 ; P3.4 - UCA1 TXD       J101.8  <-+-> RX  UARTtoUSB bridge
 ; P3.5 - UCA1 RXD       J101.10 <---- TX  UARTtoUSB bridge
@@ -179,7 +179,7 @@
 
 ;  VCC -                J1.1    ----> VCC SD_CardAdapter
 ;  GND -                J2.20   <---> GND SD_CardAdapter
-; P2.2 -  UCA0 CLK      J4.35   ----> CLK SD_CardAdapter (SCK)  
+; P2.2 -  UCA0 CLK      J4.35   ----> CLK SD_CardAdapter (SCK)
 ; P2.6 -                J4.39   ----> CS  SD_CardAdapter (Card Select)
 ; P2.0 -  UCA0 TXD/SIMO J1.8    ----> SDI SD_CardAdapter (MOSI)
 ; P2.1 -  UCA0 RXD/SOMI J2.19   <---- SDO SD_CardAdapter (MISO)
@@ -202,11 +202,11 @@
 ; P3.2 -UCB1 SCL/SOMI   J1.5    ----> free
 ; P3.3 -         TA1.1  J1.5    <---> free
 
-; PJ.4 - LFXI 32768Hz quartz  
-; PJ.5 - LFXO 32768Hz quartz  
-; PJ.6 - HFXI 
-; PJ.7 - HFXO 
-  
+; PJ.4 - LFXI 32768Hz quartz
+; PJ.5 - LFXO 32768Hz quartz
+; PJ.6 - HFXI
+; PJ.7 - HFXO
+
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : I/O
@@ -235,9 +235,6 @@ LED1        .equ    1       ;  P1.0 LED1 red
 SW1_IN      .set P1IN       ; port
 SW1         .set 2          ; P1.1 = S1
 
-WIPE_IN     .equ    P1IN
-IO_WIPE     .equ    2       ; P1.1 = S1 = FORTH Deep_RST pin
-
 ; P1.2 - Switch S2
 SW2_IN      .set P1IN       ; port
 SW2         .set 4          ; P1.2 = S2
@@ -260,7 +257,7 @@ BUS_TERM    .equ    0C0h
 SD_CDIN     .equ P2IN
 SD_CSOUT    .equ P2OUT
 SD_CSDIR    .equ P2DIR
-CS_SD       .equ 40h    ; P2.6 Chip Select  
+CS_SD       .equ 40h    ; P2.6 Chip Select
 CD_SD       .equ 80h    ; P2.7 Card Detect
 
 ; PORTx default wanted state : pins as input with pullup resistor
@@ -301,11 +298,11 @@ BUS_TERM    .equ    30h    ;
             MOV #-1,&PBOUT  ; all pins as input with resistor
 
     .IFDEF TERMINAL4WIRES
-; RTS output is wired to the CTS input of UART2USB bridge 
+; RTS output is wired to the CTS input of UART2USB bridge
 ; configure RTS as output high to disable RX TERM during start FORTH
             BIS.B #RTS,&P3DIR   ; RTS as output high
         .IFDEF TERMINAL5WIRES
-; CTS input must be wired to the RTS output of UART2USB bridge 
+; CTS input must be wired to the RTS output of UART2USB bridge
 ; configure CTS as input low (true) to avoid lock when CTS is not wired
             BIC.B #CTS,&P3OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
@@ -358,7 +355,7 @@ LED2        .equ    80h        ;  P9.7 LED2 green
 
 
 ; PORT10 usage
-    
+
 ; PORTx default wanted state : pins as input with pullup resistor
 
             MOV     #-1,&PEREN    ; all pins with pull resistors else P9.7

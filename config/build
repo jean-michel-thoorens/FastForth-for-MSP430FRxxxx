@@ -1,9 +1,6 @@
-#asl -i $FF/inc -L  $(FilePath)$1 -o $FF/binaries/$2.p
-asl -i $FF/inc -L  $1 -o $FF/binaries/$2.p
-#p2hex -F Intel $FF/binaries/$2.p
-p2hex $FF/binaries/$2.p
-#srec_cat $FF/binaries/$2.hex -output $FF/binaries/$2.txt -Texas_Instruments_TeXT
-#srec_cat  -contradictory-bytes=warning $FF/binaries/$2.hex -intel -output  $FF/binaries/$2.txt -Texas_Instruments_TeXT 
-# rm $FF/binaries/$2.hex
-rm $FF/binaries/$2.p
-
+asl -i ./inc -L  $1 -o ./binaries/$2.p
+p2hex ./binaries/$2.p ./binaries/$2.hex
+#srec_cat  -contradictory-bytes=warning ./binaries/$2.hex -Intel -output  ./binaries/$2asm -HEX_Dump
+srec_cat  -contradictory-bytes=warning ./binaries/$2.hex -Intel -output  ./binaries/$2.txt -Texas_Instruments_TeXT 
+rm ./binaries/$2.p
+rm ./binaries/$2.hex

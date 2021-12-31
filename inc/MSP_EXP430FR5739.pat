@@ -4,7 +4,7 @@
 \.f=\.4th for MSP_EXP430FR5739!      to change file type
 
 !========================
-! remove comments        
+! remove comments
 !========================
 \\*\n=
 \s\\*\n=\n
@@ -95,7 +95,7 @@
 !
 ! P4.0 - Switch S1              <--- LCD contrast + (finger :-)
 ! P4.1 - Switch S2              <--- LCD contrast - (finger :-)
-!                                   
+!
 !  GND                          <-------+---0V0---------->  1 LCD_Vss
 !  VCC                          >------ | --3V6-----+---->  2 LCD_Vdd
 !                                       |           |
@@ -113,22 +113,22 @@
 ! P1.2 -                 SV1.3  <------------------------> 13 LCD_DB5
 ! P1.3 -                 SV1.8  <------------------------> 14 LCD_DB7
 !
-! PJ.4 - LFXI 32768Hz quartz  
-! PJ.5 - LFXO 32768Hz quartz  
-! PJ.6 - HFXI 
-! PJ.7 - HFXO 
-!                                 +--4k7-< DeepRST <-- GND 
+! PJ.4 - LFXI 32768Hz quartz
+! PJ.5 - LFXO 32768Hz quartz
+! PJ.6 - HFXI
+! PJ.7 - HFXO
+!                                 +--4k7-< DeepRST <-- GND
 !                                 |
 ! P2.0 -  UCA0 TXD       SV2.11 --+-> RX  UARTtoUSB bridge
 ! P2.1 -  UCA0 RXD       SV2.8  <---- TX  UARTtoUSB bridge
 !  VCC -                        <---- VCC (optional supply from UARTtoUSB bridge - WARNING ! 3.3V !)
 !  GND -                        <---> GND (optional supply from UARTtoUSB bridge)
-!        
-! VCC  -                 RF.2 
-! VSS  -                 RF.1 
+!
+! VCC  -                 RF.2
+! VSS  -                 RF.1
 ! P2.2 -                 RF.16  <---- CD  SD_CardAdapter (Card Detect)
 ! P2.3 -                 RF.10  ----> CS  SD_CardAdapter (Card Select)
-! P2.4 - UCA1 CLK        RF.14  ----> CLK SD_CardAdapter (SCK)  
+! P2.4 - UCA1 CLK        RF.14  ----> CLK SD_CardAdapter (SCK)
 ! P2.5 - UCA1 TXD/SIMO   RF.7   ----> SDI SD_CardAdapter (MOSI)
 ! P2.6 - UCA1 RXD/SOMI   RF.5   <---- SDO SD_CardAdapter (MISO)
 !
@@ -140,7 +140,7 @@
 ! ============================================
 ! FORTH I/O :
 ! ============================================
-!TERMINAL 
+!TERMINAL
 BUS_TERM=3!         \ P2.0 = TX, P2.1 = RX
 
 TERM_IN=\$201!
@@ -222,10 +222,10 @@ WDT_TIM_CCR0=\$352!     TA0CCR0
 WDT_TIM_EX0=\$360!      TA0EX0
 WDT_TIM_0_VEC=\$FFEA!     TA0_0_VEC
 
-IR_IN=\$201!  
-IR_OUT=\$203! 
-IR_DIR=\$205! 
-IR_REN=\$207! 
+IR_IN=\$201!
+IR_OUT=\$203!
+IR_DIR=\$205!
+IR_REN=\$207!
 IR_IES=\$219!
 IR_IE=\$21B!
 IR_IFG=\$21D!
@@ -307,12 +307,12 @@ UCRXIFG0=1!         eUSCI_B Receive Interrupt Flag
 I2CM_CTLW0=\$640!   USCI_B0 Control Word Register 0
 I2CM_CTLW1=\$642!   USCI_B0 Control Word Register 1
 I2CM_BRW=\$646!     USCI_B0 Baud Word Rate 0
-I2CM_STATW=\$648!   USCI_B0 status word 
-I2CM_TBCNT=\$64A!   USCI_B0 byte counter threshold  
+I2CM_STATW=\$648!   USCI_B0 status word
+I2CM_TBCNT=\$64A!   USCI_B0 byte counter threshold
 I2CM_RXBUF=\$64C!   USCI_B0 Receive Buffer 8
 I2CM_TXBUF=\$64E!   USCI_B0 Transmit Buffer 8
 I2CM_I2COA0=\$654!  USCI_B0 I2C Own Address 0
-I2CM_ADDRX=\$65C!   USCI_B0 Received Address Register 
+I2CM_ADDRX=\$65C!   USCI_B0 Received Address Register
 I2CM_I2CSA=\$660!   USCI_B0 I2C Slave Address
 I2CM_IE=\$66A!      USCI_B0 Interrupt Enable
 I2CM_IFG=\$66C!     USCI_B0 Interrupt Flags Register
@@ -320,12 +320,12 @@ I2CM_IFG=\$66C!     USCI_B0 Interrupt Flags Register
 I2CS_CTLW0=\$640!   USCI_B0 Control Word Register 0
 I2CS_CTLW1=\$642!   USCI_B0 Control Word Register 1
 I2CS_BRW=\$646!     USCI_B0 Baud Word Rate 0
-I2CS_STATW=\$648!   USCI_B0 status word 
-I2CS_TBCNT=\$64A!   USCI_B0 byte counter threshold  
+I2CS_STATW=\$648!   USCI_B0 status word
+I2CS_TBCNT=\$64A!   USCI_B0 byte counter threshold
 I2CS_RXBUF=\$64C!   USCI_B0 Receive Buffer 8
 I2CS_TXBUF=\$64E!   USCI_B0 Transmit Buffer 8
 I2CS_I2COA0=\$654!  USCI_B0 I2C Own Address 0
-I2CS_ADDRX=\$65C!   USCI_B0 Received Address Register 
+I2CS_ADDRX=\$65C!   USCI_B0 Received Address Register
 I2CS_I2CSA=\$660!   USCI_B0 I2C Slave Address
 I2CS_IE=\$66A!      USCI_B0 Interrupt Enable
 I2CS_IFG=\$66C!     USCI_B0 Interrupt Flags Register
@@ -334,7 +334,7 @@ I2CS_IFG=\$66C!     USCI_B0 Interrupt Flags Register
 CD_SD=4!                P2.2 as Card Detect
 SD_CDIN=\$201!
 
-CS_SD=8!                P2.3 as Card Select     
+CS_SD=8!                P2.3 as Card Select
 SD_CSOUT=\$203!
 SD_CSDIR=\$205!
 

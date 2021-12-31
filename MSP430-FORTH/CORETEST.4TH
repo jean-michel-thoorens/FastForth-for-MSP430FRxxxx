@@ -3,24 +3,77 @@
 \ ; CORETEST.4TH for any FastForth target
 \ ; -------------------------------------
 
-[DEFINED] {CORETEST} [IF] {CORETEST} [THEN]
-
 MARKER {CORETEST}
 
-: ABORT_TEST
-$0D EMIT   \ return to column 1
-POSTPONE {CORETEST} \ that remove all test words 
+: ABORT_TEST        \ flag --
+$0D EMIT            \ return to column 1
+POSTPONE {CORETEST} \ remove all test words
 ABORT" {CORE_ANS} word set not found !"
 ;
 
 [UNDEFINED] {CORE_ANS} ABORT_TEST
 
 : CORETESTSUCCESS
-$0A BASE !
-$0D EMIT   \ return to column 1
-{CORETEST} \ that remove all test words 
-1 ABORT" CORE tests success!"
+$0D EMIT        \ -- $0D    return to column 1
+$0A BASE !      \           set decimal
+{CORETEST}      \           remove all test words
+." CORETEST + COREPLUSTEST success!" \ true --
 ;
+
+[UNDEFINED] SM/REM [IF]
+CODE SM/REM
+MOV R14,R12
+MOV @R15,R11
+CMP #0,R14
+S< IF
+    XOR #-1,R14
+    ADD #1,R14
+THEN
+CMP #0,0(R15)
+S< IF
+    XOR #-1,2(R15)
+    XOR #-1,0(R15)
+    ADD #1,2(R15)
+    ADDC #0,0(R15)
+THEN
+PUSHM #3,R13
+LO2HI
+    UM/MOD
+HI2LO
+POPM #3,R13
+CMP #0,R11
+S< IF
+    XOR #-1,0(R15)
+    ADD #1,0(R15)
+THEN
+XOR R12,R11
+CMP #0,R11
+S< IF
+    XOR #-1,R14
+    ADD #1,R14
+THEN
+MOV @R13+,R0
+ENDCODE
+[THEN]
+
+[UNDEFINED] FM/MOD [IF]
+\ https://forth-standard.org/standard/core/FMDivMOD
+\ FM/MOD   d1 n1 -- r q   floored signed div'n
+: FM/MOD
+SM/REM
+HI2LO                   \ -- remainder quotient       S=divisor
+CMP #0,0(R15)           \ remainder <> 0 ?
+0<> IF
+    CMP #1,R14          \ quotient < 1 ?
+    S< IF
+      ADD R12,0(R15)    \ add divisor to remainder
+      SUB #1,R14        \ decrement quotient
+    THEN
+THEN
+MOV @R1+,R13
+MOV @R13+,R0
+ENDCODE
+[THEN]
 
 \ From: John Hayes S1I
 \ Subject: tester.fr
@@ -52,7 +105,7 @@ VARIABLE VERBOSE
 \             DO 0 LOOP
 \             ELSE 0 DO DROP LOOP THEN
 \             THEN ;
-\ 
+\
 \ : ERROR     \ ( C-ADDR U -- ) DISPLAY AN ERROR MESSAGE FOLLOWED BY
 \         \ THE LINE THAT HAD THE ERROR.
 \     TYPE SOURCE TYPE CR          \ DISPLAY LINE CORRESPONDING TO ERROR
@@ -1084,7 +1137,7 @@ CREATE ABUF 80 CHARS ALLOT
 
 : ACCEPT-TEST
     CR ." PLEASE TYPE UP TO 80 CHARACTERS: "
-ABUF 80 \ ACCEPT            \ JMT 
+ABUF 80 \ ACCEPT            \ JMT
           ['] ACCEPT >BODY  \ JMT: find default part of deferred ACCEPT
           EXECUTE           \ JMT: execute ACCEPT
     CR ." RECEIVED: " [CHAR] " EMIT
@@ -1100,100 +1153,13 @@ T{ : GDX   123 ; : GDX   GDX 234 ; -> }T
 
 T{ GDX -> 123 234 }T
 
-\ ------------------------------------------------------------------------
-TESTING TO VALUE :NONAME IS DEFER
+CR .( End of Core word set tests) \ "
 
-[DEFINED] VALUE [IF]
-T{  111 VALUE v1 -> }T
-T{ -999 VALUE v2 -> }T
-T{ v1 ->  111 }T
-T{ v2 -> -999 }T
-T{ 222 TO v1 -> }T
-T{ v1 -> 222 }T
-T{ : vd1 v1 ; -> }T
-T{ vd1 -> 222 }T
-T{ : vd2 TO v2 ; -> }T
-T{ v2 -> -999 }T
-T{ -333 vd2 -> }T
-T{ v2 -> -333 }T
-T{ v1 ->  222 }T
-[THEN]
-
-[DEFINED] :NONAME [IF]
-
-[UNDEFINED] CASE [IF]
-\ https://forth-standard.org/standard/core/CASE
-: CASE 0 ; IMMEDIATE \ -- #of-1 
-
-\ https://forth-standard.org/standard/core/OF
-: OF \ #of-1 -- orgOF #of 
-1+	                    \ count OFs 
->R	                    \ move off the stack in case the control-flow stack is the data stack. 
-POSTPONE OVER POSTPONE = \ copy and test case value
-POSTPONE IF	            \ add orig to control flow stack 
-POSTPONE DROP	        \ discards case value if = 
-R>	                    \ we can bring count back now 
-; IMMEDIATE 
-
-\ https://forth-standard.org/standard/core/ENDOF
-: ENDOF \ orgOF #of -- orgENDOF #of 
->R	                    \ move off the stack in case the control-flow stack is the data stack. 
-POSTPONE ELSE 
-R>	                    \ we can bring count back now 
-; IMMEDIATE 
-
-\ https://forth-standard.org/standard/core/ENDCASE
-: ENDCASE \ orgENDOF1..orgENDOFn #of -- 
-POSTPONE DROP
-0 DO 
-    POSTPONE THEN 
-LOOP 
-; IMMEDIATE 
-[THEN]
-
-VARIABLE nn1
-VARIABLE nn2
-T{ :NONAME 1234 ; nn1 ! -> }T
-T{ :NONAME 9876 ; nn2 ! -> }T
-T{ nn1 @ EXECUTE -> 1234 }T
-T{ nn2 @ EXECUTE -> 9876 }T
-
-T{ :NONAME ( n -- 0,1,..n ) DUP IF DUP >R 1- RECURSE R> THEN ;
-   CONSTANT RN1 -> }T
-T{ 0 RN1 EXECUTE -> 0 }T
-T{ 4 RN1 EXECUTE -> 0 1 2 3 4 }T
-
-:NONAME  ( n -- n1 )    \ Multiple RECURSEs in one definition
-   1- DUP
-   CASE 0 OF EXIT ENDOF
-        1 OF 11 SWAP RECURSE ENDOF
-        2 OF 22 SWAP RECURSE ENDOF
-        3 OF 33 SWAP RECURSE ENDOF
-        DROP ABS RECURSE EXIT
-   ENDCASE
-; CONSTANT RN2
-
-T{  1 RN2 EXECUTE -> 0 }T
-T{  2 RN2 EXECUTE -> 11 0 }T
-T{  4 RN2 EXECUTE -> 33 22 11 0 }T
-T{ 25 RN2 EXECUTE -> 33 22 11 0 }T
-
-[THEN]
-
-[DEFINED] IS [IF]
-T{ DEFER defer5 -> }T
-T{ : is-defer5 IS defer5 ; -> }T
-T{ ' * IS defer5 -> }T
-T{ 2 3 defer5 -> 6 }T
-T{ ' + is-defer5 -> }T
-T{ 1 2 defer5 -> 3 }T
-[THEN]
-
-\ ==============================================================================
+\ =============================================================================
 \ COREPLUSTEST
-\ ==============================================================================
+\ =============================================================================
 \ Additional tests on the the ANS Forth Core word set
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 \ https://raw.githubusercontent.com/gerryjackson/forth2012-test-suite/master/src/coreplustest.fth
 
 \ This program was written by Gerry Jackson in 2007, with contributions from
@@ -1204,9 +1170,9 @@ T{ 1 2 defer5 -> 3 }T
 \ but WITHOUT ANY WARRANTY; without even the implied warranty of
 \ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-\ The tests are not claimed to be comprehensive or correct 
+\ The tests are not claimed to be comprehensive or correct
 
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 \ The tests are based on John Hayes test program for the core word set
 \
 \ This file provides some more tests on Core words where the original Hayes
@@ -1218,12 +1184,12 @@ T{ 1 2 defer5 -> 3 }T
 \     Parsing behaviour
 \     Number prefixes # $ % and 'A' character input
 \     Definition names
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 \ Assumptions and dependencies:
 \     - tester.fr or ttester.fs has been loaded prior to this file
 \     - core.fr has been loaded so that constants <TRUE> MAX-INT, MIN-INT and
 \       MAX-UINT are defined
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 
 DECIMAL
 
@@ -1262,7 +1228,7 @@ T{ -20 30 -10 GD7 -> 30 20 10 0 -10 -20 6 }T
 T{ -20 31 -10 GD7 -> 31 21 11 1 -9 -19 6 }T
 T{ -20 29 -10 GD7 -> 29 19 9 -1 -11 5 }T
 
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 TESTING DO +LOOP with large and small increments
 
 \ Contributed by Andrew Haley
@@ -1300,7 +1266,7 @@ T{ 0 0 0 -USTEP -UWRAP?   1 GD9
 T{ 0 MIN-INT MAX-INT  STEP +WRAP? 1 GD9
 T{ 0 MAX-INT MIN-INT -STEP -WRAP? 1 GD9
 
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 TESTING DO +LOOP with maximum and minimum increments
 
 : (-MI) MAX-INT DUP NEGATE + 0= IF MAX-INT NEGATE ELSE -32767 THEN ;
@@ -1319,7 +1285,7 @@ T{ 0 MIN-INT 1+  -1 MIN-INT GD8  -> 1 }T
 T{ 0 MIN-INT 1+   1 MIN-INT GD8  -> 2 }T
 T{ 0 MIN-INT 1+ DUP MIN-INT GD8  -> 1 }T
 
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 \ TESTING +LOOP setting I to an arbitrary value
 
 \ The specification for +LOOP permits the loop index I to be set to any value
@@ -1329,7 +1295,7 @@ T{ 0 MIN-INT 1+ DUP MIN-INT GD8  -> 1 }T
 \ n2 is the value of I in a DO ... +LOOP
 \ n3 is a test value
 \ If n2=n3 then return n1-n2 else return 1
-: SET-I  ( n1 n2 n3 -- n1-n2 | 1 ) 
+: SET-I  ( n1 n2 n3 -- n1-n2 | 1 )
    OVER = IF - ELSE 2DROP 1 THEN
 ;
 
@@ -1354,7 +1320,7 @@ T{ PL7 -> -1 -2 -3 -4 -5 }T
 : PL8 -20 -5 DO I -20 I -2 -SET-I DUP -1 = IF DROP 0 I -6 -SET-I THEN +LOOP ;
 T{ PL8 -> -5 -6 0 -1 -2 -20 }T
 
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 TESTING multiple RECURSEs in one colon definition
 
 : ACK ( m n -- u )    \ Ackermann function, from Rosetta Code
@@ -1368,7 +1334,7 @@ T{ 0 0 ACK ->  1 }T
 T{ 3 0 ACK ->  5 }T
 T{ 2 4 ACK -> 11 }T
 
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 TESTING multiple ELSE's in an IF statement
 \ Discussed on comp.lang.forth and accepted as valid ANS Forth
 
@@ -1376,22 +1342,22 @@ TESTING multiple ELSE's in an IF statement
 T{ 0 MELSE -> 2 4 }T
 T{ -1 MELSE -> 1 3 5 }T
 
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 TESTING manipulation of >IN in interpreter mode
 
 T{ 12345 DEPTH OVER 9 < 34 AND + 3 + >IN ! -> 12345 2345 345 45 5 }T
 T{ 14145 8115 ?DUP 0= 34 AND >IN +! TUCK MOD 14 >IN ! GCD CALCULATION -> 15 }T
 
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 TESTING IMMEDIATE with CONSTANT  VARIABLE and CREATE [ ... DOES> ]
 
 T{ 123 CONSTANT IW1 IMMEDIATE IW1 -> 123 }T
 T{ : IW2 IW1 LITERAL ; IW2 -> 123 }T
 T{ VARIABLE IW3 IMMEDIATE 234 IW3 ! IW3 @ -> 234 }T
 T{ : IW4 IW3 [ @ ] LITERAL ; IW4 -> 234 }T
-\ T{ :NONAME [ 345 ] IW3 [ ! ] ; DROP IW3 @ -> 345 }T
+T{ :NONAME [ 345 ] IW3 [ ! ] ; DROP IW3 @ -> 345 }T
 T{ CREATE IW5 456 , IMMEDIATE -> }T
-\ T{ :NONAME IW5 [ @ IW3 ! ] ; DROP IW3 @ -> 456 }T
+T{ :NONAME IW5 [ @ IW3 ! ] ; DROP IW3 @ -> 456 }T
 T{ : IW6 CREATE , IMMEDIATE DOES> @ 1+ ; -> }T
 T{ 111 IW6 IW7 IW7 -> 112 }T
 T{ : IW8 IW7 LITERAL 1+ ; IW8 -> 113 }T
@@ -1400,27 +1366,22 @@ T{ : IW9 CREATE , DOES> @ 2 + IMMEDIATE ; -> }T
 T{ 222 IW9 IW10 FIND-IW IW10 -> -1 }T   \ IW10 is not immediate
 T{ IW10 FIND-IW IW10 -> 224 1 }T        \ IW10 becomes immediate
 
-[DEFINED] :NONAME [IF]
-T{ :NONAME [ 345 ] IW3 [ ! ] ; DROP IW3 @ -> 345 }T
-T{ :NONAME IW5 [ @ IW3 ! ] ; DROP IW3 @ -> 456 }T
-[THEN]
-
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 TESTING that IMMEDIATE doesn't toggle a flag
 
 VARIABLE IT1 0 IT1 !
 : IT2 1234 IT1 ! ; IMMEDIATE IMMEDIATE
 T{ : IT3 IT2 ; IT1 @ -> 1234 }T
 
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 TESTING parsing behaviour of S" ." and (
 \ which should parse to just beyond the terminating character no space needed
 
 T{ : GC5 S" A string"2DROP ; GC5 -> }T
 T{ ( A comment)1234 -> 1234 }T
 T{ : PB1 CR ." You should see 2345: "." 2345"( A comment) CR ; PB1 -> }T
- 
-\ ------------------------------------------------------------------------------
+
+\ -----------------------------------------------------------------------------
 TESTING number prefixes # $ % and 'c' character input
 \ Adapted from the Forth 200X Draft 14.5 document
 
@@ -1454,7 +1415,7 @@ DECIMAL
 \ Check number prefixes in compile mode
 T{ : nmp  #8327 $-2cbe %011010111 ''' ; nmp -> 8327 -11454 215 39 }T
 
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 TESTING definition names
 \ should support {1..31} graphical characters
 : !"#$%&'()*+,-./0123456789:;<=>? 1 ;
@@ -1467,7 +1428,7 @@ T{ _`abcdefghijklmnopqrstuvwxyz{|} -> 3 }T
 T{ _`abcdefghijklmnopqrstuvwxyz{|~ -> 4 }T
 T{ _`abcdefghijklmnopqrstuvwxyz{|} -> 3 }T
 
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 TESTING FIND with a zero length string and a non-existent word
 
 CREATE EMPTYSTRING 0 C,
@@ -1482,37 +1443,83 @@ CREATE NON-EXISTENT-WORD   \ Same as in exceptiontest.fth
    CHAR $ C, CHAR $ C,
 T{ NON-EXISTENT-WORD FIND -> NON-EXISTENT-WORD 0 }T
 
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 TESTING IF ... BEGIN ... REPEAT (unstructured)
 
 T{ : UNS1 DUP 0 > IF 9 SWAP BEGIN 1+ DUP 3 > IF EXIT THEN REPEAT ; -> }T
 T{ -6 UNS1 -> -6 }T
 T{  1 UNS1 -> 9 4 }T
 
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 TESTING DOES> doesn't cause a problem with a CREATEd address
 
 : MAKE-2CONST DOES> 2@ ;
 T{ CREATE 2K 3 , 2K , MAKE-2CONST 2K -> ' 2K >BODY 3 }T
 
-\ ------------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
 TESTING ALLOT ( n -- ) where n <= 0
 
 T{ HERE 5 ALLOT -5 ALLOT HERE = -> <TRUE> }T
 T{ HERE 0 ALLOT HERE = -> <TRUE> }T
- 
+
+\ -----------------------------------------------------------------------------
+
+CR .( End of additional Core tests) \ "
+
+\ -----------------------------------------------------------------------------
+TESTING TO VALUE :NONAME IS DEFER
+
+T{  111 VALUE v1 -> }T
+T{ -999 VALUE v2 -> }T
+T{ v1 ->  111 }T
+T{ v2 -> -999 }T
+T{ 222 TO v1 -> }T
+T{ v1 -> 222 }T
+T{ : vd1 v1 ; -> }T
+T{ vd1 -> 222 }T
+T{ : vd2 TO v2 ; -> }T
+T{ v2 -> -999 }T
+T{ -333 vd2 -> }T
+T{ v2 -> -333 }T
+T{ v1 ->  222 }T
+
+VARIABLE nn1
+VARIABLE nn2
+T{ :NONAME 1234 ; nn1 ! -> }T
+T{ :NONAME 9876 ; nn2 ! -> }T
+T{ nn1 @ EXECUTE -> 1234 }T
+T{ nn2 @ EXECUTE -> 9876 }T
+
+T{ :NONAME ( n -- 0,1,..n ) DUP IF DUP >R 1- RECURSE R> THEN ;
+   CONSTANT RN1 -> }T
+T{ 0 RN1 EXECUTE -> 0 }T
+T{ 4 RN1 EXECUTE -> 0 1 2 3 4 }T
+
+:NONAME  ( n -- n1 )    \ Multiple RECURSEs in one definition
+   1- DUP
+   CASE 0 OF EXIT ENDOF
+        1 OF 11 SWAP RECURSE ENDOF
+        2 OF 22 SWAP RECURSE ENDOF
+        3 OF 33 SWAP RECURSE ENDOF
+        DROP ABS RECURSE EXIT
+   ENDCASE
+; CONSTANT RN2
+
+T{  1 RN2 EXECUTE -> 0 }T
+T{  2 RN2 EXECUTE -> 11 0 }T
+T{  4 RN2 EXECUTE -> 33 22 11 0 }T
+T{ 25 RN2 EXECUTE -> 33 22 11 0 }T
+
+
+T{ DEFER defer5 -> }T
+T{ : is-defer5 IS defer5 ; -> }T
+T{ ' * IS defer5 -> }T
+T{ 2 3 defer5 -> 6 }T
+T{ ' + is-defer5 -> }T
+T{ 1 2 defer5 -> 3 }T
+
 \ -----------------------------------------------------------------------------
 TESTING MARKER   (contributed by James Bowman)
-
-[DEFINED] MARKER [IF]
-
-    [UNDEFINED] 0<> [IF]
-    CODE 0<>
-    CMP #0,R14
-    0<> IF MOV #-1,R14 THEN
-    MOV @R13+,R0
-    ENDCODE
-    [THEN]
 
 T{ : MA? BL WORD FIND NIP 0<> ; -> }T
 T{ MARKER MA0 -> }T
@@ -1524,10 +1531,5 @@ T{ MA1 MA2 MA1 -> 222 111 }T
 T{ MA? MA0 MA? MA1 MA? MA2 -> TRUE TRUE FALSE }T
 T{ MA0 -> }T
 T{ MA? MA0 MA? MA1 MA? MA2 -> FALSE FALSE FALSE }T
-
-[THEN]
-
-
-CR .( End of Core word set tests)
 
 CORETESTSUCCESS

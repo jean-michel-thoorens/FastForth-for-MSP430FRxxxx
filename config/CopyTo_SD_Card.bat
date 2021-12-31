@@ -2,7 +2,7 @@
 ::used by CopySourceFileToTarget_SD_Card.bat or by scite editor Tools menu
 
 ::echo %2
-::echo %~d1\inc\%~n2.pat
+::echo %~dp1..\inc\%~n2.pat
 
 @ECHO OFF
 
@@ -33,8 +33,8 @@ echo %~dpn1.f not found!
 goto badend
 )
 
-IF NOT EXIST %~d1\inc\%~n2.pat (
-echo %~d1\inc\%~n2.pat not found!
+IF NOT EXIST %~dp1..\inc\%~n2.pat (
+echo %~dp1..\inc\%~n2.pat not found!
 goto badend
 )
 
@@ -51,8 +51,8 @@ exit
 
 
 :preprocessF
-@%~d1\prog\gema.exe -nobackup -line -t '-\r\n=\r\n' -f  %~d1\inc\%~n2.pat %~dpn1.f %~dpn1.4TH
-@call  %~d1\config\Select.bat SelectDeviceId %~d1\inc\%~n2.pat
+@%~d1\prog\gema.exe -nobackup -line -t '-\r\n=\r\n' -f  %~dp1..\inc\%~n2.pat %~dpn1.f %~dpn1.4TH
+@call  %~d1\config\Select.bat SelectDeviceId %~dp1..\inc\%~n2.pat
 
 :DownloadF
 @taskkill /F /IM ttermpro.exe 1> NUL 2>&1

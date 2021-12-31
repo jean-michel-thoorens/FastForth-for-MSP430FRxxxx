@@ -4,7 +4,7 @@
 \.f=\.4th for ChipStick_FR2433!      to change file type
 !
 !========================
-! remove comments        
+! remove comments
 !========================
 \\*\n=
 \s\\*\n=\n
@@ -20,9 +20,9 @@
 ! P3.1 -                        LED1
 !
 ! P2.1  -             PL2.2  -  SW1
-! P2.0  -             PL2.3  -  SW2 
+! P2.0  -             PL2.3  -  SW2
 !
-!                                 +--4k7-< DeepRST <-- GND 
+!                                 +--4k7-< DeepRST <-- GND
 !                                 |
 ! P1.4  - UCA0 TXD    PL1.4  -  <-+-> RX  UARTtoUSB bridge
 ! P1.5  - UCA0 RXD    PL1.3  -  <---- TX  UARTtoUSB bridge
@@ -32,27 +32,27 @@
 ! P1.1  - UCB0 CLK    PL1.9  -  ----> CLK SPI_RAM
 ! P1.2  - UCB0 SIMO   PL1.10 -  ----> SI  SPI_RAM
 ! P1.3  - UCB0 SOMI   PL2.10 -  <---- S0  SPI_RAM
-!       
-!       
+!
+!
 ! P1.1  - UCB0 CLK    PL1.9  -  ----> SD_CLK
 ! P1.2  - UCB0 SIMO   PL1.10 -  ----> SD_SDI
 ! P1.3  - UCB0 SOMI   PL2.10 -  <---- SD_SDO
 ! P2.3  -             PL1.6  -  <---- SD_CD (Card Detect)
 ! P2.2  -             PL2.9  -  ----> SD_CS (Card Select)
-!       
+!
 ! P1.2  - UCB0 SDA    PL1.10 -  <---> SDA I2C Slave
 ! P1.3  - UCB0 SCL    PL2.10 -  ----> SCL I2C Slave
-!       
+!
 ! P2.2  -             PL2.9  -  ----> SCL I2C SoftMaster
 ! P2.0  -             PL2.3  -  <---> SDA I2C SoftMaster
-!       
-! P1.0  - UCB0 STE    PL1.8  -  <---- TSSOP32236 (IR RC5) 
+!
+! P1.0  - UCB0 STE    PL1.8  -  <---- TSSOP32236 (IR RC5)
 
 
 ! ============================================
 ! FORTH I/O :
 ! ============================================
-!TERMINAL 
+!TERMINAL
 BUS_TERM=\$30!      ; P1.4 = TX, P1.5 = RX
 
 TERM_IN=\$200!
@@ -62,21 +62,21 @@ TERM_SEL=\$20A!     \SEL0
 TERM_VEC=\$FFE4!    \ UCA0
 WAKE_UP=1!          \ RX int
 
-TERM_CTLW0=\$500!   \ eUSCI_A control word 0        
-TERM_CTLW1=\$502!   \ eUSCI_A control word 1        
-TERM_BRW=\$506!         
-TERM_BR0=\$506!     \ eUSCI_A baud rate 0           
-TERM_BR1=\$507!     \ eUSCI_A baud rate 1           
-TERM_MCTLW=\$508!   \ eUSCI_A modulation control    
-TERM_STATW=\$50A!   \ eUSCI_A status                
-TERM_RXBUF=\$50C!   \ eUSCI_A receive buffer        
-TERM_TXBUF=\$50E!   \ eUSCI_A transmit buffer       
-TERM_ABCTL=\$510!   \ eUSCI_A LIN control           
-TERM_IRTCTL=\$512!  \ eUSCI_A IrDA transmit control 
-TERM_IRRCTL=\$513!  \ eUSCI_A IrDA receive control  
-TERM_IE=\$51A!      \ eUSCI_A interrupt enable      
-TERM_IFG=\$51C!     \ eUSCI_A interrupt flags       
-TERM_IV=\$51E!      \ eUSCI_A interrupt vector word 
+TERM_CTLW0=\$500!   \ eUSCI_A control word 0
+TERM_CTLW1=\$502!   \ eUSCI_A control word 1
+TERM_BRW=\$506!
+TERM_BR0=\$506!     \ eUSCI_A baud rate 0
+TERM_BR1=\$507!     \ eUSCI_A baud rate 1
+TERM_MCTLW=\$508!   \ eUSCI_A modulation control
+TERM_STATW=\$50A!   \ eUSCI_A status
+TERM_RXBUF=\$50C!   \ eUSCI_A receive buffer
+TERM_TXBUF=\$50E!   \ eUSCI_A transmit buffer
+TERM_ABCTL=\$510!   \ eUSCI_A LIN control
+TERM_IRTCTL=\$512!  \ eUSCI_A IrDA transmit control
+TERM_IRRCTL=\$513!  \ eUSCI_A IrDA receive control
+TERM_IE=\$51A!      \ eUSCI_A interrupt enable
+TERM_IFG=\$51C!     \ eUSCI_A interrupt flags
+TERM_IV=\$51E!      \ eUSCI_A interrupt vector word
 
 RTS=4!              ; P3.2
 CTS=1!              ; P3.0
@@ -90,19 +90,19 @@ LED1_OUT=\$222!
 LED1=\$02!          P3.1
 
 SW1_IN=\$201!
-SW1=\$02!           P2.1    
+SW1=\$02!           P2.1
 
 WIPE_IN=\$201!
-IO_WIPE=\$02!       P2.1    
+IO_WIPE=\$02!       P2.1
 
 SW2_IN=\$201!
 SW2=\$01!           P2.0
 
 
-IR_IN=\$200!  
-IR_OUT=\$202! 
-IR_DIR=\$204! 
-IR_REN=\$208! 
+IR_IN=\$200!
+IR_OUT=\$202!
+IR_DIR=\$204!
+IR_REN=\$208!
 IR_IES=\$218!
 IR_IE=\$21A!
 IR_IFG=\$21C!
@@ -116,7 +116,7 @@ I2CSM_DIR=\$205!
 I2CSM_REN=\$207!
 SMSDA=\$01!         P2.0
 SMSCL=\$04!         P2.2
-SM_BUS=\$05!    
+SM_BUS=\$05!
 
 I2CSMM_IN=\$201!
 I2CSMM_OUT=\$203!
@@ -124,7 +124,7 @@ I2CSMM_DIR=\$205!
 I2CSMM_REN=\$207!
 SMMSDA=\$01!        P2.0
 SMMSCL=\$04!        P2.2
-SMM_BUS=\$05!    
+SMM_BUS=\$05!
 
 I2CMM_IN=\$200!
 I2CMM_OUT=\$202!
@@ -160,7 +160,7 @@ S_BUS=\$C0!
 CD_SD=8!        ; P2.3 as Card Detect
 SD_CDIN=\$201!
 
-CS_SD=4!        ; P2.2 as Card Select     
+CS_SD=4!        ; P2.2 as Card Select
 SD_CSOUT=\$203!
 SD_CSDIR=\$205!
 

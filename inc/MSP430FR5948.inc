@@ -26,7 +26,7 @@ DEVICE = "MSP430FR5948"
 ; ----------------------------------------------
 PAGESIZE        .equ 512         ; MPU unit
 ; ----------------------------------------------
-; BSL                         
+; BSL
 ; ----------------------------------------------
 BSL             .equ 1000h
 ; ----------------------------------------------
@@ -64,7 +64,7 @@ BSL_SIG2        .equ 0FF86h      ;
 JTAG_PASSWORD   .equ 0FF88h      ; 256 bits max
 IPE_SIG_VALID   .equ 0FF88h      ; one word
 IPE_STR_PTR_SRC .equ 0FF8Ah      ; one word
-I2CSLA0         .equ 0FFA2h      ; UCBxI2COA0 default value address 
+I2CSLA0         .equ 0FFA2h      ; UCBxI2COA0 default value address
 I2CSLA1         .equ 0FFA4h      ; UCBxI2COA1 default value address
 I2CSLA2         .equ 0FFA6h      ; UCBxI2COA2 default value address
 I2CSLA3         .equ 0FFA8h      ; UCBxI2COA3 default value address
@@ -270,7 +270,7 @@ P1SELC      .equ PA_SFR + 16h    ; Port 1 SELection Complement
 P1IES       .equ PA_SFR + 18h    ; Port 1 Interrupt Edge Select
 P1IE        .equ PA_SFR + 1Ah    ; Port 1 Interrupt Enable
 P1IFG       .equ PA_SFR + 1Ch    ; Port 1 Interrupt FlaG
-P1IV        .equ PA_SFR + 0Eh    ; Port 1 Interrupt Vector word 
+P1IV        .equ PA_SFR + 0Eh    ; Port 1 Interrupt Vector word
 
 P2IN        .equ PA_SFR + 01h    ; Port 2 INput
 P2OUT       .equ PA_SFR + 03h    ; Port 2 OUTput
@@ -282,15 +282,15 @@ P2SELC      .equ PA_SFR + 17h    ; Port 2 SELection Complement
 P2IES       .equ PA_SFR + 19h    ; Port 2 Interrupt Edge Select
 P2IE        .equ PA_SFR + 1Bh    ; Port 2 Interrupt Enable
 P2IFG       .equ PA_SFR + 1Dh    ; Port 2 Interrupt FlaG
-P2IV        .equ PA_SFR + 1Eh    ; Port 2 Interrupt Vector word 
+P2IV        .equ PA_SFR + 1Eh    ; Port 2 Interrupt Vector word
 
 
 WIPE_IN     .equ P2IN
 IO_WIPE     .equ 1      ; P2.0 = FORTH Deep_RST pin
 
     .IFDEF UCA0_TERM
-; P2.0  UCA0-TXD    --> USB2UART RXD    
-; P2.1  UCA0-RXD    <-- USB2UART TXD 
+; P2.0  UCA0-TXD    --> USB2UART RXD
+; P2.1  UCA0-RXD    <-- USB2UART TXD
 TXD         .equ 1      ; P2.0 = TX + FORTH Deep_RST pin
 RXD         .equ 2      ; P2.1 = RX
 BUS_TERM    .equ 3
@@ -307,13 +307,13 @@ BUS_SD      .equ 04C0h  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0S
 
 
     .IFDEF TERMINAL4WIRES
-; RTS output is wired to the CTS input of UART2USB bridge 
+; RTS output is wired to the CTS input of UART2USB bridge
 ; configure RTS as output high to disable RX TERM during start FORTH
 HANDSHAKOUT .equ    P2OUT
 HANDSHAKIN  .equ    P2IN
 RTS         .equ    4           ; P2.2
         .IFDEF TERMINAL5WIRES
-; CTS input must be wired to the RTS output of UART2USB bridge 
+; CTS input must be wired to the RTS output of UART2USB bridge
 ; configure CTS as input low (true) to avoid lock when CTS is not wired
 CTS         .equ  8             ; P2.3
         .ENDIF  ; TERMINAL5WIRES
@@ -346,7 +346,7 @@ P3SELC      .equ PB_SFR + 16h    ; Port 3 Complement Selection
 P3IES       .equ PB_SFR + 18h    ; Port 3 Interrupt Edge Select
 P3IE        .equ PB_SFR + 1Ah    ; Port 3 Interrupt Enable
 P3IFG       .equ PB_SFR + 1Ch    ; Port 3 Interrupt Flag
-P3IV        .equ PB_SFR + 0Eh    ; Port 3 Interrupt Vector word 
+P3IV        .equ PB_SFR + 0Eh    ; Port 3 Interrupt Vector word
 
 P4IN        .equ PB_SFR + 01h    ; Port 4 Input */
 P4OUT       .equ PB_SFR + 03h    ; Port 4 Output
@@ -358,7 +358,7 @@ P4SELC      .equ PB_SFR + 17h    ; Port 4 Complement Selection
 P4IES       .equ PB_SFR + 19h    ; Port 4 Interrupt Edge Select
 P4IE        .equ PB_SFR + 1Bh    ; Port 4 Interrupt Enable
 P4IFG       .equ PB_SFR + 1Dh    ; Port 4 Interrupt Flag
-P4IV        .equ PB_SFR + 1Eh    ; Port 4 Interrupt Vector word 
+P4IV        .equ PB_SFR + 1Eh    ; Port 4 Interrupt Vector word
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORTJ
@@ -467,7 +467,7 @@ TERM_STATW      .equ eUSCI_B0_SFR + 08h     ; USCI_B0 Status Word
 TERM_RXBUF      .equ eUSCI_B0_SFR + 0Ch     ; USCI_B0 Receive Buffer 8
 TERM_TXBUF      .equ eUSCI_B0_SFR + 0Eh     ; USCI_B0 Transmit Buffer 8
 TERM_I2COA0     .equ eUSCI_B0_SFR + 14h     ; USCI_B0 I2C Own Address 0
-TERM_ADDRX      .equ eUSCI_B0_SFR + 1Ch     ; USCI_B0  Received Address Register 
+TERM_ADDRX      .equ eUSCI_B0_SFR + 1Ch     ; USCI_B0  Received Address Register
 TERM_I2CSA      .equ eUSCI_B0_SFR + 20h     ; USCI_B0 I2C Slave Address
 TERM_IE         .equ eUSCI_B0_SFR + 2Ah     ; USCI_B0 Interrupt Enable
 TERM_IFG        .equ eUSCI_B0_SFR + 2Ch     ; USCI_B0 Interrupt Flags Register

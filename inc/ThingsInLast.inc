@@ -1,6 +1,6 @@
 ; -*- coding: utf-8 -*-
 
-ROMDICT         ; init DDP with this current address
+ROMDICT         .equ $  ; init DDP with this current address
 lastvoclink     .equ voclink
 lastforthword   .equ forthlink
 lastasmword     .equ asmlink
@@ -81,32 +81,32 @@ lastasmword31   .equ asmlink31
 ; 0FF80h = SIGNATURES AREA, Deep_RST erases only 8 words from 0FF80h to 0FF90h
 ;----------------
     .org 0FF80h     ; JTAG signature (2 words)
-    .word -1   
+    .word -1
     .word -1
 ;    .org 0FF84h    ; BSL signature (2 words)
-    .word -1        
-    .word -1
-;    .org 0FF88h    ; MSP430FR5xxx|MSP430FR6xxx JTAG_PASSWORD, up to 0FFFFh
-;    .org 0FF88h    ; MSP430FR5xxx|MSP430FR6xxx encapsulation signature (2 words)
     .word -1
     .word -1
+;    .org 0FF88h    ; FR5xxx|FR6xxx JTAG_PASSWORD, up to 0FFFFh
+;    .org 0FF88h    ; FR5xxx|FR6xxx encapsulation signature (2 words)
+;    .org 0FF88h    ; FR215x|FR235x|FR247x|FR267x  BLS config signature + BSL config (2 words)
     .word -1
     .word -1
-;    .org 0FF90h    ; free for 8 x I2C addresses UCBx
-    .word 0         ; I2C address mini = 10h, maxi = 0EEh (I2C-bus specification and user manual V6)
-    .word 0         ; (112 x I2C addresses with R/W flag = 0)
-    .word 0 
-    .word 0 
-    .word 0 
-    .word 0 
-    .word 0 
-    .word 0 
+    .word -1
+    .word -1
+;    .org 0FF90h    ; free (not erased by DEEP RESET)
+    .word -1
+    .word -1
+    .word -1
+    .word -1
+    .word -1
+    .word -1
+    .word -1
+    .word -1
 
 ;----------------
-; FFA0h =  MSP430FR2355/2476 BSL I2C Address, a good idea for I2C_SLAVE_ADR(s) area, isn't it?
+; FFA0h =  FR215x|FR235x|FR247x|FR267x BSL I2C Address, a good idea for I2C_SLAVE_ADR(s) area, isn't it?
 ;----------------
-    .org 0FFA0h ;
-    .word 077h  ; --> MSP430FR2355/2476 BSL I2C 7 bits address (without R/W flag)
+    .word 077h  ; --> FR215x|FR235x|FR247x|FR267x BSL I2C 7 bits address (without R/W flag)
     .word 10h   ; --> UCBxI2COA0 8 bits address (with R/W flag=0)
     .word 12h   ; --> UCBxI2COA1
     .word 14h   ; --> UCBxI2COA2
@@ -116,7 +116,6 @@ lastasmword31   .equ asmlink31
 ;----------------
 ; FFACh = VECTORS AREA (lowest known vector interrupt)
 ;----------------
-    .org 0FFACh
     .word COLD
     .word COLD
     .word COLD

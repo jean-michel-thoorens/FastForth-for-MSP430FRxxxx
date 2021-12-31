@@ -4,7 +4,7 @@
 \.f=\.4th for MSP_EXP430FR5969!      to change file type
 !
 !========================
-! remove comments        
+! remove comments
 !========================
 \\*\n=
 \s\\*\n=\n
@@ -41,7 +41,7 @@
 ! P2 - P4.2
 ! P3 - P2.6 UCA1 RX/SOMI
 ! P4 - P2.5 UCA1 TX/SIMO
-! P5 - P4.3             
+! P5 - P4.3
 ! P6 - P2.4 UCA1     CLK
 ! P7 - P2.2 TB0.2 UCB0CLK
 ! P8 - P3.4
@@ -70,7 +70,7 @@
 ! P9    P10    RX0     P2.1 (no strap)
 ! P11   P12    CTS     P4.0 (no strap)
 ! P13   P14    RTS     P4.1 (no strap)
-! P15<->P16     V+ <-> VCC 
+! P15<->P16     V+ <-> VCC
 ! P17   P18     5V          (no strap)
 ! P19---P20    GND-----VSS
 
@@ -90,23 +90,23 @@
 
 ! J13 jumpers : device <-> eZ-FET
 ! -------------------------------
-!  P2   P1          NC     NC  
+!  P2   P1          NC     NC
 !  P4<->P3        TEST <-> TEST
-!  P6<->P5         RST <-> RST 
+!  P6<->P5         RST <-> RST
 !  P8   P7        P2.0     TX0  (no jumper)
 ! P10   P9        P2.1     RX0  (no jumper)
 ! P12   P11       P4.0     CTS  (no jumper)
 ! P14   P13       P4.1     RTS  (no jumper)
-! P16<->P15        VCC <-> V+  
+! P16<->P15        VCC <-> V+
 ! P18   P17         5V     5V   (no jumper)
-! P20---P19        VSS-----GND  
+! P20---P19        VSS-----GND
 
 ! P4.6 - J6 - LED1 red
 ! P1.0 - LED2 green
 !
 ! P4.5 - Switch S1              <--- LCD contrast + (finger :-)
 ! P1.1 - Switch S2              <--- LCD contrast - (finger ;-)
-!                                   
+!
 !  GND -                 J1.2   <-------+---0V0---------->  1 LCD_Vss
 !  VCC -                 J1.3   >------ | --3V6-----+---->  2 LCD_Vdd
 !                                       |           |
@@ -123,18 +123,18 @@
 ! PJ.1 -                 J3.3   <------------------------> 12 LCD_DB5
 ! PJ.2 -                 J3.5   <------------------------> 13 LCD_DB6
 ! PJ.3 -                 J3.7   <------------------------> 14 LCD_DB7
-!        
-!                                 +--4k7-< DeepRST <-- GND 
+!
+!                                 +--4k7-< DeepRST <-- GND
 !                                 |
 ! P2.0 - UCA0 TXD        J13.8  <-+-> RX   UARTtoUSB bridge
 ! P2.1 - UCA0 RXD        J13.10 <---- TX   UARTtoUSB bridge
 ! P4.1 - RTS             J13.14 ----> CTS  UARTtoUSB bridge (optional hardware control flow)
 !  VCC -                 J13.16 <---- VCC  (optional supply from UARTtoUSB bridge - WARNING ! 3.3V !)
 !  GND -                 J13.20 <---> GND  (optional supply from UARTtoUSB bridge)
-!        
+!
 !  VCC -                 J11.1  ----> VCC  SD_CardAdapter
 !  GND -                 J12.3  <---> GND  SD_CardAdapter
-! P2.4 - UCA1 CLK        J4.6   ----> CLK  SD_CardAdapter (SCK)  
+! P2.4 - UCA1 CLK        J4.6   ----> CLK  SD_CardAdapter (SCK)
 ! P4.3 -                 J4.5   ----> CS   SD_CardAdapter (Card Select)
 ! P2.5 - UCA1 TXD/SIMO   J4.4   ----> SDI  SD_CardAdapter (MOSI)
 ! P2.6 - UCA1 RXD/SOMI   J4.3   <---- SDO  SD_CardAdapter (MISO)
@@ -152,11 +152,11 @@
 ! P1.6 - UCB0 SDA/SIMO   J5.15  <---> SDA  I2C MASTER/SLAVE
 ! P3.0 -                 J5.7   <---- free
 !
-! PJ.4 - LFXI 32768Hz quartz  
-! PJ.5 - LFXO 32768Hz quartz  
-! PJ.6 - HFXI 
-! PJ.7 - HFXO 
-! 
+! PJ.4 - LFXI 32768Hz quartz
+! PJ.5 - LFXO 32768Hz quartz
+! PJ.6 - HFXI
+! PJ.7 - HFXO
+!
 ! P2.3 - NC
 ! P2.7 - NC
 ! P3.1 - NC
@@ -179,7 +179,7 @@
 ! ============================================
 ! FORTH I/O :
 ! ============================================
-!TERMINAL 
+!TERMINAL
 BUS_TERM=3!         \ P2.0 = TX, P2.1 = RX
 
 TERM_IN=\$201!
@@ -189,21 +189,21 @@ TERM_SEL=\$20D!
 TERM_VEC=\$FFF0!    \ UCA0
 WAKE_UP=1!          \ RX int
 
-TERM_CTLW0=\$5C0!    \ eUSCI_A control word 0        
-TERM_CTLW1=\$5C2!    \ eUSCI_A control word 1        
-TERM_BRW=\$5C6!         
-TERM_BR0=\$5C6!      \ eUSCI_A baud rate 0           
-TERM_BR1=\$5C7!      \ eUSCI_A baud rate 1           
-TERM_MCTLW=\$5C8!    \ eUSCI_A modulation control    
-TERM_STAT=\$5CA!     \ eUSCI_A status                
-TERM_RXBUF=\$5CC!    \ eUSCI_A receive buffer        
-TERM_TXBUF=\$5CE!    \ eUSCI_A transmit buffer       
-TERM_ABCTL=\$5D0!    \ eUSCI_A LIN control           
-TERM_IRTCTL=\$5D2!   \ eUSCI_A IrDA transmit control 
-TERM_IRRCTL=\$5D3!   \ eUSCI_A IrDA receive control  
-TERM_IE=\$5DA!       \ eUSCI_A interrupt enable      
-TERM_IFG=\$5DC!      \ eUSCI_A interrupt flags       
-TERM_IV=\$5DE!       \ eUSCI_A interrupt vector word 
+TERM_CTLW0=\$5C0!    \ eUSCI_A control word 0
+TERM_CTLW1=\$5C2!    \ eUSCI_A control word 1
+TERM_BRW=\$5C6!
+TERM_BR0=\$5C6!      \ eUSCI_A baud rate 0
+TERM_BR1=\$5C7!      \ eUSCI_A baud rate 1
+TERM_MCTLW=\$5C8!    \ eUSCI_A modulation control
+TERM_STAT=\$5CA!     \ eUSCI_A status
+TERM_RXBUF=\$5CC!    \ eUSCI_A receive buffer
+TERM_TXBUF=\$5CE!    \ eUSCI_A transmit buffer
+TERM_ABCTL=\$5D0!    \ eUSCI_A LIN control
+TERM_IRTCTL=\$5D2!   \ eUSCI_A IrDA transmit control
+TERM_IRRCTL=\$5D3!   \ eUSCI_A IrDA receive control
+TERM_IE=\$5DA!       \ eUSCI_A interrupt enable
+TERM_IFG=\$5DC!      \ eUSCI_A interrupt flags
+TERM_IV=\$5DE!       \ eUSCI_A interrupt vector word
 
 RTS=2!              ; P4.1
 CTS=1!              ; P4.0
@@ -213,7 +213,7 @@ HANDSHAKOUT=\$223!
 CD_SD=4!            P4.2 as Card Detect
 SD_CDIN=\$221!
 
-CS_SD=8!            P4.3 as Card Select     
+CS_SD=8!            P4.3 as Card Select
 SD_CSOUT=\$223!
 SD_CSDIR=\$225!
 
@@ -237,10 +237,10 @@ LED2=\$01!          P1.0
 
 ! init state : input with pullup resistor
 SW1_IN=\$221
-SW1=\$20!           P4.5 = S1 
+SW1=\$20!           P4.5 = S1
 
 WIPE_IN=\$221
-IO_WIPE=\$20!       P4.5 = S1 = FORTH Deep_RST pin  
+IO_WIPE=\$20!       P4.5 = S1 = FORTH Deep_RST pin
 
 ! init state : input with pullup resistor
 SW2_IN=\$200
@@ -353,12 +353,12 @@ UCRXIFG0=1!         eUSCI_B Receive Interrupt Flag
 I2CM_CTLW0=\$640!   USCI_B0 Control Word Register 0
 I2CM_CTLW1=\$642!   USCI_B0 Control Word Register 1
 I2CM_BRW=\$646!     USCI_B0 Baud Word Rate 0
-I2CM_STATW=\$648!   USCI_B0 status word 
-I2CM_TBCNT=\$64A!   USCI_B0 byte counter threshold  
+I2CM_STATW=\$648!   USCI_B0 status word
+I2CM_TBCNT=\$64A!   USCI_B0 byte counter threshold
 I2CM_RXBUF=\$64C!   USCI_B0 Receive Buffer 8
 I2CM_TXBUF=\$64E!   USCI_B0 Transmit Buffer 8
 I2CM_I2COA0=\$654!  USCI_B0 I2C Own Address 0
-I2CM_ADDRX=\$65C!   USCI_B0 Received Address Register 
+I2CM_ADDRX=\$65C!   USCI_B0 Received Address Register
 I2CM_I2CSA=\$660!   USCI_B0 I2C Slave Address
 I2CM_IE=\$66A!      USCI_B0 Interrupt Enable
 I2CM_IFG=\$66C!     USCI_B0 Interrupt Flags Register
@@ -366,12 +366,12 @@ I2CM_IFG=\$66C!     USCI_B0 Interrupt Flags Register
 I2CS_CTLW0=\$640!   USCI_B0 Control Word Register 0
 I2CS_CTLW1=\$642!   USCI_B0 Control Word Register 1
 I2CS_BRW=\$646!     USCI_B0 Baud Word Rate 0
-I2CS_STATW=\$648!   USCI_B0 status word 
-I2CS_TBCNT=\$64A!   USCI_B0 byte counter threshold  
+I2CS_STATW=\$648!   USCI_B0 status word
+I2CS_TBCNT=\$64A!   USCI_B0 byte counter threshold
 I2CS_RXBUF=\$64C!   USCI_B0 Receive Buffer 8
 I2CS_TXBUF=\$64E!   USCI_B0 Transmit Buffer 8
 I2CS_I2COA0=\$654!  USCI_B0 I2C Own Address 0
-I2CS_ADDRX=\$65C!   USCI_B0 Received Address Register 
+I2CS_ADDRX=\$65C!   USCI_B0 Received Address Register
 I2CS_I2CSA=\$660!   USCI_B0 I2C Slave Address
 I2CS_IE=\$66A!      USCI_B0 Interrupt Enable
 I2CS_IFG=\$66C!     USCI_B0 Interrupt Flags Register

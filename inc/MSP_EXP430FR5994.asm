@@ -11,7 +11,7 @@
 ; 3V3             10-9
 ; P2.1 UCA0_RX     8-7         <---- TX   UARTtoUSB bridge
 ;                                +--4k7-< DeepRST <-- GND
-;                                |            
+;                                |
 ; P2.0 UCA0_TX     6-5         <-+-> RX   UARTtoUSB bridge
 ; /RST             4-3
 ; TEST             2-1
@@ -19,18 +19,18 @@
 ;
 ; P5.6    - sw1                <--- LCD contrast + (finger :-)
 ; P5.5    - sw2                <--- LCD contrast - (finger ;-)
-; RST     - sw3 
+; RST     - sw3
 ;
 ; P1.0    - led1 red
 ; P1.1    - led2 green
 ;
 ; J1 - left ext.
 ; 3v3
-; P1.2/TA1.1/TA0CLK/COUT/A2/C2 <--- OUT IR_Receiver (1 TSOP32236)     
+; P1.2/TA1.1/TA0CLK/COUT/A2/C2 <--- OUT IR_Receiver (1 TSOP32236)
 ; P6.1/UCA3RXD/UCA3SOMI        ------------------------->  4 LCD_RS
 ; P6.0/UCA3TXD/UCA3SIMO        ------------------------->  5 LCD_R/W
 ; P6.2/UCA3CLK                 ------------------------->  6 LCD_EN0
-; P1.3/TA1.2/UCB0STE/A3/C3            
+; P1.3/TA1.2/UCB0STE/A3/C3
 ; P5.2/UCB1CLK/TA4CLK
 ; P6.3/UCA3STE
 ; P7.1/UCB2SOMI/UCB2SCL        ---> SCL I2C MASTER/SLAVE
@@ -39,23 +39,23 @@
 ; J3 - left int.
 ; 5V
 ; GND
-; P3.0/A12/C12                 <------------------------> 11 LCD_DB4   
+; P3.0/A12/C12                 <------------------------> 11 LCD_DB4
 ; P3.1/A13/C13                 <------------------------> 12 LCD_DB5
 ; P3.2/A14/C14                 <------------------------> 13 LCD_DB6
 ; P3.3/A15/C15                 <------------------------> 14 LCD_DB7
 ; P1.4/TB0.1/UCA0STE/A4/C4
-; P1.5/TB0.2/UCA0CLK/A5/C5     >---||--+--^/\/\/v--+---->  3 LCD_Vo (=0V6 without modulation)    
+; P1.5/TB0.2/UCA0CLK/A5/C5     >---||--+--^/\/\/v--+---->  3 LCD_Vo (=0V6 without modulation)
 ; P4.7
 ; P8.0
 ;
 ; J4 - right int.
-; P3.7/TB0.6                          
-; P3.6/TB0.5                          
-; P3.5/TB0.4/COUT                     
+; P3.7/TB0.6
+; P3.6/TB0.5
+; P3.5/TB0.4/COUT
 ; P3.4/TB0.3/SMCLK
 ; P7.3/UCB2STE/TA4.1
-; P2.6/TB0.1/UCA1RXD/UCA1SOMI 
-; P2.5/TB0.0/UCA1TXD/UCA1SIMO 
+; P2.6/TB0.1/UCA1RXD/UCA1SOMI
+; P2.5/TB0.0/UCA1TXD/UCA1SIMO
 ; P4.3/A11
 ; P4.2/A10       RTS ----> CTS  UARTtoUSB bridge (optional hardware control flow)
 ; P4.1/A9        CTS <---- RTS  UARTtoUSB bridge (optional hardware control flow)
@@ -91,7 +91,7 @@
 ; -----------------------------------------------
 ; LCD config
 ; -----------------------------------------------
-                                    
+
 ;       <-------+---0V0---------->  1 LCD_Vss
 ;       >------ | --3V6-----+---->  2 LCD_Vdd
 ;               |           |
@@ -144,8 +144,8 @@ BUS_SD      .equ 04C0h  ; pins P2.2 as UCB0CLK, P1.6 as UCB0SIMO & P1.7 as UCB0S
     .ENDIF
 
     .IFDEF UCA0_TERM ; see device.inc
-; P2.0  UCA0-TXD    --> USB2UART RXD    
-; P2.1  UCA0-RXD    <-- USB2UART TXD 
+; P2.0  UCA0-TXD    --> USB2UART RXD
+; P2.1  UCA0-RXD    <-- USB2UART TXD
 TERM_IN     .equ P2IN
 TERM_SEL    .equ P2SEL1
 TERM_REN    .equ P2REN
@@ -163,7 +163,7 @@ BUS_TERM    .equ 3
 ; PORT4 FastForth usage
 SD_CSOUT    .equ    P4OUT
 SD_CSDIR    .equ    P4DIR
-CS_SD       .equ    1           ; P4.0 Chip Select    
+CS_SD       .equ    1           ; P4.0 SD_card Chip Select
 
 HANDSHAKIN  .equ    P4IN
 HANDSHAKOUT .equ    P4OUT
@@ -174,11 +174,11 @@ CTS         .equ    2           ; P4.1
             BIS #-1,&PBOUT
 
     .IFDEF TERMINAL4WIRES
-; RTS output is wired to the CTS input of UART2USB bridge 
+; RTS output is wired to the CTS input of UART2USB bridge
 ; configure RTS as output high to disable RX TERM during start FORTH
             BIS.B #RTS,&P4DIR   ; RTS as output high
         .IFDEF TERMINAL5WIRES
-; CTS input must be wired to the RTS output of UART2USB bridge 
+; CTS input must be wired to the RTS output of UART2USB bridge
 ; configure CTS as input low (true) to avoid lock when CTS is not wired
             BIC.B #CTS,&P4OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
@@ -193,11 +193,9 @@ CTS         .equ    2           ; P4.1
 ; P5.5 Switch S2
 SW1_IN      .set P5IN    ; port
 SW1         .set 040h    ; P5.6 bit position
+
 SW2_IN      .set P5IN    ; port
 SW2         .set 020h    ; P5.5 bit position
-
-WIPE_IN     .equ    P5IN
-IO_WIPE     .equ    40h ; P5.6 = S1 = FORTH Deep_RST pin
 
 ; PORT6 FastForth usage
 
@@ -223,7 +221,7 @@ SCL         .equ 2      ; P7.1
 BUS_TERM    .equ 3
     .ENDIF
 
-CD_SD       .equ 4        ; P7.2 Card Detect
+CD_SD       .equ 4        ; P7.2 SD_Card Card Detect
 SD_CDIN     .equ P7IN
 
 ; PORT8 FastForth usage

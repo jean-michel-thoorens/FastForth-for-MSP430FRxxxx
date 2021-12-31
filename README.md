@@ -1,46 +1,67 @@
-# FastForth for all MSP430FRxxxx TI's devices,  light, fast, efficient, reliable.
+## FastForth for MSP430FRxxxx TI's CPUs, light, fast, reliable.
 
-Tested on TI MSP-EXP430FR(5739,5969,5994,6989,4133,2355,2433) launchpads, at 1, 2, 4, 8, 12, 16 MHz plus 20MHz & 24MHz with MSP430FR(23xx,57xx) devices.
+Tested on TI MSP-EXP430FR 5739,
+[5969](https://duckduckgo.com/?q=MSP-EXP430FR5969),
+[5994](https://duckduckgo.com/?q=MSP-EXP430FR5994),
+6989,
+4133,
+[2476](https://duckduckgo.com/?q=Lp-MSP430FR2476),
+[2355](https://duckduckgo.com/?q=MSP-EXP430FR2355),
+2433) launchpads, at 1, 2, 4, 8, 12, 16 MHz plus 20 & 24 MHz with MSP430FR(23xx,57xx) devices.
 
-FastForth is a **5kB size** "load interpret compile" operating system for MSP430 devices with FRAM which includes:
+FastForth is a "load interpret compile execute" operating system for the CPU's MSP430 Texas Instruments with FRAM:
 
-* FORTH kernel with interpreting decimal, hex, binary numbers (#,$,% prefixes), double numbers and Q15.16 numbers,
-
-* the assembler, **label free, with TI's syntax**,
-
-* easy roundtrip between FORTH and ASSEMBLER in definitions, with only 2 switches: `HI2LO` and `LO2HI`,
-
-* conditional compilation,
-
-* efficient memory management which can be modulated according to these 3 levels: power on, reset, deep reset,
-
-* automatic memory releasing with MARKER tags,
-
-* robust and visual error handling,
-
-* choice of the TERMINAL (TERATERM.exe) interface:
+* LOAD: choice of the TERMINAL (TERATERM.exe) interface:
 
     * UART TERMINAL up to 6MBds @ MCLK=24MHz, with software (XON/XOFF) and/or hardware (RTS) control flow, **transmit delay: 0 ms/char, 0 ms/line**
 
-    * **I2C TERMINAL up to 1MHz**, "full duplex" like, allowing to communicate with several **I2C_FastForth** targets,
+    * a very well designed **I2C TERMINAL up to 1MHz**, with a behaviour full duplex, ready to communicate with all modules **I2C_FastForth** wired onto bus,
     
-* and therefore, **"loading, interpreting, compiling" a source file is faster and easier than loading its binary equivalent**,
+* INTERPRET: with a 16-entry word-set that speeds up the FORTH interpreter by 4,
 
-* transmission errors, if any, are automatically rejected by the on-board interpreter,
+* COMPILE: in addition to the FORTH engine, the **MSP430 assembler (label free) with syntax TI's**,
 
-* CPU in sleep mode LPM0:LPM4, awaiting a command from UART:I2C TERMINAL, or any user interrupt event,
+and as result **"load interpret compile" a source file is faster and easier than loading its binary equivalent** via the TI's eZFET interface:    
+For example, with MCLK=24MHz, THREADS=16, UART=6MBds 8n1, a [PL2303GC](https://duckduckgo.com/?q=DSD+TECH+SH-U06A+PL2303GC) and Teraterm.exe as TERMINAL, the download/interpret/execute process of the file CORETEST is done at an effective rate close to 43KB/s (430kBds).     
+with a bridge UARTtoI2C and an I2C_Slave target MCLK=24MHz, THREADS=16, the effective rate is the same ( I don't understand but it's like this...)
 
-* direct access to all SFR and other symbolic addresses by use of [GEMA preprocessor](https://github.com/NeonMan/gema),
+Despite its **size of 5 kb** FastForth includes:
 
-* Fully configurable reset, initialisation and background sequences.
+* FORTH kernel with interpreting decimal, hex, binary (#,$,% prefixed) numbers, digits separator '_', 'char', double numbers and Q15.16 numbers,
 
-For only 3 kbytes in addition, you have the primitives to access the SD\_CARD FAT16 and FAT32: read, write, del, download source files and also copy them from PC to the SD_Card. It works with all SD\_CARD memories from 64MB to 64GB. The cycle to read/write a byte is below 1 us @ 16 MHz.
+* the MSP430 16 bits assembler (1,5 kb),
 
-With all the kernel addons, including extended\_ASM and SD\_Card driver, FastForth size is **10 kB**.
+* a good error management which interrupts the downloading at the slightest error,
+
+* a memory management which can be modulated according to these 3 levels: MARKER, RESET, DEEP_RESET,
+
+* everything you need to write a real time application made of a mix of FORTH/assembler:
+
+    * the complete set of the FORTH building words,
+
+    * conditional compilation,
+
+    * thanks to [GEMA preprocessor](http://gema.sourceforge.net/new/index.shtml), the compilation of all symbolic addresses without having to declare them in FORTH, 
+
+    * easy roundtrip between FORTH and assembler with only two switches 'one word' `HI2LO` and `LO2HI`,
+
+    * automatic releasing memory with MARKER tags,
+
+    * Fully configurable sequences: reset, initialisation and background,
+
+    * CPU in sleep mode LPM0|LPM4 in awaiting a command from UART|I2C TERMINAL, and ready to process any interrupts.
+
+For only 3 kbytes in addition, we have the primitives to access the SD_CARD FAT16 and FAT32: read, write, del, download source files and also to copy them from PC to the SD_Card.
+It works with all SD\_CARD memories from 64MB to 64GB with FAT32 format.
+The cycle to read/write a **byte** is below 1us @ 16 MHz.
+
+With all the kernel addons, including the 20 bits MSP430\_X assembler and the SD\_Card driver, FastForth size is **10 kB**.
+
+After downloading CORE_ANS.f file (+2 kb), FastForth passes successfully the CORE ANS94 + COREPLUSTEST tests.
 
 However, if all works well with Windows 10, it works less well with Linux due to the lack of a good alternative to TERATERM...
 
-Note: for every update, download all subdirectories to correctly update the project, without missing configurations files.
+Note: please, for each update download all subdirectories to correctly update the project.
 
 ## how to connect TERMINAL
 
@@ -51,7 +72,16 @@ Note: for every update, download all subdirectories to correctly update the proj
     ------------------------------------------------------------------------------------------
     (modify this first: open the box and weld red wire on 3.3V pad).
 
-### programming with MSP430Flasher/UniFlash and FET interface
+### programming with MSP430Flasher/UniFlash and FET interface:
+
+            J101 connector
+                    |
+                    v
+     TI Launchpad <--> FET interface  <-------------> USB <-------------> MSP430Flasher.exe/UniFlash
+              Vcc <--- 3V3
+       TST/SBWTCK <--> SBWTCK
+              GND <--> GND
+      RST/SBWTDIO <--> SBWTDIO
 
      TI Launchpad <--> CP2102/PL2302TA cable <------> USB <-------------> TERATERM.exe 
                RX <--- TX            )
@@ -59,14 +89,11 @@ Note: for every update, download all subdirectories to correctly update the proj
                TX ---> RX            )
               RTS ---> CTS (optionnal) RTS pin Px.y is described in your \inc\launchpad.asm)
     
-     TI Launchpad <--> FET interface  <-------------> USB <-------------> MSP430Flasher.exe/UniFlash
-              Vcc <--- 3V3
-       TST/SBWTCK <--> SBWTCK
-              GND <--> GND
-      RST/SBWTDIO <--> SBWTDIO
+### programming with BSL_Scripter.exe (don't work with MSP-EXP430FR2355 launchpad)
 
-### programming with BSL_Scripter.exe
-
+            J101 connector
+                    |
+                    v
      MSP430FRxxxx <--> CP2102/PL2303TA cable <------> USB <-------->+<--> TERATERM.exe
                RX <--- TX   )                                       |
               GND <--> GND  > used by FastForth TERMINAL            +<--> BSL_Scripter.exe
@@ -91,17 +118,16 @@ A set of .bat files in \MSP430-FORTH folder is furnished to do all this automati
     
 To see all specifications of FastForth, download \MSP430-FORTH\FF_SPECS.f.
 
-To change the terminal baudrate on the fly, 9600 Bauds up to 6 MBds, download \MSP430-FORTH\CHNGBAUD.f.
+To change the UART TERMINAL baudrate on the fly, 9600 Bauds up to 6 MBds, download \MSP430-FORTH\CHNGBAUD.f.
 Beyond 1 MBds, shorten the PL2303HXD cable, down to 50 cm for 6MBds.
 
 XON/XOFF flow control allows 3.75kV galvanic isolation of terminal input with SOIC8 Si8622EC|ISO7021.
-With powered SOIC16W ISOW7821, you have 5kV rms isolation for both XON/XOFF TERMINAL and a 3V3 75mA supply.
 
-If you choose I2C_FastForth for your target, you will need of one more to make the USBtoI2C bridge.
+If you choose I2C_FastForth for your project, you will need of one more launchpad to make the USBtoI2C bridge.
 See driver for I2C_FastForth:  \MSP430-FORTH\UARTI2CS.f.
 
 After downloading of complementary words in \MSP430-FORTH\ANS_COMP.f, FastForth executes CORETEST.4th
-in less than a second, and without errors which ensures its compatibility with the FORTH CORE ANS94 standard.
+in one second, and without errors which ensures its compatibility with the FORTH CORE ANS94 standard.
 
 Notice that FAST FORTH interprets lines up to 84 chars, only SPACE as delimiter, only CR+LF as
 End Of Line, and BACKSPACE. 
@@ -112,22 +138,62 @@ Finally, using the SCITE editor as IDE, all is ready to do everything from its "
 What is new ?
 -------------
 
+### V309   
+
+* = V308 - 344 bytes.
+
+* removed `INTERPRET`, `CR` and the useless error line displaying.
+
+* Removed `PWR_HERE` and `PWR_STATE`, replaced `RST_HERE` by `RST_SET` and `RST_STATE` by `RST_RET`.
+
+* Replaced `WIPE` by `-1 SYS`, `COLD` by `6 SYS` and `WARM` by `0 SYS` or simply `SYS`.
+
+* replaced `VOCABULARY` with `WORDSET`. `ALSO` is also :-) removed because the executing of a definition created by `WORDSET` adds it into the CONTEXT stack. For example, typing `FORTH` adds it into CONTEXT. Note that as result the use of ONLY is modified: `FORTH ONLY` instead of `ONLY FORTH`.
+
+* modified QNUMBER QABORT `ABORT` `QUIT` `HI2LO` `PREVIOUS` `WORD` `FIND` `>NUMBER` `TYPE` `#>` `COUNT` `SWAP` `TICK` `POSTPONE` `COLON` `[ELSE]` plus the assembler.
+
+* The bootstrap ON/OFF is modified: `BOOT` / `NOBOOT` to enable / disable it.
+
+* the word-set `ASSEMBLER` is renamed `hidden` because it stores not only the ASM instructions definitions but also HDNCODE definitions.
+
+* when you executes a `MARKER` definition, it starts by removing its previous definition if exists.
+
+* Some bugs corrected:  
+    * QNUMBER FORWDOES `TYPE` `WORD`, 
+    * `M*/` in \MSP430-FORTH\DOUBLE.f file, 
+    * the assembler handles correctly argument+/-offset.
+
+* User can choose floored or symmetric division. See \MSP430-FORTH\ANS_CORE.f
+
+* the words `:NONAME` `IS` `DOES>` `CODENNM` are added to the core and there is still enough room in its 5kb for the VOCABULARY_SET add-on.  
+  DEFER is not included because too easy to replace by a CODE definition, see CR in file CORE_ANS.f. 
+
+* When used with VOCABULARY_SET activated, `RST_SET`/`RST_RET` and definition/use of `MARKER` tags save/restore the full word-set environment: DP, CURRENT, CONTEXT stack, VOCLINK.
+
+* FF_SPECS.f displays all word-sets, including the `hidden` one.
+
+* the SD_Card driver is rewritten. Only FAT32 format is supported. I suggest 4kb sized clusters.   
+  The old WRITE" command is duplicated :  
+    ** `WRITE"` to create a new file (or to overwrite it if exists),  
+    ** `APPEND"` to append to a file (or to create it if not exists)
+
+
 ### V308
 
-* 16 bytes removed from (Kernel + Conditional_Compilation + Assembler).
+* = V307 - 16 bytes.
     
 * Source file copy from TERMINAL to the SD\_Card of any I2C\_FastForth target works fine.
     
-* The bootstrap call is modified: `' BOOT IS WARM` to enable it, `' BOOT [PFA] IS WARM` to remove it.
+* ~~The bootstrap call is modified: `' BOOT IS WARM` to enable it, `' BOOT [PFA] IS WARM` to remove it~~.
 
-* ASM definitions are renamed HDNCODE (HiDdeN CODE), ENDASM is replaced by ENDCODE.
+* `ASM` definitions are renamed `HDNCODE` (HiDdeN CODE), `ENDASM` is replaced by `ENDCODE`.
 
-    HDNCODE definitions are identical to low level CODE ones, but are hidden because defined in the ASSEMBLER word set, and can be used only
+    `HDNCODE` definitions are identical to low level `CODE` ones, but are hidden because defined in the ~~`ASSEMBLER`~~ `hidden` word set, and must be used only
     in the scope of another low level CODE definition. See use in \MSP430-FORTH\UARTI2CS.f.
     
 * FastForth passes CORETEST + COREPLUSTEST tests. See modified \MSP430-FORTH\CORETEST.4TH
 
-* Double number word D< corrected in \MSP430-FORTH\DOUBLE.f
+* Double number word `D<` corrected in \MSP430-FORTH\DOUBLE.f
 
 
 ### V307
@@ -149,57 +215,58 @@ What is new ?
  `MOV #RXON,&SLEEP+2` to store RXON addr at SLEEP+2 addr.  
  `MOV.B BUFFER+-1(X),TOS` to load the byte at BUFFER-1(X) addr in the register TOS.
     
-* COLD does same than hardware RST.  
-  WIPE does same than hardware SW1+RST (DEEP_RESET).
+* ~~`COLD` does same than hardware RST~~.  
+  `6 SYS` does same than hardware RST.  
+  ~~`WIPE` does same than hardware SW1+RST (DEEP_RESET)~~.  
+  `-1 SYS` does same than hardware SW1+RST (DEEP_RESET).  
 
 
 * More complicated:
 
-In the FastForth init process, COLD WARM SLEEP are modified and INI_FORTH is added.
-They start each with an immediate call to a paired assembly subroutine:
+In the FastForth init process, COLD WARM SLEEP are modified and INIT_FORTH is added.
+They start each with a call to a paired assembly subroutine:
       
-          RST_SYS failures ->+       +<- ABORT_TERM <- ABORT" <-(error)<-+-<-COMPILE/EXECUTE<-INTERPRET<-+
-                             |       |                                   |                               ^
-                             |       v                                   v                               |
-          SW1+RST->+<-RST    |       +--> INI_FORTH -> ABORT" ->+->QUIT>-+->ACCEPT->+         +->ACCEPT->+
-                   |         |            ---------             ^                   |         ^
-                   v         v                                  |                   v         |  
-          WIPE --->+->COLD-->+--> PUC --> INI_FORTH --> WARM -->+                   +->SLEEP->+  
-                      ----                ---------     ----                           -----  
-      
-    subroutine:       COLD_APP            INI_SOFT_APP  INI_HARD_APP                   BACKGND_APP
-    default CALL#     COLD_TERM           RET_ADR       INIT_TERM                      RXON
-    Default action:   wait TERMINAL idle  do nothing    init TERM UCAx                 enable TERMINAL TX
-                                                        + unlock I/O's                 (send RXON + /RTS)
+          RST_SYS failures --------->+       +<- ABORT_TERM <--------(error)<------------+<--COMPILE/EXECUTE<-INTERPRET<-+
+                                     |       |                                           |                               ^
+          RST ------------>+         |       v                                           v                               |
+                           v         |       +-> INIT_FORTH -> ABORT" ->+-> ABORT->QUIT->+->ACCEPT->+         +->ACCEPT->+
+          SW1+RST -------->+         |           ==========             ^                           |         ^
+                           v         v                                  |                           v         |  
+          -n SYS --------->+->COLD-->+->PUC->+-> INIT_FORTH --> WARM" ->+                           +->SLEEP->+  
+                           ^  ====           ^   ==========     ====                                   =====  
+                           |                 |
+          +n SYS (even) -->+              (NOPUC)
+                                             |
+          +n SYS (odd) --------------------->+
+                                             ^ 
+          [0] SYS -------------------------->+
 
-   
+                  CALL...     &COLD_APP          &SOFT_APP      &HARD_APP                              &SLEEP_APP
+                              =========          =========      =========                              ==========
+    Default subroutine...     COLD_TERM          RET_ADR        INIT_TERM                              RXON
+        Default action...     wait TERM idle     do nothing     init TERM UC, unlock I/O               enable TERMINAL to TX
+                                                        
+    note: -n SYS|SW1+RST reset the default subroutine of these four calls.  
+
 On the other hand, MARKER is modified in such a way that MARKER\_DOES executes a CALL to
-the content of BODY+4,   by default RET_ADR:
+the content of USER_BODY-2,   by default RET_ADR:
     
-    MARKER [CFA]    = DODOES
-           [PFA]    = MARKER_DOES
-           [BODY]   = previous DP (Dictionnary Pointer)
-           [BODY+2] = previous VOCLINK (if word-set addon)
-           [BODY+4] = RET_ADR
+    MARKER [CFA]         = DODOES
+           [PFA]         = MARKER_DOES
+           [BODY]        = previous DP (Dictionnary Pointer)
+           ...
+           [USER_PARAM-2] = RET_ADR  as REMOVE_APP by default
 
-By replacing [BODY+4] with the address of a new defined subroutine (named for example: STOP_XXX), 
-MARKER_DOES will execute it to restore all critical pointers saved at BODY+6, BODY+8...
 
-Thus, with MARKER and the definition of subroutines COLD_XXX, INI_SOFT_XXX, INI_HARD_XXX, BACKGND_XXX 
+By replacing [USER_PARAM-2] with the address of a new defined subroutine (named for example: REMOVE_XXX), 
+MARKER_DOES will execute it to restore n critical pointers (room made by 2n ALLOT) at USER_PARAM, USER_PARAM+2, ...
+
+Thus, with MARKER and the definition of subroutines STOP_XXX, INIT_SOFT_XXX, INIT_HARD_XXX, BACKGND_XXX, 
 the programmer has full control of his "XXX" real time application using interrupts, 
-with everything he needs to start it, stop it, and also to properly remove it with
-a 'soft' MARKER word, avoiding the use of a WIPE or a SW1+RST of the last chance. 
+with everything he needs to start, stop and remove it properly, thanks to a 'soft' MARKER definition, 
+avoiding the (SW1+RST) of the last chance. 
 
-See examples in  /MSP430-FORTH/UARTI2CS.f,  /MSP430-FORTH/RTC.f.
-
-notes:
-
-* RST and SW1+RST (deep RST) are hardware redirected to COLD via NMI and the USER\_NMI vector. 
- 
-* INI\_SOFT\_SD is used as INI\_SOFT\_APP alias by the SD_CARD driver to reinit handles.  
-
-* WIPE|SW1+RST initialises this four APP calls plus TERMINAL\_INT Vector.  
-
+See example in  /MSP430-FORTH/UARTI2CS.f.
 
 
 ### V306
@@ -263,13 +330,13 @@ notes:
     A newcomer: FastForth for I2C TERMINAL. With the driver UART2I2CS running on another FastForth target,
                 we have the USB to I2C_Slave bridge we need: one TERMINAL for up to 112 I2C_FastForth targets.
 
-                                                                                    +---------------------------+
-      notebook                     USB to I2C_Slave bridge                    +-I2C-| others I2C_slave target   |
-    +-----------+      +-------------------------------------------------+   /    +--------------------------+  |
-    |           |      ¦ PL2303HXD         target running UARTI2CS @24MHz¦  +-I2C-|  MSP430FR4133 @ 1 MHz    |  |
-    |           |      ¦------------+       +----------------------------¦ /   +--------------------------+  |--+
-    |           |      ¦            | 3wires|   MSP430FR2355 @ 24MHz     ¦/    |   MSP430FR5738 @ 24 MHz  |  |
-    | TERATERM -o->USB-o->USB2UART->o->UART-o-> FAST FORTH -> UARTI2CS  -o-I2C-o-> FAST FORTH with option |--+
+                                                                                    +-------------------------+
+      notebook                     USB to I2C_Slave bridge                    +-I2C-| others I2C_slave target |
+    +-----------+      +-------------------------------------------------+   /    +-------------------------+ |
+    |           |      ¦ PL2303HXD         target running UARTI2CS @24MHz¦  +-I2C-|  MSP430FR4133 @ 1 MHz   | |
+    |           |      ¦------------+       +----------------------------¦ /   +--------------------------+ |-+
+    |           |      ¦            | 3wires|   MSP430FR2355 @ 24MHz     ¦/    |   MSP430FR5738 @ 24 MHz  | |
+    | TERATERM -o->USB-o->USB2UART->o->UART-o-> FAST FORTH -> UARTI2CS  -o-I2C-o-> FAST FORTH with option |-+
     | terminal  |      ¦            | 6MBds |               (I2C MASTER) ¦     |  TERMINAL_I2C (I2C SLAVE)| 
     |           |      ¦------------+       +----------------------------¦     +--------------------------+
     |           |      ¦            |< 20cm>|                            ¦       up to 112 I2C_Slave targets  
@@ -277,29 +344,28 @@ notes:
 
     With the indicated MCLK and UART speed, Coretest.4th is downloaded to (and executed by) I2C_Slave in 800ms.
     The driver UARTI2CS works without error from 1MHz to 24MHz MCLK and from 115200Bds up to 6MBds UART.
-    With I2C_Master running at 24 MHz, the I2C bus frequency is about 1MHz, and it works fine even if I2C_slave is running at 1 MHz.
+    With I2C_Master running at 24 MHz, the I2C bus frequency is about 1MHz, and it works fine
+    even if I2C_slave is running at 1 MHz.
     Don't forget to add two 3k3 pullup resistors on SCL and SDA...
 
     the Multi Master Mode works but is not tested in multi master environment.
     
     "cerise sur le gâteau": when they wait for a TERMINAL input (idle state), 
     both I2C_Master and I2C_Slave(s) are sleeping in LPMx mode and the bus I2C is freed. 
-    LPM4 mode is available for I2C_Slave devices.
+    The I2C_slave driver handles LPM4 mode.
     
-    The driver UART2I2CS doesn't use the UCBx I2C_Master hardware, really too bad, but
-    profitably its software version, much more faster, which consumes just two I/O (better in the range Px0-Px3),
-    the UCBx remaining available for another I2C_Slave or SPI driver.
-    
+    The UART2I2CS does not use TI's horrible UCBx_I2C_Master driver, but a much faster software driver,
+    with the UCBx still available for an I2C_Slave or SPI driver.
 
 ##### HOW TO DO ?
 
-    first you make a I2C cable (GND,SDA,SCL,3V3) between your 2 LaunchPad, with 3,3k pullup resistors on SDA and SCL lines.
-    see each of two /inc/target.pat files to know SDA ans SCL pins.
+    first you make the I2C cable (GND,SDA,SCL,3V3) between your 2 LaunchPad, with 3,3k pullup resistors
+    on SDA and SCL lines. See in forthMSP430FR_TERM_I2C.asm to select SDA and SCL pins.
     
     to compile FastForth for I2C TERMINAL from forthMSP430FR.asm file:
-    1-  uncomment the line "TERMINAL_I2C".
-    2-  search "I2CSLAVEADR" line and set your <slave address you want>, i.e. 10h.
-    3-  compile file then prog your I2C_Slave LaunchPad.
+    -  uncomment the line "TERMINAL_I2C".
+    -  search "I2CSLAVEADR" line and set your <slave address you want>, i.e. 10h.
+    -  compile file then prog your I2C_Slave LaunchPad.
     
     with the another LaunchPad running FastForth:
     At the end of UART2I2CS.f file set the <slave address you want>, i.e. $10.
@@ -362,7 +428,7 @@ notes:
 ### PREVIOUS versions
     
 Unlocking I/O's is transfered from RESET to WARM.
-Thus, by redirecting WARM, you can add I/O's configuration of your application before unlock them.
+Thus, by redirecting WARM, you can add I/O's configuration of your application before unlocking.
 
 
 The structure of primary DEFERred words as KEY,EMIT,CR,WARM... is modified,
@@ -406,7 +472,7 @@ to build the primary DEFERred low level definition "machin" :
 
 you can obviously mix LOW/HIGH levels in CODENNM and :NONAME
 
-All interpretation/compilation errors now execute PWR_STATE, so any incorrect definition
+All interpretation/compilation errors now execute ~~`PWR_RET`~~~ `RST_RET`, so any incorrect definition
 and all its source file will be automatically erased.
     
 
@@ -484,32 +550,34 @@ In explorer you should obtain this back your driver letter:
              \prog(.bat)             to do what ?...
    
     \config\
-           \asm.properties                     configuration for *.inc,*.asm files
-           \forth.properties                   configuration for *.f,*.4th files
-           \fortran.properties                 configuration for *.pat files
-           \SendFile.ttl                       TERATERM macro file to send source file to FASTFORTH
-           \SendToSD.ttl                       TERATERM macro file to send source file to embedded SD_CARD 
-           \build(.bat)                        called by scite to build target.txt program 
-           \BSL_prog(.bat)                     to flash target with target.txt file with BSL_Scripter
-           \FET_prog(.bat)                     to flash target with target.txt file with MSP430Flasher
-           \CopyTo_SD_Card(.bat)               to copy in your MSP430-FORTH
-           \SendSource(.bat)                   to send file to FASTFORTH
-           \Preprocess(.bat)                   to convert generic .f file to specific .4th file
-           \CopySourceFileToTarget_SD_Card.bat copy it in any user folder for drag'n drop use
-           \SendSourceFileToTarget.bat         copy it in any user folder for drag'n drop use
-           \PreprocessSourceFile.bat           copy it in any user folder for drag'n drop use
-           \SelectTarget.bat                   called to select target, device and deviceID
+           \asm.properties                      configuration for *.inc,*.asm files
+           \forth.properties                    configuration for *.f,*.4th files
+           \fortran.properties                  configuration for *.pat files
+           \SciTEDirectory.properties           copy it to your project root folder
+           \SciTEUser.properties                copy it in your home directory
+           \SendFile.ttl                        TERATERM macro file to send source file to FASTFORTH
+           \SendToSD.ttl                        TERATERM macro file to send source file to embedded SD_CARD 
+           \build(.bat)                         called by scite to build target.txt program 
+           \BSL_prog(.bat)                      to flash target with target.txt file with BSL_Scripter
+           \FET_prog(.bat)                      to flash target with target.txt file with MSP430Flasher
+           \CopyTo_SD_Card(.bat)                to copy in your MSP430-FORTH
+           \SendSource(.bat)                    to send file to FASTFORTH
+           \Preprocess(.bat)                    to convert generic .f file to specific .4th file
+           \CopySourceFileToTarget_SD_Card.bat  copy it in any user folder for drag'n drop use
+           \SendSourceFileToTarget.bat          copy it in any user folder for drag'n drop use
+           \PreprocessSourceFile.bat            copy it in any user folder for drag'n drop use
+           \SelectTarget.bat                    called to select target, device and deviceID
     
     \inc\                         MACRO ASsembler files.inc, files.asm, GEMA preprocessor files.pat
-        \MSP430FRxxxx.inc         device configuration for AS assembler
-        \MSP430FRxxxx.asm         device init code for AS assembler 
-        \MSP_EXP430FRxxxx.asm     target configuration for AS assembler
+        \TargetInit.asm           select target configuration file for AS assembler
+        \MSP_EXP430FRxxxx.asm     target minimalist hardware config to compile FastForth
+        \ThingsInFirst.inc        general configuration for AS assembler
+        \MSP430FRxxxx.inc         device declarations
+        \ThingsInLast.inc         general post configuration for AS assembler
         \FastForthREGtoTI.pat     converts FORTH symbolic registers names to TI Rx registers
         \tiREGtoFastForth.pat     converts TI Rx registers to FORTH symbolic registers names 
         \MSP430FRxxxx.pat         device configuration for gema preprocessor
         \MSP_EXP430FRxxxx.pat     target configuration for gema preprocessor
-        \ThingsInFirst.inc        general pre configuration for AS assembler
-        \ThingsInLast.inc         general post configuration for AS assembler
 
     \prog\        SciTEGlobal.properties, TERATERM.INI + programs.url
         
@@ -532,7 +600,7 @@ In explorer you should obtain this back your driver letter:
                  \FF_SPECS.f     shows all specificities of FAST-FORTH compiled on your target 
                  \RTC.f          set date and time, one example of MARKER use.
                  \RC5toLCD.f     multitasking example 
-                 \SD_test.f      tests for SD_CARD driver
+                 \SD_TEST.f      tests for SD_CARD driver
                  \SD_TOOLS.f     same as SD_TOOLS.asm, (but erasable)
                  \TESTASM.f      some tests for embedded assembler
                  \TESTXASM.f     some tests for embedded extended assembler
@@ -540,7 +608,7 @@ In explorer you should obtain this back your driver letter:
                  \UTILITY.f      same as UTILITY.asm, (but erasable)
     
 
-Note: all actions (flashing target, download files) can be made by using bat files directly,.
+Note: all actions (flashing target, download files) can be made by using bat files directly.
 The next is to download IDE (WINDOWS):
 
 ## First get TI's programs
@@ -559,7 +627,7 @@ install in the suggested directory, then copy MSP430Flasher.exe and MSP430.dll t
 
 * [sCiTE single file executable](https://www.scintilla.org/SciTEDownload.html) to drive:\prog\, then rename Scxxx.exe to scite.exe
 
-* [Macro AS](http://john.ccac.rwth-aachen.de:8000/ftp/as/precompiled/i386-unknown-win32/aswcurr.zip), unzip in drive:\prog\  
+* [Macro AS](http://john.ccac.rwth-aachen.de:8000/ftp/as/precompiled/i386-unknown-win32/aswcurr-142-bld158.zip), unzip in drive:\prog\  
 
 * [srecord](https://sourceforge.net/projects/srecord/files/srecord-win32/1.64/), unzip in drive:\prog\  
 
@@ -622,7 +690,7 @@ IT's done ! See  forthMSP430FRxxxx.asm to configure TeraTerm
 
 * assemble (CTRL+0). A window asks you for 4 parameters:
 
-* set target as first param, i.e. MSP_EXP430FR5969
+* set your target as first param, i.e. MSP_EXP430FR5969
 
 * then execute. the output will be \binaries\MSP_EXP430FR5969.txt
 
@@ -639,17 +707,17 @@ to same pins of the launchpad, on eZ-FET side of the programming connector.
 
 ## Connect the FAST FORTH target to a serial terminal
 
-you will need an USBtoUART cable with a PL2303TA or PL2303HXD device that allows both XON/XOFF 
+you will need an USBtoUART cable with a PL2303TA|PL2303HXD|PL1303GC device that allows both XON/XOFF 
 and hardware control flow :
 
-[PL2303HXD 3.3V](http://www.google.com/search?q=PL2303HXD+3.3V+cable)
+[PL2303GC](https://duckduckgo.com/?q=DSD+TECH+SH-U06A+PL2303GC)
 [PL2303 driver](http://www.prolific.com.tw/US/ShowProduct.aspx?p_id=225&pcid=41)
 
 WARNING! always verify VCC PIN = 3.3V before use to supply your target with.
 
 or with a CP2102 device and 3.3V/5V that allows XON/XOFF control flow up to 921600 Bds:
 
-[CP2102 3.3V](https://www.google.com/search?q=cp2102+3.3V+6PIN)
+[CP2102 3.3V](https://duckduckgo.com/q=cp2102+3.3V+6PIN)
 [CP2102 driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers)
 
 WARNING! always verify VCC PIN = 3.3V before use to supply your target with.
@@ -671,7 +739,7 @@ correctly ended with CR+LF.
 If you have MSP-EXP430FR5994, nothing to do.
 
 For the choice of a SD card socket be carefull, pin CD (Card Detect) must be present! 
-google search: "micro SD card 9 pin"
+web search: "micro SD card 9 pin"
 Look for the good wiring in /Launchpad.asm file
 
 #### Compile with SD_Card addon
@@ -688,7 +756,8 @@ See "SD_TESTS.f", a FORTH program done for example
 If you remove the SD memory card reader and then reset, all SD\_IO pins are available except SD_CD.  
 Drive letters are always ignored.  
 
-    LOAD" path\filename.4th".
+    LOAD" path\filename.4th" relative path,
+    LOAD" \path\filename.4th" absolute path.
 
 The file is interpreted by FORTH in same manner than from the serial terminal.  
 When EOF is reached, the file is automatically closed.  
@@ -701,30 +770,34 @@ LOAD" may be used as Change Directory command:
     LOAD" \"            Root becomes the current folder.
 
 
-     READ" path\filename.ext".  
+    READ" filename.ext" reads a file in current directory,
+    READ" \filename.ext" reads a file in root directory.
 
 The first sector of this file is loaded in BUFFER.
-To read next sectors, use the command READ that loads the next sector in the buffer, 
-and leaves on the stack a flag that is true when the EOF is reached. 
+To read next sectors, use the command READ which loads the next sector in the buffer
+and leaves on the stack a true flag when the EOF is reached. 
 The file is automatically closed. See tstwords.4th for basic usage.
 
-The variable BufferLen keep the count of bytes to be read (0 to 512).
+The variable BufferLen keep the count of bytes to be read (1 to 512).
 
-If you want to anticipate the end, use the CLOSE command.
+If you want to anticipate the end, remove the false flag left by the previous READ then use the CLOSE command.
 
     WRITE" path\filename.ext".
 
-If the file does not exist, create it, else open it and set the write pointer at the end of the file, 
+If the file does not exist, create it else open it, and set the write pointer at the end of the file, 
 ready to append chars.
+
+The command WRITE writes the buffer and increments the current sector.
 
 See example of use in \MSP430-FORTH\SD_TEST.f.
 
-To overwrite an existing file: DEL" file" then  WRITE" file".
+To overwrite an existing file:
 
-Use CLOSE to close the file.
+    DEL" path\filename.ext" (no error issued),
+    WRITE" path\filename.ext".
 
+Use CLOSE to close this file.
 
-    DEL" path\filename.ext". If the file is not found, do nothing, no error.
 
 
 #### Copy source file to SD_Card
@@ -741,103 +814,88 @@ correctly ended with CR+LF.
 
 First, remove the USBtoUART bridge then reconnect it. Perhaps it was in suspend state...
 
-If the system is always freezed, press <reset> button on the MSP-EXP430FR5xxx ; FORTH restarts 
-as it was after the last RST_HERE command.
+If the system is always freezed, press `RST` button on the MSP-EXP430FR5xxx ; FORTH restarts 
+as it was after the last `RST_SET` command.
 
 If the system does not restart again, press `SW1+RESET`. 
-FORTH restarts in the state it is in its object txt file.
+FORTH restarts in the state of its object file.
 
-Here is the FastForth memory management, one of its major assets :
+Here is the FastForth memory management, one of its major assets, with both hardware events and software equivalent for COLD and WIPE levels:
 
-    case 1 : when you type `PWR_STATE` the program beyond PWR_HERE marker is lost.
-
-    case 1.1 : when you type `WARM`, FORTH interpreter is restarted, the program beyond PWR_HERE is lost. 
-               The WARM display starts with "#0". 
+*  RST_RET 
     
-    case 1.2 : Power ON performs a reset and the program beyond PWR_HERE is lost.
-               the WARM display starts with the SYSRSTIV value "#2".
+    *  when you type `RST_RET` the program beyond the last RST_SET is lost.
+
+    *  Running a `MARKER` definition will remove it and the program beyond. In addition the user can link it a routine to remove modified configuration in system: vectors, hardware, IOs... 
+
+*  WARM level :  SYS --> WARM display --> SLEEP.
+
+    *  when you type `0 SYS`, FORTH interpreter is restarted without program lost, without WARM display. 
     
-    case 1.3 : SVSHIFG SVSH event, same effects,
-               the WARM display starts with the SYSRSTIV decimal value "#14".
-
+    *  when you type `SYS`, FORTH restarts, the program beyond RST_SET is lost, INIT_FORTH and INIT_HARD_APP (INIT_TERM by default) are executed, the WARM display starts by "#1". 
     
-    case 2 : when you type `RST_STATE` the program beyond RST_HERE marker is lost.
+    *  when you type `+n SYS` (n>0, odd), same effects, the WARM display starts by "#+n". 
 
-    case 2.1 : <RESET> performs reset and the program beyond RST_HERE is lost,
-               the WARM display starts with the SYSRSTIV value "#4".
+*  COLD level : PUC --> `SYS` --> WARM display --> SLEEP.
+
+    *  Power ON : the WARM display starts with the SYSRSTIV value "#2".
     
-    case 2.2 : when you type `COLD` (software reset), same effects,
-               the WARM display starts with the SYSRSTIV value "#6".
+    *  SVSHIFG SVSH event (dropout supply) : the WARM display starts with the SYSRSTIV value: "#14".
+
+    *  hardware `RST` : the WARM display starts with the SYSRSTIV value "#4".
     
-    case 2.3 : PUC on failure, same effects,
-               The WARM display starts with the SYSRSTIV decimal value.
+    *  PUC on failure : the WARM display starts with the SYSRSTIV value: #n.
 
+    *  `+n SYS` (n>0 and even) is the software RESET : the WARM display starts with the SYSRSTIV value "#+n" (even).
     
-    case 3 : when you type `WIPE` (software Deep Reset) 
-            * all programs donwloaded from the terminal or the SD_Card are lost,
-            * the default state of COLD_APP, INI_SOFT_APP, INI_HARD_APP and BACKGND_APP are restored,
-            * all "defered" words are initialised with their default value,
-            * same thing for interrupts vectors, 
-            * and SIGNATURES area is cleared (FFh).
-             The WARM display starts with #-1.
 
-    case 3.1 : <SW1+RESET> performs hardware deep reset, same effects. 
-               The WARM display starts with #-1.
+*  WIPE level : PUC --> `-n SYS` --> WARM display --> SLEEP
+
+    *  `-n SYS` (n<0) performs the software Deep Reset:
+ 
+        *  INIT_FORTH and INIT_HARD_APP (INIT_TERM by default) are executed,
+        *  all programs donwloaded from the terminal or from the SD_Card are lost,
+        *  the default state of COLD_APP, INI_SOFT_APP, INI_HARD_APP and BACKGND_APP is restored,
+        *  all "defered" words are initialised with their default value,
+        *  all interrupts vectors also, 
+        *  SIGNATURES area is FFh full filled.
+        *  WARM display = #-n.
+
+    *  hardware `SW1+RESET` does same effects, WARM display = #-1.
     
-    case 3.2 : after compiling new FastForth, same effects obviously!
-               The WARM display starts with #-3.
+    *  recompiling FastForth, too, WARM display = #-3.
 
+* ERROR : ABORT" --> ABORT" display --> SLEEP.  
+    
+    *  when an error occurs, FASTFORTH discards the end of current downloading if any, does same as `SYS` then displays the error message. In this way, any error is followed by the complete erasure of the bad defined word causing this error, and also by discarding the end of downloading of the source file including it. 
 
-    case 4 : FastForth keeps the memory of all resident definitions. During source file download the
-             conditionnal compilation allows to compile only non-resident definitions.
-
-    case 4.1 : Running a "MARKER" definition will delete anything compiled beyond that.
-               By starting a source file with this "MARKER" tag, the memory is first cleared of
-               all the contents of that source file each time it is reloaded.
+    *  It is strongly recommended to end any source file with `RST_SET` to protect it program from any subsequent error.
 
 
 
-As all other words FORTH, PWR_STATE PWR_HERE RST_STATE RST_HERE and MARKER defn. may be also used in definitions.    
+As all other words FORTH, RST_SET RST_RET and MARKER definitions may be freely used in compiling mode.    
 
-If you have previously set 'NOECHO', there is no WARM display.
+If you have previously set 'NOECHO', there is no WARM, COLD, WIPE display.
 
-With I2C_FastForth, WARM display is preceded by the I2C slave address, example; `@18`. 
-
-If an error occurs from the interpreter, FORTH is restarted, the error is always displayed and the program beyond PWR_HERE is lost. 
-
-In this way, any error is followed by the complete erasure of a bad definined word causing this error, 
-or by that of the downloaded source file including it. 
-
-It is therefore recommended to end a source file with at least 'PWR_HERE' to protect it
-from any subsequent error.
+With I2C_FastForth version, WARM display is preceded by the decimal I2C slave address, example: `@18`. 
 
 
 ## VOCABULARY ADD-ON
 
-These words are not ANS94 compliant, they are those of F83 standard.
+These words are not ANS94 compliant.
 
-For example, after loading SD_TOOLS add-on, you can type: ALSO ASSEMBLER WORDS PREVIOUS WORDS
+The CONTEXT stack is 8 word_set sized.
 
-    With `ALSO ASSEMBLER`, the vocabulary ASSEMBLER is added to the search CONTEXT thus the ASSEMBLER words
-    become visible,
-    
-    WORDS display the words of ASSEMBLER then those of FORTH,
-    
-    PREVIOUS remove the vocabulary ASSEMBLER form the CONTEXT, and the ASSEMBLER words become hidden,
-    
-    so the last WORDS display only FORTH words.
+after typing: WORDSET TRUC   \ a new word-set called TRUC is created
 
-In the forthMSP430FR_ASM.asm, see the FORTH word CODE that add ASSEMBLER to the search CONTEXT and the ASSEMBLER word ENDCODE
- that remove ASSEMBLER from search CONTEXT. Thus, the assembler words can be used only between CODE and ENDCODE.
+    TRUC            adds the word-set TRUC first in the CONTEXT stack, the interpreter search existing definitions first in TRUC
+    PREVIOUS        removes TRUC from CONTEXT
 
-The CONTEXT can grow up to 6 vocabularies by using the word ALSO.
+    DEFINITIONS     adds news definitions in the first word-set in the CONTEXT stack, i.e. TRUC,
+    PREVIOUS        removes TRUC from CONTEXT but new definitions are still added in TRUC
+    DEFINITIONS     new definitions are added into the previous first word-set in the CONTEXT stack,
+                    after `-1 SYS`: the FORTH word-set.
 
-If you want add words to the assembler you must type: ALSO ASSEMBLER DEFINITIONS,
-The vocabulary ASSEMBLER is added to the search CONTEXT as previously but also becomes the CURRENT vocabulary in which the new words will be stored.
-
-Finally, `FORTH ONLY DEFINITIONS` limits the search CONTEXT to FORTH and the CURRENT vocabulary is FORTH. 
-
-**WARNING !** it is discouraged to execute any definition included in the assembler word-set.
 
 ## EMBEDDED ASSEMBLER
 
@@ -848,16 +906,15 @@ See files \\inc\\Target.pat.
 
 FAST FORTH knows three kinds of definitions :
 
-* high level FORTH definitions : <name> ... ;
+* high level FORTH definitions `: <name> ... ;`
 
-* low level definitions CODE <name> ... ENDCODE
+* low level definitions `CODE <name> ... ENDCODE`
 
-* low level hidden definitions HDNCODE <name> ... ENDCODE
-    they are hidden because not FORTH executable.
+* low level hidden definitions `HDNCODE <name> ... ENDCODE` which are deliberately hidden because they are not executable by FORTH.
     
 Examples:
     
-    : NOOP              \ FORTH definiton "NOOP", do nothing
+    : NOOP              \ FORTH definition "NOOP", does nothing
         DUP
         DROP
     ;
@@ -876,18 +933,18 @@ Examples:
     THEN
                         \ else return to background task SLEEP
     MOV @RSP+,SR        \ restore SR flags
-    BIC #%1111_1000,SR  \ but force CPU Active Mode
+    BIC #%0111_1000,SR  \ but force CPU Active Mode, disable all interrupts
     RET                 \ (instead of RETI)
     ENDCODE
     
     
-A the end of low level CODE definition, the instruction MOV @IP+,PC jumps to the next definition. 
+At the end of low level CODE definition, the instruction MOV @IP+,PC jumps to the next definition. 
 This faster (4 cycles) and shorter (one word) instruction replaces the famous pair of assembly 
 instructions : CALL #LABEL ... RET (4+4 cycles, 2+1 words). The register IP is the Interpretative Pointer. 
 
-High level FORTH definitions starts with a boot code "DOCOL" that save the IP pointer, reload it with the first address
-of a list of execution addresses, then performs a postincrement branch to this first address. 
-The list ends with the address of another piece of code: EXIT (6 cycles) that restores IP before the instruction MOV @IP+,PC.
+High level FORTH definitions starts with a boot code "DOCOL" which saves the IP pointer and loads it with the first address
+of a list of execution addresses, then performs a postincrement branch to the first one. 
+The list ends with the address of another piece of code: EXIT (6 cycles) which restores IP before the instruction MOV @IP+,PC.
 
 here, the compilation of low level ADD definition :
 
@@ -898,7 +955,9 @@ here, the compilation of low level ADD definition :
 and the one of the high level word NOOP :
 
                     header          \ compiled by the word :
-    execution addr  CALL rDOCOL     \ boot code "DOCOL" compiled by the word :
+    execution addr
+    DOCOL           PUSH IP         \ boot code "DOCOL"...
+                    CALL rDOCOL     \ ...compiled by the word :
                     addr of DUP     \ execution addr of DUP
                     addr of DROP    \ execution addr of DROP
                     addr of EXIT    \ execution addr of EXIT compiled by the word ;
@@ -944,7 +1003,8 @@ A little more complex, the case of mixing FORTH and assembly with use of the wor
 If we see the code "MIX\_FORTH\_ASM" after compilation :
 
             header              \ compiled by :
-    exec@   CALL rDOCOL         \ boot code "DOCOL" (which saves IP onto stack) compiled by :
+    exec@   PUSH IP             \ 
+            CALL rDOCOL
             addr of SWAP
             addr of DUP
             next addr           \ addr of asm1, compiled by HI2LO
@@ -970,12 +1030,13 @@ If we see this code "MIX\_ASM\_FORTH" after compilation :
             header              \ compiled by CODE
     exec@   asm1
             asm2
+    DOCOL   PUSH IP
             CALL rDOCOL         \ "DOCOL" compiled by COLON
             addr of word1
             addr of word2
             addr of EXIT        \ EXIT restores IP from stack then executes MOV @IP+,PC
 
-A new step
+A new step:
 
         : MIX_FORTH_ASM_FORTH   \ definition of a FORTH word starts with :
             word1
@@ -992,8 +1053,9 @@ A new step
 
 the compiled result    
 
-            header              \ compiled by :
-    exec@   CALL rDOCOL         \ "DOCOL" boot code compiled by :
+            header              \ )
+    exec@   PUSH IP             \ > compiled by :
+            CALL rDOCOL         \ )
             addr of word1
             addr of word2
             ...
@@ -1001,32 +1063,20 @@ the compiled result
             MOV #0,IP           \ IP is free for use
             asm1                \ assembly instruction
             ...
-            CALL #EXIT          \ compiled by LO2HI
+            CALL rDOCOL         \ compiled by LO2HI
             addr of word3
             addr of word4
             addr of EXIT        \ compiled by ;
-
-EXIT is used twice !
-
-the first time, by LO2HI :
-
-    EXIT    MOV @RSP+,IP    \ 2 pop into IP the PC pushed on return stack by CALL #EXIT
-            MOV @IP+,PC     \ 4 execute the routine at addr3 
-
-then at the end of FORTH word (addr5):
-
-    EXIT    MOV @RSP+,IP    \ 2 pop old IP from return stack
-            MOV @IP+,PC     \ 4 execute the routine pointed by the old IP
 
 Still another step : 
 
         CODE MIX_ASM_FORTH_ASM  \ CODE starts a low level word
             asm1
             asm2
-        COLON                   \ switch to start FORTH word (COLON saves IP)
+        COLON                   \ start high level definition
             word
             ... 
-        HI2LO                   \ FORTH to assembler switch
+        HI2LO                   \ switch high to low level
             asm3
             asm4
             MOV @RSP+,IP        \ restore IP
@@ -1039,7 +1089,7 @@ In fact, an exclusive of FAST FORTH, the start of a word FORTH can be placed any
             asm1
             asm2
             ...
-        COLON                   \ starts high level
+        COLON                   \ starts high level definition
             word1
             word2
             ...
@@ -1058,13 +1108,14 @@ with the compiled result :
             header              \ compiled by CODE
     exec@   asm
             asm
-            CALL rDOCOL         \ "DOCOL" compiled by COLON
+    DOCOL   PUSH IP             \ compiled... 
+            CALL rDOCOL         \ ...by COLON
             addr
             addr
             next address        \ compiled by HI2LO
             asm
             asm
-            CALL #EXIT          \ compiled by LO2HI
+            CALL rDOCOL         \ compiled by LO2HI
             addr
             addr
             EXIT addr           \ that restores IP from return stack and then executes MOV @IP+,PC
@@ -1168,7 +1219,7 @@ another nest :
 you can MIX conditional branches with a mix of FORTH/assembly: see TEST5 in the demo file \MSP430-FORTH\TESTASM.4TH
 
 
-FAST FORTH have one pass assembler, not able to make forward jump.
+FAST FORTH have one pass assembler, not able to resolve forward jumps.
 
 I have added possibility of several "non canonical" jumps, up to 3 backward and up to 3 forward jumps to label :
 
@@ -1203,7 +1254,7 @@ I have added possibility of several "non canonical" jumps, up to 3 backward and 
     ENDCODE
 
 Forward labels FWx are for single use, backward labels BWx can solve several jumps,
-until new definition.
+until their new definition.
 
 ### SYMBOLIC ASSEMBLER ? YES !
 
@@ -1215,6 +1266,38 @@ I have discovered a little semantic preprocessor "GEMA", just like that FAST FOR
 Gema translates FORTH registers in ASM registers (R0 to R15) via \inc\ThingsInFirst.pat
 
 With the three bat files in \MSP430_FORTH folder all is done automatically.
+
+### WHAT ABOUT VARIABLES, CONSTANTS...
+
+In addition to the FORTH VARIABLE and CONSTANT definitions, the macroassembler allows to use symbolic variables and constants
+which are compiled / executed as number by the FORTH interpreter, also by the assembler, but only in the scope of a source use.f file with their declaration done in a use.pat file.
+
+On the other hand, the CONSTANT, VARIABLE and MARKER definitions are correctly handled by the assembler which provides for each case the expected argument: the constant, the address of the variable and the address of the first user variable with MARKER.
+
+Example:
+
+    VARIABLE BASE 
+    $10 BASE !
+    2 CONSTANT TWO
+    MARKER {MYAPP}
+    'ESC' , 'XON' C, 'XOFF' C,
+    
+    HDNCODE EXAMPLE         \ hidden definition because linked in the hidden word-set
+    CMP #RET_ADR,&{MYAPP}-2 \ compare content of {MYAPP}-2 address with RET_ADR
+    MOV &BASE,X             \ X = 16
+    MOV #BASE,X             \ X = address of base
+    MOV @X,X                \ X = 16
+    MOV #TWO,Y              \ Y = 2
+    MOV &{MYAPP},W          \ W = $1B
+    MOV.B &{MYAPP}+2,W      \ W = 17
+    MOV.B &{MYAPP}+3,W      \ W = 19
+    MOV @IP+PC
+    ENDCODE
+
+    CODE RUN_EXAMPLE
+    MOV #EXAMPLE,PC         \ = BR EXAMPLE      runs EXAMPLE, without return
+    ENDCODE
+
 
 # COMPILE FAST FORTH FOR YOUR TARGET
 
@@ -1228,7 +1311,7 @@ Notice that you must define here only the necessary for FAST-FORTH compilation.
 3- in \inc\ThingsInFirst.inc add one "device.inc" item:
 
         .IFDEF MY_MSP430FR5738_1
-    UCA0_UART   ; defines uart used by FORTH input terminal 
+    UCA0_UART   ; defines uart used for TERMINAL 
     LF_XTAL     ; defines if your module have a 32768 Hz xtal, to enable it.
     UCB0_SD     ; defines UC used for SD Card driver if any
         .include "MSP430FR5738.inc"  ; include device declarations
@@ -1252,14 +1335,14 @@ that is the reset state of FastForth...
 
 # ANNEXES
 
-Here you have a good view of MSP430 assembly:
+Here you have a good overview of MSP430 assembly:
 [MSP430 ISA](http://www.ece.utep.edu/courses/web3376/Notes_files/ee3376-isa.pdf)
 
 FastForth embedded assembler doesn't recognize the (useless) TI's symbolic addressing mode: ADD.B EDE,TONI.
 
-REGISTERS correspondence (you can use freely ASM or TI or FASTFORTH registers's names).
+REGISTERS correspondence (you can freely use ASM or TI or FASTFORTH registers's names).
 
-        ASSEMBLER   TI      FASTFORTH   comment 
+        ASM         TI      FASTFORTH   comment 
     
         R0          PC      PC          Program Counter
         R1          SP      RSP         Return Stack Pointer
@@ -1281,13 +1364,32 @@ REGISTERS correspondence (you can use freely ASM or TI or FASTFORTH registers's 
 **REGISTERS use**
 
 The FASTFORTH registers rDOCOL, rDOVAR, rDOCON and rDODOES must be preserved. 
-If you use them you may either PUSHM #4,M before and POPM #4,M after,
-or use then restore FastForth default values:
-xdocol, xdovar, xdocon, xdodoes. See device.pat.
+If you use them you may either `PUSHM #4,M` before and `POPM #4,M after`,
+or use them directly then restore FastForth default values:
+
+`MOV #INIT_DOXXX,X`  
+`MOV @X+,rDOCOL`  
+`MOV @X+,rDODOES`  
+`MOV @X+,rDOCON`  
+`MOV @X,rDOVAR`
+
+(Search `INIT_DOXXX` in your \inc\device.pat)
+
+If you want to restore only rDODOES, rDOCON and rDOVAR:
+
+`MOV #INIT_DOXXX+4,X`  
+`MOV @X+,rDODOES`  
+`MOV @X+,rDOCON`  
+`MOV @X,rDOVAR`
+
+If you want to restore only rDODOES and rDOCON:
+
+`MOV #XDODOES,rDODOES`  
+`MOV #XDOCON,rDOCON`  
 
 When you use these registers you can't call any FORTH words created by them at the same time! 
 
-don't use R3 and use R2 only with BIC, BIT, BIS instructions in register mode.
+don't use R3 and use R2 (SR) only with BIC, BIT, BIS instructions in register mode.
 
 The bits 0-11 of SR register are saved by interrupts and restored by the instruction RETI.
 you can use freely UF9 UF10 and UF11 as SR bits 9-11. 
@@ -1315,32 +1417,32 @@ don't never pop a byte with instruction MOV.B @PSP+, because it generates a stac
 
 register RSP is the Return Stack Pointer (SP).
 
-to push one cell on the RSP stack : `PUSH <what you want>`
+to push one cell on the RSP stack: `PUSH <what you want>`
 
-to pop one cell from the RSP stack : `MOV @RSP+,<where you want>`
+to pop one cell from the RSP stack: `MOV @RSP+,<where you want>`
 
-don't never pop a byte with instruction `MOV.B @RSP+, ...`
+don't never push or pop a byte on RSP stack !
 
 
 to push multiple registers on the RSP stack :
 
-    PUSHM #n,Rx                 \  with 0 <= x-(n-1) < 16
+`PUSHM #n,Rx`,  with 0 <= x-(n-1) < 16
 
 to pop multiple registers from the RSP stack :
 
-    POPM #n,Rx                  \  with 0 <= x-(n-1) < 16
+`POPM #n,Rx`,  with 0 <= x-(n-1) < 16
 
     PUSHM order : PSP,TOS, IP, S , T , W , X , Y ,rDOVAR,rDOCON,rDODOES,rDOCOL, R3, SR,RSP, PC
     PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5   ,  R4  , R3, R2, R1, R0
 
-example : `PUSHM #6,IP` pushes `IP,S,T,W,X,Y` registers to return stack
+example : `PUSHM #6,IP` pushes IP,S,T,W,X,Y registers to return stack
 
     POPM  order :  PC,RSP, SR, R3,rDOCOL,rDODOES,rDOCON,rDOVAR, Y , X , W , T , S , IP,TOS,PSP
     POPM  order :  R0, R1, R2, R3,  R4  ,  R5   ,  R6  ,   R7 , R8, R9,R10,R11,R12,R13,R14,R15
 
-example : `POPM #6,IP` pulls `Y,X,W,T,S,IP` registers from return stack
+example : `POPM #6,IP` pulls Y,X,W,T,S,IP registers from return stack
 
-Error occurs if `#n` is out of bounds.
+Error occurs if #n is out of bounds.
 
 **conditionnal jumps use**
 
@@ -1353,187 +1455,145 @@ Error occurs if `#n` is out of bounds.
     0>=   with IF UNTIL WHILE
     0<    with ?GOTO 
 
-
 # FAST FORTH resumed
 
-
-    RETURN-STACK-CELLS  = 48            maximum size of the return stack, in cells  
-    STACK-CELLS         = 48            maximum size of the data stack, in cells  
-    /COUNTED-STRING	 = 255           maximum size of a counted string, in characters  
+    RETURN-STACK-CELLS  = 48            max size of the return stack, in cells  
+    STACK-CELLS         = 48            max size of the data stack, in cells  
+    /COUNTED-STRING	 = 255           max size of a counted string, in characters  
     /HOLD	           = 34            size of the pictured numeric output string buffer, in characters  
     /PAD	            = 84            size of the scratch area pointed to by PAD, in characters  
-    ADDRESS-UNIT-BITS   = 16            size of one address unit, in bits  
-    FLOORED	         = true          true if floored division is the default  
-    MAX-CHAR	        = 255           maximum value of any character in the implementation-defined character set  
+    ADDRESS-UNIT-BITS   = 16            size of one address unit, in bits
+    FLOORED	         = true          true if floored division is the default
+    MAX-CHAR	        = 255           max value of any character in the implementation-defined character set
     MAX-N               = 32767         largest usable signed integer  
     MAX-U               = 65535         largest usable unsigned integer  
     MAX-D	           = 2147483647    largest usable signed double number  
     MAX-UD              = 4294967295    largest usable unsigned double number  
-    DeFiNiTiOnS aRe CaSe-InSeNsItIvE    Strings are case-sensitive
-
+    DeFiNiTiOnS aRe CaSe-InSeNsItIvE    they are compiled in their CAPS_ON form.
 
 ## FORTH word-set
 
-It is reduced to a minimum, but nevertheless extensible up to ... $FF80 !
+Reduced to 53 definitions, but with everything necessary to be expandable up to $FF80.
 
-    RST_HERE        PWR_HERE        RST_STATE       PWR_STATE       CREATE          ;               :               IMMEDIATE       
-    POSTPONE        ]               [               \               '               [']             ABORT"          INTERPRET       
-    COUNT           LITERAL         ALLOT           ,               >NUMBER         FIND            WORD            ."              
-    S"              .               U.              SIGN            HOLD            #>              #S              #               
-    <#              !               @               CR              TYPE            NOECHO          ECHO            EMIT            
-    KEY             ACCEPT          COLD            WARM            WIPE            
+RST_SET,
+RST_RET,
+[MARKER     ](https://forth-standard.org/standard/core/MARKER),
+HI2LO,
+CODENNM,
+HDNCODE,
+CODE,
+[IS         ](https://forth-standard.org/standard/core/IS),
+[\:NONAME   ](https://forth-standard.org/standard/core/ColonNONAME),
+[DOES>      ](https://forth-standard.org/standard/core/DOES),
+[CREATE     ](https://forth-standard.org/standard/core/CREATE),
+[IMMEDIATE  ](https://forth-standard.org/standard/core/IMMEDIATE),
+[;          ](https://forth-standard.org/standard/core/Semi),
+[:          ](https://forth-standard.org/standard/core/Colon),
+[POSTPONE   ](https://forth-standard.org/standard/core/POSTPONE),
+[\\         ](https://forth-standard.org/standard/core/bs),
+[\]         ](https://forth-standard.org/standard/core/right-bracket),
+[\[         ](https://forth-standard.org/standard/core/Bracket),
+[\[\'\]     ](https://forth-standard.org/standard/core/BracketTick),
+[\'         ](https://forth-standard.org/standard/core/Tick),
+[ABORT"     ](https://forth-standard.org/standard/core/ABORTq),
+[ALLOT      ](https://forth-standard.org/standard/core/ALLOT),
+[COUNT      ](https://forth-standard.org/standard/core/COUNT),
+[LITERAL    ](https://forth-standard.org/standard/core/LITERAL),
+[,          ](https://forth-standard.org/standard/core/Comma),
+[>NUMBER    ](https://forth-standard.org/standard/core/toNUMBER),
+[FIND       ](https://forth-standard.org/standard/core/FIND),
+[WORD       ](https://forth-standard.org/standard/core/WORD),
+[."         ](https://forth-standard.org/standard/core/Dotq),
+[S"         ](https://forth-standard.org/standard/core/Sq),
+[.          ](https://forth-standard.org/standard/core/d),
+[U.         ](https://forth-standard.org/standard/core/Ud),
+[SIGN       ](https://forth-standard.org/standard/core/SIGN),
+[HOLD       ](https://forth-standard.org/standard/core/HOLD),
+[#>         ](https://forth-standard.org/standard/core/num-end),
+[#S         ](https://forth-standard.org/standard/core/numS),
+[#          ](https://forth-standard.org/standard/core/num),
+[<#         ](https://forth-standard.org/standard/core/num-start),
+[\[UNDEFINED\]  ](https://forth-standard.org/standard/tools/BracketUNDEFINED),
+[\[DEFINED\]    ](https://forth-standard.org/standard/tools/BracketDEFINED),
+[\[IF\]         ](https://forth-standard.org/standard/tools/BracketIF),
+[\[THEN\]       ](https://forth-standard.org/standard/tools/BracketTHEN)
+[\[ELSE\]       ](https://forth-standard.org/standard/tools/BracketELSE),
+[!          ](https://forth-standard.org/standard/core/Store),
+[@          ](https://forth-standard.org/standard/core/Fetch),
+[TYPE       ](https://forth-standard.org/standard/core/TYPE),
+NOECHO,
+ECHO,
+[EMIT       ](https://forth-standard.org/standard/core/EMIT),
+[KEY        ](https://forth-standard.org/standard/core/KEY),
+[ACCEPT     ](https://forth-standard.org/standard/core/ACCEPT),
+SYS.
 
-[CREATE     ](https://forth-standard.org/standard/core/CREATE)
-[;          ](https://forth-standard.org/standard/core/Semi)
-[:          ](https://forth-standard.org/standard/core/Colon)
-[IMMEDIATE  ](https://forth-standard.org/standard/core/IMMEDIATE)
-[POSTPONE   ](https://forth-standard.org/standard/core/POSTPONE)
-[\]         ](https://forth-standard.org/standard/core/right-bracket)
-[\[         ](https://forth-standard.org/standard/core/Bracket)
-[\\         ](https://forth-standard.org/standard/block/bs)
-[\[\'\]     ](https://forth-standard.org/standard/core/BracketTick)
-[\'         ](https://forth-standard.org/standard/core/Tick)
-[ABORT"     ](https://forth-standard.org/standard/core/ABORTq)
-[COUNT      ](https://forth-standard.org/standard/core/COUNT)
-[LITERAL    ](https://forth-standard.org/standard/core/LITERAL)
-[ALLOT      ](https://forth-standard.org/standard/core/ALLOT)
-[,          ](https://forth-standard.org/standard/core/Comma)
-[>NUMBER    ](https://forth-standard.org/standard/core/toNUMBER)
-[FIND       ](https://forth-standard.org/standard/core/FIND)
-[WORD       ](https://forth-standard.org/standard/core/WORD)
-[."         ](https://forth-standard.org/standard/core/Dotq)
-[S"         ](https://forth-standard.org/standard/core/Sq)
-[.          ](https://forth-standard.org/standard/core/d)
-[U.         ](https://forth-standard.org/standard/core/Ud)
-[SIGN       ](https://forth-standard.org/standard/core/SIGN)
-[HOLD       ](https://forth-standard.org/standard/core/HOLD)
-[#>         ](https://forth-standard.org/standard/core/num-end)
-[#S         ](https://forth-standard.org/standard/core/numS)
-[#          ](https://forth-standard.org/standard/core/num)
-[<#         ](https://forth-standard.org/standard/core/num-start)
-[!          ](https://forth-standard.org/standard/core/Store)
-[@          ](https://forth-standard.org/standard/core/Fetch)
-[CR         ](https://forth-standard.org/standard/core/CR)
-[TYPE       ](https://forth-standard.org/standard/core/TYPE)
-[EMIT       ](https://forth-standard.org/standard/core/EMIT)
-[KEY        ](https://forth-standard.org/standard/core/KEY)
-[ACCEPT     ](https://forth-standard.org/standard/core/ACCEPT)  
+Words ACCEPT KEY EMIT are DEFERred definitions. ACCEPT doesn't use KEY.
 
-    COLD            PFA of COLD content = STOP_APP subroutine address, by default --> STOP_TERM  
-    WARM            PFA of WARM content = INI_APP subroutine address, by default --> ENABLE_IO  
-    WIPE            resets the program memory to its original state (Deep_RST have same effect).
-    RST_HERE        defines the bound of the program memory protected against COLD or hardware reset.  
-    PWR_HERE        defines the bound of the program memory protected against ON/OFF and also against any error occurring.  
-    RST_STATE       removes all words defined after RST_HERE (COLD or <reset> have same effet)  
-    PWR_STATE       removes all words defined after PWR_HERE (an error has same effect)  
-    INTERPRET       text interpreter, common part of EVALUATE and QUIT.  
-    NOECHO          stop display on output   
-    ECHO            start display on output  
-
-### words added by the option MSP430ASSEMBLER:
-
-    HDNCODE         CODE            HI2LO
-
-    CODE <word>     creates a word written in assembler.
-                    this defined <word> must be ended with ENDCODE unless COLON or LO2HI use.  
-    HDNCODE <word>  creates a word written in assembler but not interpretable by FORTH (because ended by RET instr.).  
-                    Visible only from assembler  
+    RST_SET         defines the bound of the program memory protected against any PUC.  
+    RST_RET         removes all words defined after RST_SET  
     HI2LO           used to switch compilation from high level (FORTH) to low level (assembler).
+    CODENNM         the assembler counterpart of :NONAME.
+    CODE <name>     creates a definition written in assembler.
+                    this defined <name> must be ended with ENDCODE unless COLON or LO2HI use. 
+    HDNCODE <name>  creates a word same as CODE but in the hidden word-set to be visible only in the assembly mode.
+    NOECHO          disables display on the TERMINAL  
+    ECHO            enables display on the TERMINAL
+    SYS             0 SYS | SYS   restarts the interpreter,
+                    +n (odd) SYS  initializes the hardware and restarts the FORTH engine,
+                    +n (even) SYS does software RESET, initializes the hardware and restarts the FORTH engine, 
+                    -n SYS        same as +n (even) SYS, plus resets the program memory to its original state.
 
-### Other words are useable in any source_files.f, see \inc\device.pat file :
+### Other words/addresses which are usable in any generic source_files.f
 
-    SLEEP               CODE_WITHOUT_RETURN: CPU shutdown  
+**All constants, variables and definitions included in \inc\device.pat and \inc\target.pat files are usable by
+the assembler and also by the FORTH interpreter (except the definitions).**
+
+    see definitions in forthMSP430FR.asm:
+    SLEEP               ASM CODE_WITHOUT_RETURN: CPU shutdown  
     LIT                 CODE compiled by LITERAL  
     XSQUOTE             CODE compiled by S" and S_  
     HEREXEC             CODE HERE and BEGIN execute address  
     QFBRAN              CODE compiled by IF UNTIL  
     BRAN                CODE compiled by ELSE REPEAT AGAIN  
     NEXT_ADR            CODE NEXT instruction (MOV @IP+,PC)  
-    XDO                 CODE compiled by DO  
-    XPLOOP              CODE compiled by +LOOP  
-    XLOOP               CODE compiled by LOOP  
     MUSMOD              ASM 32/16 unsigned division, used by ?NUMBER, UM/MOD  
     MDIV1DIV2           ASM input for 48/16 unsigned division with DVDhi=0, see DOUBLE M*/  
     MDIV1               ASM input for 48/16 unsigned division, see DOUBLE M*/  
-    RET_ADR             ASM content of INI_FORTH_PFA and MARKER+8 definitions,  
+    RET_ADR             ASM RET address,  
     SETIB               CODE Set Input Buffer with org & len values, reset >IN pointer  
     REFILL              CODE accept one line from input and leave org len of input buffer  
-    CIB_ADR             [CIB_ADR] = TIB_ORG by default; may be redirected to SDIB_ORG  
+    CIB_ORG             Current Input Buffer address, default value: TIB_ORG; may be redirected to SDIB_ORG  
     XDODOES             to restore rDODOES: `MOV #XDODOES,rDODOES`  
     XDOCON              to restore rDOCON: `MOV #XDOCON,rDOCON`  
     XDOVAR              to restore rDOVAR: `MOV #XDOVAR,rDOVAR`  
-    !                   to restore rDOCOL: `MOV &WIPE_DOCOL,rDOCOL`  
-    INI_FORTH           CODE_WITHOUT_RETURN common part of RST and QABORT, starts FORTH engine  
-    QABORT              CODE_WITHOUT_RETURN run-time part of ABORT"  
-    ABORT_TERM          CODE_WITHOUT_RETURN called by QABORT, also by QREVEAL and INTERPRET     
-    UART_COLD_TERM      ASM, content of COLD_PFA by default  
-    UART_INIT_TERM      ASM, content of WARM_PFA by default  
-    UART_RXON           ASM, content of SLEEP_PFA by default  
-    UART_RXOFF          ASM, called by ACCEPT before Receiving char LF.  
-    I2C_COLD_TERM       ASM, content of COLD_PFA by default  
-    I2C_INIT_TERM       ASM, content of WARM_PFA by default  
-    I2C_RXON            ASM, content of SLEEP_PFA by default  
-    I2C_CTRL_CH         ASM, used as is: `MOV.B #CTRL_CHAR,Y`  
-    !                                    `CALL #I2C_CTRL_CH`
+                        to restore rDOCOL: `MOV &INIT_DOCOL,rDOCOL`  
+    INIT_FORTH          CODE_WITHOUT_RETURN, common part of SYS and QABORT, starts FORTH engine  
+    QABORT              CODE_WITHOUT_RETURN, run-time part of ABORT"  
     ABORT               ABORT address
     QUIT                QUIT address
 
+    see definitions in forthMSP430FR_TERM_UART.asm:
+    ABORT_TERM          CODE_WITHOUT_RETURN, called by QABORT, QREVEAL and INTERPRET     
+    UART_WARM
+    UART_INIT_TERM      ASM CODE, content of UART_WARM+2 by default
+    UART_COLD_TERM      ASM CODE, content of UART_COLD+2 by default 
+    UART_INIT_SOFT      ASM CODE, content of INIT_FORTH+2 by default = RET address
+    UART_RXON           ASM CODE, content of SLEEP+2 by default
+    UART_RXOFF          ASM CODE, called by ACCEPT
 
-### Other variables useable in source_files.f, see \inc\device.pat file :
-
-    FREQ_KHZ        FREQUENCY (in kHz)
-    TERMBRW_RST     TERMBRW_RST
-    TERMMCTLW_RST   TERMMCTLW_RST
-    I2CSLAVEADR     I2C_SLAVE address
-    I2CSLAVEADR1       
-    LPM_MODE        LPM_MODE value, LPM0+GIE is the default value
-    RSTIV_MEM       SYSRSTIV memory, set to -1 to do Deep RESET
-    RST_DP          RST value for DP
-    RST_VOC         RST value for VOClink
-    VERSION 
-    THREADS 
-    KERNEL_ADDON    
-
-    WIPE_INI                MOV #WIPE_INI,X
-    WIPE_COLD       WIPE value for PFA_COLD
-    WIPE_INI_FORTH  WIPE value for PFA_INI_FORTH
-    WIPE_SLEEP      WIPE value for PFA_SLEEP
-    WIPE_WARM       WIPE value for PFA_WARM
-    WIPE_TERM_INT   WIPE value for TERMINAL vector
-    WIPE_DP         WIPE value for RST_DP   
-    WIPE_VOC        WIPE value for RST_VOC
-
-    INI_FORTH_INI   MOV #INI_FORTH_INI,X    \ >BODY instruction of default INI_SOFT_APP
-    INIT_ACCEPT     FORTH value for PFAACCEPT
-    INIT_CR         FORTH value for PFACR
-    INIT_EMIT       FORTH value for PFAEMIT
-    INIT_KEY        FORTH value for PFAKEY
-    INIT_CIB        FORTH value for CIB_ADR
-    HALF_FORTH_INI  to preserve the state of DEFERed words, used by user INI_SOFT_APP as:
-    !                   ADD #4,0(RSP)           \ skip INI_FORTH >BODY instruction "MOV #INI_FORTH_INI,X"
-    !                   MOV #HALF_FORTH_INI,X   \ replace it by "MOV #HALF_FORTH_INI,X"
-    !                   MOV @RSP+,PC            \ then RET
-    INIT_DOCOL      FORTH value for rDOCOL   (R4) to restore rDOCOL: MOV &INIT_DOCOL,rDOCOL
-    INIT_DODOES     FORTH value for rDODOES  (R5)
-    INIT_DOCON      FORTH value for rDOCON   (R6)
-    INIT_DOVAR      FORTH value for rDOVAR   (R7)
-    INIT_CAPS       FORTH value for CAPS
-    INIT_BASE       FORTH value for BASE
-    
+    see definitions in forthMSP430FR_TERM_I2C.asm:
+    ABORT_TERM          CODE_WITHOUT_RETURN, called by QABORT, QREVEAL and INTERPRET     
+    I2C_WARM
+    I2C_INIT_TERM       ASM CODE, content of I2C_WARM+2 by default
+    I2C_COLD_TERM       ASM CODE, content of I2C_COLD+2 by default = RET address
+    I2C_INIT_SOFT       ASM CODE, content of INIT_FORTH+2 by default = RET address
+    I2C_RXON            ASM CODE, content of SLEEP+2 by default
+    I2C_CTRL_CH         ASM CODE, used as is: MOV.B #CTRL_CHAR,Y
+                                              CALL #I2C_CTRL_CH
 
 
-## MSP430ASSEMBLER word-set
-
-    ?GOTO           GOTO            FW3             FW2             FW1             BW3             BW2             
-    BW1             REPEAT          WHILE           AGAIN           UNTIL           ELSE            THEN            
-    IF              0=              0<>             U>=             U<              0<              0>=             
-    S<              S>=             RRUM            RLAM            RRAM            RRCM            POPM            
-    PUSHM           CALL            PUSH.B          PUSH            SXT             RRA.B           RRA             
-    SWPB            RRC.B           RRC             AND.B           AND             XOR.B           XOR             
-    BIS.B           BIS             BIC.B           BIC             BIT.B           BIT             DADD.B          
-    DADD            CMP.B           CMP             SUB.B           SUB             SUBC.B          SUBC            
-    ADDC.B          ADDC            ADD.B           ADD             MOV.B           MOV             RETI            
-    LO2HI           COLON           ENDASM          ENDCODE
+## MSP430ASSEMBLER word-set (in the hidden word-set)
 
 [ADD, ADD.B     ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=135),
 [ADDC, ADDC.B   ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=136),
@@ -1548,18 +1608,44 @@ It is reduced to a minimum, but nevertheless extensible up to ... $FF80 !
 [PUSH, PUSH.B   ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=168),
 [RETI           ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=170),
 [RRA, RRA.B     ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=173),
-[RRC, RRC.B     ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=174)
-[SUB, SUB.B     ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=179)
-[SUBC, SUBC.B   ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=180)
-[SWPB           ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=181)
-[SXT            ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=182)
-[XOR, XOR.B     ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=184)
-[RRUM           ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=218)
-[RLAM           ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=208)
-[RRAM           ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=211)
-[RRCM           ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=214)
-[POPM           ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=204)
-[PUSHM          ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=205)
+[RRC, RRC.B     ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=174),
+[SUB, SUB.B     ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=179),
+[SUBC, SUBC.B   ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=180),
+[SWPB           ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=181),
+[SXT            ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=182),
+[XOR, XOR.B     ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=184),
+[RRUM           ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=218),
+[RLAM           ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=208),
+[RRAM           ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=211),
+[RRCM           ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=214),
+[POPM           ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=204),
+[PUSHM          ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=205),
+?GOTO,
+GOTO, 
+BW3, 
+BW2,
+BW1,
+FW3,
+FW2,
+FW1,
+REPEAT,
+WHILE,
+AGAIN,
+UNTIL,
+ELSE,
+THEN,
+IF,
+0=,
+0<>,
+U>=,
+U<,
+0<,
+0>=,
+S<,
+S>=,
+LO2HI,
+COLON,
+ENDCODE.
 
     ?GOTO           used after a conditionnal (0=,0<>,U>=,U<,0<,S<,S>=) to branch to a label FWx or BWx  
     GOTO            used as unconditionnal branch to a label FWx or BWx  
@@ -1584,8 +1670,8 @@ It is reduced to a minimum, but nevertheless extensible up to ... $FF80 !
     0>=             conditionnal, to use only with IF UNTIL WHILE  
     S<              conditionnal  
     S>=             conditionnal  
-    LO2HI           switches compilation between low level and high level modes without saving IP register.  
-    COLON           pushes IP then performs LO2HI, used as: CODE <word> ... assembler instr ... COLON ... FORTH words ... ;
+    LO2HI           switches compilation from low level to high level modes without saving IP register.  
+    COLON           pushes IP then performs LO2HI.
     ENDCODE         to end a CODE or HDNCODE definition.  
 
 #### EXTENDED_MEM WORDS set:
@@ -1624,187 +1710,177 @@ Full 20 bits address/data assembler
 [XORX, XORX.A, XORX.B   ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=227),
 [RPT                    ](http://www.ti.com/lit/ug/slau272d/slau272d.pdf#page=119)
 
-### CONDCOMP ADD-ON
-
-[MARKER         ](https://forth-standard.org/standard/core/MARKER),
-[\[DEFINED\]    ](https://forth-standard.org/standard/tools/BracketDEFINED),
-[\[UNDEFINED\]  ](https://forth-standard.org/standard/tools/BracketUNDEFINED),
-[\[IF\]         ](https://forth-standard.org/standard/tools/BracketIF),
-[\[ELSE\]       ](https://forth-standard.org/standard/tools/BracketELSE),
-[\[THEN\]       ](https://forth-standard.org/standard/tools/BracketTHEN)
-
-
 ### VOCABULARY ADD-ON
 
 [DEFINITIONS     ](https://forth-standard.org/standard/search/DEFINITIONS),
-[ONLY            ](https://forth-standard.org/standard/search/ONLY),
 [PREVIOUS        ](https://forth-standard.org/standard/search/PREVIOUS),
-[ALSO            ](https://forth-standard.org/standard/search/ALSO)  
+ONLY,
+FORTH,
+WORDSET.
 
-ASSEMBLER sets ASSEMBLER as CONTEXT word set  
-FORTH sets FORTH as CONTEXT word set  
-VOCABULARY <name> creates a new word-set 
-
-
-### NONAME ADD-ON
-
-[\:NONAME      ](https://forth-standard.org/standard/core/ColonNONAME),
-[DEFER         ](https://forth-standard.org/standard/core/DEFER),
-[IS            ](https://forth-standard.org/standard/core/IS)
-
-CODENNM is the assembly counterpart of :NONAME.
+    FORTH               adds FORTH as first CONTEXT word-set  
+    FORTH ONLY          clears the CONTEXT stack, same as `-1 SYS`
+    WORDSET <name>      creates a new word-set named <name>
+    <name>              adds this named word-set in the CONTEXT stack
 
 
 ### SD_CARD_LOADER ADD-ON
 
-    LOAD"           LOAD" SD_TEST.4TH" loads source file SD_TEST.4TH from SD_Card and compile it.
+    LOAD" SD_TEST.4TH"  loads source file SD_TEST.4TH from SD_Card and compile it.
+    BOOT                enable bootstrap
+    NOBOOT              disable bootstrap
 
+Once bootloader is enabled, any PUC event loads (and executes) the file \BOOT.4TH from the SD_Card.
 
 ### SD_CARD_READ_WRITE ADD-ON
 
-    TERM2SD"        SD_EMIT         WRITE           READ            CLOSE           DEL"            WRITE"          
-    READ"
+TERM2SD",
+SD_EMIT,
+WRITE,
+READ,
+CLOSE,
+DEL",
+WRITE",
+APPEND",
+READ".
 
-    TERM2SD"        TERM2SD" SD_TEST.4TH" copy input file to SD_CARD (use CopySourceFileToTarget_SD_Card.bat to do)
+    TERM2SD"        TERM2SD" SD_TEST.4TH" copy input file to SD_CARD
+                       (use CopySourceFileToTarget_SD_Card.bat to do)
     SD_EMIT         sends output stream at the end of last opened as write file.
-    WRITE           write sequentially BUFFER content to a sector
-    READ            read sequentially a sector to BUFFER
+    WRITE           write sequentially the content of SD_buf to a file
+    READ            read sequentially a file in SD_buf, leave a flag, false when the file is automatically closed.
     CLOSE           close last opened file.
     DEL"            DEL" SD_TEST.4TH" remove this file from SD_CARD.
-    WRITE"          WRITE" TRUC" open or create TRUC file ready to write to the end of this file
-    READ"           READ" TRUC" open TRUC and load its first sector in BUFFER
-
-
-
-### BOOTLOADER
-
-to enable bootloader: `' BOOT IS WARM`,
-to disable bootloader: `' BOOT [PFA] IS WARM`
-
-Once bootloader enabled, any PUC event loads (and executes) the file \BOOT.4TH from the SD_Card.
+    WRITE"          WRITE" TRUC" create or overwrite a file TRUC ready to write to its beginning.
+    APPEND"         APPEND" TRUC" open or create a file TRUC ready to write to the end of this file
+    READ"           READ" TRUC" open TRUC and load its first sector in SD_buf
 
 
 ## OPTIONNAL ADD-ON
 
-* when ADD-ONs are compiled with the kernel, their respective MARKER word identified with braces {} does nothing.  
-  Sources are in the folder \ADDON, as source.asm file.
-
-* when ADD-ONs are downloaded, their respective MARKER word identified with braces {} removes all ADD-ONs words.  
+* Their respective MARKER word identified with braces {} removes all ADD-ONs words.  
   Sources are in the folder \MSP430-FORTH\, as source.f file.
 
 ### ANS_COMP
 
 Adds complement to pass FORTH ANS94 core test.
 
-[VALUE           ](https://forth-standard.org/standard/core/VALUE),
-[TO              ](https://forth-standard.org/standard/core/TO),
-[BEGIN           ](https://forth-standard.org/standard/core/BEGIN),
-[DOES>           ](https://forth-standard.org/standard/core/DOES),
-[SPACES          ](https://forth-standard.org/standard/core/SPACES),
-[SPACE           ](https://forth-standard.org/standard/core/SPACE),
-[BL              ](https://forth-standard.org/standard/core/BL),
-[PAD             ](https://forth-standard.org/standard/core/PAD),       
-[>IN             ](https://forth-standard.org/standard/core/toIN),
-[BASE            ](https://forth-standard.org/standard/core/BASE),
-[STATE           ](https://forth-standard.org/standard/core/STATE),
-[CONSTANT        ](https://forth-standard.org/standard/core/CONSTANT),
-[VARIABLE        ](https://forth-standard.org/standard/core/VARIABLE),
-[SOURCE          ](https://forth-standard.org/standard/core/SOURCE),
-[RECURSE         ](https://forth-standard.org/standard/core/RECURSE),
-[EVALUATE        ](https://forth-standard.org/standard/core/EVALUATE),
-[EXECUTE         ](https://forth-standard.org/standard/core/EXECUTE),
-[>BODY           ](https://forth-standard.org/standard/core/toBODY),
-[.(              ](https://forth-standard.org/standard/core/Dotp),
-[(               ](https://forth-standard.org/standard/core/p),
-[DECIMAL         ](https://forth-standard.org/standard/core/DECIMAL),
-[HEX             ](https://forth-standard.org/standard/core/HEX),
-[HERE            ](https://forth-standard.org/standard/core/HERE),
-[FILL            ](https://forth-standard.org/standard/core/FILL),
-[MOVE            ](https://forth-standard.org/standard/core/MOVE),
-[+!              ](https://forth-standard.org/standard/core/PlusStore),
-[[CHAR]          ](https://forth-standard.org/standard/core/BracketCHAR),
-[CHAR            ](https://forth-standard.org/standard/core/CHAR),
-[CELL+           ](https://forth-standard.org/standard/core/CELLPlus),
-[CELLS           ](https://forth-standard.org/standard/core/CELLS),
-[CHAR+           ](https://forth-standard.org/standard/core/CHARPlus),
-[CHARS           ](https://forth-standard.org/standard/core/CHARS),
-[ALIGN           ](https://forth-standard.org/standard/core/ALIGN),
-[ALIGNED         ](https://forth-standard.org/standard/core/ALIGNED),
-[2OVER           ](https://forth-standard.org/standard/core/TwoOVER),
-[2SWAP           ](https://forth-standard.org/standard/core/TwoSWAP),
-[2DROP           ](https://forth-standard.org/standard/core/TwoDROP),
-[2DUP            ](https://forth-standard.org/standard/core/TwoDUP),
-[2!              ](https://forth-standard.org/standard/core/TwoStore),
-[2@              ](https://forth-standard.org/standard/core/TwoFetch),
-[R@              ](https://forth-standard.org/standard/core/RFetch),
-[ROT             ](https://forth-standard.org/standard/core/ROT),
-[OVER            ](https://forth-standard.org/standard/core/OVER),
-[*/              ](https://forth-standard.org/standard/core/TimesDiv),
-[*/MOD           ](https://forth-standard.org/standard/core/TimesDivMOD),
-[MOD             ](https://forth-standard.org/standard/core/MOD),
-[/               ](https://forth-standard.org/standard/core/Div),
-[/MOD            ](https://forth-standard.org/standard/core/DivMOD),
-[*               ](https://forth-standard.org/standard/core/Times),
-[FM/MOD          ](https://forth-standard.org/standard/core/FMDivMOD),
-[ABS             ](https://forth-standard.org/standard/core/ABS),
-[NEGATE          ](https://forth-standard.org/standard/core/NEGATE),
-[SM/REM          ](https://forth-standard.org/standard/core/SMDivREM),
-[UM/MOD          ](https://forth-standard.org/standard/core/UMDivMOD),
-[M*              ](https://forth-standard.org/standard/core/MTimes),
-[UM*             ](https://forth-standard.org/standard/core/UMTimes),
-[2/              ](https://forth-standard.org/standard/core/TwoDiv),
-[2*              ](https://forth-standard.org/standard/core/TwoTimes),
-[MIN             ](https://forth-standard.org/standard/core/MIN),
-[MAX             ](https://forth-standard.org/standard/core/MAX),
-[RSHIFT          ](https://forth-standard.org/standard/core/RSHIFT),
-[LSHIFT          ](https://forth-standard.org/standard/core/LSHIFT),
-[INVERT          ](https://forth-standard.org/standard/core/INVERT),
-[1-              ](https://forth-standard.org/standard/core/OneMinus),
-[1+              ](https://forth-standard.org/standard/core/OnePlus),
-[S>D             ](https://forth-standard.org/standard/core/StoD),
-[XOR             ](https://forth-standard.org/standard/core/XOR),
-[OR              ](https://forth-standard.org/standard/core/OR),
-[AND             ](https://forth-standard.org/standard/core/AND),
-[LEAVE           ](https://forth-standard.org/standard/core/LEAVE),
-[UNLOOP          ](https://forth-standard.org/standard/core/UNLOOP),
-[J               ](https://forth-standard.org/standard/core/J),
-[I               ](https://forth-standard.org/standard/core/I),
-[+LOOP           ](https://forth-standard.org/standard/core/PlusLOOP),
-[LOOP            ](https://forth-standard.org/standard/core/LOOP),
-[DO              ](https://forth-standard.org/standard/core/DO),  
-[REPEAT          ](https://forth-standard.org/standard/core/REPEAT),
-[WHILE           ](https://forth-standard.org/standard/core/WHILE),
-[AGAIN           ](https://forth-standard.org/standard/core/AGAIN),
-[UNTIL           ](https://forth-standard.org/standard/core/UNTIL),
-[THEN            ](https://forth-standard.org/standard/core/THEN),
-[ELSE            ](https://forth-standard.org/standard/core/ELSE),
-[IF              ](https://forth-standard.org/standard/core/IF),
-[>               ](https://forth-standard.org/standard/core/more),
-[<               ](https://forth-standard.org/standard/core/less),
-[U<              ](https://forth-standard.org/standard/core/Uless),
-[=               ](https://forth-standard.org/standard/core/Equal),
-[0<              ](https://forth-standard.org/standard/core/Zeroless),
-[0=              ](https://forth-standard.org/standard/core/ZeroEqual),
-[C,              ](https://forth-standard.org/standard/core/CComma),
-[C!              ](https://forth-standard.org/standard/core/CStore),
-[C@              ](https://forth-standard.org/standard/core/CFetch),
-[R>              ](https://forth-standard.org/standard/core/Rfrom),
-[>R              ](https://forth-standard.org/standard/core/toR),
-[NIP             ](https://forth-standard.org/standard/core/NIP),
-[DROP            ](https://forth-standard.org/standard/core/DROP),
-[SWAP            ](https://forth-standard.org/standard/core/SWAP),
-[DEPTH           ](https://forth-standard.org/standard/core/DEPTH),
-[EXIT            ](https://forth-standard.org/standard/core/EXIT),
-[?DUP            ](https://forth-standard.org/standard/core/qDUP),
-[DUP             ](https://forth-standard.org/standard/core/DUP),
-[-               ](https://forth-standard.org/standard/core/Minus),
-[+               ](https://forth-standard.org/standard/core/Plus)
+[VALUE      ](https://forth-standard.org/standard/core/VALUE),
+[TO         ](https://forth-standard.org/standard/core/TO),
+[DEFER      ](https://forth-standard.org/standard/core/DEFER),
+[BEGIN      ](https://forth-standard.org/standard/core/BEGIN),
+[SPACES     ](https://forth-standard.org/standard/core/SPACES),
+[SPACE      ](https://forth-standard.org/standard/core/SPACE),
+[BL         ](https://forth-standard.org/standard/core/BL),
+[PAD        ](https://forth-standard.org/standard/core/PAD),
+[>IN        ](https://forth-standard.org/standard/core/toIN),
+[BASE       ](https://forth-standard.org/standard/core/BASE),
+[STATE      ](https://forth-standard.org/standard/core/STATE),
+[CONSTANT   ](https://forth-standard.org/standard/core/CONSTANT),
+[VARIABLE   ](https://forth-standard.org/standard/core/VARIABLE),
+[SOURCE     ](https://forth-standard.org/standard/core/SOURCE),
+[RECURSE    ](https://forth-standard.org/standard/core/RECURSE),
+[EVALUATE   ](https://forth-standard.org/standard/core/EVALUATE),
+[EXECUTE    ](https://forth-standard.org/standard/core/EXECUTE),
+[>BODY      ](https://forth-standard.org/standard/core/toBODY),
+[.(         ](https://forth-standard.org/standard/core/Dotp),
+[(          ](https://forth-standard.org/standard/core/p),
+[DECIMAL    ](https://forth-standard.org/standard/core/DECIMAL),
+[HEX        ](https://forth-standard.org/standard/core/HEX),
+[HERE       ](https://forth-standard.org/standard/core/HERE),
+[FILL       ](https://forth-standard.org/standard/core/FILL),
+[MOVE       ](https://forth-standard.org/standard/core/MOVE),
+[+!         ](https://forth-standard.org/standard/core/PlusStore),
+[[CHAR]     ](https://forth-standard.org/standard/core/BracketCHAR),
+[CHAR       ](https://forth-standard.org/standard/core/CHAR),
+[CELL+      ](https://forth-standard.org/standard/core/CELLPlus),
+[CELLS      ](https://forth-standard.org/standard/core/CELLS),
+[CHAR+      ](https://forth-standard.org/standard/core/CHARPlus),
+[CHARS      ](https://forth-standard.org/standard/core/CHARS),
+[ALIGN      ](https://forth-standard.org/standard/core/ALIGN),
+[ALIGNED    ](https://forth-standard.org/standard/core/ALIGNED),
+[2OVER      ](https://forth-standard.org/standard/core/TwoOVER),
+[2SWAP      ](https://forth-standard.org/standard/core/TwoSWAP),
+[2DROP      ](https://forth-standard.org/standard/core/TwoDROP),
+[2DUP       ](https://forth-standard.org/standard/core/TwoDUP),
+[2!         ](https://forth-standard.org/standard/core/TwoStore),
+[2@         ](https://forth-standard.org/standard/core/TwoFetch),
+[R@         ](https://forth-standard.org/standard/core/RFetch),
+[ROT        ](https://forth-standard.org/standard/core/ROT),
+[OVER       ](https://forth-standard.org/standard/core/OVER),
+[*/         ](https://forth-standard.org/standard/core/TimesDiv),
+[*/MOD      ](https://forth-standard.org/standard/core/TimesDivMOD),
+[MOD        ](https://forth-standard.org/standard/core/MOD),
+[/          ](https://forth-standard.org/standard/core/Div),
+[/MOD       ](https://forth-standard.org/standard/core/DivMOD),
+[*          ](https://forth-standard.org/standard/core/Times),
+[FM/MOD     ](https://forth-standard.org/standard/core/FMDivMOD),
+[ABS        ](https://forth-standard.org/standard/core/ABS),
+[NEGATE     ](https://forth-standard.org/standard/core/NEGATE),
+[SM/REM     ](https://forth-standard.org/standard/core/SMDivREM),
+[UM/MOD     ](https://forth-standard.org/standard/core/UMDivMOD),
+[M*         ](https://forth-standard.org/standard/core/MTimes),
+[UM*        ](https://forth-standard.org/standard/core/UMTimes),
+[2/         ](https://forth-standard.org/standard/core/TwoDiv),
+[2*         ](https://forth-standard.org/standard/core/TwoTimes),
+[MIN        ](https://forth-standard.org/standard/core/MIN),
+[MAX        ](https://forth-standard.org/standard/core/MAX),
+[RSHIFT     ](https://forth-standard.org/standard/core/RSHIFT),
+[LSHIFT     ](https://forth-standard.org/standard/core/LSHIFT),
+[INVERT     ](https://forth-standard.org/standard/core/INVERT),
+[1-         ](https://forth-standard.org/standard/core/OneMinus),
+[1+         ](https://forth-standard.org/standard/core/OnePlus),
+[S>D        ](https://forth-standard.org/standard/core/StoD),
+[XOR        ](https://forth-standard.org/standard/core/XOR),
+[OR         ](https://forth-standard.org/standard/core/OR),
+[AND        ](https://forth-standard.org/standard/core/AND),
+[LEAVE      ](https://forth-standard.org/standard/core/LEAVE),
+[UNLOOP     ](https://forth-standard.org/standard/core/UNLOOP),
+[J          ](https://forth-standard.org/standard/core/J),
+[I          ](https://forth-standard.org/standard/core/I),
+[+LOOP      ](https://forth-standard.org/standard/core/PlusLOOP),
+[LOOP       ](https://forth-standard.org/standard/core/LOOP),
+[DO         ](https://forth-standard.org/standard/core/DO),
+[REPEAT     ](https://forth-standard.org/standard/core/REPEAT),
+[WHILE      ](https://forth-standard.org/standard/core/WHILE),
+[AGAIN      ](https://forth-standard.org/standard/core/AGAIN),
+[UNTIL      ](https://forth-standard.org/standard/core/UNTIL),
+[THEN       ](https://forth-standard.org/standard/core/THEN),
+[ELSE       ](https://forth-standard.org/standard/core/ELSE),
+[IF         ](https://forth-standard.org/standard/core/IF),
+[>          ](https://forth-standard.org/standard/core/more),
+[<          ](https://forth-standard.org/standard/core/less),
+[U<         ](https://forth-standard.org/standard/core/Uless),
+[=          ](https://forth-standard.org/standard/core/Equal),
+[0<         ](https://forth-standard.org/standard/core/Zeroless),
+[0=         ](https://forth-standard.org/standard/core/ZeroEqual),
+[C,         ](https://forth-standard.org/standard/core/CComma),
+[C!         ](https://forth-standard.org/standard/core/CStore),
+[C@         ](https://forth-standard.org/standard/core/CFetch),
+[R>         ](https://forth-standard.org/standard/core/Rfrom),
+[>R         ](https://forth-standard.org/standard/core/toR),
+[NIP        ](https://forth-standard.org/standard/core/NIP),
+[DROP       ](https://forth-standard.org/standard/core/DROP),
+[SWAP       ](https://forth-standard.org/standard/core/SWAP),
+[DEPTH      ](https://forth-standard.org/standard/core/DEPTH),
+[EXIT       ](https://forth-standard.org/standard/core/EXIT),
+[?DUP       ](https://forth-standard.org/standard/core/qDUP),
+[DUP        ](https://forth-standard.org/standard/core/DUP),
+[-          ](https://forth-standard.org/standard/core/Minus),
+[+          ](https://forth-standard.org/standard/core/Plus),
+[CR         ](https://forth-standard.org/standard/core/CR).
 
 
 ### FIXPOINT
 
-    S>F             F.              F*              F#S             F/              F-              F+              
-    HOLDS           {FIXPOINT}
+S>F,
+F.,
+F*,
+F#S,
+F/,
+F-,
+F+,
+[HOLDS          ](https://forth-standard.org/standard/core/HOLDS).
 
     S>F             u/n -- Qlo Qhi       convert u/n in a Q15.16 value
     F.              display a Q15.16 value
@@ -1814,29 +1890,25 @@ Adds complement to pass FORTH ANS94 core test.
     F/              Q15.16 division        
     F-              Q15.16 soustraction
     F+              Q15.16 addition
-    HOLDS           https://forth-standard.org/standard/core/HOLDS
 
 
 ### UTILITY
 
-    DUMP            U.R             WORDS           ?               .RS             .S              {TOOLS}
-
 [DUMP           ](https://forth-standard.org/standard/tools/DUMP), 
 [U.R            ](https://forth-standard.org/standard/core/UDotR),
-[WORDS          ](https://forth-standard.org/standard/tools/WORDS),  
+[WORDS          ](https://forth-standard.org/standard/tools/WORDS),
 [?              ](https://forth-standard.org/standard/tools/q), 
 [.S             ](https://forth-standard.org/standard/tools/DotS),
+.RS.
 
     .RS             displays Return Stack content  
 
 ### SD_TOOLS
 
-    DIR             FAT             CLUSTER         SECTOR          {SD_TOOLS}
-
     DIR             dump first sector of current directory  
     FAT             dump first sector of FAT1  
-    CLUSTER         .123 CLUSTER displays first sector of cluster 123  
-    SECTOR          .123456789 SECTOR displays sector 123456789  
+    CLUSTER.        .123 CLUSTER. displays first sector of cluster 123  
+    SECTOR.         .123456789 SECTOR. displays sector 123456789  
 
 ### DOUBLE word set
 
@@ -1873,6 +1945,7 @@ Adds complement to pass FORTH ANS94 core test.
 First search from ti.com: [MSP430Flasher](http://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSP430Flasher/latest/index_FDS.html)
 
 untar in a home folder then:
+* set executable flag in permission of this file
 * open MSPFlasher-1.3.16-linux-x64-installer.run
 * install in MSP430Flasher (under home)
 

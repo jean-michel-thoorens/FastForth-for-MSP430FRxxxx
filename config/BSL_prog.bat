@@ -30,12 +30,12 @@
 :: %1 = target name without ext. of \binaries\target.txt file
 :: %2 = port COMx in use
 :: %~d1 = drive: of %1
-:: %~n1 = target name without ext. of %1
+:: %~nx1 = target name with ext. of %1
 
 
 @set PortCOM=%2
 @if 1%PortCOM% == 1 CALL %~d1\config\Select.bat SelectPortCOM
 
 @%~d1\prog\BSL-Scripter.exe --log --quiet --initComm [INVOKE,%PortCOM%,UART,9600,PARITY] --device FRxx --erase ERASE_ALL --exit [RESET]
-@%~d1\prog\BSL-Scripter.exe --log --initComm [INVOKE,%PortCOM%,UART,9600,PARITY] --device FRxx --speed FAST  --bslPwd %~d1\binaries\pass32_default.txt -w %~d1\binaries\%~n1.txt --exit [RESET]
+@%~d1\prog\BSL-Scripter.exe --log --initComm [INVOKE,%PortCOM%,UART,9600,PARITY] --device FRxx --speed FAST  --bslPwd %~dp1binaries\pass32_default.txt -w %~dp1binaries\%~nx1 --exit [RESET]
 @pause

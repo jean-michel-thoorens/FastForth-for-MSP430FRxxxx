@@ -4,7 +4,7 @@
 @ECHO OFF
 
 ::echo %2
-::echo %~d1\inc\%~n2.pat
+::echo %~dp1..\inc\%~n2.pat
 
 IF "%2" == "" ( 
 echo no file to be preprocessed!
@@ -16,8 +16,8 @@ echo %~dpn1.f not found!
 goto badend 
 )
 
-IF NOT EXIST %~d1\inc\%~n2.pat (
-echo %~d1\inc\%~n2.pat not found!
+IF NOT EXIST %~dp1..\inc\%~n2.pat (
+echo %~dp1..\inc\%~n2.pat not found!
 goto badend 
 )
 
@@ -31,8 +31,11 @@ exit
 
 
 :preprocess
-%~d1\prog\gema.exe -nobackup -line -t '-\r\n=\r\n' -f %~d1\inc\%~n2.pat  %~dpn1.f %~dp1LAST.4TH
-XCOPY /D /Y  %~dp1LAST.4TH %~dp1\%~n2\%~n1.4TH* > NUL
+%~d1\prog\gema.exe -nobackup -line -t '-\r\n=\r\n' -f %~dp1..\inc\%~n2.pat  %~dpn1.f %~dp1LAST.4TH
+
+call  %~d1\config\Select.bat SelectDevice %~dp1..\inc\%~n2.pat
+if not exist  %~dp1SD_%device:~3% MD %~dp1SD_%device:~3% > NUL 
+COPY /y %~dp1LAST.4TH %~dp1SD_%device:~3%\%~n1.4TH > NUL
 exit
 
 :: %~dpn1.f is the symbolic source file

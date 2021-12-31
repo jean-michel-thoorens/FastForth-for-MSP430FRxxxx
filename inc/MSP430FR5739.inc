@@ -48,7 +48,7 @@ JTAG_SIG1       .equ 0FF80h      ; if 0 (electronic fuse=0) enable JTAG/SBW; mus
 JTAG_SIG2       .equ 0FF82h      ; if JTAG_SIG1=0xAAAA, length of password string @ JTAG_PASSWORD
 BSL_SIG1        .equ 0FF84h      ;
 BSL_SIG2        .equ 0FF86h      ;
-I2CSLA0         .equ 0FFA2h      ; UCBxI2COA0 default value address 
+I2CSLA0         .equ 0FFA2h      ; UCBxI2COA0 default value address
 I2CSLA1         .equ 0FFA4h      ; UCBxI2COA1 default value address
 I2CSLA2         .equ 0FFA6h      ; UCBxI2COA2 default value address
 I2CSLA3         .equ 0FFA8h      ; UCBxI2COA3 default value address
@@ -109,10 +109,10 @@ BSL_PASSWORD    .equ 0FFE0h      ; 256 bits
 SFR_SFR         .equ 0100h           ; Special function
 PMM_SFR         .equ 0120h           ; PMM
 FRAM_SFR        .equ 0140h           ; FRAM control
-CRC16_SFR       .equ 0150h   
+CRC16_SFR       .equ 0150h
 WDT_A_SFR       .equ 015Ch           ; Watchdog
 CS_SFR          .equ 0160h
-SYS_SFR         .equ 0180h           ; SYS 
+SYS_SFR         .equ 0180h           ; SYS
 REF_SFR         .equ 01B0h           ; REF
 PA_SFR          .equ 0200h           ; PORT1/2
 PB_SFR          .equ 0220h           ; PORT3/4
@@ -239,7 +239,7 @@ P1DIR       .equ PA_SFR + 04h    ; Port 1 DIRection
 P1REN       .equ PA_SFR + 06h    ; Port 1 Resistor ENable
 P1SEL0      .equ PA_SFR + 0Ah    ; Port 1 SELection 0
 P1SEL1      .equ PA_SFR + 0Ch    ; Port 1 SELection 1
-P1IV        .equ PA_SFR + 0Eh    ; Port 1 Interrupt Vector word 
+P1IV        .equ PA_SFR + 0Eh    ; Port 1 Interrupt Vector word
 P1SELC      .equ PA_SFR + 16h    ; Port 1 SELection Complement
 P1IES       .equ PA_SFR + 18h    ; Port 1 Interrupt Edge Select
 P1IE        .equ PA_SFR + 1Ah    ; Port 1 Interrupt Enable
@@ -255,7 +255,7 @@ P2SELC      .equ PA_SFR + 17h    ; Port 2 SELection Complement
 P2IES       .equ PA_SFR + 19h    ; Port 2 Interrupt Edge Select
 P2IE        .equ PA_SFR + 1Bh    ; Port 2 Interrupt Enable
 P2IFG       .equ PA_SFR + 1Dh    ; Port 2 Interrupt Flag
-P2IV        .equ PA_SFR + 1Eh    ; Port 2 Interrupt Vector word 
+P2IV        .equ PA_SFR + 1Eh    ; Port 2 Interrupt Vector word
 
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : PORT3/4
@@ -360,10 +360,10 @@ RES3      .equ MPY_SFR + 2Ah    ; 32x32-bit result 3 */
 MPY32CTL0 .equ MPY_SFR + 2Ch    ; MPY32 control register 0
 
 
-MPUCTL0     .equ MPU_SFR + 00h  ; MPU control 0             
-MPUCTL1     .equ MPU_SFR + 02h  ; MPU control 1             
-MPUSEG      .equ MPU_SFR + 04h  ; MPU Segmentation Register 
-MPUSAM      .equ MPU_SFR + 06h  ; MPU access management     
+MPUCTL0     .equ MPU_SFR + 00h  ; MPU control 0
+MPUCTL1     .equ MPU_SFR + 02h  ; MPU control 1
+MPUSEG      .equ MPU_SFR + 04h  ; MPU Segmentation Register
+MPUSAM      .equ MPU_SFR + 06h  ; MPU access management
 
 
     .IFDEF UCA0_TERM
@@ -410,7 +410,7 @@ TERM_STATW      .equ eUSCI_B0_SFR + 08h     ; USCI_B0 Status Word
 TERM_RXBUF      .equ eUSCI_B0_SFR + 0Ch     ; USCI_B0 Receive Buffer 8
 TERM_TXBUF      .equ eUSCI_B0_SFR + 0Eh     ; USCI_B0 Transmit Buffer 8
 TERM_I2COA0     .equ eUSCI_B0_SFR + 14h     ; USCI_B0 I2C Own Address 0
-TERM_ADDRX      .equ eUSCI_B0_SFR + 1Ch     ; USCI_B0  Received Address Register 
+TERM_ADDRX      .equ eUSCI_B0_SFR + 1Ch     ; USCI_B0  Received Address Register
 TERM_I2CSA      .equ eUSCI_B0_SFR + 20h     ; USCI_B0 I2C Slave Address
 TERM_IE         .equ eUSCI_B0_SFR + 2Ah     ; USCI_B0 Interrupt Enable
 TERM_IFG        .equ eUSCI_B0_SFR + 2Ch     ; USCI_B0 Interrupt Flags Register

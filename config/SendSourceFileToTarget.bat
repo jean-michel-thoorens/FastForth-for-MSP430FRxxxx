@@ -16,7 +16,7 @@ exit
 
 call  %~d1\config\Select.bat SelectTemplate
 
-start  %~d1\config\SendSource.bat %1 %~d1\inc\%template% ECHO
+start  %~d1\config\SendSource.bat %1 %~dp1..\inc\%template% ECHO
 
 ::PAUSE > NUL
 exit

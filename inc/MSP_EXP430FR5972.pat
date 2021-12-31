@@ -4,7 +4,7 @@
 \.f=\.4th for MSP_EXP430FR5972!      to change file type
 !
 !========================
-! remove comments        
+! remove comments
 !========================
 \\*\n=
 \s\\*\n=\n
@@ -26,7 +26,7 @@
 !
 ! P1.1 - Switch S1              <--- LCD contrast + (finger :-)
 ! P1.2 - Switch S2              <--- LCD contrast - (finger ;-)
-!                                   
+!
 !  GND                          <-------+---0V0---------->  1 LCD_Vss
 !  VCC                          >------ | --3V3-----+---->  2 LCD_Vdd
 !                                       |           |
@@ -44,7 +44,7 @@
 ! P9.5/A13/C13                  ------------------------->  5 LCD_R/W
 ! P9.6/A14/C14                  ------------------------->  6 LCD_EN
 !
-!                                 +--4k7-< DeepRST <-- GND 
+!                                 +--4k7-< DeepRST <-- GND
 !                                 |
 ! P3.4 - UCA1 TXD               <-+-> RX  UARTtoUSB bridge
 ! P3.5 - UCA1 RXD               <---- TX  UARTtoUSB bridge
@@ -54,7 +54,7 @@
 !
 !  VCC -                        ----> VCC SD_CardAdapter
 !  GND -                        <---> GND SD_CardAdapter
-! P2.2 -  UCA0 CLK              ----> CLK SD_CardAdapter (SCK)  
+! P2.2 -  UCA0 CLK              ----> CLK SD_CardAdapter (SCK)
 ! P2.6 -                        ----> CS  SD_CardAdapter (Card Select)
 ! P2.0 -  UCA0 TXD/SIMO         ----> SDI SD_CardAdapter (MOSI)
 ! P2.1 -  UCA0 RXD/SOMI         <---- SDO SD_CardAdapter (MISO)
@@ -77,11 +77,11 @@
 ! P3.2 -UCB1 SCL/SOMI           ----> free
 ! P3.3 -         TA1.1          <---> free
 !
-! PJ.4 - LFXI 32768Hz quartz  
-! PJ.5 - LFXO 32768Hz quartz  
-! PJ.6 - HFXI 
-! PJ.7 - HFXO 
-  
+! PJ.4 - LFXI 32768Hz quartz
+! PJ.5 - LFXO 32768Hz quartz
+! PJ.6 - HFXI
+! PJ.7 - HFXO
+
 
 ! ============================================
 ! FORTH I/O :
@@ -120,7 +120,7 @@ HANDSHAKOUT=\$222!
 CD_SD=\$80!        ; P2.7 as Card Detect
 SD_CDIN=\$201!
 
-CS_SD=\$40!        ; P2.6 as Card Select 
+CS_SD=\$40!        ; P2.6 as Card Select
 SD_CSOUT=\$203!
 SD_CSDIR=\$205!
 
@@ -181,10 +181,10 @@ WDT_TIM_CCR0=\$352!     TA0CCR0
 WDT_TIM_EX0=\$360!      TA0EX0
 WDT_TIM_0_Vec=\$FFE8!   TA0_0_Vec
 
-IR_IN=\$221!  
-IR_OUT=\$223! 
-IR_DIR=\$225! 
-IR_REN=\$227! 
+IR_IN=\$221!
+IR_OUT=\$223!
+IR_DIR=\$225!
+IR_REN=\$227!
 IR_IES=\$239!
 IR_IE=\$23B!
 IR_IFG=\$23D!
@@ -198,7 +198,7 @@ I2CSM_DIR=\$204!
 I2CSM_REN=\$206!
 SM_SDA=8!     P1.3
 SM_SCL=\$20!     P1.5
-SM_BUS=\$28!     
+SM_BUS=\$28!
 
 I2CSMM_IN=\$200!
 I2CSMM_OUT=\$202!
@@ -206,7 +206,7 @@ I2CSMM_DIR=\$204!
 I2CSMM_REN=\$206!
 SMM_SDA=8!    P1.3
 SMM_SCL=\$20!    P1.5
-SMM_BUS=\$28!    
+SMM_BUS=\$28!
 RC5_TIM_CTL=\$380!      TA1CTL
 RC5_TIM_R=\$390!        TA1R
 RC5_TIM_EX0=\$3A0!      TA1EX0
@@ -220,7 +220,7 @@ I2CMM_SEL=\$20A!    SEL0
 I2CMM_Vec=\$FFEC!   UCBO_Vec
 MM_SDA=\$40!         P1.6
 MM_SCL=\$80!         P1.7
-MM_BUS=\$C0!    
+MM_BUS=\$C0!
 
 I2CM_IN=\$200!
 I2CM_OUT=\$202!
@@ -230,7 +230,7 @@ I2CM_SEL=\$20A!     SEL0
 I2CM_Vec=\$FFEC!    UCBO_Vec
 M_SDA=\$40!          P1.6
 M_SCL=\$80!          P1.7
-M_BUS=\$C0!    
+M_BUS=\$C0!
 
 I2CS_IN=\$200!
 I2CS_OUT=\$202!
@@ -255,12 +255,12 @@ UCRXIFG0=1!         eUSCI_B Receive Interrupt Flag
 I2CM_CTLW0=\$640!   USCI_B0 Control Word Register 0
 I2CM_CTLW1=\$642!   USCI_B0 Control Word Register 1
 I2CM_BRW=\$646!     USCI_B0 Baud Word Rate 0
-I2CM_STATW=\$648!   USCI_B0 status word 
-I2CM_TBCNT=\$64A!   USCI_B0 byte counter threshold  
+I2CM_STATW=\$648!   USCI_B0 status word
+I2CM_TBCNT=\$64A!   USCI_B0 byte counter threshold
 I2CM_RXBUF=\$64C!   USCI_B0 Receive Buffer 8
 I2CM_TXBUF=\$64E!   USCI_B0 Transmit Buffer 8
 I2CM_I2COA0=\$654!  USCI_B0 I2C Own Address 0
-I2CM_ADDRX=\$65C!   USCI_B0 Received Address Register 
+I2CM_ADDRX=\$65C!   USCI_B0 Received Address Register
 I2CM_I2CSA=\$660!   USCI_B0 I2C Slave Address
 I2CM_IE=\$66A!      USCI_B0 Interrupt Enable
 I2CM_IFG=\$66C!     USCI_B0 Interrupt Flags Register
@@ -268,12 +268,12 @@ I2CM_IFG=\$66C!     USCI_B0 Interrupt Flags Register
 I2CS_CTLW0=\$640!   USCI_B0 Control Word Register 0
 I2CS_CTLW1=\$642!   USCI_B0 Control Word Register 1
 I2CS_BRW=\$646!     USCI_B0 Baud Word Rate 0
-I2CS_STATW=\$648!   USCI_B0 status word 
-I2CS_TBCNT=\$64A!   USCI_B0 byte counter threshold  
+I2CS_STATW=\$648!   USCI_B0 status word
+I2CS_TBCNT=\$64A!   USCI_B0 byte counter threshold
 I2CS_RXBUF=\$64C!   USCI_B0 Receive Buffer 8
 I2CS_TXBUF=\$64E!   USCI_B0 Transmit Buffer 8
 I2CS_I2COA0=\$654!  USCI_B0 I2C Own Address 0
-I2CS_ADDRX=\$65C!   USCI_B0 Received Address Register 
+I2CS_ADDRX=\$65C!   USCI_B0 Received Address Register
 I2CS_I2CSA=\$660!   USCI_B0 I2C Slave Address
 I2CS_IE=\$66A!      USCI_B0 Interrupt Enable
 I2CS_IFG=\$66C!     USCI_B0 Interrupt Flags Register

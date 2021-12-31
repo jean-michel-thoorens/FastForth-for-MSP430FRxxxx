@@ -4,7 +4,7 @@
 \.f=\.4th for MSP_EXP430FR2433!      to change file type
 !
 !========================
-! remove comments        
+! remove comments
 !========================
 \\*\n=
 \s\\*\n=\n
@@ -63,7 +63,7 @@
 ! MSP-EXP430FR2433 LAUNCHPAD    <--> OUTPUT WORLD
 ! ======================================================================
 !
-!                                 +--4k7-< DeepRST switch <-- GND 
+!                                 +--4k7-< DeepRST switch <-- GND
 !                                 |
 ! P1.4  - UCA0 TXD    J101.6 -  <-+-> RX  UARTtoUSB bridge
 ! P1.5  - UCA0 RXD    J101.8 -  <---- TX  UARTtoUSB bridge
@@ -76,21 +76,21 @@
 ! P2.5  - UCA1 SOMI   J2.14  -  <---- SD_SDO
 ! P2.1  -             J2.12  -  <---- SD_CD (Card Detect)
 ! P2.0  -             J2.11  -  ----> SD_CS (Card Select)
-!       
+!
 ! P1.3  - UCB0 SCL    J1.9   -  ----> SCL I2C Slave
 ! P1.2  - UCB0 SDA    J1.10  -  <---> SDA I2C Slave
-!       
+!
 ! P3.1  -             J2.13  -  ----> SCL I2C SoftMaster
 ! P3.2  -             J2.17  -  <---> SDA I2C SoftMaster
-!       
-! P2.2  - ACLK        J2.18  -  <---- TSSOP32236 (IR RC5) 
+!
+! P2.2  - ACLK        J2.18  -  <---- TSSOP32236 (IR RC5)
 
 
 
 ! ============================================
 ! FORTH I/O :
 ! ============================================
-!TERMINAL 
+!TERMINAL
 BUS_TERM=\$30!      ; P1.4 = TX, P1.5 = RX
 
 TERM_IN=\$200!
@@ -100,21 +100,21 @@ TERM_SEL=\$20A!     \SEL0
 TERM_VEC=\$FFE4!    \ UCA0
 WAKE_UP=1!          \ RX int
 
-TERM_CTLW0=\$500!   \ eUSCI_A control word 0        
-TERM_CTLW1=\$502!   \ eUSCI_A control word 1        
-TERM_BRW=\$506!         
-TERM_BR0=\$506!     \ eUSCI_A baud rate 0           
-TERM_BR1=\$507!     \ eUSCI_A baud rate 1           
-TERM_MCTLW=\$508!   \ eUSCI_A modulation control    
-TERM_STATW=\$50A!   \ eUSCI_A status                
-TERM_RXBUF=\$50C!   \ eUSCI_A receive buffer        
-TERM_TXBUF=\$50E!   \ eUSCI_A transmit buffer       
-TERM_ABCTL=\$510!   \ eUSCI_A LIN control           
-TERM_IRTCTL=\$512!  \ eUSCI_A IrDA transmit control 
-TERM_IRRCTL=\$513!  \ eUSCI_A IrDA receive control  
-TERM_IE=\$51A!      \ eUSCI_A interrupt enable      
-TERM_IFG=\$51C!     \ eUSCI_A interrupt flags       
-TERM_IV=\$51E!      \ eUSCI_A interrupt vector word 
+TERM_CTLW0=\$500!   \ eUSCI_A control word 0
+TERM_CTLW1=\$502!   \ eUSCI_A control word 1
+TERM_BRW=\$506!
+TERM_BR0=\$506!     \ eUSCI_A baud rate 0
+TERM_BR1=\$507!     \ eUSCI_A baud rate 1
+TERM_MCTLW=\$508!   \ eUSCI_A modulation control
+TERM_STATW=\$50A!   \ eUSCI_A status
+TERM_RXBUF=\$50C!   \ eUSCI_A receive buffer
+TERM_TXBUF=\$50E!   \ eUSCI_A transmit buffer
+TERM_ABCTL=\$510!   \ eUSCI_A LIN control
+TERM_IRTCTL=\$512!  \ eUSCI_A IrDA transmit control
+TERM_IRRCTL=\$513!  \ eUSCI_A IrDA receive control
+TERM_IE=\$51A!      \ eUSCI_A interrupt enable
+TERM_IFG=\$51C!     \ eUSCI_A interrupt flags
+TERM_IV=\$51E!      \ eUSCI_A interrupt vector word
 
 RTS=1!              P1.0
 CTS=2!              P1.1
@@ -133,20 +133,20 @@ LED2_DIR=\$204!
 LED2=2!             P1.1 LED2 green
 
 SW1_IN=\$201!
-SW1=8!              P2.3 = S1    
+SW1=8!              P2.3 = S1
 
 WIPE_IN=\$201!
-IO_WIPE=8!          P2.3 = S1 = FORTH Deep_RST pin    
+IO_WIPE=8!          P2.3 = S1 = FORTH Deep_RST pin
 
 SW2_IN=\$201!
 SW2=\$80!           P2.7
 
 
 !IR_RC5
-IR_IN=\$201!  
-IR_OUT=\$203! 
-IR_DIR=\$205! 
-IR_REN=\$209! 
+IR_IN=\$201!
+IR_OUT=\$203!
+IR_DIR=\$205!
+IR_REN=\$209!
 IR_IES=\$219!
 IR_IE=\$21B!
 IR_IFG=\$21D!
@@ -161,7 +161,7 @@ I2CSM_DIR=\$224!
 I2CSM_REN=\$226!
 SM_SDA=4!            P3.2
 SM_SCL=2!            P3.1
-SM_BUS=\$06!    
+SM_BUS=\$06!
 
 !I2C_Soft_Multi_Master
 I2CSMM_IN=\$220!
@@ -170,14 +170,14 @@ I2CSMM_DIR=\$224!
 I2CSMM_REN=\$226!
 SMM_SDA=4!            P3.2
 SMM_SCL=2!            P3.1
-SMM_BUS=\$06!    
+SMM_BUS=\$06!
 
 !I2C_Multi_Master
 I2CMM_IN=\$200!
 I2CMM_OUT=\$202!
 I2CMM_DIR=\$204!
 I2CMM_REN=\$206!
-I2CMM_SEL=\$20A!    SEL0   
+I2CMM_SEL=\$20A!    SEL0
 I2CMM_VEC=\$FFE0!   UCB0_VEC
 MM_SDA=\$04!         P1.2
 MM_SCL=\$08!         P1.3
@@ -218,12 +218,12 @@ UCRXIFG0=1!         eUSCI_B Receive Interrupt Flag
 I2CM_CTLW0=\$540!   USCI_B0 Control Word Register 0
 I2CM_CTLW1=\$542!   USCI_B0 Control Word Register 1
 I2CM_BRW=\$546!     USCI_B0 Baud Word Rate 0
-I2CM_STATW=\$548!   USCI_B0 status word 
-I2CM_TBCNT=\$54A!   USCI_B0 byte counter threshold  
+I2CM_STATW=\$548!   USCI_B0 status word
+I2CM_TBCNT=\$54A!   USCI_B0 byte counter threshold
 I2CM_RXBUF=\$54C!   USCI_B0 Receive Buffer 8
 I2CM_TXBUF=\$54E!   USCI_B0 Transmit Buffer 8
 I2CM_I2COA0=\$554!  USCI_B0 I2C Own Address 0
-I2CM_ADDRX=\$55C!   USCI_B0 Received Address Register 
+I2CM_ADDRX=\$55C!   USCI_B0 Received Address Register
 I2CM_I2CSA=\$560!   USCI_B0 I2C Slave Address
 I2CM_IE=\$56A!      USCI_B0 Interrupt Enable
 I2CM_IFG=\$56C!     USCI_B0 Interrupt Flags Register
@@ -231,12 +231,12 @@ I2CM_IFG=\$56C!     USCI_B0 Interrupt Flags Register
 I2CS_CTLW0=\$540!   USCI_B0 Control Word Register 0
 I2CS_CTLW1=\$542!   USCI_B0 Control Word Register 1
 I2CS_BRW=\$546!     USCI_B0 Baud Word Rate 0
-I2CS_STATW=\$548!   USCI_B0 status word 
-I2CS_TBCNT=\$54A!   USCI_B0 byte counter threshold  
+I2CS_STATW=\$548!   USCI_B0 status word
+I2CS_TBCNT=\$54A!   USCI_B0 byte counter threshold
 I2CS_RXBUF=\$54C!   USCI_B0 Receive Buffer 8
 I2CS_TXBUF=\$54E!   USCI_B0 Transmit Buffer 8
 I2CS_I2COA0=\$554!  USCI_B0 I2C Own Address 0
-I2CS_ADDRX=\$55C!   USCI_B0 Received Address Register 
+I2CS_ADDRX=\$55C!   USCI_B0 Received Address Register
 I2CS_I2CSA=\$560!   USCI_B0 I2C Slave Address
 I2CS_IE=\$56A!      USCI_B0 Interrupt Enable
 I2CS_IFG=\$56C!     USCI_B0 Interrupt Flags Register
@@ -244,7 +244,7 @@ I2CS_IFG=\$56C!     USCI_B0 Interrupt Flags Register
 CD_SD=2!        ; P2.1 as Card Detect
 SD_CDIN=\$201!
 
-CS_SD=1!        ; P2.0 as Card Select    
+CS_SD=1!        ; P2.0 as Card Select
 SD_CSOUT=\$203!
 SD_CSDIR=\$205!
 

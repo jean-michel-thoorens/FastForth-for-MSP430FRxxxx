@@ -4,7 +4,7 @@
 \.f=\.4th for MSP_EXP430FR4133!      to change file type
 !
 !========================
-! remove comments        
+! remove comments
 !========================
 \\*\n=
 \s\\*\n=\n
@@ -37,7 +37,7 @@
 ! P2 - P8.1 ACLK/A9
 ! P3 - P1.1 UCA0 RXD
 ! P4 - P1.0 UCA0 TXD
-! P5 - P2.7    
+! P5 - P2.7
 ! P6 - P8.0 SMCLK/A8
 ! P7 - P5.1 UCB0 CLK
 ! P8 - P2.5
@@ -117,7 +117,7 @@
 ! MSP  - MSP-EXP430FR4133 LAUNCHPAD <--> OUTPUT WORLD
 ! ---------------------------------------------------
 !
-!                                 +-4k7-< DeepRST <-- GND 
+!                                 +-4k7-< DeepRST <-- GND
 !                                 |
 ! P1.0 - UCA0 TXD       J101.8  --+-> RX  UARTtoUSB bridge
 ! P1.1 - UCA0 RXD       J101.10 <---- TX  UARTtoUSB bridge
@@ -125,15 +125,15 @@
 !  VCC -                J101.16 <---- VCC (optional supply from UARTtoUSB bridge - WARNING ! 3.3V !)
 !  GND -                J101.20 <---> GND (optional supply from UARTtoUSB bridge)
 !
-! P1.0 - STRAP JP1 MUST BE REMOVED     (LED red) 
+! P1.0 - STRAP JP1 MUST BE REMOVED     (LED red)
 !        =========================
 !
 ! P4.0 - LED green
 !
 ! P1.2 - Switch SW1              <--- LCD contrast + (finger :-)
-! P2.6 - Switch SW2              <--- LCD contrast - (finger ;-) 
+! P2.6 - Switch SW2              <--- LCD contrast - (finger ;-)
 !
-!                                   
+!
 !  GND -                 J2.1   <-------+---0V0---------->  1 LCD_Vss
 !  VCC -                 J1.1   >------ | --3V6-----+---->  2 LCD_Vdd
 !                                       |           |
@@ -150,23 +150,23 @@
 ! P5.1 -                 J1.7   <------------------------> 12 LCD_DB5
 ! P5.2 -                 J2.15  <------------------------> 13 LCD_DB5
 ! P5.3 -                 J2.14  <------------------------> 14 LCD_DB7
-!        
-!                     
+!
+!
 ! P1.7 -                J2.19   <---- OUT IR_Receiver (1 TSOP32236)
-! 
-! P4.1 - LFXIN  32768Hz quartz  
-! P4.2 - LFXOUT 32768Hz quartz  
-! 
+!
+! P4.1 - LFXIN  32768Hz quartz
+! P4.2 - LFXOUT 32768Hz quartz
+!
 !  VCC -                J1.1    ----> VCC SD_CardAdapter
 !  GND -                J2.1    <---> GND SD_CardAdapter
-! P5.1 -  UCB0 CLK      J1.7    ----> CLK SD_CardAdapter (SCK)  
+! P5.1 -  UCB0 CLK      J1.7    ----> CLK SD_CardAdapter (SCK)
 ! P8.1 -                J1.2    ----> CS  SD_CardAdapter (Card Select)
 ! P5.2 -  UCB0 TXD/SIMO J2.15   ----> SDI SD_CardAdapter (MOSI)
 ! P5.3 -  UCB0 RXD/SOMI J2.14   <---- SDO SD_CardAdapter (MISO)
 ! P8.0 -                J1.6    <---- CD  SD_CardAdapter (Card Detect)
 !
 !
-!       
+!
 ! P8.2 - Soft I2C_Master J1.9   ----> SDA software I2C Master
 ! P8.3 - Soft I2C_Master J1.10  <---> SCL software I2C Master
 
@@ -174,7 +174,7 @@
 ! ============================================
 ! FORTH I/O :
 ! ============================================
-!TERMINAL 
+!TERMINAL
 BUS_TERM=3!         ; P1.0 = TX, P1.1 = RX
 
 TERM_IN=\$200!
@@ -184,21 +184,21 @@ TERM_SEL=\$20A!     \ SEL0
 TERM_VEC=\$FFEC!    \ UCA0
 WAKE_UP=1!          \ RX int
 
-TERM_CTLW0=\$500!    \ eUSCI_A control word 0        
-TERM_CTLW1=\$502!    \ eUSCI_A control word 1        
-TERM_BRW=\$506!         
-TERM_BR0=\$506!      \ eUSCI_A baud rate 0           
-TERM_BR1=\$507!      \ eUSCI_A baud rate 1           
-TERM_MCTLW=\$508!    \ eUSCI_A modulation control    
-TERM_STATW=\$50A!     \ eUSCI_A status                
-TERM_RXBUF=\$50C!    \ eUSCI_A receive buffer        
-TERM_TXBUF=\$50E!    \ eUSCI_A transmit buffer       
-TERM_ABCTL=\$510!    \ eUSCI_A LIN control           
-TERM_IRTCTL=\$512!   \ eUSCI_A IrDA transmit control 
-TERM_IRRCTL=\$513!   \ eUSCI_A IrDA receive control  
-TERM_IE=\$51A!       \ eUSCI_A interrupt enable      
-TERM_IFG=\$51C!      \ eUSCI_A interrupt flags       
-TERM_IV=\$51E!       \ eUSCI_A interrupt vector word 
+TERM_CTLW0=\$500!    \ eUSCI_A control word 0
+TERM_CTLW1=\$502!    \ eUSCI_A control word 1
+TERM_BRW=\$506!
+TERM_BR0=\$506!      \ eUSCI_A baud rate 0
+TERM_BR1=\$507!      \ eUSCI_A baud rate 1
+TERM_MCTLW=\$508!    \ eUSCI_A modulation control
+TERM_STATW=\$50A!     \ eUSCI_A status
+TERM_RXBUF=\$50C!    \ eUSCI_A receive buffer
+TERM_TXBUF=\$50E!    \ eUSCI_A transmit buffer
+TERM_ABCTL=\$510!    \ eUSCI_A LIN control
+TERM_IRTCTL=\$512!   \ eUSCI_A IrDA transmit control
+TERM_IRRCTL=\$513!   \ eUSCI_A IrDA receive control
+TERM_IE=\$51A!       \ eUSCI_A interrupt enable
+TERM_IFG=\$51C!      \ eUSCI_A interrupt flags
+TERM_IV=\$51E!       \ eUSCI_A interrupt vector word
 
 RTS=8!              ; P2.3
 CTS=\$10!           ; P2.4
@@ -262,10 +262,10 @@ LCD_DB=\$0F!        P5.0-3 LCD_DATA_BUS
 
 !IR_RC5 input
 !------------
-IR_IN=\$200!  
-IR_OUT=\$202! 
-IR_DIR=\$204! 
-IR_REN=\$206! 
+IR_IN=\$200!
+IR_OUT=\$202!
+IR_DIR=\$204!
+IR_REN=\$206!
 IR_IES=\$218!
 IR_IE=\$21A!
 IR_IFG=\$21C!
@@ -340,12 +340,12 @@ UCRXIFG0=1!         eUSCI_B Receive Interrupt Flag
 I2CM_CTLW0=\$540!   USCI_B0 Control Word Register 0
 I2CM_CTLW1=\$542!   USCI_B0 Control Word Register 1
 I2CM_BRW=\$546!     USCI_B0 Baud Word Rate 0
-I2CM_STATW=\$548!   USCI_B0 status word 
-I2CM_TBCNT=\$54A!   USCI_B0 byte counter threshold  
+I2CM_STATW=\$548!   USCI_B0 status word
+I2CM_TBCNT=\$54A!   USCI_B0 byte counter threshold
 I2CM_RXBUF=\$54C!   USCI_B0 Receive Buffer 8
 I2CM_TXBUF=\$54E!   USCI_B0 Transmit Buffer 8
 I2CM_I2COA0=\$554!  USCI_B0 I2C Own Address 0
-I2CM_ADDRX=\$55C!   USCI_B0 Received Address Register 
+I2CM_ADDRX=\$55C!   USCI_B0 Received Address Register
 I2CM_I2CSA=\$560!   USCI_B0 I2C Slave Address
 I2CM_IE=\$56A!      USCI_B0 Interrupt Enable
 I2CM_IFG=\$56C!     USCI_B0 Interrupt Flags Register
@@ -353,18 +353,18 @@ I2CM_IFG=\$56C!     USCI_B0 Interrupt Flags Register
 I2CS_CTLW0=\$540!   USCI_B0 Control Word Register 0
 I2CS_CTLW1=\$542!   USCI_B0 Control Word Register 1
 I2CS_BRW=\$546!     USCI_B0 Baud Word Rate 0
-I2CS_STATW=\$548!   USCI_B0 status word 
-I2CS_TBCNT=\$54A!   USCI_B0 byte counter threshold  
+I2CS_STATW=\$548!   USCI_B0 status word
+I2CS_TBCNT=\$54A!   USCI_B0 byte counter threshold
 I2CS_RXBUF=\$54C!   USCI_B0 Receive Buffer 8
 I2CS_TXBUF=\$54E!   USCI_B0 Transmit Buffer 8
 I2CS_I2COA0=\$554!  USCI_B0 I2C Own Address 0
-I2CS_ADDRX=\$55C!   USCI_B0 Received Address Register 
+I2CS_ADDRX=\$55C!   USCI_B0 Received Address Register
 I2CS_I2CSA=\$560!   USCI_B0 I2C Slave Address
 I2CS_IE=\$56A!      USCI_B0 Interrupt Enable
 I2CS_IFG=\$56C!     USCI_B0 Interrupt Flags Register
 
 
-CD_SD=2!        ; P8.1 as Card Detect     
+CD_SD=2!        ; P8.1 as Card Detect
 SD_CDIN=\$261!
 
 CS_SD=1!        ; P8.0 as Card Select

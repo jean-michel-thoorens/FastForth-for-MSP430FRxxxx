@@ -33,42 +33,67 @@ FREQ_KHZ=\$1800!        FREQUENCY (in kHz)
 TERMBRW_RST=\$1802!     TERMBRW_RST
 TERMMCTLW_RST=\$1804!   TERMMCTLW_RST
 I2CSLAVEADR=\$1802!     I2C_SLAVE address
-I2CSLAVEADR1=\$1804!    
+I2CSLAVEADR1=\$1804!
 LPM_MODE=\$1806!        LPM_MODE value, LPM0+GIE is the default value
-RSTIV_MEM=\$1808!       SYSRSTIV memory, set to -1 to do Deep RESET
-RST_DP=\$180A!          RST value for DP
-RST_VOC=\$180C!         RST value for VOClink
-VERSION=\$180E!
-THREADS=\$1810!         THREADS
-KERNEL_ADDON=\$1812!
-
-WIPE_INI_=\$1814!       MOV #WIPE_INI,X
-WIPE_COLD=\$1814!       WIPE value for PFA_COLD
-WIPE_INI_FORTH=\$1816!  WIPE value for PFA_INI_FORTH
-WIPE_SLEEP=\$1818!      WIPE value for PFA_SLEEP
-WIPE_WARM=\$181A!       WIPE value for PFA_WARM
-WIPE_TERM_INT=\$181C!   WIPE value for TERMINAL vector
-WIPE_DP=\$182E!         WIPE value for RST_DP   
-WIPE_VOC=\$1820!        WIPE value for RST_VOC
-
-INI_FORTH_INI=\$1822!   MOV #INI_FORTH_INI,X    \ >BODY instruction of INI_FORTH subroutine
-INIT_ACCEPT=\$1822!     WIPE value for PFAACCEPT
-INIT_CR=\$1824!         WIPE value for PFACR
-INIT_EMIT=\$1826!       FORTH value for PFAEMIT
-INIT_KEY=\$1828!        WIPE value for PFAKEY
-INIT_CIB=\$182A!        WIPE value for CIB_ADR
-HALF_FORTH_INI=\$182C!  to preserve the state of DEFERed words, used by user INI_SOFT_APP as:
-!                       ADD #4,0(RSP)           \ skip INI_FORTH >BODY instruction "MOV #INI_FORTH_INI,X"
-!                       MOV #HALF_FORTH_INI,X   \ replace it by "MOV #HALF_FORTH_INI,X"
-!                       MOV @RSP+,PC            \ then RET
-INIT_DOCOL=\$182C!      FORTH value for rDOCOL   (R4)
-INIT_DODOES=\$182E!     FORTH value for rDODOES  (R5)
-INIT_DOCON=\$1830!      FORTH value for rDOCON   (R6)
-INIT_DOVAR=\$1832!      FORTH value for rDOVAR   (R7)
-INIT_CAPS=\$1834!       FORTH value for CAPS
-INIT_BASE=\$1836!       FORTH value for BASE
-!                       free EPROM
-
+USERSTIV=\$1808!        user SYS variable, defines software RESET, DEEP_RST, INIT_HARWARE, etc.
+VERSION=\$180A!
+THREADS=\$180C!         THREADS
+KERNEL_ADDON=\$180E!    BIT15=FLOORED DIVISION
+!                       BIT14=LF_XTAL
+!                       BIT13=UART CTS
+!                       BIT12=UART RTS
+!                       BIT11=UART XON/XOFF
+!                       BIT10=UART half duplex
+!                       BIT9=I2C_TERMINAL
+!                       BIT8=Q15.16 input
+!                       BIT7=DOUBLE input
+!                       BIT6=assembler 20 bits
+!                       BIT5=assembler 16 bits
+!                       BIT4=assembler 16 bits with 20 bits addr
+!                       BIT3=vocabulary set
+!                       BIT2=
+!                       BIT1=
+!                       BIT0=
+!
+DEEP_ORG=\$1810!        MOV #DEEP_ORG,X
+DEEP_TERM_VEC=\$1810!   to DEEP_INIT TERMINAL vector
+DEEP_COLD=\$1812!       to DEEP_INIT COLD_APP
+DEEP_SOFT=\$1814!       to DEEP_INIT SOFT_APP
+DEEP_HARD=\$1816!       to DEEP_INIT HARD_APP
+DEEP_SLEEP=\$1818!      to DEEP_INIT SLEEP_APP
+DEEP_DP=\$181A!         to DEEP_INIT RST_DP
+DEEP_LASTVOC=\$181C!    to DEEP_INIT RST_LASTVOC
+DEEP_CURRENT=\$181E!    to DEEP_INIT RST_CURRENT
+DEEP_CONTEXT=\$1820!    to DEEP_INIT RST_CONTEXT
+!
+PUC_ABORT_ORG=\$1822!   MOV #PUC_ABORT_ORG,X
+INIT_ACCEPT=\$1822!     to INIT PFA_ACCEPT
+INIT_EMIT=\$1824!       to INIT PFA_EMIT
+INIT_KEY=\$1826!        to INIT PFA_KEY
+INIT_CIB=\$1828!        to INIT CIB_ORG
+FORTH_ORG=\$182A!       MOV #FORTH_ORG,X        \to preserve the state of DEFERed words
+INIT_RSP=\$182A!        to INIT RSP
+INIT_DOCOL=\$182C!      to INIT rDOCOL   (R4) to restore rDOCOL: MOV &INIT_DOCOL,rDOCOL
+INIT_DODOES=\$182E!     to INIT rDODOES  (R5)
+INIT_DOCON=\$1830!      to INIT rDOCON   (R6)
+INIT_DOVAR=\$1832!      to INIT rDOVAR   (R7)
+INIT_CAPS=\$1834!       to INIT CAPS
+INIT_BASE=\$1836!       to INIT BASE
+INIT_LEAVE=\$1838!      to INIT LEAVEPTR
+!
+RST_ORG=\$183A!
+RST_LEN=\$10!
+COLD_APP=\$183A!        COLD_APP
+SOFT_APP=\$183C!        SOFT_APP
+HARD_APP=\$183E!        HARD_APP
+SLEEP_APP=\$1840!       SLEEP_APP
+RST_DP=\$1842!          RST_RET value for (RAM) DDP
+RST_LASTVOC=\$1844!     RST_RET value for (RAM) LASTVOC
+RST_CURRENT=\$1846!     RST_RET value for (RAM) CURRENT
+RST_CONTEXT=\$1848!     RST_RET value for (RAM) CONTEXT (8 CELLS)
+!
+! $185A = free EPROM
+!
 ! ---------------------------------------
 ! FAT16 FileSystemInfos
 ! ---------------------------------------
@@ -154,7 +179,7 @@ HDLW_BUFofst=22!    BUFFER offset ; used by LOAD" and by WRITE"
 HDLW_PrevLEN=24!    previous LEN
 HDLW_PrevORG=26!    previous ORG
 
-!OpenedFirstFile     ; "openedFile" structure 
+!OpenedFirstFile     ; "openedFile" structure
 HandleMax=4!
 HandleLenght=28!
 FirstHandle=\$1890!
@@ -183,7 +208,7 @@ LSTACK_SIZE=\#16! words
 PSTACK_SIZE=\#48! words
 RSTACK_SIZE=\#48! words
 PAD_LEN=\#84! bytes
-TIB_LEN=\#84! bytes
+CIB_LEN=\#84! bytes
 HOLD_SIZE=\#34! bytes
 
 !SD_card Input Buffer = PAD
@@ -195,46 +220,41 @@ SDIB_LEN=\$54!
 ! ---------------------------------------
 ! FastForth RAM memory map (= 1k)
 ! ---------------------------------------
-LEAVEPTR=\$1C00!    \ Leave-stack pointer, init by QUIT
-LSATCK=\$1C00!      \ leave stack,      grow up
-PSTACK=\$1C80!      \ parameter stack,  grow down
-RSTACK=\$1CE0!      \ Return stack,     grow down
-
-PAD_I2CADR=\$1CE0!  \ RX I2C address
-PAD_I2CCNT=\$1CE2!  \ count max
-PAD_ORG=\$1CE4!     \ user scratch pad buffer, 84 bytes, grow up
-
-TIB_I2CADR=\$1D38!  \ TX I2C address
-TIB_I2CCNT=\$1D3A!  \ count of bytes
-TIB_ORG=\$1D3C!     \ Terminal input buffer, 84 bytes, grow up
-
-HOLDS_ORG=\$1D90!   \ a good address for HOLDS
-HOLD_BASE=\$1DB2!   \ BASE HOLD area, grow down
-
-! ----------------------
-! NOT SAVED VARIABLES
-! ----------------------
-
+LEAVEPTR=\$1C00!        Leave-stack pointer, init by QUIT
+LSATCK=\$1C00!          leave stack,      grow up
+PSTACK=\$1C80!          parameter stack,  grow down
+RSTACK=\$1CE0!          Return stack,     grow down
+!
+PAD_I2CADR=\$1CE0!      RX I2C address
+PAD_I2CCNT=\$1CE2!      count max
+PAD_ORG=\$1CE4!         user scratch pad buffer, 84 bytes, grow up
+!
+TIB_I2CADR=\$1D38!      TX I2C address
+TIB_I2CCNT=\$1D3A!      count of bytes
+TIB_ORG=\$1D3C!         Terminal input buffer, 84 bytes, grow up
+!
+HOLDS_ORG=\$1D90!       base address for HOLDS
+HOLD_BASE=\$1DB2!       BASE HOLD area, grow down
+!
 HP=\$1DB2!              HOLD ptr
-CAPS=\$1DB4!            CAPS ON/OFF flag, must be set to -1 before first reset !
-LAST_NFA=\$1DB6!
-LAST_THREAD=\$1DB8!
-LAST_CFA=\$1DBA!
-LAST_PSP=\$1DBC!
+LAST_NFA=\$1DB4!
+LAST_THREAD=\$1DB6!
+LAST_CFA=\$1DB8!
+LAST_PSP=\$1DBA!
+!
+STATEADR=\$1DBC!        Interpreter state
+BASEADR=\$1DBE!         base
+CAPS=\$1DC0!            CAPS ON/OFF
+!
+SOURCE_LEN=\$1DC2!      len of input stream
+SOURCE_ORG=\$1DC4!      adr of input stream
+TOIN=\$1DC6!            >IN
+DP=\$1DC8!              dictionary ptr
+!
+LASTVOC=\$1DCA!         keep VOC-LINK
+CURRENT=\$1DCC!         CURRENT dictionnary ptr
+CONTEXT=\$1DCE!         CONTEXT dictionnary space (8 CELLS)
 
-STATEADR=\$1DBE!          Interpreter state
-
-SOURCE_LEN=\$1DC0!      len of input stream
-SOURCE_ORG=\$1DC2!      adr of input stream
-TOIN=\$1DC4!            >IN
-DP=\$1DC6!              dictionary ptr
-
-LASTVOC=\$1DC8!         keep VOC-LINK
-CONTEXT=\$1DCA!         CONTEXT dictionnary space (8 CELLS)
-CURRENT=\$1DDA!         CURRENT dictionnary ptr
-
-BASEADR=\$1DDC!           numeric base, must be defined before first reset !
-LINE=\$1DDE!            line in interpretation, activated with NOECHO, desactivated with ECHO
 ! ---------------------------------------
 !1DE0! 28 RAM bytes free
 ! ---------------------------------------
@@ -256,46 +276,54 @@ MAIN_LEN=\$3E00!        15.5 k FRAM
 
 SLEEP=\$C200!               CODE_WITHOUT_RETURN, CPU shutdown
 LIT=\$C20A!                 CODE compiled by LITERAL
-XSQUOTE=\$C214!             CODE compiled by S" and S_
-HEREXEC=\$C228!             CODE HERE and BEGIN execute address
-QFBRAN=\$C234!              CODE compiled by IF UNTIL
-BRAN=\$C23A!                CODE compiled by ELSE REPEAT AGAIN
-NEXT_ADR=\$C23C!            CODE NEXT instruction (MOV @IP+,PC)
-XDO=\$C23E!                 CODE compiled by DO
-XPLOOP=\$C24E!              CODE compiled by +LOOP
-XLOOP=\$C260!               CODE compiled by LOOP
-MUSMOD=\$C266!              ASM CODE 32/16 unsigned division, used by ?NUMBER, UM/MOD
-MDIV1DIV2=\$C278!           ASM CODE input for 48/16 unsigned division with DVDhi=0, see DOUBLE M*/
-MDIV1=\$C280!               ASM CODE input for 48/16 unsigned division, see DOUBLE M*/
-RET_ADR=\$C2AA!             ASM CODE of INI_FORTH_PFA and MARKER+8 definitions,
-SETIB=\$C2AC!               CODE Set Input Buffer with org & len values, reset >IN pointer
-REFILL=\$C2BC!              CODE accept one line from input and leave org len of input buffer
-CIB_ADR=\$C2CA!             [CIB_ADR] = TIB_ORG by default; may be redirected to SDIB_ORG
-XDODOES=\$C2D4!             to restore rDODOES: MOV #XDODOES,rDODOES
-XDOCON=\$C2E2!              to restore rDOCON: MOV #XDOCON,rDOCON
-XDOVAR=\$C2EE!              to restore rDOVAR: MOV #XDOVAR,rDOVAR
+XSQUOTE=\$C21E!             CODE compiled by S" and S_
+HEREXEC=\$C232!             CODE HERE and BEGIN execute address
+MUSMOD=\$C23E!              asm CODE 32/16 unsigned division, used by ?NUMBER, UM/MOD
+MDIV1DIV2=\$C250!           asm CODE input for 48/16 unsigned division with DVDhi=0, see DOUBLE M*/
+MDIV1=\$C258!               asm CODE input for 48/16 unsigned division, see DOUBLE M*/
+RET_ADR=\$C282!             asm CODE of INIT_SOFT_PFA and MARKER+8 definitions,
+SETIB=\$C284!               CODE Set Input Buffer with org & len values, reset >IN pointer
+REFILL=\$C294!              CODE accept one line from input and leave org len of input buffer
+CIB_ORG=\$C2A0!             [CIB_ORG] = TIB_ORG by default; may be redirected to SDIB_ORG
+QFBRAN=\$C2AC!              CODE compiled by IF UNTIL
+BRAN=\$C2B2!                CODE compiled by ELSE REPEAT AGAIN
+NEXT_ADR=\$C2B4!            CODE NEXT instruction (MOV @IP+,PC)
+XDODOES=\$C2B6!             to restore rDODOES: MOV #XDODOES,rDODOES
+XDOCON=\$C2C4!              to restore rDOCON: MOV #XDOCON,rDOCON
+!                           to restore rDOVAR: MOV &INIT_DOVAR,rDOVAR
 !                           to restore rDOCOL: MOV &INIT_DOCOL,rDOCOL
-INI_FORTH=\$C2F8!           asm CODE common part of RST and QABORT, starts FORTH engine
-QABORT=\$C32A!              CODE_WITHOUT_RETURN run-time part of ABORT"
-ABORT_TERM=\$C336!          CODE_WITHOUT_RETURN, called by QREVEAL and INTERPRET  
+INIT_FORTH=\$C2D0!          asm CODE common part of RST and QABORT, starts FORTH engine
+QABORT=\$C308!              CODE_WITHOUT_RETURN run-time part of ABORT"
+ABORT_TERM=\$C312!          CODE_WITHOUT_RETURN, called by QREVEAL and INTERPRET
 !-------------------------------------------------------------------------------
-UART_COLD_TERM=\$C394!      ASM CODE, content of COLD+2 by default
-UART_INIT_TERM=\$C39C!      ASM CODE, content of WARM+2 by default
-UART_RXON=\$C3C6!           ASM CODE, content of SLEEP+2 by default
-UART_RXOFF=\$C3C8!          ASM CODE, called by ACCEPT before RX char LF.
+! UART FASTFORTH
 !-------------------------------------------------------------------------------
-I2C_COLD_TERM=\$C3B8!       ASM CODE, content of COLD_PFA by default
-I2C_INIT_TERM=\$C38E!       ASM CODE, content of WARM_PFA by default
-I2C_RXON=\$C3BA!            ASM CODE, content of SLEEP_PFA by default
-I2C_CTRL_CH=\$C3BC!         ASM CODE, used as is: MOV.B #CTRL_CHAR,Y
+UART_INIT_TERM=\$C354!      asm CODE, content of WARM+2 by default (WARM starts with: CALL #UART_INIT_TERM)
+UART_COLD_TERM=\$C37E!      asm CODE, content of COLD+2 by default (COLD starts with: CALL #UART_COLD_TERM)
+UART_INIT_SOFT=\$C384!      asm CODE, content of INIT_FORTH+2 (by default, INIT_FORTH starts with: CALL #RET_ADR)
+UART_RXON=\$C386!           asm CODE, content of SLEEP+2 (by default, SLEEP starts with: CALL #UART_RXON)
+UART_RXON=KEY\+\$8!         asm CODE, content of SLEEP+2 (by default, SLEEP starts with: CALL #UART_RXON)
+UART_RXOFF=ACCEPT\+\$2A!    asm CODE, called by ACCEPT after 'CR' and before 'LF'.
+!-------------------------------------------------------------------------------
+! I2C FASTFORTH
+!-------------------------------------------------------------------------------
+I2C_ACCEPT=\$C344!          asm CODE, content of SLEEP+2 by default
+I2C_CTRL_CH=\$C346!         asm CODE, used as is: MOV.B #CTRL_CHAR,Y
 !                                                 CALL #I2C_CTRL_CH
+I2C_COLD_TERM=\$C356!       asm CODE, content of COLD+2, RET address by default
+I2C_INIT_SOFT=\$C356!       asm CODE, content of INIT_FORTH+2, RET address by default
+I2C_INIT_TERM=\$C358!       asm CODE, content of WARM+2 by default
+I2C_WARM=\$C380!            WARM address
 !-------------------------------------------------------------------------------
-
+NOPUC=SYS\+\$0A!            NOPUC               with FORTH: ' SYS 10 +
+COLD=SYS\+\$16!             COLD address                    ' SYS 22 +
+ABORT=ALLOT\+\$8!           CODE_WITHOUT_RETURN             ' ALLOT 8 +
+QUIT=ALLOT\+\$0E!           CODE_WITHOUT_RETURN             ' ALLOT 14 +
 
 ! ----------------------------------------------
 ! Interrupt Vectors and signatures - MSP430FR5738
 ! ----------------------------------------------
-FRAM_FULL=\$FF30!       80 bytes are sufficient considering what can be compiled in one line and WORD use.
+FRAM_FULL=\$FF40!       64 bytes are sufficient considering what can be compiled in one line and WORD use.
 SIGNATURES=\$FF80!      JTAG/BSL signatures
 JTAG_SIG1=\$FF80!       if 0 (electronic fuse=0) enable JTAG/SBW; must be reset by wipe.
 JTAG_SIG2=\$FF82!       if JTAG_SIG1=\$AAAA, length of password string @ JTAG_PASSWORD
@@ -467,27 +495,27 @@ TB0EX0=\$3E0!       \ TB0 expansion register 0
 TB0IV=\$3EE!        \ TB0 interrupt vector
 
 
-TB1CTL=\$400!       \ TB1 control                 
-TB1CCTL0=\$402!     \ Capture/compare control 0   
-TB1CCTL1=\$404!     \ Capture/compare control 1   
-TB1CCTL2=\$406!     \ Capture/compare control 2   
-TB1R=\$410!         \ TB1 counter register        
-TB1CCR0=\$412!      \ Capture/compare register 0  
-TB1CCR1=\$414!      \ Capture/compare register 1  
-TB1CCR2=\$416!      \ Capture/compare register 2  
-TB1EX0=\$420!       \ TB1 expansion register 0    
-TB1IV=\$42E!        \ TB1 interrupt vector        
+TB1CTL=\$400!       \ TB1 control
+TB1CCTL0=\$402!     \ Capture/compare control 0
+TB1CCTL1=\$404!     \ Capture/compare control 1
+TB1CCTL2=\$406!     \ Capture/compare control 2
+TB1R=\$410!         \ TB1 counter register
+TB1CCR0=\$412!      \ Capture/compare register 0
+TB1CCR1=\$414!      \ Capture/compare register 1
+TB1CCR2=\$416!      \ Capture/compare register 2
+TB1EX0=\$420!       \ TB1 expansion register 0
+TB1IV=\$42E!        \ TB1 interrupt vector
 
-TB2CTL=\$440!       \ TB2 control                 
-TB2CCTL0=\$442!     \ Capture/compare control 0   
-TB2CCTL1=\$444!     \ Capture/compare control 1   
-TB2CCTL2=\$446!     \ Capture/compare control 2   
-TB2R=\$450!         \ TB2 counter register        
-TB2CCR0=\$452!      \ Capture/compare register 0  
-TB2CCR1=\$454!      \ Capture/compare register 1  
-TB2CCR2=\$456!      \ Capture/compare register 2  
-TB2EX0=\$460!       \ TB2 expansion register 0    
-TB2IV=\$46E!        \ TB2 interrupt vector        
+TB2CTL=\$440!       \ TB2 control
+TB2CCTL0=\$442!     \ Capture/compare control 0
+TB2CCTL1=\$444!     \ Capture/compare control 1
+TB2CCTL2=\$446!     \ Capture/compare control 2
+TB2R=\$450!         \ TB2 counter register
+TB2CCR0=\$452!      \ Capture/compare register 0
+TB2CCR1=\$454!      \ Capture/compare register 1
+TB2CCR2=\$456!      \ Capture/compare register 2
+TB2EX0=\$460!       \ TB2 expansion register 0
+TB2IV=\$46E!        \ TB2 interrupt vector
 
 ! RTC_B
 RTCCTL0=\$4A0!      \ RTC control 0

@@ -1,7 +1,7 @@
 ; -*- coding: utf-8 -*-
 
 ; ----------------------------------------------------------------------
-; MSP_EXP430FR739.asm 
+; MSP_EXP430FR739.asm
 ; ----------------------------------------------------------------------
 ; ----------------------------------------------------------------------
 ; MSP430FR57xx BOOTSTRAP
@@ -12,7 +12,7 @@
 ; Buffer size for Core Commands : 260 bytes
 ; Notable Information
 ; 1. TX and RX pins are noted in the device data sheet
-; 2. A mass erase command or incorrect password triggers a BSL reset. 
+; 2. A mass erase command or incorrect password triggers a BSL reset.
 ;    This resets the BSL state to the default settings (9600 baud, password locked)
 ; Known Bugs
 ; 1. The baud rate of 115k cannot be ensured across all clock, voltage, and temperature variations
@@ -105,7 +105,7 @@
 ;
 ; P4.0 - Switch S1              <--- LCD contrast + (finger :-)
 ; P4.1 - Switch S2              <--- LCD contrast - (finger :-)
-;                                   
+;
 ;  GND                          <-------+---0V0---------->  1 LCD_Vss
 ;  VCC                          >------ | --3V6-----+---->  2 LCD_Vdd
 ;                                       |           |
@@ -123,25 +123,25 @@
 ; P1.2 -                 SV1.3  <------------------------> 13 LCD_DB5
 ; P1.3 -                 SV1.8  <------------------------> 14 LCD_DB7
 ;
-; PJ.4 - LFXI 32768Hz quartz  
-; PJ.5 - LFXO 32768Hz quartz  
-; PJ.6 - HFXI 
-; PJ.7 - HFXO 
-;                                 +--4k7-< DeepRST <-- GND 
+; PJ.4 - LFXI 32768Hz quartz
+; PJ.5 - LFXO 32768Hz quartz
+; PJ.6 - HFXI
+; PJ.7 - HFXO
+;                                 +--4k7-< DeepRST <-- GND
 ;                                 |
 ; P2.0 -  UCA0 TXD       SV2.11 --+-> RX  UARTtoUSB bridge
 ; P2.1 -  UCA0 RXD       SV2.8  <---- TX  UARTtoUSB bridge
 ;  VCC -                        <---- VCC (optional supply from UARTtoUSB bridge - WARNING ! 3.3V !)
 ;  GND -                        <---> GND (optional supply from UARTtoUSB bridge)
-;        
+;
 ; ---------------------------------------------------------------------------
 ; SD_CardAdapter not compatible with HARDWARE flow control for FORTH TERMINAL
 ; ---------------------------------------------------------------------------
-; VCC  -                 RF.2 
-; VSS  -                 RF.1 
+; VCC  -                 RF.2
+; VSS  -                 RF.1
 ; P2.2 -                 RF.16  <---- CD  SD_CardAdapter (Card Detect) / RTS
 ; P2.3 -                 RF.10  ----> CS  SD_CardAdapter (Card Select) / CTS
-; P2.4 - UCA1 CLK        RF.14  ----> CLK SD_CardAdapter (SCK)  
+; P2.4 - UCA1 CLK        RF.14  ----> CLK SD_CardAdapter (SCK)
 ; P2.5 - UCA1 TXD/SIMO   RF.7   ----> SDI SD_CardAdapter (MOSI)
 ; P2.6 - UCA1 RXD/SOMI   RF.5   <---- SDO SD_CardAdapter (MISO)
 ;
@@ -199,14 +199,14 @@ SD_CDIN     .equ    P2IN
 SD_CSOUT    .equ    P2OUT
 SD_CSDIR    .equ    P2DIR
 CD_SD       .equ    4          ; P2.2
-CS_SD       .equ    8          ; P2.3   
+CS_SD       .equ    8          ; P2.3
 
 HANDSHAKOUT .equ    P2OUT
 HANDSHAKIN  .equ    P2IN
 RTS         .equ    4           ; P2.2
 CTS         .equ    8           ; P2.3
 
-; RTS output is wired to the CTS input of UART2USB bridge 
+; RTS output is wired to the CTS input of UART2USB bridge
 ; configure RTS as output high to disable RX TERM during start FORTH
 
 ; P2.7 is used to power the accelerometer and NTC voltage divider ==> output low = power OFF
@@ -215,11 +215,11 @@ CTS         .equ    8           ; P2.3
     MOV #07FEFh,&PAOUT  ; all input pins with pull up resistor else P2.7 and P1.4
 
     .IFDEF TERMINAL4WIRES
-; RTS output is wired to the CTS input of UART2USB bridge 
+; RTS output is wired to the CTS input of UART2USB bridge
 ; configure RTS as output high to disable RX TERM during start FORTH
             BIS.B #RTS,&P2DIR   ; RTS as output high
         .IFDEF TERMINAL5WIRES
-; CTS input must be wired to the RTS output of UART2USB bridge 
+; CTS input must be wired to the RTS output of UART2USB bridge
 ; configure CTS as input low (true) to avoid lock when CTS is not wired
             BIC.B #CTS,&P2OUT   ; CTS input pulled down
         .ENDIF  ; TERMINAL5WIRES
@@ -243,9 +243,6 @@ CTS         .equ    8           ; P2.3
 
 SW1_IN      .equ P4IN
 SW1         .equ 1          ; P4.0 = S1
-
-WIPE_IN     .equ    P4IN
-IO_WIPE     .equ    1       ; P4.0 = S1 = FORTH Deep_RST pin
 
 SW2_IN      .equ P4IN
 SW2         .equ 2          ; P4.1 = S2
