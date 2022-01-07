@@ -42,7 +42,7 @@ FREQ_KHZ=\$1800!        FREQUENCY (in kHz)
 TERMBRW_RST=\$1802!     TERMBRW_RST
 TERMMCTLW_RST=\$1804!   TERMMCTLW_RST
 I2CSLAVEADR=\$1802!     I2C_SLAVE address
-I2CSLAVEADR1=\$1804!    
+I2CSLAVEADR1=\$1804!
 LPM_MODE=\$1806!        LPM_MODE value, LPM0+GIE is the default value
 USERSTIV=\$1808!        user SYS variable, defines software RESET, DEEP_RST, INIT_HARWARE, etc.
 VERSION=\$180A!
@@ -70,10 +70,10 @@ DEEP_COLD=\$1812!       to DEEP_INIT COLD_APP
 DEEP_SOFT=\$1814!       to DEEP_INIT SOFT_APP
 DEEP_HARD=\$1816!       to DEEP_INIT HARD_APP
 DEEP_SLEEP=\$1818!      to DEEP_INIT SLEEP_APP
-DEEP_DP=\$181A!         to DEEP_INIT RST_DP   
+DEEP_DP=\$181A!         to DEEP_INIT RST_DP
 DEEP_LASTVOC=\$181C!    to DEEP_INIT RST_LASTVOC
-DEEP_CURRENT=\$181E!    to DEEP_INIT RST_CURRENT   
-DEEP_CONTEXT=\$1820!    to DEEP_INIT RST_CONTEXT  
+DEEP_CURRENT=\$181E!    to DEEP_INIT RST_CURRENT
+DEEP_CONTEXT=\$1820!    to DEEP_INIT RST_CONTEXT
 !
 PUC_ABORT_ORG=\$1822!   MOV #PUC_ABORT_ORG,X
 INIT_ACCEPT=\$1822!     to INIT PFA_ACCEPT
@@ -139,7 +139,7 @@ PAD_I2CADR=\$1CE0!      RX I2C address
 PAD_I2CCNT=\$1CE2!      count max
 PAD_ORG=\$1CE4!         user scratch pad buffer, 84 bytes, grow up
 !
-TIB_I2CADR=\$1D38!      TX I2C address 
+TIB_I2CADR=\$1D38!      TX I2C address
 TIB_I2CCNT=\$1D3A!      count of bytes
 TIB_ORG=\$1D3C!         Terminal input buffer, 84 bytes, grow up
 !
@@ -166,7 +166,7 @@ CURRENT=\$1DCC!         CURRENT dictionnary ptr
 CONTEXT=\$1DCE!         CONTEXT dictionnary space (8 CELLS)
 !
 ! ---------------------------------------
-!1DE0! 28 RAM bytes free 
+!1DE0! 28 RAM bytes free
 ! ---------------------------------------
 
 ! ---------------------------------------
@@ -214,9 +214,9 @@ BufferLen=\$2020!
 ! ---------------------------------------
 ClusterL=\$2022!     16 bits wide (FAT16)
 ClusterH=\$2024!     16 bits wide (FAT16)
-NewClusterL=\$2026!  16 bits wide (FAT16)
-NewClusterH=\$2028!  16 bits wide (FAT16)
-CurFATsector=\$202A!
+LastFATsector=\$2026!   Set by FreeAllClusters, used by OPEN_OVERWRITE
+LastFAToffset=\$2028!   Set by FreeAllClusters, used by OPEN_OVERWRITE
+FATsector=\$202A!       used by APPEND"
 
 ! ---------------------------------------
 ! DIR entry
@@ -263,7 +263,7 @@ HDLW_PrevLEN=24!    previous LEN
 HDLW_PrevORG=26!    previous ORG
 
 
-!OpenedFirstFile     ; "openedFile" structure 
+!OpenedFirstFile     ; "openedFile" structure
 HandleMax=8!
 HandleLenght=28!
 FirstHandle=\$2038!
@@ -305,26 +305,26 @@ XDOCON=\$44C4!              to restore rDOCON: MOV #XDOCON,rDOCON
 !                           to restore rDOCOL: MOV &INIT_DOCOL,rDOCOL
 INIT_FORTH=\$44D0!          asm CODE common part of RST and QABORT, starts FORTH engine
 QABORT=\$4508!              CODE_WITHOUT_RETURN run-time part of ABORT"
-ABORT_TERM=\$4512!          CODE_WITHOUT_RETURN, called by QREVEAL and INTERPRET  
+ABORT_TERM=\$4512!          CODE_WITHOUT_RETURN, called by QREVEAL and INTERPRET
 !-------------------------------------------------------------------------------
 ! UART FASTFORTH
 !-------------------------------------------------------------------------------
-UART_INIT_TERM=\$4554!      asm CODE, content of WARM+2 by default (WARM starts with: CALL #UART_INIT_TERM)
-UART_COLD_TERM=\$457E!      asm CODE, content of COLD+2 by default (COLD starts with: CALL #UART_COLD_TERM)
-UART_INIT_SOFT=\$4584!      asm CODE, content of INIT_FORTH+2 (by default, INIT_FORTH starts with: CALL #RET_ADR)
-UART_RXON=\$4586!           asm CODE, content of SLEEP+2 (by default, SLEEP starts with: CALL #UART_RXON)
-UART_RXON=KEY\+\$8!         asm CODE, content of SLEEP+2 (by default, SLEEP starts with: CALL #UART_RXON)
+UART_INIT_TERM=\$4554!      asm CODE, content of WARM+2 by default (WARM starts with: CALL &HARD_APP)
+UART_COLD_TERM=\$457E!      asm CODE, content of COLD+2 by default (COLD starts with: CALL &STOP_APP)
+UART_INIT_SOFT=\$4584!      asm CODE, content of SLEEP+2 (by default, SLEEP starts with: CALL &SOFT_APP)
+UART_WARM=\$4586!           WARM address
+UART_RXON=KEY\+\$8!         asm CODE, content of SLEEP+2 (by default, SLEEP starts with: CALL &SLEEP_APP)
 UART_RXOFF=ACCEPT\+\$2A!    asm CODE, called by ACCEPT after 'CR' and before 'LF'.
 !-------------------------------------------------------------------------------
 ! I2C FASTFORTH
 !-------------------------------------------------------------------------------
-I2C_ACCEPT=\$4544!          asm CODE, content of SLEEP+2 by default
+I2C_ACCEPT=\$4544!          asm CODE, default content of SLEEP_APP (SLEEP starts with: CALL &SLEEP_APP)
 I2C_CTRL_CH=\$4546!         asm CODE, used as is: MOV.B #CTRL_CHAR,Y
 !                                                 CALL #I2C_CTRL_CH
-I2C_COLD_TERM=\$4556!       asm CODE, content of COLD+2, RET address by default
-I2C_INIT_SOFT=\$4556!       asm CODE, content of INIT_FORTH+2, RET address by default
-I2C_INIT_TERM=\$4558!       asm CODE, content of WARM+2 by default
-I2C_WARM=\$4580!            WARM address
+I2C_COLD_TERM=\$4550!       asm CODE, default content of STOP_APP (COLD starts with: CALL &STOP_APP)
+I2C_INIT_SOFT=\$4550!       asm CODE, default content of SOFT_APP (INIT_FORTH starts with: CALL &SOFT_APP)
+I2C_INIT_TERM=\$4552!       asm CODE, default content of HARD_APP (WARM starts with: CALL &HARD_APP)
+I2C_WARM=\$457A!            WARM address
 !-------------------------------------------------------------------------------
 NOPUC=SYS\+\$0A!            NOPUC               with FORTH: ' SYS 10 +
 COLD=SYS\+\$16!             COLD address                    ' SYS 22 +
@@ -711,14 +711,14 @@ DMA2DAH=\$538!      \ DMA channel 2 destination address high
 DMA2SZ=\$53A!       \ DMA channel 2 transfer size
 
 
-MPUCTL0=\$5A0!      \ MPU control 0             
-MPUCTL1=\$5A2!      \ MPU control 1             
-MPUSEGB2=\$5A4!     \ MPU Segmentation Border2 
-MPUSEGB1=\$5A6!     \ MPU Segmentation Border1 
-MPUSAM=\$5A8!       \ MPU access management     
-MPUIPC0=\$5AA!      \ MPU IP control 0                      
-MPUIPSEGB2=\$5AC!   \ MPU IP Encapsulation Segment Border 2 
-MPUIPSEGB1=\$5AE!   \ MPU IP Encapsulation Segment Border 1 
+MPUCTL0=\$5A0!      \ MPU control 0
+MPUCTL1=\$5A2!      \ MPU control 1
+MPUSEGB2=\$5A4!     \ MPU Segmentation Border2
+MPUSEGB1=\$5A6!     \ MPU Segmentation Border1
+MPUSAM=\$5A8!       \ MPU access management
+MPUIPC0=\$5AA!      \ MPU IP control 0
+MPUIPSEGB2=\$5AC!   \ MPU IP Encapsulation Segment Border 2
+MPUIPSEGB1=\$5AE!   \ MPU IP Encapsulation Segment Border 1
 
 UCA0CTLW0=\$5C0!    \ eUSCI_A control word 0
 UCA0CTLW1=\$5C2!    \ eUSCI_A control word 1

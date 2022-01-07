@@ -57,7 +57,7 @@ MARKER {CORDIC}
     39797 ,
     39797 ,
 
-    [UNDEFINED] DABS 
+    [UNDEFINED] DABS
     [IF]
     CODE DABS
     AND #-1,R14
@@ -71,7 +71,7 @@ MARKER {CORDIC}
     ENDCODE
     [THEN]
 
-    [UNDEFINED] R> 
+    [UNDEFINED] R>
     [IF]
     CODE R>
     SUB #2,R15
@@ -82,7 +82,7 @@ MARKER {CORDIC}
     [THEN]
 
     RST_SET
- 
+
     CODE TSTBIT
     MOV @R15+,R9
     AND @R9,R14
@@ -95,7 +95,7 @@ MARKER {CORDIC}
 
     [IF]   ; MSP430FRxxxx with hardware_MPY
 
-        [UNDEFINED] HOLDS 
+        [UNDEFINED] HOLDS
         [IF]
     CODE HOLDS
     MOV @R15+,R9
@@ -114,7 +114,7 @@ BW3 ADD R14,R9
     ENDCODE
         [THEN]
 
-        [UNDEFINED] F#S 
+        [UNDEFINED] F#S
         [IF]
     CODE F#S
                 MOV 2(R15),R9
@@ -149,7 +149,7 @@ BW3 ADD R14,R9
 
     [ELSE] ; no hardware multiplier
 
-        [UNDEFINED] HOLDS 
+        [UNDEFINED] HOLDS
         [IF]
     CODE HOLDS
     MOV @R15+,R9
@@ -168,7 +168,7 @@ BW3 ADD R14,R9
     ENDCODE
         [THEN]
 
-        [UNDEFINED] F#S 
+        [UNDEFINED] F#S
         [IF]
     CODE F#S
                 MOV @R15,R12
@@ -253,7 +253,7 @@ FW1         CMP R13,R10
         CMP #0,R14
         0<> WHILE
             CMP #14,R13
-    0= UNTIL 
+    0= UNTIL
         THEN
     CALL #XSCALE
     MOV R9,0(R15)
@@ -276,7 +276,7 @@ FW1         CMP R13,R10
     THEN
     MOV R9,R12
     CMP #0,R12
-    S< IF 
+    S< IF
         XOR #-1,R12
         ADD #1,R12
     THEN
@@ -285,7 +285,7 @@ FW1         CMP R13,R10
     0= IF
         CMP #0,R8
         0= IF
-            LO2HI 
+            LO2HI
                 ABORT" null inputs!"
             HI2LO
         THEN
@@ -343,7 +343,7 @@ FW1         CMP R13,R10
         THEN
     CALL #XSCALE
     POPM #2,R13
-    GOTO FW1                
+    GOTO FW1
     BEGIN
         RRA R9
 FW1     RRA R12
@@ -373,7 +373,7 @@ FW1     RRA R12
     ENDCODE
 
 
-    [UNDEFINED] F. 
+    [UNDEFINED] F.
     [IF]
     CODE F.
     MOV R14,R12
@@ -402,7 +402,7 @@ FW1     RRA R12
 
 RST_SET
 
-    [UNDEFINED] SWAP 
+    [UNDEFINED] SWAP
     [IF]
     CODE SWAP
     MOV @R15,R10
@@ -412,7 +412,7 @@ RST_SET
     ENDCODE
     [THEN]
 
-    [UNDEFINED] ROT 
+    [UNDEFINED] ROT
     [IF]
     CODE ROT
     MOV @R15,R10
@@ -425,86 +425,86 @@ RST_SET
 
 ECHO
 
-10000 89,0 POL2REC . .  ; sin, cos --> 
-10000 75,0 POL2REC . .  ; sin, cos --> 
-10000 60,0 POL2REC . .  ; sin, cos --> 
-10000 45,0 POL2REC . .  ; sin, cos --> 
-10000 30,0 POL2REC . .  ; sin, cos --> 
-10000 15,0 POL2REC . .  ; sin, cos --> 
-10000 1,0 POL2REC . .   ; sin, cos --> 
-16384 30,0 POL2REC SWAP . . ; x, y --> 
-16384 45,0 POL2REC SWAP . . ; x, y --> 
-16384 60,0 POL2REC SWAP . . ; x, y --> 
+10000 89,0 POL2REC . .  ; sin, cos -->
+10000 75,0 POL2REC . .  ; sin, cos -->
+10000 60,0 POL2REC . .  ; sin, cos -->
+10000 45,0 POL2REC . .  ; sin, cos -->
+10000 30,0 POL2REC . .  ; sin, cos -->
+10000 15,0 POL2REC . .  ; sin, cos -->
+10000 1,0 POL2REC . .   ; sin, cos -->
+16384 30,0 POL2REC SWAP . . ; x, y -->
+16384 45,0 POL2REC SWAP . . ; x, y -->
+16384 60,0 POL2REC SWAP . . ; x, y -->
 
-10000 -89,0 POL2REC . .  ; sin, cos --> 
-10000 -75,0 POL2REC . .  ; sin, cos --> 
-10000 -60,0 POL2REC . .  ; sin, cos --> 
-10000 -45,0 POL2REC . .  ; sin, cos --> 
-10000 -30,0 POL2REC . .  ; sin, cos --> 
-10000 -15,0 POL2REC . .  ; sin, cos --> 
-10000 -1,0 POL2REC . .   ; sin, cos --> 
-16384 -30,0 POL2REC SWAP . . ; x, y --> 
-16384 -45,0 POL2REC SWAP . . ; x, y --> 
-16384 -60,0 POL2REC SWAP . . ; x, y --> 
+10000 -89,0 POL2REC . .  ; sin, cos -->
+10000 -75,0 POL2REC . .  ; sin, cos -->
+10000 -60,0 POL2REC . .  ; sin, cos -->
+10000 -45,0 POL2REC . .  ; sin, cos -->
+10000 -30,0 POL2REC . .  ; sin, cos -->
+10000 -15,0 POL2REC . .  ; sin, cos -->
+10000 -1,0 POL2REC . .   ; sin, cos -->
+16384 -30,0 POL2REC SWAP . . ; x, y -->
+16384 -45,0 POL2REC SWAP . . ; x, y -->
+16384 -60,0 POL2REC SWAP . . ; x, y -->
 
--10000 89,0 POL2REC . .  ; sin, cos --> 
--10000 75,0 POL2REC . .  ; sin, cos --> 
--10000 60,0 POL2REC . .  ; sin, cos --> 
--10000 45,0 POL2REC . .  ; sin, cos --> 
--10000 30,0 POL2REC . .  ; sin, cos --> 
--10000 15,0 POL2REC . .  ; sin, cos --> 
--10000 1,0 POL2REC . .   ; sin, cos --> 
--16384 30,0 POL2REC SWAP . . ; x, y --> 
--16384 45,0 POL2REC SWAP . . ; x, y --> 
--16384 60,0 POL2REC SWAP . . ; x, y --> 
+-10000 89,0 POL2REC . .  ; sin, cos -->
+-10000 75,0 POL2REC . .  ; sin, cos -->
+-10000 60,0 POL2REC . .  ; sin, cos -->
+-10000 45,0 POL2REC . .  ; sin, cos -->
+-10000 30,0 POL2REC . .  ; sin, cos -->
+-10000 15,0 POL2REC . .  ; sin, cos -->
+-10000 1,0 POL2REC . .   ; sin, cos -->
+-16384 30,0 POL2REC SWAP . . ; x, y -->
+-16384 45,0 POL2REC SWAP . . ; x, y -->
+-16384 60,0 POL2REC SWAP . . ; x, y -->
 
--10000 -89,0 POL2REC . .  ; sin, cos --> 
--10000 -75,0 POL2REC . .  ; sin, cos --> 
--10000 -60,0 POL2REC . .  ; sin, cos --> 
--10000 -45,0 POL2REC . .  ; sin, cos --> 
--10000 -30,0 POL2REC . .  ; sin, cos --> 
--10000 -15,0 POL2REC . .  ; sin, cos --> 
--10000 -1,0 POL2REC . .   ; sin, cos --> 
--16384 -30,0 POL2REC SWAP . . ; x, y --> 
--16384 -45,0 POL2REC SWAP . . ; x, y --> 
--16384 -60,0 POL2REC SWAP . . ; x, y --> 
+-10000 -89,0 POL2REC . .  ; sin, cos -->
+-10000 -75,0 POL2REC . .  ; sin, cos -->
+-10000 -60,0 POL2REC . .  ; sin, cos -->
+-10000 -45,0 POL2REC . .  ; sin, cos -->
+-10000 -30,0 POL2REC . .  ; sin, cos -->
+-10000 -15,0 POL2REC . .  ; sin, cos -->
+-10000 -1,0 POL2REC . .   ; sin, cos -->
+-16384 -30,0 POL2REC SWAP . . ; x, y -->
+-16384 -45,0 POL2REC SWAP . . ; x, y -->
+-16384 -60,0 POL2REC SWAP . . ; x, y -->
 
 
-2  1  REC2POL F. .          ; phase module --> 
-2 -1  REC2POL F. .          ; phase module --> 
-20  10  REC2POL F. .        ; phase module --> 
-20 -10  REC2POL F. .        ; phase module --> 
-200 100 REC2POL F. .        ; phase module --> 
-100 -100 REC2POL F. .       ; phase module --> 
-2000 1000 REC2POL F. .      ; phase module --> 
-1000 -1000 REC2POL F. .     ; phase module --> 
-16000 8000 REC2POL F. .     ; phase module --> 
-16000 -8000 REC2POL F. .    ; phase module --> 
-16000 0 REC2POL F. .        ; phase module --> 
-0 16000 REC2POL F. .        ; phase module --> 
+2  1  REC2POL F. .          ; phase module -->
+2 -1  REC2POL F. .          ; phase module -->
+20  10  REC2POL F. .        ; phase module -->
+20 -10  REC2POL F. .        ; phase module -->
+200 100 REC2POL F. .        ; phase module -->
+100 -100 REC2POL F. .       ; phase module -->
+2000 1000 REC2POL F. .      ; phase module -->
+1000 -1000 REC2POL F. .     ; phase module -->
+16000 8000 REC2POL F. .     ; phase module -->
+16000 -8000 REC2POL F. .    ; phase module -->
+16000 0 REC2POL F. .        ; phase module -->
+0 16000 REC2POL F. .        ; phase module -->
 
--2  1  REC2POL F. .          ; phase module --> 
--2 -1  REC2POL F. .          ; phase module --> 
--20  10  REC2POL F. .        ; phase module --> 
--20 -10  REC2POL F. .        ; phase module --> 
--200 100 REC2POL F. .        ; phase module --> 
--100 -100 REC2POL F. .       ; phase module --> 
--2000 1000 REC2POL F. .      ; phase module --> 
--1000 -1000 REC2POL F. .     ; phase module --> 
--16000 8000 REC2POL F. .     ; phase module --> 
--16000 -8000 REC2POL F. .    ; phase module --> 
-16000 0 REC2POL F. .        ; phase module --> 
-0 16000 REC2POL F. .        ; phase module --> 
+-2  1  REC2POL F. .          ; phase module -->
+-2 -1  REC2POL F. .          ; phase module -->
+-20  10  REC2POL F. .        ; phase module -->
+-20 -10  REC2POL F. .        ; phase module -->
+-200 100 REC2POL F. .        ; phase module -->
+-100 -100 REC2POL F. .       ; phase module -->
+-2000 1000 REC2POL F. .      ; phase module -->
+-1000 -1000 REC2POL F. .     ; phase module -->
+-16000 8000 REC2POL F. .     ; phase module -->
+-16000 -8000 REC2POL F. .    ; phase module -->
+16000 0 REC2POL F. .        ; phase module -->
+0 16000 REC2POL F. .        ; phase module -->
 
-10000 89,0 POL2REC REC2POL   ROT . F. 
-10000 75,0 POL2REC REC2POL   ROT . F. 
-10000 60,0 POL2REC REC2POL   ROT . F. 
-10000 45,0 POL2REC REC2POL   ROT . F. 
-10000 30,0 POL2REC REC2POL   ROT . F. 
-10000 26,565 POL2REC REC2POL ROT . F. 
-10000 15,0 POL2REC REC2POL   ROT . F. 
-10000 14,036 POL2REC REC2POL ROT . F. 
-10000 7,125 POL2REC REC2POL  ROT . F. 
-10000 1,0 POL2REC REC2POL    ROT . F. 
+10000 89,0 POL2REC REC2POL   ROT . F.
+10000 75,0 POL2REC REC2POL   ROT . F.
+10000 60,0 POL2REC REC2POL   ROT . F.
+10000 45,0 POL2REC REC2POL   ROT . F.
+10000 30,0 POL2REC REC2POL   ROT . F.
+10000 26,565 POL2REC REC2POL ROT . F.
+10000 15,0 POL2REC REC2POL   ROT . F.
+10000 14,036 POL2REC REC2POL ROT . F.
+10000 7,125 POL2REC REC2POL  ROT . F.
+10000 1,0 POL2REC REC2POL    ROT . F.
 
 

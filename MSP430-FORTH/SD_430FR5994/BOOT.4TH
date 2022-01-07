@@ -3,7 +3,30 @@
 ; BOOT.4th for MSP_EXP430FR5994
 ; --------
 
-    [UNDEFINED] = 
+    [UNDEFINED] DUP
+    [IF]
+    CODE DUP
+BW1 SUB #2,R15
+    MOV R14,0(R15)
+    MOV @R13+,R0
+    ENDCODE
+
+    CODE ?DUP
+    CMP #0,R14
+    0<> ?GOTO BW1
+    MOV @R13+,R0
+    ENDCODE
+    [THEN]
+
+    [UNDEFINED] DROP
+    [IF]
+    CODE DROP
+    MOV @R15+,R14
+    MOV @R13+,R0
+    ENDCODE
+    [THEN]
+
+    [UNDEFINED] =
     [IF]
     CODE =
     SUB @R15+,R14
@@ -30,10 +53,11 @@
     ENDCODE
     [THEN]
 
-    $04 =
+    DUP 4 =
     [IF]
+        DROP
         RST_RET
-        NOECHO LOAD" SD_TEST.4TH"
+        LOAD" SD_TEST.4TH"
     [ELSE]
         ' SYS $0A + EXECUTE
     [THEN]

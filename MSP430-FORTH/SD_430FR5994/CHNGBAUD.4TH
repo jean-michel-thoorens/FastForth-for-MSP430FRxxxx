@@ -53,7 +53,7 @@ BW1 SUB #2,R15
 
     [UNDEFINED] CR [IF]
     DEFER CR
-    
+
     :NONAME
     $0D EMIT $0A EMIT
     ; IS CR
@@ -166,7 +166,7 @@ FW1 AND #0,R14
     MOV @R13+,R0
     ENDCODE
 
-    CODE DO            
+    CODE DO
     SUB #2,R15
     MOV R14,0(R15)
     ADD #2,&$1DC8
@@ -222,29 +222,29 @@ BW2 ADD #4,&$1DC8
 
     [UNDEFINED] CASE [IF]
     : CASE 0 ; IMMEDIATE
-    
+
 
     : OF
-    1+	
-    >R	
+    1+
+    >R
     POSTPONE OVER POSTPONE =
-    POSTPONE IF	
-    POSTPONE DROP	
-    R>	
-    ; IMMEDIATE 
+    POSTPONE IF
+    POSTPONE DROP
+    R>
+    ; IMMEDIATE
 
     : ENDOF
-    >R	
-    POSTPONE ELSE 
-    R>	
-    ; IMMEDIATE 
+    >R
+    POSTPONE ELSE
+    R>
+    ; IMMEDIATE
 
     : ENDCASE
     POSTPONE DROP
-    0 DO 
-        POSTPONE THEN 
-    LOOP 
-    ; IMMEDIATE 
+    0 DO
+        POSTPONE THEN
+    LOOP
+    ; IMMEDIATE
     [THEN]
 
     [UNDEFINED] S_ [IF]
@@ -270,7 +270,7 @@ BW2 ADD #4,&$1DC8
     CMP #0,&$1DBC
     0= IF MOV @R13+,R0
     THEN
-    COLON          
+    COLON
     $1B
     POSTPONE LITERAL
     POSTPONE EMIT
@@ -280,7 +280,7 @@ BW2 ADD #4,&$1DC8
     [THEN]
 
     : BAD_MHz
-    $20 DUP EMIT 
+    $20 DUP EMIT
             ABORT" only for 1,4,8,16,24 MHz MCLK!"
     ;
 
@@ -296,7 +296,7 @@ BW2 ADD #4,&$1DC8
     ESC [8;42;80t
     41 0 DO CR LOOP
     ESC [H
-    
+
     $1800 @ DUP >R
     ." target MCLK = " 1000 U/ . ." MHz" CR
     ." choose your baudrate:" CR
@@ -320,7 +320,7 @@ BW2 ADD #4,&$1DC8
             R> CASE
                 #24000 OF $4 $0
                     ENDOF
-                24000 <   
+                24000 <
                 IF OVR_BAUDS
                 THEN BAD_MHz
             ENDCASE
@@ -329,7 +329,7 @@ BW2 ADD #4,&$1DC8
             R> CASE
                 #24000 OF $4 $EE00  ENDOF
                 #20000 OF $4 $0     ENDOF
-                20000 <   
+                20000 <
                 IF OVR_BAUDS
                 THEN BAD_MHz
             ENDCASE
@@ -339,7 +339,7 @@ BW2 ADD #4,&$1DC8
                 #24000 OF $6 $0     ENDOF
                 #20000 OF $5 $0     ENDOF
                 #16000 OF $4 $0     ENDOF
-                16000 <   
+                16000 <
                 IF OVR_BAUDS
                 THEN BAD_MHz
             ENDCASE
@@ -350,7 +350,7 @@ BW2 ADD #4,&$1DC8
                 #20000 OF $6 $D600  ENDOF
                 #16000 OF $5 $4900  ENDOF
                 #12000 OF $4 $0     ENDOF
-                12000 <   
+                12000 <
                 IF OVR_BAUDS
                 THEN BAD_MHz
             ENDCASE
@@ -362,7 +362,7 @@ BW2 ADD #4,&$1DC8
                 #16000 OF $8 $D600  ENDOF
                 #12000 OF $6 $AA00  ENDOF
                 #8000  OF $5 $9200  ENDOF
-                8000 <   
+                8000 <
                 IF OVR_BAUDS
                 THEN BAD_MHz
             ENDCASE
@@ -375,7 +375,7 @@ BW2 ADD #4,&$1DC8
                 #12000 OF $0D $0200  ENDOF
                 #8000  OF $8 $D600  ENDOF
                 #4000  OF $4 $4900  ENDOF
-                4000 <   
+                4000 <
                 IF OVR_BAUDS
                 THEN BAD_MHz
             ENDCASE
@@ -389,7 +389,7 @@ BW2 ADD #4,&$1DC8
                 #8000  OF $11 $4A00 ENDOF
                 #4000  OF $8 $D600  ENDOF
                 #2000  OF $4 $4900  ENDOF
-                2000 <   
+                2000 <
                 IF OVR_BAUDS
                 THEN BAD_MHz
             ENDCASE
@@ -404,7 +404,7 @@ BW2 ADD #4,&$1DC8
                 #4000  OF $11 $4A00 ENDOF
                 #2000  OF $8 $D600  ENDOF
                 #1000  OF $4 $4900  ENDOF
-                1000 <   
+                1000 <
                 IF OVR_BAUDS
                 THEN BAD_MHz
             ENDCASE
@@ -420,7 +420,7 @@ BW2 ADD #4,&$1DC8
                 #2000  OF $11 $4A00 ENDOF
                 #1000  OF $8 $D600  ENDOF
                 #500   OF $4 $4900  ENDOF
-                500 <   
+                500 <
                 IF OVR_BAUDS
                 THEN BAD_MHz
             ENDCASE
@@ -463,4 +463,4 @@ BW2 ADD #4,&$1DC8
     ." Change baudrate in Teraterm, save its setup, then reset target."
     ;
 
-    CHNGBAUD 
+    CHNGBAUD

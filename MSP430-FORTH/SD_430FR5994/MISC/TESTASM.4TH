@@ -91,7 +91,7 @@ FW1 MOV @R15+,R14
 
     [UNDEFINED] VARIABLE
     [IF]
-    : VARIABLE 
+    : VARIABLE
     CREATE
     HI2LO
     MOV #$1287,-4(R10)
@@ -102,7 +102,7 @@ FW1 MOV @R15+,R14
 
     [UNDEFINED] CONSTANT
     [IF]
-    : CONSTANT 
+    : CONSTANT
     CREATE
     HI2LO
     MOV R14,-2(R10)
@@ -149,13 +149,13 @@ FW1 MOV @R15+,R14
             LO2HI
             $20 EMIT
             HI2LO
-            SUB #2,R13 
+            SUB #2,R13
             SUB #1,R14
         0= UNTIL
         MOV @R1+,R13
     THEN
     MOV @R15+,R14
-    MOV @R13+,R0              
+    MOV @R13+,R0
     ENDCODE
     [THEN]
 
@@ -187,12 +187,12 @@ BW1 SUB #2,R15
     [UNDEFINED] U.R
     [IF]
     : U.R
-    >R  <# 0 # #S #>  
+    >R  <# 0 # #S #>
     R> OVER - 0 MAX SPACES TYPE
     ;
     [THEN]
 
-    [UNDEFINED] IF 
+    [UNDEFINED] IF
     [IF]
 
     CODE IF
@@ -204,7 +204,7 @@ BW1 SUB #2,R15
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
-    
+
     CODE THEN
     MOV &$1DC8,0(R14)
     MOV @R15+,R14
@@ -212,7 +212,7 @@ BW1 SUB #2,R15
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] SWAP 
+    [UNDEFINED] SWAP
     [IF]
     CODE SWAP
     PUSH R14
@@ -222,13 +222,13 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] BEGIN 
+    [UNDEFINED] BEGIN
     [IF]
 
     CODE BEGIN
     MOV #$4032,R0
     ENDCODE IMMEDIATE
-    
+
     CODE UNTIL
     MOV #$40AC,R9
 BW1 ADD #4,&$1DC8
@@ -238,22 +238,22 @@ BW1 ADD #4,&$1DC8
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
-    
+
     CODE AGAIN
     MOV #$40B2,R9
     GOTO BW1
     ENDCODE IMMEDIATE
-    
+
     : WHILE
     POSTPONE IF SWAP
     ; IMMEDIATE
-    
+
     : REPEAT
     POSTPONE AGAIN POSTPONE THEN
     ; IMMEDIATE
     [THEN]
 
-    [UNDEFINED] DO 
+    [UNDEFINED] DO
     [IF]
 
     HDNCODE XDO
@@ -307,7 +307,7 @@ BW2 ADD #4,&$1DC8
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
-    
+
     HDNCODE XPLOO
     ADD R14,0(R1)
     MOV @R15+,R14
@@ -331,7 +331,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] BASE 
+    [UNDEFINED] BASE
     [IF]
     $1DBE  CONSTANT BASE
     [THEN]
@@ -360,7 +360,7 @@ BW2 ADD #4,&$1DC8
         DO I C@ 3 U.R LOOP
         SPACE
         I $10 + I 8 +
-        DO I C@ 3 U.R LOOP  
+        DO I C@ 3 U.R LOOP
         SPACE SPACE
         I $10 + I
         DO I C@ $7E MIN $20 MAX EMIT LOOP
@@ -410,7 +410,7 @@ BW1
     CMP #%10,&BASE
     0<> IF  MOV #2,&BASE
     ELSE    MOV #$0A,&BASE
-    THEN    
+    THEN
     COLON
     BASE @ U.
     ;
@@ -477,7 +477,7 @@ ENDCODE
 [THEN]
 
 : BYTES_TABLE_IDX
-CREATE 
+CREATE
 0 DO I C,
 LOOP
 DOES>
@@ -496,8 +496,8 @@ $0201 BYTES_TABLE1 !
 CODE IDX_TEST1
     MOV.B   BYTES_TABLE1(R14),R14
 COLON
-    U. 
-;      
+    U.
+;
 
 0 IDX_TEST1     ; you should see 1 -->
 
@@ -541,26 +541,26 @@ CREATE TABLE
 TABLE 2 - CONSTANT PFA_TABLE
 
 
-CODE REDIRECT       ; <table> --    redirects TABLE to argument <table>    
+CODE REDIRECT       ; <table> --    redirects TABLE to argument <table>
 MOV R14,&PFA_TABLE
 MOV @R15+,R14
 MOV @R13+,R0
 ENDCODE
 
 
-CODE REDIRECT0      ; --            redirects TABLE to TABLE0        
+CODE REDIRECT0      ; --            redirects TABLE to TABLE0
 MOV #TABLE0,&PFA_TABLE
 MOV @R13+,R0
 ENDCODE
 
 
-CODE REDIRECT10     ; --            redirects TABLE to TABLE10        
+CODE REDIRECT10     ; --            redirects TABLE to TABLE10
 MOV #TABLE10,&PFA_TABLE
 MOV @R13+,R0
 ENDCODE
 
 
-CODE REDIRECT20     ; --            redirects TABLE to TABLE20        
+CODE REDIRECT20     ; --            redirects TABLE to TABLE20
 MOV #TABLE20,&PFA_TABLE
 MOV @R13+,R0
 ENDCODE
@@ -608,7 +608,7 @@ CODENNM                 ; does DUP
     SUB #2,R15
     MOV R14,0(R15)
     MOV @R13+,R0
-ENDCODE                 ; leaves its execution address (CFA) on stack 
+ENDCODE                 ; leaves its execution address (CFA) on stack
 
 DUP .
 
@@ -618,11 +618,11 @@ IS TRUC                 ; TRUC becomes a primary DEFERred word
 TRUC .                  ; display R14 value -->
 
 
-    
+
 ' TRUC >BODY IS TRUC    ; TRUC is reinitialized with its default action
 
 
-TRUC .                  ; display R14 value --> 
+TRUC .                  ; display R14 value -->
 
 
 

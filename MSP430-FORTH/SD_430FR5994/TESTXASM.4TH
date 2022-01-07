@@ -18,7 +18,7 @@
 
     MARKER {TEST_ASMX}
 
-    [UNDEFINED] + 
+    [UNDEFINED] +
     [IF]
     CODE +
     ADD @R15+,R14
@@ -26,7 +26,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] - 
+    [UNDEFINED] -
     [IF]
     CODE -
     SUB @R15+,R14
@@ -36,7 +36,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] MAX 
+    [UNDEFINED] MAX
     [IF]
     CODE MAX
     CMP @R15,R14
@@ -44,7 +44,7 @@
 BW1 ADD #2,R15
     MOV @R13+,R0
     ENDCODE
-    
+
     CODE MIN
     CMP @R15,R14
     S<  ?GOTO BW1
@@ -53,7 +53,7 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] C@ 
+    [UNDEFINED] C@
     [IF]
     CODE C@
     MOV.B @R14,R14
@@ -61,9 +61,9 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] CONSTANT 
+    [UNDEFINED] CONSTANT
     [IF]
-    : CONSTANT 
+    : CONSTANT
     CREATE
     HI2LO
     MOV R14,-2(R10)
@@ -73,13 +73,13 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] SPACE 
+    [UNDEFINED] SPACE
     [IF]
     : SPACE
     $20 EMIT ;
     [THEN]
 
-    [UNDEFINED] SPACES 
+    [UNDEFINED] SPACES
     [IF]
     CODE SPACES
     CMP #0,R14
@@ -89,17 +89,17 @@ FW1 MOV @R15+,R14
             LO2HI
             $20 EMIT
             HI2LO
-            SUB #2,R13 
+            SUB #2,R13
             SUB #1,R14
         0= UNTIL
         MOV @R1+,R13
     THEN
     MOV @R15+,R14
-    MOV @R13+,R0              
+    MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] OVER 
+    [UNDEFINED] OVER
     [IF]
     CODE OVER
     MOV R14,-2(R15)
@@ -109,7 +109,7 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] SWAP 
+    [UNDEFINED] SWAP
     [IF]
     CODE SWAP
     MOV @R15,R10
@@ -119,7 +119,7 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] >R 
+    [UNDEFINED] >R
     [IF]
     CODE >R
     PUSH R14
@@ -128,7 +128,7 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] R> 
+    [UNDEFINED] R>
     [IF]
     CODE R>
     SUB #2,R15
@@ -138,15 +138,15 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] U.R 
+    [UNDEFINED] U.R
     [IF]
     : U.R
-    >R  <# 0 # #S #>  
+    >R  <# 0 # #S #>
     R> OVER - 0 MAX SPACES TYPE
     ;
     [THEN]
 
-    [UNDEFINED] DO 
+    [UNDEFINED] DO
     [IF]
 
     HDNCODE XDO
@@ -200,7 +200,7 @@ BW2 ADD #4,&$1DC8
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
-    
+
     HDNCODE XPLOO
     ADD R14,0(R1)
     MOV @R15+,R14
@@ -213,7 +213,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] I 
+    [UNDEFINED] I
     [IF]
     CODE I
     SUB #2,R15
@@ -224,21 +224,21 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] CR 
+    [UNDEFINED] CR
     [IF]
     DEFER CR
-    
+
     :NONAME
     $0D EMIT $0A EMIT
     ; IS CR
     [THEN]
 
-    [UNDEFINED] BASE 
+    [UNDEFINED] BASE
     [IF]
     $1DBE  CONSTANT BASE
     [THEN]
 
-    [UNDEFINED] DUMP 
+    [UNDEFINED] DUMP
     [IF]
     CODE DUMP
     PUSH R13
@@ -253,7 +253,7 @@ BW2 ADD #4,&$1DC8
         DO I C@ 3 U.R LOOP
         SPACE
         I $10 + I 8 +
-        DO I C@ 3 U.R LOOP  
+        DO I C@ 3 U.R LOOP
         SPACE SPACE
         I $10 + I
         DO I C@ $7E MIN $20 MAX EMIT LOOP
@@ -262,7 +262,7 @@ BW2 ADD #4,&$1DC8
     ;
     [THEN]
 
-    [UNDEFINED] HERE 
+    [UNDEFINED] HERE
     [IF]
     CODE HERE
     MOV #$4032,R0
@@ -571,7 +571,7 @@ HERE OVER - DUMP
 RST_RET
 
 ; -----------------------------------------------------------------------------
-; DTCforthMSP430FR5xxx ASSEMBLER, OPCODES VI extended single operand 
+; DTCforthMSP430FR5xxx ASSEMBLER, OPCODES VI extended single operand
 ; -----------------------------------------------------------------------------
 ; absolute and immediate instructs. must be written as $x.xxxx (DOUBLE numbers)
 ; indexed instructions must be written as $.xxxx(REG) (DOUBLE numbers)
@@ -669,7 +669,7 @@ HERE OVER - DUMP
 ; you should see:       5B 12  44 33 40 18 5B 12 44 33
 RST_RET
 
-    [UNDEFINED] BASE 
+    [UNDEFINED] BASE
     [IF]
     ' # 2 +  CONSTANT BASE
     [THEN]
@@ -682,7 +682,7 @@ RST_RET
 ;
 
 : %U.
-BASE @ %10 BASE ! SWAP 8 EMIT U. BASE ! 
+BASE @ %10 BASE ! SWAP 8 EMIT U. BASE !
 RST_RET
 ;
 

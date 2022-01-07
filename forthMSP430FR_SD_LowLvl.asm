@@ -22,14 +22,6 @@ ComputePhysicalSector               ; input = logical sector...
 ;Compute CMD                        ;
 ; ----------------------------------;
     MOV     #1,&SD_CMD_FRM          ;3 $(01 00 xx xx xx CMD) set stop bit in CMD frame
-;    CMP     #2,&FATtype             ;3 FAT32 ?
-;    JZ      FAT32_CMD               ;2 yes
-;FAT16_CMD                           ;  FAT16 : CMD17/24 byte address = Sector * BPB_BytsPerSec
-;    ADD     W,W                     ;1 shift left one Sector
-;    ADDC.B  X,X                     ;1
-;    MOV     W,&SD_CMD_FRM+2         ;3 $(01 00 ll LL xx CMD)
-;    MOV.B   X,&SD_CMD_FRM+4         ;3 $(01 00 ll LL hh CMD)
-;    JMP     WaitIdleBeforeSendCMD   ;
 FAT32_CMD                           ;  FAT32 : CMD17/24 sector address
     MOV.B   W,&SD_CMD_FRM+1         ;3 $(01 ll xx xx xx CMD)
     SWPB    W                       ;1
@@ -65,10 +57,8 @@ FullSpeedSend                       ;
 ;   NOP                             ;0 NOPx adjusted to avoid SD error
     SUB.B   #1,X                    ;1
     JC      Send_CMD_PUT            ;2 U>= : don't skip SD_CMD_FRM(0) !
-
                                     ; host must provide height clock cycles to complete operation
                                     ; here X=255, so wait for CMD return expected value with PUT FFh 256 times
-
 ;    MOV     #4,X                    ; to pass made in PRC SD_Card init
 ;    MOV     #16,X                   ; to pass Transcend SD_Card init
 ;    MOV     #32,X                   ; to pass Panasonic SD_Card init
@@ -142,24 +132,22 @@ WaitFEhResponse                     ; wait for SD_Card response = FEh
 ; ----------------------------------;
     CALL #SPI_GET                   ;
     ADD.B   #2,W                    ;1 W = 0 ?
-    JZ  ReadSectorFirstByte         ;2 yes
+    JZ  ReadSectorFirstByte         ;2 yes, X = 0
     JNZ WaitFEhResponse             ;2
 ; ----------------------------------;
-ReadSectorLoop                      ; get 512+1 bytes, write 512 bytes in SD_BUF
+ReadSectorLoop                      ; get 512 bytes + CRC16 in SD_BUF
 ; ----------------------------------;
     MOV.B   &SD_RXBUF,SD_BUF-1(X)   ; 5
 ReadSectorFirstByte                 ; W=0
     MOV.B   #-1,&SD_TXBUF           ; 3 put FF
     NOP                             ; 1 NOPx adjusted to avoid read SD_error
     ADD     #1,X                    ; 1
-    CMP     #BytsPerSec+1,X         ; 2
+    CMP     #BytsPerSec+3,X         ; 2
     JNZ     ReadSectorLoop          ; 2 14 cycles loop read byte
-; ----------------------------------;
-    MOV.B #-1,&SD_TXBUF             ; 3 put only one FF because first CRC byte is already received...
 ; ----------------------------------;
 ReadWriteHappyEnd                   ; <==== WriteSector
 ; ----------------------------------;
-    BIC #3,S                        ; reset read and write errors
+    BIC #3,S                        ; Clear read and write errors
     BIS.B #CS_SD,&SD_CSOUT          ; Chip Select high
     MOV @RSP+,PC                    ; W = 0
 ; ----------------------------------;
@@ -188,8 +176,8 @@ WriteSectorLoop                     ; 11 cycles loop write, starts with X = 0
 ; ----------------------------------;
 WriteSkipCRC16                      ; CRC16 not used in SPI mode
 ; ----------------------------------;
-    MOV     #3,X                    ; PUT 2 bytes to skip CRC16
-    CALL    #SPI_X_GET              ; + 1 byte to get data token in W
+    MOV     #3,X                    ; PUT 3 times to skip CRC16
+    CALL    #SPI_X_GET              ; and to get data token in W
 ; ----------------------------------;
 CheckWriteState                     ;
 ; ----------------------------------;
@@ -207,7 +195,7 @@ CheckWriteState                     ;
 ; 4   = CMD0     time out (GO_IDLE_STATE)
 ; 8   = ACMD41   time out (APP_SEND_OP_COND)
 ; $10 = CMD16    time out (SET_BLOCKLEN)
-; $20 = not FAT16/FAT32 media, low byte = partition ID
+; $20 = not FAT32 media, low byte = partition ID
 
 ; low byte, if CMD R1 response : %0xxx_xxxx
 ; 1th bit = In Idle state
@@ -234,7 +222,6 @@ SD_CARD_ERROR                       ; <=== SD_INIT errors 4,8,$10 from forthMSP4
     ADD &SD_RXBUF,S                 ; add SPI(GET) return value as low byte error
 SD_CARD_ID_ERROR                    ; <=== SD_INIT error $20 from forthMSP430FR_SD_INIT.asm
     BIS.B #CS_SD,&SD_CSOUT          ; Chip Select high
-;    mDOCOL                          ;
     mASM2FORTH                      ;
     .word   ECHO
     .word   XSQUOTE                 ; don't use S register
@@ -247,8 +234,6 @@ ABORT_SD                            ; <=== OPEN file errors from forthMSP430FR_S
     MOV TOS,0(PSP)                  ;
     MOV #10h,&BASEADR               ; select hex
     MOV S,TOS                       ;
-;    MOV #TIB_ORG,&CIB_ADR           ;               restore TIB as Current Input Buffer
-;    MOV #BODYACCEPT,&PFAACCEPT      ;               restore default ACCEPT
     mASM2FORTH                      ;
     .word UDOT,ABORT_TERM           ; no return...
 ; ----------------------------------;

@@ -103,9 +103,9 @@
     MARKER {RC5TOLCD}   \ restore the state before MARKER definition
 \                       \ {UARTI2CS}-2 = RET_ADR: by default MARKER_DOES does CALL #RET_ADR
     8 ALLOT             \ {UARTI2CS}    make room to save previous INI_APP address
-                        \ {RC5TOLCD}+2  make room to save previous WDT_TIM_0_VEC
-                        \ {RC5TOLCD}+4  make room to save previous IR_VEC
-                        \ {RC5TOLCD}+6  make room for 20 us count loop.
+\                         {RC5TOLCD}+2  make room to save previous WDT_TIM_0_VEC
+\                         {RC5TOLCD}+4  make room to save previous IR_VEC
+\                         {RC5TOLCD}+6  make room for 20 us count loop.
 
     [UNDEFINED] TSTBIT
     [IF]
@@ -664,8 +664,6 @@ BW1 CALL #STOP_R2L
 \ ----------------------------------\
 
 RST_SET
-ECHO
-
 
     MARKER {RC5TOLCD}   \ restore the state before MARKER definition
 \                       \ {UARTI2CS}-2 = RET_ADR: by default MARKER_DOES does CALL #RET_ADR

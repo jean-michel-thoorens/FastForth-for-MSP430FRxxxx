@@ -567,98 +567,98 @@ RST_SET
 
 ECHO
 
-10000 89,0 POL2REC . .  ; sin, cos -->
-10000 75,0 POL2REC . .  ; sin, cos -->
-10000 60,0 POL2REC . .  ; sin, cos -->
-10000 45,0 POL2REC . .  ; sin, cos -->
-10000 30,0 POL2REC . .  ; sin, cos -->
-10000 15,0 POL2REC . .  ; sin, cos -->
-10000 1,0 POL2REC . .   ; sin, cos -->
+10000 89,0 POL2REC . .  ; sin, cos --> 
+10000 75,0 POL2REC . .  ; sin, cos --> 
+10000 60,0 POL2REC . .  ; sin, cos --> 
+10000 45,0 POL2REC . .  ; sin, cos --> 
+10000 30,0 POL2REC . .  ; sin, cos --> 
+10000 15,0 POL2REC . .  ; sin, cos --> 
+10000 1,0 POL2REC . .   ; sin, cos --> 
 \ module phase -- X Y
-16384 30,0 POL2REC SWAP . . ; x, y -->
-16384 45,0 POL2REC SWAP . . ; x, y -->
-16384 60,0 POL2REC SWAP . . ; x, y -->
+16384 30,0 POL2REC SWAP . . ; x, y --> 
+16384 45,0 POL2REC SWAP . . ; x, y --> 
+16384 60,0 POL2REC SWAP . . ; x, y --> 
 
 \
-10000 -89,0 POL2REC . .  ; sin, cos -->
-10000 -75,0 POL2REC . .  ; sin, cos -->
-10000 -60,0 POL2REC . .  ; sin, cos -->
-10000 -45,0 POL2REC . .  ; sin, cos -->
-10000 -30,0 POL2REC . .  ; sin, cos -->
-10000 -15,0 POL2REC . .  ; sin, cos -->
-10000 -1,0 POL2REC . .   ; sin, cos -->
+10000 -89,0 POL2REC . .  ; sin, cos --> 
+10000 -75,0 POL2REC . .  ; sin, cos --> 
+10000 -60,0 POL2REC . .  ; sin, cos --> 
+10000 -45,0 POL2REC . .  ; sin, cos --> 
+10000 -30,0 POL2REC . .  ; sin, cos --> 
+10000 -15,0 POL2REC . .  ; sin, cos --> 
+10000 -1,0 POL2REC . .   ; sin, cos --> 
 \ module phase -- X Y
-16384 -30,0 POL2REC SWAP . . ; x, y -->
-16384 -45,0 POL2REC SWAP . . ; x, y -->
-16384 -60,0 POL2REC SWAP . . ; x, y -->
+16384 -30,0 POL2REC SWAP . . ; x, y --> 
+16384 -45,0 POL2REC SWAP . . ; x, y --> 
+16384 -60,0 POL2REC SWAP . . ; x, y --> 
 
 \
--10000 89,0 POL2REC . .  ; sin, cos -->
--10000 75,0 POL2REC . .  ; sin, cos -->
--10000 60,0 POL2REC . .  ; sin, cos -->
--10000 45,0 POL2REC . .  ; sin, cos -->
--10000 30,0 POL2REC . .  ; sin, cos -->
--10000 15,0 POL2REC . .  ; sin, cos -->
--10000 1,0 POL2REC . .   ; sin, cos -->
+-10000 89,0 POL2REC . .  ; sin, cos --> 
+-10000 75,0 POL2REC . .  ; sin, cos --> 
+-10000 60,0 POL2REC . .  ; sin, cos --> 
+-10000 45,0 POL2REC . .  ; sin, cos --> 
+-10000 30,0 POL2REC . .  ; sin, cos --> 
+-10000 15,0 POL2REC . .  ; sin, cos --> 
+-10000 1,0 POL2REC . .   ; sin, cos --> 
 \ module phase -- X Y
--16384 30,0 POL2REC SWAP . . ; x, y -->
--16384 45,0 POL2REC SWAP . . ; x, y -->
--16384 60,0 POL2REC SWAP . . ; x, y -->
+-16384 30,0 POL2REC SWAP . . ; x, y --> 
+-16384 45,0 POL2REC SWAP . . ; x, y --> 
+-16384 60,0 POL2REC SWAP . . ; x, y --> 
 \
 
--10000 -89,0 POL2REC . .  ; sin, cos -->
--10000 -75,0 POL2REC . .  ; sin, cos -->
--10000 -60,0 POL2REC . .  ; sin, cos -->
--10000 -45,0 POL2REC . .  ; sin, cos -->
--10000 -30,0 POL2REC . .  ; sin, cos -->
--10000 -15,0 POL2REC . .  ; sin, cos -->
--10000 -1,0 POL2REC . .   ; sin, cos -->
+-10000 -89,0 POL2REC . .  ; sin, cos --> 
+-10000 -75,0 POL2REC . .  ; sin, cos --> 
+-10000 -60,0 POL2REC . .  ; sin, cos --> 
+-10000 -45,0 POL2REC . .  ; sin, cos --> 
+-10000 -30,0 POL2REC . .  ; sin, cos --> 
+-10000 -15,0 POL2REC . .  ; sin, cos --> 
+-10000 -1,0 POL2REC . .   ; sin, cos --> 
 \ module phase -- X Y
--16384 -30,0 POL2REC SWAP . . ; x, y -->
--16384 -45,0 POL2REC SWAP . . ; x, y -->
--16384 -60,0 POL2REC SWAP . . ; x, y -->
+-16384 -30,0 POL2REC SWAP . . ; x, y --> 
+-16384 -45,0 POL2REC SWAP . . ; x, y --> 
+-16384 -60,0 POL2REC SWAP . . ; x, y --> 
 \
 
 
-2  1  REC2POL F. .          ; phase module -->
-2 -1  REC2POL F. .          ; phase module -->
-20  10  REC2POL F. .        ; phase module -->
-20 -10  REC2POL F. .        ; phase module -->
-200 100 REC2POL F. .        ; phase module -->
-100 -100 REC2POL F. .       ; phase module -->
-2000 1000 REC2POL F. .      ; phase module -->
-1000 -1000 REC2POL F. .     ; phase module -->
-16000 8000 REC2POL F. .     ; phase module -->
-16000 -8000 REC2POL F. .    ; phase module -->
-16000 0 REC2POL F. .        ; phase module -->
-0 16000 REC2POL F. .        ; phase module -->
+2  1  REC2POL F. .          ; phase module --> 
+2 -1  REC2POL F. .          ; phase module --> 
+20  10  REC2POL F. .        ; phase module --> 
+20 -10  REC2POL F. .        ; phase module --> 
+200 100 REC2POL F. .        ; phase module --> 
+100 -100 REC2POL F. .       ; phase module --> 
+2000 1000 REC2POL F. .      ; phase module --> 
+1000 -1000 REC2POL F. .     ; phase module --> 
+16000 8000 REC2POL F. .     ; phase module --> 
+16000 -8000 REC2POL F. .    ; phase module --> 
+16000 0 REC2POL F. .        ; phase module --> 
+0 16000 REC2POL F. .        ; phase module --> 
 \ 16384 -8192 REC2POL F. .    ; --> abort
 \ 0 0 REC2POL F. .            ; --> abort
 
--2  1  REC2POL F. .          ; phase module -->
--2 -1  REC2POL F. .          ; phase module -->
--20  10  REC2POL F. .        ; phase module -->
--20 -10  REC2POL F. .        ; phase module -->
--200 100 REC2POL F. .        ; phase module -->
--100 -100 REC2POL F. .       ; phase module -->
--2000 1000 REC2POL F. .      ; phase module -->
--1000 -1000 REC2POL F. .     ; phase module -->
--16000 8000 REC2POL F. .     ; phase module -->
--16000 -8000 REC2POL F. .    ; phase module -->
-16000 0 REC2POL F. .        ; phase module -->
-0 16000 REC2POL F. .        ; phase module -->
+-2  1  REC2POL F. .          ; phase module --> 
+-2 -1  REC2POL F. .          ; phase module --> 
+-20  10  REC2POL F. .        ; phase module --> 
+-20 -10  REC2POL F. .        ; phase module --> 
+-200 100 REC2POL F. .        ; phase module --> 
+-100 -100 REC2POL F. .       ; phase module --> 
+-2000 1000 REC2POL F. .      ; phase module --> 
+-1000 -1000 REC2POL F. .     ; phase module --> 
+-16000 8000 REC2POL F. .     ; phase module --> 
+-16000 -8000 REC2POL F. .    ; phase module --> 
+16000 0 REC2POL F. .        ; phase module --> 
+0 16000 REC2POL F. .        ; phase module --> 
 \ 16384 -8192 REC2POL F. .    ; --> abort
 \ 0 0 REC2POL F. .            ; --> abort
 
-10000 89,0 POL2REC REC2POL   ROT . F.
-10000 75,0 POL2REC REC2POL   ROT . F.
-10000 60,0 POL2REC REC2POL   ROT . F.
-10000 45,0 POL2REC REC2POL   ROT . F.
-10000 30,0 POL2REC REC2POL   ROT . F.
-10000 26,565 POL2REC REC2POL ROT . F.
-10000 15,0 POL2REC REC2POL   ROT . F.
-10000 14,036 POL2REC REC2POL ROT . F.
-10000 7,125 POL2REC REC2POL  ROT . F.
-10000 1,0 POL2REC REC2POL    ROT . F.
+10000 89,0 POL2REC REC2POL   ROT . F. 
+10000 75,0 POL2REC REC2POL   ROT . F. 
+10000 60,0 POL2REC REC2POL   ROT . F. 
+10000 45,0 POL2REC REC2POL   ROT . F. 
+10000 30,0 POL2REC REC2POL   ROT . F. 
+10000 26,565 POL2REC REC2POL ROT . F. 
+10000 15,0 POL2REC REC2POL   ROT . F. 
+10000 14,036 POL2REC REC2POL ROT . F. 
+10000 7,125 POL2REC REC2POL  ROT . F. 
+10000 1,0 POL2REC REC2POL    ROT . F. 
 
 

@@ -42,17 +42,17 @@ THREADS     .equ 16 ;  1,  2 ,  4 ,  8 ,  16,  32  search entries in word-set.
                     ; +0, +28, +48, +56, +90, +154 bytes, usefull to speed up compilation;
                     ; the FORTH interpreter is speed up by about a square root factor of THREADS.
 
-FREQUENCY   .equ 1 ; fully tested at 1,2,4,8,16 MHz, plus 24 MHz for MSP430FR57xx,MSP430FR2355
+FREQUENCY   .equ 16 ; fully tested at 1,2,4,8,16 MHz, plus 24 MHz for MSP430FR57xx,MSP430FR2355
 
 ;   ============================================================================
-;TERMINAL_I2C ; - 12 bytes; uncomment to select I2C_Master TERMINAL instead of UART TERMINAL
+TERMINAL_I2C ; - 12 bytes; uncomment to select I2C_Master TERMINAL instead of UART TERMINAL
 ;   ============================================================================
     .IFDEF TERMINAL_I2C
 MYSLAVEADR   .equ 18
 ;   ============================================================================
     .ELSE ; UART TERMINAL
 ;   ============================================================================
-TERMINALBAUDRATE    .equ 115200 ; choose value considering the frequency, see explanations below.
+TERMINALBAUDRATE    .equ 4000000 ; choose value considering the frequency, see explanations below.
 ;   ----------------------------------------------------------------------------
 TERMINAL3WIRES   ;   ; + 18 bytes  enable 3 wires XON/XOFF software flow control
 TERMINAL4WIRES   ;   ; + 12 bytes  enable 4 wires RTS hardware flow control
@@ -67,9 +67,9 @@ TERMINAL4WIRES   ;   ; + 12 bytes  enable 4 wires RTS hardware flow control
 ;===============================================================================
 DOUBLE_INPUT        ;; +   60 bytes : adds the interpretation engine for double numbers (numbers with dot)
 FIXPOINT_INPUT      ;; +   68 bytes : adds the interpretation engine for Q15.16 numbers (numbers with comma)
-SD_CARD_LOADER      ; + 1766 bytes : to load source files from SD_card
-BOOTLOADER          ; +  132 bytes : includes in WARM process the bootloader SD_CARD\BOOT.4TH.
-SD_CARD_READ_WRITE  ; + 1148 bytes : to read, create, write and del files + copy text files from PC to target SD_Card
+SD_CARD_LOADER      ;; + 1582 bytes : to load source files from SD_card
+BOOTLOADER          ;; +   82 bytes : includes in WARM process the bootloader SD_CARD\BOOT.4TH.
+SD_CARD_READ_WRITE  ;; + 1168 bytes : to read, create, write and del files + copy text files from PC to target SD_Card
 ;EXTENDED_MEM        ; +  506 bytes : allows assembler to execute code up to 1MB (LARGE_CODE).
 ;EXTENDED_ASM        ; + 1212 bytes : extended assembler to 20 bits datas (LARGE_DATA + LARGE_CODE).
 ;VOCABULARY_SET      ; +  162 bytes : adds words: WORDSET FORTH hidden PREVIOUS ONLY DEFINITIONS
@@ -1308,12 +1308,12 @@ LITERAL     CMP #0,&STATE       ;3
 LITERALLOOP MOV &DP,W           ;3
             ADD #4,&DP          ;3
             MOV #lit,0(W)       ;4
-            MOV X,2(W)          ;3 pass 1: compile n|dhi, if pass 2: compile dhi
+            MOV X,2(W)          ;3 pass 1: compile n, if pass 2: compile dhi
             MOV @PSP+,TOS       ;2
             BIT #UF9,SR         ;2 double number ?
 LITERALNEXT BIC #UF9,SR         ;2    in all case, clear UF9
-            JZ LITERALEND       ;2 goto end if n|interpret_state
-            MOV TOS,2(W)        ;3 compile dlo over dhi
+            JZ LITERALEND       ;2 no  goto end if n|interpret_state
+            MOV TOS,2(W)        ;3 yes compile dlo over dhi
             JMP LITERALLOOP     ;2
 LITERALEND  MOV @IP+,PC         ;4
     .ELSE
@@ -1350,7 +1350,7 @@ ALLOT       ADD TOS,&DP
 ; which includes emptying the return stack, without displaying a message.
 ; ABORT is the common next of WARM and ABORT"
 ABORT       MOV #PSTACK,PSP         ; ABORT = ALLOT + 8
-            MOV #0,TOS              ; and set TOS for SYS use.
+            MOV #0,TOS              ; and clear TOS for SYS use.
 ; https://forth-standard.org/standard/core/QUIT
 ; QUIT  --     interpret line by line the input stream
 QUIT        mASM2FORTH              ; QUIT = ALLOT + 14
@@ -1524,7 +1524,7 @@ SEMICOLON   CMP #0,&STATE           ; if interpret mode, semicolon becomes a com
 ; IMMEDIATE        --   make last definition immediate
 IMMEDIATE   MOV &LAST_NFA,Y         ; Y = NFA|unused_PA_reg (as lure for :NONAME)
             BIS.B #1,0(Y)           ;4 FIND process more easier with bit0 than bit7
-NEXTADR     MOV @IP+,PC
+            MOV @IP+,PC
 
             FORTHWORD "CREATE"
 ; https://forth-standard.org/standard/core/CREATE
@@ -1573,7 +1573,7 @@ HEADERLESS  SUB #2,PSP              ; common part of :NONAME and CODENNM
 ;            FORTHWORD "DEFER"
 ;            CALL #HEADER
 ;            MOV #4030h,-4(W)        ;4 first CELL = MOV @PC+,PC = BR #addr
-;            MOV #NEXTADR,-2(W)      ;3 second CELL              =   ...mNEXT : do nothing by default
+;            MOV #NEXT_ADR,-2(W)     ;3 second CELL              =   ...mNEXT : do nothing by default
 ;            JMP REVEAL              ; to link created word in vocabulary
 
 ; IS <name>        xt --
@@ -1581,7 +1581,7 @@ HEADERLESS  SUB #2,PSP              ; common part of :NONAME and CODENNM
 ; used like this (high level defn.):
 ;   DEFER DISPLAY                       create a "do nothing" definition (2 CELLS)
 
-; or (low level defn.):
+; or (more elegant low level defn.):
 ;   CODE DISPLAY                        create a "do nothing" definition (2 CELLS)
 ;   MOV #NEXT_ADR,PC                    NEXT_ADR is the address of NEXT code: MOV @IP+,PC
 ;   ENDCODE
@@ -1709,11 +1709,9 @@ VOCABULOOP  MOV #0,0(W)             ; DP = BODY first
     .ENDIF ; VOCABULARY_SET
 VOCDOES     mNEXTADR                ; adds WORD-SET first in context stack
     .IFDEF VOCABULARY_SET
-ALSO        MOV #7,Y                ;2 -- move up 7 words, first word in last
-            MOV #CONTEXT+12,X       ;2 X=src
-ALSOLOOP    MOV @X,2(X)             ; X=src < Y=dst copy W bytes beginning with the end
-            SUB #2,X
-            SUB #1,Y
+ALSO        MOV #14,X                ;2 -- move up 7 words, first word in last
+ALSOLOOP    SUB #2,X
+            MOV CONTEXT(X),CONTEXT+2(X) ; X=src < Y=dst copy W bytes beginning with the end
             JNZ ALSOLOOP
     .ELSE ; VOCABULARY_SET off      ; VOCDOES is used only by the assembler to switch from HIlevel to LOlevel environments
            MOV #BODYFORTH,&CONTEXT+2;4  copy BODYFORTH      --> 2th cell of CONTEXT

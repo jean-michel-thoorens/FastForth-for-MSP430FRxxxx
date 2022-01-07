@@ -72,16 +72,6 @@
     ENDCODE
     [THEN]
 
-\ https://forth-standard.org/standard/core/AND
-\ C AND    x1 x2 -- x3           logical AND
-    [UNDEFINED] AND
-    [IF]
-    CODE AND
-    AND @PSP+,TOS
-    MOV @IP+,PC
-    ENDCODE
-    [THEN]
-
 \ https://forth-standard.org/standard/core/Plus
 \ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
     [UNDEFINED] +
@@ -327,7 +317,7 @@ BW2 ADD #4,&DP              \ make room to compile two words
     ADD @PSP,TOS                \ -- ORG END
     LO2HI
     SWAP                        \ -- END ORG
-    $FFF0 AND                   \ -- END ORG_modulo_16
+\    $FFF0 AND                   \ -- END ORG_modulo_16
     DO  CR                      \ generate line
         I 4 U.R SPACE           \ generate address
         I 8 + I

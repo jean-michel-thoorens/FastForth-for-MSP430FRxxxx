@@ -168,7 +168,7 @@ FW1 AND #0,R14
     CODE BEGIN
     MOV #$4032,R0
     ENDCODE IMMEDIATE
-    
+
     CODE UNTIL
     MOV #$40AC,R9
 BW1 ADD #4,&$1DC8
@@ -178,20 +178,20 @@ BW1 ADD #4,&$1DC8
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
-    
+
     CODE AGAIN
     MOV #$40B2,R9
     GOTO BW1
     ENDCODE IMMEDIATE
     [THEN]
-    
+
     [UNDEFINED] WHILE
     [IF]
     : WHILE
     POSTPONE IF SWAP
     ; IMMEDIATE
     [THEN]
-    
+
     [UNDEFINED] REPEAT
     [IF]
     : REPEAT
@@ -211,7 +211,7 @@ BW1 ADD #4,&$1DC8
     MOV @R13+,R0
     ENDCODE
 
-    CODE DO            
+    CODE DO
     SUB #2,R15
     MOV R14,0(R15)
     ADD #2,&$1DC8
@@ -344,7 +344,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2/ 
+    [UNDEFINED] 2/
     [IF]
     CODE 2/
     RRA R14
@@ -399,7 +399,7 @@ BW2 ADD #4,&$1DC8
     CODE CR
     MOV #$40B4,R0
     ENDCODE
-    
+
     :NONAME
     $0D EMIT $0A EMIT
     ; IS CR
@@ -437,31 +437,31 @@ BW2 ADD #4,&$1DC8
     [UNDEFINED] CASE
     [IF]
     : CASE
-    0 
+    0
     ; IMMEDIATE
 
     : OF
-    1+	
-    >R	
-    POSTPONE OVER 
+    1+
+    >R
+    POSTPONE OVER
     POSTPONE =
-    POSTPONE IF	
-    POSTPONE DROP	
-    R>	
-    ; IMMEDIATE 
+    POSTPONE IF
+    POSTPONE DROP
+    R>
+    ; IMMEDIATE
 
     : ENDOF
-    >R	
-    POSTPONE ELSE 
-    R>	
-    ; IMMEDIATE 
+    >R
+    POSTPONE ELSE
+    R>
+    ; IMMEDIATE
 
     : ENDCASE
     POSTPONE DROP
-    0 DO 
-        POSTPONE THEN 
-    LOOP 
-    ; IMMEDIATE 
+    0 DO
+        POSTPONE THEN
+    LOOP
+    ; IMMEDIATE
     [THEN]
 
     [UNDEFINED] S_
@@ -510,9 +510,9 @@ BW2 ADD #4,&$1DC8
         MOV R9,0(R15)
         MOV.B @R9+,R14
         RRA R14
-        MOV R14,R10       
+        MOV R14,R10
         BIT #1,R10
-        0= IF         
+        0= IF
             ADD #1,R10
         THEN
         ADD R9,R10
@@ -532,7 +532,7 @@ BW2 ADD #4,&$1DC8
 
     ESC [7m
     CR ." FastForth V"
-    $180A @         
+    $180A @
     0 <# # $08 HOLD # '.' HOLD #S #> TYPE
     ."  for MSP430FR"
     HERE
@@ -567,7 +567,7 @@ BW2 ADD #4,&$1DC8
         ELSE ."  DTC=3,"
         THEN
     THEN
-    $20 EMIT 
+    $20 EMIT
     $180C @ U. $08 EMIT
     ." -Entry word set, "
     $1800 @ 0 1000 UM/MOD U.
@@ -577,7 +577,7 @@ BW2 ADD #4,&$1DC8
     ESC [0m
 
     CR
-    ." /COUNTED-STRING   = 255" CR 
+    ." /COUNTED-STRING   = 255" CR
     ." /HOLD             = 34" CR
     ." /PAD              = 84" CR
     ." ADDRESS-UNIT-BITS = 16" CR
@@ -609,12 +609,12 @@ BW2 ADD #4,&$1DC8
     2*  DUP 0< IF 2* DUP 0< IF ." DOUBLE and "
                          THEN  ." Q15.16 numbers handling" CR
             ELSE  2* DUP 0< IF ." DOUBLE numbers handling" CR
-                         THEN                       
-            THEN                    
-    2*  DUP 0< IF ." MSP430_X assembler with TI's syntax" 
+                         THEN
+            THEN
+    2*  DUP 0< IF ." MSP430_X assembler with TI's syntax"
                     CR 2* 2*
             ELSE
-                2*  DUP                   
+                2*  DUP
                 0< IF ." MSP430 Assembler"
                     2*  DUP
                     0< IF ." , 20bits extended addresses,"
@@ -623,13 +623,13 @@ BW2 ADD #4,&$1DC8
                 THEN
                 ."  with TI's syntax" CR
             THEN DROP
-    [DEFINED] FORTH [IF] ." word-set management" CR 
+    [DEFINED] FORTH [IF] ." word-set management" CR
     [THEN]
     [DEFINED] LOAD" [IF] ." SD_CARD Load" CR
     [THEN]
-    [DEFINED] BOOT  [IF] ." SD_CARD Bootloader" CR 
+    [DEFINED] BOOT  [IF] ." SD_CARD Bootloader" CR
     [THEN]
-    [DEFINED] READ" [IF] ." SD_CARD Read/Write" CR 
+    [DEFINED] READ" [IF] ." SD_CARD Read/Write" CR
     [THEN]
 
     $1DCA
@@ -637,7 +637,7 @@ BW2 ADD #4,&$1DC8
         @ ?DUP
     WHILE
         DUP $180C @ 2* -
-        CR ESC [7m 
+        CR ESC [7m
         [DEFINED] FORTH
         [IF] DUP BODY>SQNFA
         [ELSE]  OVER @
@@ -646,7 +646,7 @@ BW2 ADD #4,&$1DC8
                 THEN
         [THEN]
         TYPE ."  word-set"
-        ESC [0m CR        
+        ESC [0m CR
         WORDS CR
     REPEAT
 
@@ -655,17 +655,17 @@ BW2 ADD #4,&$1DC8
     [THEN]
     [DEFINED] {DOUBLE}   [IF] CR  ." DOUBLE word set"
     [THEN]
-    [DEFINED] {UTILITY}  [IF] CR ." UTILITY" 
+    [DEFINED] {UTILITY}  [IF] CR ." UTILITY"
     [THEN]
-    [DEFINED] {FIXPOINT} [IF] CR ." Q15.16 ADD SUB MUL DIV" 
+    [DEFINED] {FIXPOINT} [IF] CR ." Q15.16 ADD SUB MUL DIV"
     [THEN]
     [DEFINED] {CORDIC}   [IF] CR ." CORDIC engine"
     [THEN]
-    [DEFINED] {SD_TOOLS} [IF] CR ." SD_TOOLS" 
+    [DEFINED] {SD_TOOLS} [IF] CR ." SD_TOOLS"
     [THEN]
-    [DEFINED] {RTC}      [IF] CR ." RTC utility" 
+    [DEFINED] {RTC}      [IF] CR ." RTC utility"
     [THEN]
-    [DEFINED] {UARTI2CS} [IF] CR ." UART to I2C_FastForth bridge" 
+    [DEFINED] {UARTI2CS} [IF] CR ." UART to I2C_FastForth bridge"
     [THEN]
     CR
     0 SYS

@@ -131,9 +131,9 @@ BufferLen=\$1878!
 ! ---------------------------------------
 ClusterL=\$187A!     16 bits wide (FAT16)
 ClusterH=\$187C!     16 bits wide (FAT16)
-NewClusterL=\$187E!  16 bits wide (FAT16)
-NewClusterH=\$1880!  16 bits wide (FAT16)
-CurFATsector=\$1882!
+LastFATsector=\$187E!   Set by FreeAllClusters, used by OPEN_OVERWRITE
+LastFAToffset=\$1880!   Set by FreeAllClusters, used by OPEN_OVERWRITE
+FATsector=\$1882!       used by APPEND"
 
 ! ---------------------------------------
 ! DIR entry
@@ -298,22 +298,22 @@ ABORT_TERM=\$C312!          CODE_WITHOUT_RETURN, called by QREVEAL and INTERPRET
 !-------------------------------------------------------------------------------
 ! UART FASTFORTH
 !-------------------------------------------------------------------------------
-UART_INIT_TERM=\$C354!      asm CODE, content of WARM+2 by default (WARM starts with: CALL #UART_INIT_TERM)
-UART_COLD_TERM=\$C37E!      asm CODE, content of COLD+2 by default (COLD starts with: CALL #UART_COLD_TERM)
-UART_INIT_SOFT=\$C384!      asm CODE, content of INIT_FORTH+2 (by default, INIT_FORTH starts with: CALL #RET_ADR)
-UART_RXON=\$C386!           asm CODE, content of SLEEP+2 (by default, SLEEP starts with: CALL #UART_RXON)
-UART_RXON=KEY\+\$8!         asm CODE, content of SLEEP+2 (by default, SLEEP starts with: CALL #UART_RXON)
+UART_INIT_TERM=\$C354!      asm CODE, content of WARM+2 by default (WARM starts with: CALL &HARD_APP)
+UART_COLD_TERM=\$C37E!      asm CODE, content of COLD+2 by default (COLD starts with: CALL &STOP_APP)
+UART_INIT_SOFT=\$C384!      asm CODE, content of SLEEP+2 (by default, SLEEP starts with: CALL &SOFT_APP)
+UART_WARM=\$C386!           WARM address
+UART_RXON=KEY\+\$8!         asm CODE, content of SLEEP+2 (by default, SLEEP starts with: CALL &SLEEP_APP)
 UART_RXOFF=ACCEPT\+\$2A!    asm CODE, called by ACCEPT after 'CR' and before 'LF'.
 !-------------------------------------------------------------------------------
 ! I2C FASTFORTH
 !-------------------------------------------------------------------------------
-I2C_ACCEPT=\$C344!          asm CODE, content of SLEEP+2 by default
+I2C_ACCEPT=\$C344!          asm CODE, default content of SLEEP_APP (SLEEP starts with: CALL &SLEEP_APP)
 I2C_CTRL_CH=\$C346!         asm CODE, used as is: MOV.B #CTRL_CHAR,Y
 !                                                 CALL #I2C_CTRL_CH
-I2C_COLD_TERM=\$C356!       asm CODE, content of COLD+2, RET address by default
-I2C_INIT_SOFT=\$C356!       asm CODE, content of INIT_FORTH+2, RET address by default
-I2C_INIT_TERM=\$C358!       asm CODE, content of WARM+2 by default
-I2C_WARM=\$C380!            WARM address
+I2C_COLD_TERM=\$C350!       asm CODE, default content of STOP_APP (COLD starts with: CALL &STOP_APP)
+I2C_INIT_SOFT=\$C350!       asm CODE, default content of SOFT_APP (INIT_FORTH starts with: CALL &SOFT_APP)
+I2C_INIT_TERM=\$C352!       asm CODE, default content of HARD_APP (WARM starts with: CALL &HARD_APP)
+I2C_WARM=\$C37A!            WARM address
 !-------------------------------------------------------------------------------
 NOPUC=SYS\+\$0A!            NOPUC               with FORTH: ' SYS 10 +
 COLD=SYS\+\$16!             COLD address                    ' SYS 22 +

@@ -11,7 +11,7 @@
     COLON
     $0D EMIT
     ABORT" FastForth V3.9 please!"
-    [UNDEFINED] WRITE 
+    [UNDEFINED] WRITE
     [IF]
         1 ABORT" no SD_CARD_READ_WRITE addon!"
     [THEN]
@@ -22,7 +22,7 @@
 
     MARKER {SD_TEST}
 
-    [UNDEFINED] EXIT 
+    [UNDEFINED] EXIT
     [IF]
     CODE EXIT
     MOV @R1+,R13
@@ -30,7 +30,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] SWAP 
+    [UNDEFINED] SWAP
     [IF]
     CODE SWAP
     MOV @R15,R10
@@ -40,7 +40,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] >BODY 
+    [UNDEFINED] >BODY
     [IF]
     CODE >BODY
     ADD #4,R14
@@ -48,7 +48,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 0= 
+    [UNDEFINED] 0=
     [IF]
     CODE 0=
     SUB #1,R14
@@ -57,7 +57,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] IF 
+    [UNDEFINED] IF
     [IF]
     CODE IF
     SUB #2,R15
@@ -76,7 +76,7 @@
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] ELSE 
+    [UNDEFINED] ELSE
     [IF]
     CODE ELSE
     ADD #4,&$1DC8
@@ -89,7 +89,7 @@
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] BEGIN 
+    [UNDEFINED] BEGIN
     [IF]
     CODE BEGIN
     MOV #$4032,R0
@@ -131,7 +131,7 @@ BW1 ADD #4,&$1DC8
     MOV @R13+,R0
     ENDCODE
 
-    CODE DO            
+    CODE DO
     SUB #2,R15
     MOV R14,0(R15)
     ADD #2,&$1DC8
@@ -185,7 +185,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] I 
+    [UNDEFINED] I
     [IF]
     CODE I
     SUB #2,R15
@@ -196,7 +196,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] + 
+    [UNDEFINED] +
     [IF]
     CODE +
     ADD @R15+,R14
@@ -204,7 +204,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] - 
+    [UNDEFINED] -
     [IF]
     CODE -
     SUB @R15+,R14
@@ -214,7 +214,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] MAX 
+    [UNDEFINED] MAX
     [IF]
     CODE MAX
     CMP @R15,R14
@@ -231,7 +231,7 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] C@ 
+    [UNDEFINED] C@
     [IF]
     CODE C@
     MOV.B @R14,R14
@@ -239,13 +239,13 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] SPACE 
+    [UNDEFINED] SPACE
     [IF]
     : SPACE
     $20 EMIT ;
     [THEN]
 
-    [UNDEFINED] SPACES 
+    [UNDEFINED] SPACES
     [IF]
     CODE SPACES
     CMP #0,R14
@@ -255,17 +255,17 @@ FW1 MOV @R15+,R14
             LO2HI
             $20 EMIT
             HI2LO
-            SUB #2,R13 
+            SUB #2,R13
             SUB #1,R14
         0= UNTIL
         MOV @R1+,R13
     THEN
     MOV @R15+,R14
-    MOV @R13+,R0              
+    MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DUP 
+    [UNDEFINED] DUP
     [IF]
     CODE DUP
 BW1 SUB #2,R15
@@ -280,7 +280,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] OVER 
+    [UNDEFINED] OVER
     [IF]
     CODE OVER
     MOV R14,-2(R15)
@@ -290,7 +290,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] >R 
+    [UNDEFINED] >R
     [IF]
     CODE >R
     PUSH R14
@@ -299,7 +299,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] R> 
+    [UNDEFINED] R>
     [IF]
     CODE R>
     SUB #2,R15
@@ -309,9 +309,9 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] CONSTANT 
+    [UNDEFINED] CONSTANT
     [IF]
-    : CONSTANT 
+    : CONSTANT
     CREATE
     HI2LO
     MOV R14,-2(R10)
@@ -321,37 +321,37 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] STATE 
+    [UNDEFINED] STATE
     [IF]
     $1DBC CONSTANT STATE
     [THEN]
 
-    [UNDEFINED] CR 
+    [UNDEFINED] CR
     [IF]
-    
+
     CODE CR
     MOV #$40B4,R0
     ENDCODE
-    
+
     :NONAME
     $0D EMIT $0A EMIT
     ; IS CR
     [THEN]
 
-    [UNDEFINED] U.R 
+    [UNDEFINED] U.R
     [IF]
     : U.R
-    >R  <# 0 # #S #>  
+    >R  <# 0 # #S #>
     R> OVER - 0 MAX SPACES TYPE
     ;
     [THEN]
 
-    [UNDEFINED] BASE 
+    [UNDEFINED] BASE
     [IF]
     $1DBE  CONSTANT BASE
     [THEN]
 
-    [UNDEFINED] DUMP 
+    [UNDEFINED] DUMP
     [IF]
     CODE DUMP
     PUSH R13
@@ -366,7 +366,7 @@ BW1 SUB #2,R15
         DO I C@ 3 U.R LOOP
         SPACE
         I $10 + I 8 +
-        DO I C@ 3 U.R LOOP  
+        DO I C@ 3 U.R LOOP
         SPACE SPACE
         I $10 + I
         DO I C@ $7E MIN $20 MAX EMIT LOOP
@@ -376,7 +376,7 @@ BW1 SUB #2,R15
     ;
     [THEN]
 
-    [UNDEFINED] HERE 
+    [UNDEFINED] HERE
     [IF]
     CODE HERE
     MOV #BEGIN,R0
@@ -384,7 +384,7 @@ BW1 SUB #2,R15
     [THEN]
 
 
-    [UNDEFINED] DROP 
+    [UNDEFINED] DROP
     [IF]
     CODE DROP
     MOV @R15+,R14
@@ -392,7 +392,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 1+ 
+    [UNDEFINED] 1+
     [IF]
     CODE 1+
     ADD #1,R14
@@ -400,7 +400,8 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] = [IF]
+    [UNDEFINED] =
+    [IF]
     CODE =
     SUB @R15+,R14
     0<> IF
@@ -412,34 +413,34 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] CASE 
+    [UNDEFINED] CASE
     [IF]
     : CASE
-    0 
+    0
     ; IMMEDIATE
 
     : OF
-    1+	
-    >R	
-    POSTPONE OVER 
+    1+
+    >R
+    POSTPONE OVER
     POSTPONE =
-    POSTPONE IF	
-    POSTPONE DROP	
-    R>	
-    ; IMMEDIATE 
+    POSTPONE IF
+    POSTPONE DROP
+    R>
+    ; IMMEDIATE
 
     : ENDOF
-    >R	
-    POSTPONE ELSE 
-    R>	
-    ; IMMEDIATE 
+    >R
+    POSTPONE ELSE
+    R>
+    ; IMMEDIATE
 
     : ENDCASE
     POSTPONE DROP
-    0 DO 
-        POSTPONE THEN 
-    LOOP 
-    ; IMMEDIATE 
+    0 DO
+        POSTPONE THEN
+    LOOP
+    ; IMMEDIATE
     [THEN]
 
     CODE SD_EMIT
@@ -454,30 +455,32 @@ BW1 SUB #2,R15
     MOV @R13+,R0
     ENDCODE
 
-: DOESWRITE
+    : DOESWRITE
     ['] SD_EMIT IS EMIT
     $4000 HERE OVER - DUMP
     ['] EMIT >BODY IS EMIT
     CLOSE
-    ." , done"
-;
+    ;
 
     : SD_TEST
     ECHO
-    $0D EMIT
+    $0D EMIT CR
+    ." ----------" CR
+    ." Bootloader" CR
+    ." ----------" CR
     ." ? Fast Forth Specifs" CR
     ." 0 Set date and time" CR
-    ." 1 Load {UTILTY} words" CR
+    ." 1 Load {UTILITY} words" CR
     ." 2 Load {SD_TOOLS} words" CR
     ." 3 Load {CORE_COMP} words" CR
     ." 4 Load ANS core tests" CR
-    ." 5 Load a 10k program " CR
-    ." 6 Read only this source file" CR
+    ." 5 Load a source file to make 10k program" CR
+    ." 6 Read it only (47k)" CR
     ." 7 write FORTH dump in YOURFILE.TXT" CR
     ." 8 append FORTH dump to YOURFILE.TXT" CR
-    ." 9 Load TST_WORDS" CR
-    ." your choice : "
-    KEY DUP EMIT CR
+    ." 9 delete YOURFILE.TXT" CR
+    ." your choice: "
+    KEY DUP EMIT
     {SD_TEST}
     CASE
     '?' OF  LOAD" FF_SPECS.4TH" ENDOF
@@ -485,21 +488,18 @@ BW1 SUB #2,R15
     '1' OF  LOAD" UTILITY.4TH"  ENDOF
     '2' OF  LOAD" SD_TOOLS.4TH" ENDOF
     '3' OF  LOAD" CORE_ANS.4TH" ENDOF
-    '4' OF  LOAD" CORETEST.4TH" ENDOF 
+    '4' OF  LOAD" CORETEST.4TH" ENDOF
     '5' OF  LOAD" PROG10K.4TH"  ENDOF
     '6' OF  READ" PROG10K.4TH"
             BEGIN READ
-            UNTIL ." , done"    ENDOF
-    '7' OF  ECHO
-            WRITE" YOURFILE.TXT"
+            UNTIL               ENDOF
+    '7' OF  WRITE" YOURFILE.TXT"
             DOESWRITE           ENDOF
-    '8' OF  ECHO
-            APPEND" YOURFILE.TXT"
+    '8' OF  APPEND" YOURFILE.TXT"
             DOESWRITE           ENDOF
-    '9' OF  LOAD" TSTWORDS.4TH" ENDOF
+    '9' OF  DEL" YOURFILE.TXT"  ENDOF
     ENDCASE
+    CR
     ;
-
-    [THEN]
 
 SD_TEST

@@ -619,7 +619,7 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     'CR' EMIT
     CR
     ." ----------" CR
-    ." Bootloader" CR
+    ." SD_TESTS  " CR
     ." ----------" CR
     ." ? Fast Forth Specifs" CR
     ." 0 Set date and time" CR
@@ -633,7 +633,7 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ." 8 append FORTH dump to YOURFILE.TXT" CR
     ." 9 delete YOURFILE.TXT" CR
     ." your choice: "
-    KEY DUP EMIT
+    KEY DUP EMIT CR
     NOECHO
     {SD_TEST}                           \ remove {SD_TEST} application
     CASE

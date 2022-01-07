@@ -60,6 +60,35 @@
 \
 \ it's an example:
 
+\ https://forth-standard.org/standard/core/DUP
+\ DUP      x -- x x      duplicate top of stack
+    [UNDEFINED] DUP
+    [IF]
+    CODE DUP
+BW1 SUB #2,PSP      \ 2  push old TOS..
+    MOV TOS,0(PSP)  \ 3  ..onto stack
+    MOV @IP+,PC     \ 4
+    ENDCODE
+
+\ https://forth-standard.org/standard/core/qDUP
+\ ?DUP     x -- 0 | x x    DUP if nonzero
+    CODE ?DUP
+    CMP #0,TOS      \ 2  test for TOS nonzero
+    0<> ?GOTO BW1    \ 2
+    MOV @IP+,PC     \ 4
+    ENDCODE
+    [THEN]
+
+\ https://forth-standard.org/standard/core/DROP
+\ DROP     x --          drop top of stack
+    [UNDEFINED] DROP
+    [IF]
+    CODE DROP
+    MOV @PSP+,TOS   \ 2
+    MOV @IP+,PC     \ 4
+    ENDCODE
+    [THEN]
+
     [UNDEFINED] =
     [IF]
 \ https://forth-standard.org/standard/core/Equal
@@ -100,10 +129,11 @@
 \ because the risk of crushing thereafter.
 \ Interpreting mode as below is required:
 \ ------------------------------------------------------------------------------
-    4 =                     \ from SYS
+    DUP 4 =                 \ TOS = SYS value
     [IF]                    \ if PUC event is <SW1+RESET> or -1 SYS
+        DROP
         RST_RET             \ remove definitions above
         LOAD" SD_TEST.4TH"  \ load a file to test the SD_Card driver
     [ELSE]                  \ else
-        ' SYS $0A + EXECUTE \ resumes WARM to remove definitions above
+        ' SYS $0A + EXECUTE \ return to n SYS to remove definitions above
     [THEN]                  \ then

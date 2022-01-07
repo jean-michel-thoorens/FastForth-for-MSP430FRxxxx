@@ -23,7 +23,7 @@
 
     MARKER {DOUBLE}
 
-    [UNDEFINED] >R 
+    [UNDEFINED] >R
     [IF]
     CODE >R
     PUSH R14
@@ -32,7 +32,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] R> 
+    [UNDEFINED] R>
     [IF]
     CODE R>
     SUB #2,R15
@@ -42,7 +42,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 0< 
+    [UNDEFINED] 0<
     [IF]
     CODE 0<
     ADD R14,R14
@@ -52,7 +52,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DROP 
+    [UNDEFINED] DROP
     [IF]
     CODE DROP
     MOV @R15+,R14
@@ -60,7 +60,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DUP 
+    [UNDEFINED] DUP
     [IF]
     CODE DUP
 BW1 SUB #2,R15
@@ -75,7 +75,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] NIP 
+    [UNDEFINED] NIP
     [IF]
     CODE NIP
     ADD #2,R15
@@ -83,7 +83,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] UM/MOD 
+    [UNDEFINED] UM/MOD
     [IF]
     CODE UM/MOD
         PUSH #DROP
@@ -93,7 +93,7 @@ BW1 SUB #2,R15
 
     $180E @ 0<   ; test the switch: $8000 / SYMETRIC DIVISION
     [IF]                ; $8000 DIVISION
-    [UNDEFINED] FM/MOD 
+    [UNDEFINED] FM/MOD
     [IF]
     CODE FM/MOD
     MOV R14,R12
@@ -126,7 +126,7 @@ BW1 SUB #2,R15
         XOR #-1,R14
         ADD #1,R14
     THEN
-    
+
     CMP #0,0(R15)
     0<> IF
         CMP #1,R14
@@ -140,7 +140,7 @@ BW1 SUB #2,R15
     [THEN]
 
     [ELSE]              ; SYMETRIC DIVISION
-    [UNDEFINED] SM/REM 
+    [UNDEFINED] SM/REM
     [IF]
     CODE SM/REM
     MOV R14,R12
@@ -178,20 +178,20 @@ BW1 SUB #2,R15
     [THEN]
     [THEN]
 
-    [UNDEFINED] / 
+    [UNDEFINED] /
     [IF]
     : /
     >R DUP 0< R>
     [ $180E @ 0< ] [IF]
         FM/MOD
-    [ELSE] 
+    [ELSE]
         SM/REM
     [THEN]
     NIP
     ;
     [THEN]
 
-    [UNDEFINED] @ 
+    [UNDEFINED] @
     [IF]
     CODE @
     MOV @R14,R14
@@ -199,7 +199,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] ! 
+    [UNDEFINED] !
     [IF]
     CODE !
     MOV @R15+,0(R14)
@@ -208,7 +208,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] C@ 
+    [UNDEFINED] C@
     [IF]
     CODE C@
     MOV.B @R14,R14
@@ -216,7 +216,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] SWAP 
+    [UNDEFINED] SWAP
     [IF]
     CODE SWAP
     MOV @R15,R10
@@ -226,7 +226,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] OVER 
+    [UNDEFINED] OVER
     [IF]
     CODE OVER
     MOV R14,-2(R15)
@@ -236,7 +236,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] ROT 
+    [UNDEFINED] ROT
     [IF]
     CODE ROT
     MOV @R15,R10
@@ -247,7 +247,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] - 
+    [UNDEFINED] -
     [IF]
     CODE -
     SUB @R15+,R14
@@ -257,7 +257,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] < 
+    [UNDEFINED] <
     [IF]
     CODE <
     SUB @R15+,R14
@@ -276,7 +276,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] IF 
+    [UNDEFINED] IF
     [IF]
     CODE IF
     SUB #2,R15
@@ -295,7 +295,7 @@ FW1 AND #0,R14
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] ELSE 
+    [UNDEFINED] ELSE
     [IF]
     CODE ELSE
     ADD #4,&$1DC8
@@ -308,7 +308,7 @@ FW1 AND #0,R14
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] TO 
+    [UNDEFINED] TO
     [IF]
     CODE TO
     BIS #$200,R2
@@ -316,9 +316,9 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DOES> 
+    [UNDEFINED] DOES>
     [IF]
-    CODE DOES> 
+    CODE DOES>
     MOV &$1DB8,R10
     MOV #$1285,0(R10)
     MOV R13,2(R10)
@@ -327,7 +327,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] SPACES 
+    [UNDEFINED] SPACES
     [IF]
     CODE SPACES
     CMP #0,R14
@@ -337,17 +337,17 @@ FW1 AND #0,R14
             LO2HI
             $20 EMIT
             HI2LO
-            SUB #2,R13 
+            SUB #2,R13
             SUB #1,R14
         0= UNTIL
         MOV @R1+,R13
     THEN
     MOV @R15+,R14
-    MOV @R13+,R0       
+    MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2@ 
+    [UNDEFINED] 2@
     [IF]
     CODE 2@
     SUB #2,R15
@@ -357,7 +357,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2! 
+    [UNDEFINED] 2!
     [IF]
     CODE 2!
     MOV @R15+,0(R14)
@@ -367,7 +367,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2DUP 
+    [UNDEFINED] 2DUP
     [IF]
     CODE 2DUP
     SUB #4,R15
@@ -377,7 +377,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2DROP 
+    [UNDEFINED] 2DROP
     [IF]
     CODE 2DROP
     ADD #2,R15
@@ -386,7 +386,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2SWAP 
+    [UNDEFINED] 2SWAP
     [IF]
     CODE 2SWAP
     MOV @R15,R10
@@ -399,7 +399,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2OVER 
+    [UNDEFINED] 2OVER
     [IF]
     CODE 2OVER
     SUB #4,R15
@@ -410,7 +410,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2>R 
+    [UNDEFINED] 2>R
     [IF]
     CODE 2>R
     PUSH @R15+
@@ -420,7 +420,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2R@ 
+    [UNDEFINED] 2R@
     [IF]
     CODE 2R@
     SUB #4,R15
@@ -431,7 +431,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2R> 
+    [UNDEFINED] 2R>
     [IF]
     CODE 2R>
     SUB #4,R15
@@ -443,7 +443,7 @@ FW1 AND #0,R14
     [THEN]
 
 
-    [UNDEFINED] D. 
+    [UNDEFINED] D.
     [IF]
     CODE D.
     MOV R14,R12
@@ -451,7 +451,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2ROT 
+    [UNDEFINED] 2ROT
     [IF]
     CODE 2ROT
     MOV 8(R15),R9
@@ -466,7 +466,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] D>S 
+    [UNDEFINED] D>S
     [IF]
     CODE D>S
     MOV @R15+,R14
@@ -474,7 +474,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] D0= 
+    [UNDEFINED] D0=
     [IF]
     CODE D0=
     CMP #0,R14
@@ -490,7 +490,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] D0< 
+    [UNDEFINED] D0<
     [IF]
     CODE D0<
     CMP #0,R14
@@ -504,7 +504,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] D= 
+    [UNDEFINED] D=
     [IF]
     CODE D=
     CMP R14,2(R15)
@@ -520,7 +520,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] D< 
+    [UNDEFINED] D<
     [IF]
     CODE D<
     CMP R14,2(R15)
@@ -539,7 +539,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DU< 
+    [UNDEFINED] DU<
     [IF]
     CODE DU<
     CMP R14,2(R15)
@@ -558,7 +558,7 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] D+ 
+    [UNDEFINED] D+
     [IF]
     CODE D+
 BW1 ADD @R15+,2(R15)
@@ -578,7 +578,7 @@ BW1 ADD @R15+,2(R15)
     ENDCODE
     [THEN]
 
-    [UNDEFINED] D- 
+    [UNDEFINED] D-
     [IF]
     CODE D-
     SUB @R15+,2(R15)
@@ -588,7 +588,7 @@ BW1 ADD @R15+,2(R15)
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DNEGATE 
+    [UNDEFINED] DNEGATE
     [IF]
     CODE DNEGATE
     XOR #-1,0(R15)
@@ -599,7 +599,7 @@ BW1 ADD @R15+,2(R15)
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DABS 
+    [UNDEFINED] DABS
     [IF]
     CODE DABS
     CMP #0,R14
@@ -610,7 +610,7 @@ BW1 ADD @R15+,2(R15)
     ENDCODE
     [THEN]
 
-    [UNDEFINED] D2/ 
+    [UNDEFINED] D2/
     [IF]
     CODE D2/
     RRA R14
@@ -619,7 +619,7 @@ BW1 ADD @R15+,2(R15)
     ENDCODE
     [THEN]
 
-    [UNDEFINED] D2* 
+    [UNDEFINED] D2*
     [IF]
     CODE D2*
     ADD @R15,0(R15)
@@ -628,7 +628,7 @@ BW1 ADD @R15+,2(R15)
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DMAX 
+    [UNDEFINED] DMAX
     [IF]
     : DMAX
     2OVER 2OVER
@@ -640,20 +640,20 @@ BW1 ADD @R15+,2(R15)
     ;
     [THEN]
 
-    [UNDEFINED] DMIN 
+    [UNDEFINED] DMIN
     [IF]
     : DMIN
     2OVER 2OVER
     D< IF
         2DROP
-    ELSE 
+    ELSE
         2>R 2DROP 2R>
     THEN
     ;
     [THEN]
 
     RST_SET
- 
+
     CODE TSTBIT
     MOV @R15+,R9
     AND @R9,R14
@@ -666,7 +666,7 @@ BW1 ADD @R15+,2(R15)
 
     [IF]   ; MSP430FRxxxx with hardware_MPY
 
-        [UNDEFINED] M*/ 
+        [UNDEFINED] M*/
         [IF]
     CODE M*/
     MOV 4(R15),&$4D4
@@ -690,7 +690,7 @@ BW1 ADD @R15+,2(R15)
     THEN
 
     [ELSE]  ; no hardware multiplier
-        [UNDEFINED] M*/ 
+        [UNDEFINED] M*/
         [IF]
     CODE M*/
     MOV #0,R6
@@ -752,20 +752,20 @@ BW1 ADD @R15+,2(R15)
             CMP #0,R10
             0<> IF
                 SUB #1,0(R15)
-                SUBC #0,R14 
+                SUBC #0,R14
             THEN
         THEN
-    THEN                
-    MOV #$40B6,R5 
-    MOV #$40C4,R6      
+    THEN
+    MOV #$40B6,R5
+    MOV #$40C4,R6
     MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2VARIABLE 
+    [UNDEFINED] 2VARIABLE
     [IF]
     : 2VARIABLE
-    CREATE 
+    CREATE
     HI2LO
     ADD #4,&$1DC8
     MOV @R1+,R13
@@ -773,7 +773,7 @@ BW1 ADD @R15+,2(R15)
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2CONSTANT 
+    [UNDEFINED] 2CONSTANT
     [IF]
     : 2CONSTANT
     CREATE
@@ -783,7 +783,7 @@ BW1 ADD @R15+,2(R15)
     ;
     [THEN]
 
-    [UNDEFINED] 2VALUE 
+    [UNDEFINED] 2VALUE
     [IF]
     : 2VALUE
     CREATE , ,
@@ -793,27 +793,27 @@ BW1 ADD @R15+,2(R15)
     BIT #$200,R2
     0= IF
         MOV #2@,R0
-    THEN 
+    THEN
     BIC #$200,R2
     MOV #2!,R0
     ENDCODE
     [THEN]
 
 
-    [UNDEFINED] 2LITERAL 
+    [UNDEFINED] 2LITERAL
     [IF]
         CODE 2LITERAL
         BIS #$200,R2
         MOV #LITERAL,R0
         ENDCODE IMMEDIATE
     [THEN]
-            
 
-    [UNDEFINED] D.R 
+
+    [UNDEFINED] D.R
     [IF]
     : D.R
-    >R SWAP OVER DABS <# #S ROT SIGN #> 
-    R> OVER - SPACES TYPE 
+    >R SWAP OVER DABS <# #S ROT SIGN #>
+    R> OVER - SPACES TYPE
     ;
     [THEN]
 
@@ -821,9 +821,9 @@ BW1 ADD @R15+,2(R15)
 
 ; Complement to pass DOUBLE TESTS
 
-    [UNDEFINED] VARIABLE 
+    [UNDEFINED] VARIABLE
     [IF]
-    : VARIABLE 
+    : VARIABLE
     CREATE
     HI2LO
     MOV #$1287,-4(R10)
@@ -832,9 +832,9 @@ BW1 ADD @R15+,2(R15)
     ENDCODE
     [THEN]
 
-    [UNDEFINED] CONSTANT 
+    [UNDEFINED] CONSTANT
     [IF]
-    : CONSTANT 
+    : CONSTANT
     CREATE
     HI2LO
     MOV R14,-2(R10)
@@ -844,7 +844,7 @@ BW1 ADD @R15+,2(R15)
     ENDCODE
     [THEN]
 
-    [UNDEFINED] CELLS 
+    [UNDEFINED] CELLS
     [IF]
     CODE CELLS
     ADD R14,R14
@@ -852,7 +852,7 @@ BW1 ADD @R15+,2(R15)
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DEPTH 
+    [UNDEFINED] DEPTH
     [IF]
     CODE DEPTH
     MOV R14,-2(R15)
@@ -864,7 +864,7 @@ BW1 ADD @R15+,2(R15)
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DO 
+    [UNDEFINED] DO
     [IF]
 
     HDNCODE XDO
@@ -918,7 +918,7 @@ BW2 ADD #4,&$1DC8
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
-    
+
     HDNCODE XPLOO
     ADD R14,0(R1)
     MOV @R15+,R14
@@ -931,7 +931,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] I 
+    [UNDEFINED] I
     [IF]
     CODE I
     SUB #2,R15
@@ -942,7 +942,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] + 
+    [UNDEFINED] +
     [IF]
     CODE +
     ADD @R15+,R14
@@ -950,7 +950,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] = 
+    [UNDEFINED] =
     [IF]
     CODE =
     SUB @R15+,R14
@@ -963,7 +963,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 0= 
+    [UNDEFINED] 0=
     [IF]
     CODE 0=
     SUB #1,R14
@@ -972,7 +972,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] SOURCE 
+    [UNDEFINED] SOURCE
     [IF]
     CODE SOURCE
     SUB #4,R15
@@ -983,12 +983,12 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] >IN 
+    [UNDEFINED] >IN
     [IF]
     $1DC6 CONSTANT >IN
     [THEN]
 
-    [UNDEFINED] 1+ 
+    [UNDEFINED] 1+
     [IF]
     CODE 1+
     ADD #1,R14
@@ -996,21 +996,21 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] CHAR 
+    [UNDEFINED] CHAR
     [IF]
     : CHAR
         $20 WORD 1+ C@
     ;
     [THEN]
 
-    [UNDEFINED] [CHAR] 
+    [UNDEFINED] [CHAR]
     [IF]
     : [CHAR]
         CHAR POSTPONE LITERAL
     ; IMMEDIATE
     [THEN]
 
-    [UNDEFINED] 2/ 
+    [UNDEFINED] 2/
     [IF]
     CODE 2/
     RRA R14
@@ -1018,7 +1018,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] INVERT 
+    [UNDEFINED] INVERT
     [IF]
     CODE INVERT
     XOR #-1,R14
@@ -1026,7 +1026,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] RSHIFT 
+    [UNDEFINED] RSHIFT
     [IF]
     CODE RSHIFT
     MOV @R15+,R10
@@ -1043,14 +1043,14 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] S>D 
+    [UNDEFINED] S>D
     [IF]
     : S>D
         DUP 0<
     ;
     [THEN]
 
-    [UNDEFINED] 1- 
+    [UNDEFINED] 1-
     [IF]
     CODE 1-
     SUB #1,R14
@@ -1058,7 +1058,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] NEGATE 
+    [UNDEFINED] NEGATE
     [IF]
     CODE NEGATE
     XOR #-1,R14
@@ -1067,21 +1067,21 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] HERE 
+    [UNDEFINED] HERE
     [IF]
     CODE HERE
     MOV #$4032,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] CHARS 
+    [UNDEFINED] CHARS
     [IF]
     CODE CHARS
     MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] MOVE 
+    [UNDEFINED] MOVE
     [IF]
     CODE MOVE
     MOV R14,R10
@@ -1114,7 +1114,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DECIMAL 
+    [UNDEFINED] DECIMAL
     [IF]
     CODE DECIMAL
     MOV #$0A,&$1DBE
@@ -1122,14 +1122,14 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] BASE 
+    [UNDEFINED] BASE
     [IF]
     $1DBE CONSTANT BASE
     [THEN]
 
     [UNDEFINED] ( ; )
     [IF]
-    : ( 
+    : (
     ')' WORD DROP
     ; IMMEDIATE
     [THEN]
@@ -1145,10 +1145,10 @@ BW2 ADD #4,&$1DC8
     ; IMMEDIATE
     [THEN]
 
-    [UNDEFINED] CR 
+    [UNDEFINED] CR
     [IF]
     DEFER CR
-    
+
     :NONAME
     $0D EMIT $0A EMIT
     ; IS CR

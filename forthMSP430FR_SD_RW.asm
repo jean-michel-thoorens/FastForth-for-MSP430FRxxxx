@@ -19,8 +19,6 @@
 ; You should have received a copy of the GNU General Public License
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
 ; ======================================================================
 ; READ" primitive as part of OpenPathName
 ; input from open:  S = OpenError, W = open_type, SectorHL = DIRsectorHL,
@@ -60,6 +58,48 @@ READ
 
 
 ; ==================================;
+FreeAllClusters                     ;SWXY input: HDLL_FirstClus(T), output:
+; ==================================;FATs are updated
+    CALL #HDLFrstClus2FATsecWofstY  ;WXY    output: W = FATsector, Y=FAToffset
+    PUSH    W                       ;       R-- FATsector ptr
+; ----------------------------------;
+LoadFAT1sectorWloop                 ;
+; ----------------------------------;
+    CALL    #ReadFAT1SectorW        ;SWX
+; ----------------------------------;
+GetAndFreeCluster                   ;
+; ----------------------------------;
+    MOV     SD_BUF(Y),W             ; get [clusterLO]
+    MOV     #0,SD_BUF(Y)            ; free CLusterLO
+GetAndFreeClusterHi                 ;
+    MOV     SD_BUF+2(Y),X           ; get [clusterHI]
+    MOV     #0,SD_BUF+2(Y)          ; free CLusterHI
+ClusterHiTest
+    AND     #00FFFh,X               ; select 12 bits significant
+    CMP     #00FFFh,X               ; [ClusterHI] was = 0FFFh?
+    JNE     SearchNextCluster2free  ; no
+ClusterLoTest                       ;
+    CMP     #-1,W                   ; [ClusterLO] was = FFFFh? last cluster used for this file
+    JZ      EndOfFileCluster        ; yes
+; ----------------------------------;
+SearchNextCluster2free              ;
+; ----------------------------------;
+    MOV     W,&ClusterL             ;
+    MOV     X,&ClusterH             ;
+    CALL #ClusterHLtoFAT1sectWofstY ;WXY    W = new FATsector, new FAToffset
+    CMP     @RSP,W                  ; new FATsector = FATsector ptr ?
+    JZ      GetAndFreeCluster       ; yes loop back
+    MOV     W,X                     ; no:   swap previous new FATsectors:
+    MOV     @RSP,W                  ;       W = previous FATsector
+    MOV     X,0(RSP)                ;       R-- new FATsector
+    CALL    #SaveSectorWtoFATs      ;SWXY update FATs from SD_BUF to W = previous FATsector
+    MOV     @RSP,W                  ;       W = new FATsector
+    JMP     LoadFAT1sectorWloop     ; loop back with W = new FATsector, new FAToffset
+; ----------------------------------;
+EndOfFileCluster                    ;
+; ----------------------------------;
+    MOV     @RSP+,W                 ; W = new FATsector
+; ==================================;
 SaveSectorWtoFATs                   ;SWXY W = FATsector loaded in SD_buf
 ; ==================================;
     MOV     W,Y                     ; Y = W
@@ -71,6 +111,7 @@ WriteFATsectorW                     ;
     MOV     #0,X                    ;
     MOV     #WriteSectorWX,PC       ;SWX then RET
 ; ----------------------------------;
+
 
 ; parse all FAT sectors until free cluster is found
 ; this New Cluster is marked as the end's one (-1)
@@ -112,9 +153,6 @@ IncrementFATsector                  ;1
 ; ----------------------------------;
 FreeClusterFound                    ; X =  cluster number low word in SD_BUF = FAToffset
 ; ----------------------------------;
-    MOV     @RSP,&LastFATsector     ;
-    MOV     Y,&LastFAToffset        ;
-; ----------------------------------;
     MOV     #0,S                    ; clear error
     MOV     #-1,SD_BUF(Y)           ; mark New Cluster low word as end cluster (0xFFFF) in SD_BUF
     MOV.B   @RSP,W                  ; W = 0:FATsectorLo
@@ -138,67 +176,6 @@ FAT32ClustAdrToClustNum             ; convert FAT32 cluster address to cluster n
 ; ----------------------------------;
 
 
-; ==================================;
-FreeAllClusters                     ;SWXY input: HDLL_FirstClus(T), output:
-; ==================================;FATs are updated
-    MOV HDLL_FirstClus(T),ClusterL  ;
-    MOV HDLH_FirstClus(T),ClusterH  ;
-    CALL #ClusterHLtoFAT1sectWofstY ;WXY    output: W = FATsector, Y=FAToffset
-    MOV     W,&LastFATsector        ;
-    MOV     Y,&LastFAToffset        ;
-    PUSH    W                       ;       R-- FATsector ptr
-; ----------------------------------;
-LoadFAT1sectorWloop                 ;
-; ----------------------------------;
-    CALL    #ReadFAT1SectorW        ;SWX
-; ----------------------------------;
-GetAndFreeCluster                   ;
-; ----------------------------------;
-    MOV     SD_BUF(Y),W             ; get [clusterLO]
-    MOV     #0,SD_BUF(Y)            ; free CLusterLO
-GetAndFreeClusterHi                 ;
-    MOV     SD_BUF+2(Y),X           ; get [clusterHI]
-    MOV     #0,SD_BUF+2(Y)          ; free CLusterHI
-ClusterHiTest
-    AND     #00FFFh,X               ; select 12 bits significant
-    CMP     #00FFFh,X               ; [ClusterHI] was = 0FFFh?
-    JNE     SearchNextCluster2free  ; no
-ClusterLoTest                       ;
-    CMP     #-1,W                   ; [ClusterLO] was = FFFFh? last cluster used for this file
-    JZ      EndOfFileCluster        ; yes
-; ----------------------------------;
-SearchNextCluster2free              ;
-; ----------------------------------;
-    MOV     W,&ClusterL             ;
-    MOV     X,&ClusterH             ;
-    CALL #ClusterHLtoFAT1sectWofstY ;WXY    W = new FATsector, new FAToffset
-    CMP     @RSP,W                  ; new FATsector = FATsector ptr ?
-    JZ      GetAndFreeCluster       ; yes loop back
-    MOV     W,X                     ; no:   swap previous new FATsectors:
-    MOV     @RSP,W                  ;       W = previous FATsector
-    MOV     X,0(RSP)                ;       R-- new FATsector
-    CALL    #SaveSectorWtoFATs      ;SWXY update FATs from SD_BUF to W = previous FATsector
-    MOV     @RSP,W                  ;       W = new FATsector
-    JMP     LoadFAT1sectorWloop     ; loop back with W = new FATsector, new FAToffset
-; ----------------------------------;
-EndOfFileCluster                    ;
-; ----------------------------------;
-    MOV     @RSP+,W                 ;
-    MOV     #SaveSectorWtoFATs,PC   ; update FATs
-; ----------------------------------;
-
-; this subroutine is called by Write_File (bufferPtr=512) and CloseHandle (0 =< BufferPtr =< 512)
-; ==================================;
-WriteSD_Buf                         ;SWX input: T = CurrentHDL
-; ==================================;
-    ADD &BufferPtr,HDLL_CurSize(T)  ; update handle CurrentSizeL
-    ADDC    #0,HDLH_CurSize(T)      ;
-; ==================================;
-WriteSectorHL                       ;SWX
-; ==================================;
-    MOV     &SectorL,W              ; Low
-    MOV     &SectorH,X              ; High
-    MOV     #WriteSectorWX,PC       ; ...then RET
 ; ----------------------------------;
 
 
@@ -302,8 +279,6 @@ FillDIRentryName                    ;SWXY use
 ; ==================================;
     MOV.B   @T+,W                   ; W = char of pathname
     MOV.B   W,SD_BUF(Y)             ;     to DIRentry
-;    CMP     #0,W                    ; end of stringZ ?
-;    JZ      OPWC_CompleteWithSpaces ;
     CMP     T,&PathName_END         ; EOS < PTR ?
     JNC     OPWC_CompleteWithSpaces ; yes
 ; ----------------------------------;
@@ -343,25 +318,6 @@ OPWC_CWS_End                        ;
     MOV @RSP+,PC                    ;
 ; ----------------------------------;
 
-
-; ==================================;
-LoadUpdateSaveDirEntry              ;SWXY
-; ==================================;
-    MOV     HDLL_DIRsect(T),W       ;
-    MOV     HDLH_DIRsect(T),X       ;
-    CALL    #readSectorWX           ;SWX SD_buffer = DIRsector
-    MOV     HDLW_DIRofst(T),Y       ; Y = DirEntryOffset
-    CALL    #GetYMDHMSforDIR        ; X=DATE,  W=TIME
-    MOV     X,SD_BUF+18(Y)          ; access date
-    MOV     W,SD_BUF+22(Y)          ; modified time
-    MOV     X,SD_BUF+24(Y)          ; modified date
-    MOV HDLL_CurSize(T),SD_BUF+28(Y); save new filesize
-    MOV HDLH_CurSize(T),SD_BUF+30(Y);
-    MOV     HDLL_DIRsect(T),W       ;
-    MOV     HDLH_DIRsect(T),X       ;
-    MOV     #WriteSectorWX,PC       ;SWX then RET
-; ----------------------------------;
-
 ;-----------------------------------------------------------------------
 ; WRITE" subroutines
 ;-----------------------------------------------------------------------
@@ -396,7 +352,6 @@ GetNewCluster                       ; input : T=CurrentHdl
 ; ----------------------------------;
 UpdateNewClusterFATs                ;
 ; ----------------------------------;
-;    CALL    #SaveSectorWtoFATs      ;SWXY no: already done by SearchMarkNewClusterHL
     MOV     @RSP,W                  ; W = previous FATsector
     CALL    #ReadFAT1SectorW        ;SWX  reload previous FATsector in buffer to link clusters
 ; ----------------------------------;
@@ -417,7 +372,7 @@ HDLSetCurClustSetCurSect            ;
     MOV &ClusterL,HDLL_CurClust(T)  ; update handle with new cluster
     MOV &ClusterH,HDLH_CurClust(T)  ;
 Write_File_End
-    MOV #ClusterHL2sectorHL,PC      ;W set current SectorHL to be written then RET
+    MOV     #ClusterHL2sectorHL,PC  ;W set current SectorHL to be written
 ; ----------------------------------;
 
 ;Z WRITE            --
@@ -449,7 +404,7 @@ OPEN_4W                             ;
     CMP     #2,S                    ; "no such file" error ?
     JZ      OPEN_WRITE_CREATE       ; yes, Handle is to be created !
     CMP     #0,S                    ; well opened file ?
-    JZ      OPEN_OVERWRITE          ; yes
+    JZ      OPEN_OVERWRITE          ; yes, handle is created
 ; ----------------------------------;
 OPWC_Write_Errors                   ;
 ; ----------------------------------;
@@ -465,7 +420,6 @@ OPW_Error                           ; set ECHO, type Pathname, type #error, type
 
 ; ======================================================================
 ; WRITE" primitive as part of OpenPathName
-; All "DEL"eted clusters are freed
 ; input from open:  W = open_type, SectorHL = DIRsectorHL,
 ;                   Buffer = [DIRsector], ClusterHL = FirstCluster
 ;       from open(GetFreeHandle): Y = DIRentry, T = CurrentHdl,
@@ -481,8 +435,8 @@ OPEN_WRITE_CREATE                   ; a new Handle is to be created
 ; 2 get free cluster                ;
 ; ----------------------------------;
     MOV     #0,W                    ; init FATsector = 0, search new cluster
-    MOV     #0,Y                    ; init FAToffset
-    CALL    #SearchMarkNewClusterHL ;WXY  output: updated (ClusterHL, FATsector, W = FATsector), SD_BUF = [new FATsector]
+    MOV     #8,Y                    ; init FAToffset to point Cluster 2
+    CALL    #SearchMarkNewClusterHL ;WXY  output: updated (ClusterHL, FATsector, W = FATsector)
 ; ----------------------------------;
 ; 3 init DIRentryAttributes         ;
 ; ----------------------------------;
@@ -526,12 +480,10 @@ OPEN_OVERWRITE                      ; handle exists
 ; ==================================;
 ; free all file clusters            ;
 ; ----------------------------------;
-    CALL    #FreeAllClusters        ;SWXY input: HDLL_FirstClus(T), output: FATS are updated
+    CALL    #FreeAllClusters        ;SWXY input: HDLL_FirstClus(T)
     MOV     #0,HDLL_CurSize(T)      ; clear currentSize
     MOV     #0,HDLH_CurSize(T)      ;
-    MOV HDLL_FirstClus(T),ClusterL  ; Set ClusterHL
-    MOV HDLH_FirstClus(T),ClusterH  ;
-    CALL #ClusterHLtoFAT1sectWofstY ;WXY    output: W = FATsector, Y=FAToffset
+    CALL #HDLFrstClus2FATsecWofstY  ;WXY    output: W = FATsector, Y=FAToffset
     CALL    #SearchMarkNewClusterHL ;SWXY input: W = FATsector, Y = FAToffset output: ClusterHL, W = updated new FATsector loaded in SD_BUF
     CALL #HDLSetCurClustSetFrstSect ;
     MOV     @IP+,PC                 ; --
@@ -548,63 +500,63 @@ OPEN_OVERWRITE                      ; handle exists
 ; ======================================================================
 OPEN_8W                             ;
     CMP     #2,S                    ; "no such file" error ?
-    JZ      OPEN_WRITE_CREATE       ; yes
+    JZ      OPEN_WRITE_CREATE       ; if yes, handle is to be created
     CMP     #0,S                    ; well opened file ?
     JNZ     OPWC_Write_Errors       ; no
 ; ==================================;
-OPEN_WRITE_APPEND                   ; yes
+OPEN_WRITE_APPEND                   ; yes, handle is already created
 ; ==================================;
-; 1- open file                      ; done
+SearchLastClust                     ;SWXY input: HDLL_FirstClus(T)
 ; ----------------------------------;
-    MOV.B  #4,HDLB_Token(T)         ; update HDLB_Token(T)
+    CALL #HDLFrstClus2FATsecWofstY  ;WXY    output: W = FATsector, Y=FAToffset
 ; ----------------------------------;
-; 2.1- Compute Sectors count        ; Sectors = HDLL_CurSize/512
+SrchFAT1sectorWloop                 ;
 ; ----------------------------------;
-    MOV.B   HDLL_CurSize+1(T),Y     ;Y = 0:CurSizeLOHi (bytes)
-    MOV.B   HDLH_CurSize(T),X       ;X = 0:CurSizeHILo
-    SWPB    X                       ;X = CurSizeHIlo:0
-    ADD     Y,X                     ;X = CurSizeHIlo:CurSizeLOhi
-    MOV.B   HDLH_CurSize+1(T),Y     ;Y:X = CurSize / 256 (bytes)
+    MOV     W,&FATsector            ;       FATsector memory
+    CALL    #ReadFAT1SectorW        ;SWX
 ; ----------------------------------;
-; 2.2 Compute Clusters Count        ;
+SearchClusterLoop                   ; in: ClusterHL
 ; ----------------------------------;
-    MOV.B &SecPerClus,T             ;3 T = DIVISOR = SecPerClus = 0:SPClo
-DIVSECPERSPC                        ;
-    MOV #0,W                        ;1 W = 0:REMlo = 0
-    MOV #8,S                        ;1 S = CNT
-DIVSECPERSPC1                       ;
-    RRA Y                           ;1 0>0:SEC_HI>C
-    RRC X                           ;1 C>SEC_LO>C
-    RRC.B W                         ;1 C>REMlo>C
-    SUB #1,S                        ;1 CNT-1
-    RRA T                           ;1 0>SPChi:SPClo>C
-    JNC DIVSECPERSPC1               ;2 7~ loopback if carry clear
-DIVSECPERSPC2                       ;
-    RRA W                           ;1 0>0:REMlo>C
-    SUB #1,S                        ;1 CNT-1
-    JGE DIVSECPERSPC2               ;2 4~ loopback     Wlo = OFFSET, X = CLU_LO, Y = CLU_HI
+    MOV     SD_BUF(Y),W             ; get [clusterLO]
+    MOV     SD_BUF+2(Y),X           ; get [clusterHI]
+    CMP     #0FFFh,X                ; [ClusterHI] = 0FFFh?
+    JNE     SearchNextCluster       ; no
+    CMP     #-1,W                   ; [ClusterLO] = FFFFh?
+    JZ      LastClusterFound        ; LastClusterFound = ClusterHL 
 ; ----------------------------------;
-; 2.3- Compute Current Cluster      ; X = ClusterCountLO, Y = ClusterCountHI
+SearchNextCluster                   ;
 ; ----------------------------------;
-    MOV &CurrentHDL,T               ;3  reload Handle ptr
-    ADD  HDLL_FirstClus(T),X        ;
-    ADDC HDLH_FirstClus(T),Y        ;
-    MOV X,HDLL_CurClust(T)          ;  update handle
-    MOV Y,HDLH_CurClust(T)          ;
+    MOV     W,&ClusterL             ;
+    MOV     X,&ClusterH             ;
+    CALL #ClusterHLtoFAT1sectWofstY ;WXY    W = new FATsector, new FAToffset
+    CMP     W,&FATsector            ; new FATsector = prev FATsector ?
+    JZ      SearchClusterLoop       ; yes loop back
+    JMP     LoadFAT1sectorWloop     ; loop back with W = new FATsector
 ; ----------------------------------;
-; 2.4- load current sectorHL        ;
+LastClusterFound                    ; in ClusterHL
 ; ----------------------------------;
-    MOV.B W,HDLB_ClustOfst(T)       ;3  update handle with W = REM8 = sectors offset in last cluster
-    CALL #LoadCurSectorHL           ;SWX in SD_buf
+    MOV     HDLL_CurSize(T),W       ; 
+    MOV     W,Y                     ;
 ; ----------------------------------;
-; 2.5- Compute SD_Buf ptr           ;
+; Compute Y = SD_Buf ptr            ; example :  Y = $A313 bytes
 ; ----------------------------------;
-    MOV HDLL_CurSize(T),W           ; example :  W = $A313 bytes
-    BIC #01FFh,HDLL_CurSize(T)      ; HDLL_CurSize = $A200 bytes
-    AND #01FFh,W                    ; remainder  W = $0113 bytes
-    MOV W,&BufferPtr                ; init Buffer Pointer with $0113
+    MOV     #1FFh,X                 ; mask for sector
+    BIC     X,HDLL_CurSize(T)       ; HDLL_CurSize = $A200 bytes
+    AND     X,Y                     ; remainder  Y = $0113 bytes
+    MOV     Y,&BufferPtr            ; init Buffer Pointer with $0113
 ; ----------------------------------;
-    MOV @IP+,PC                     ; BufferPtr = first free byte offset
+; Compute W = Cluster offset        ;
+; ----------------------------------;
+    MOV.B   &SecPerClus,X           ;
+    SUB     #1,X                    ; mask for Cluster offset, max = 0b0011_1111, for 4k clusters: 0b0000_0111
+    SWPB    W                       ; W.B = 0bxxxx_xxx?
+    RRA.B   W                       ; W.B = 0b?xxx_xxxx
+    AND     X,W                     ; W.B = 0b00xx_xxxx max, for 4k clusters: 0b0000_0xxx
+    MOV.B W,HDLB_ClustOfst(T)       ; W.B = Cluster offset
+    CALL #HDLSetCurClustSetCurSect  ;
+    CALL    #ReadSectorHL           ; load SectorHL to be updated in SD_buf
+; ----------------------------------;
+    MOV @IP+,PC                     ;
 ; ----------------------------------;
 
 
@@ -631,9 +583,11 @@ T2S_Get_a_Char_Loop                 ;
     BIT     #RX_TERM,&TERM_IFG      ;3 new char in TERMRXBUF ?
     JZ      T2S_Get_a_Char_Loop     ;2
     MOV.B   &TERM_RXBUF,X           ;3
-    MOV.B   X,&TERM_TXBUF
     CMP.B   #4,X                    ;1 EOT sent by TERATERM ?
     JZ      T2S_End_Of_File         ;2 yes
+; ----------------------------------;
+;    MOV.B   X,&TERM_TXBUF          ;       uncomment this line to echo chars
+; ----------------------------------;
     MOV.B   X,SD_BUF(W)             ;3
     ADD     #1,W                    ;1
     CMP     #BytsPerSec-1,W         ;2
@@ -668,7 +622,7 @@ T2S_Wait_LF                         ; warning! EOT must be followed by CR+LF (TE
     CALL    #CloseHandle            ;4
 ; ----------------------------------;
     MOV     @RSP+,IP                ;
-    MOV     @IP+,PC                 ;4
+    MOV     @IP+,PC                 ;
 ; ----------------------------------;
 
     .ELSE ; if I2C_TERMINAL
@@ -681,6 +635,9 @@ T2S_Wait_LF                         ; warning! EOT must be followed by CR+LF (TE
     FORTHWORD "TERM2SD\34"          ; here, I2C_Master is reSTARTed in RX mode
 ; ==================================;
     mDOCOL                          ;
+; ----------------------------------;
+    .word   NOECHO                  ;       comment this line to echo chars
+; ----------------------------------;
     .word   WRITEDQ                 ; if already exist FreeAllClusters else create it as WRITE file
     mNEXTADR                        ;
 ; ----------------------------------;
@@ -746,7 +703,7 @@ T2S_Wait_LF                         ; warning! EOT is followed by CR+LF, because
     CALL    #CloseHandle            ;   tranfert SD_BUF to last sector of opened file in SD_CARD then close it
 ; ----------------------------------;
     MOV     @RSP+,IP                ;
-    MOV     @IP+,PC                 ;
+    MOV     #ECHO,PC                ;
 ; ----------------------------------;
 
     .ENDIF

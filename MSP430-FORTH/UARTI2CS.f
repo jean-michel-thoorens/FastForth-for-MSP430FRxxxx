@@ -37,7 +37,7 @@
 \ example : POPM #6,IP   pop Y,X,W,T,S,IP registers from return stack, with IP last poped
 \
 \ ASSEMBLER conditionnal usage before IF UNTIL WHILE : S< S>= U< U>= 0= 0<> 0>=
-\ ASSEMBLER conditionnal usage before          ?GOTO : S< S>= U< U>= 0= 0<> 0<
+\ ASSEMBLER conditionnal usage before          ?GOTO : S< S>= U< U>= 0= 0<> 0< 
 \
 \ ================================================================================
 \ coupled to a PL2303HXD/TA cable, this driver enables a FastForth target to act as USB to I2C_Slave bridge,
@@ -45,7 +45,7 @@
 \ In addition, it simulates a full duplex communication while the I2C bus is only half duplex.
 \ Don't forget to wire 3k3 pull up resistors on wires SDA SCL!
 \ ================================================================================
-\
+\ 
 \ driver test : MCLK=24MHz, PL2303HXD with shortened cable (20cm), WIFI off, all windows apps closed else Scite and TERATERM.
 \ -----------                                                                                    .
 \                                                                                               .         ┌────────────────────────────────┐
@@ -55,10 +55,10 @@
 \ |               |          ║───────────────┐           ┌────────────────────────────────║ /        ┌───────────────────────────────┐  |──┘
 \ |               |          ║               |  3 wires  |    MSP430FR2355 @ 24MHz        ║/         |    MSP430FR5738 @ 24 MHz      |  |
 \ |   TERATERM   -o--> USB --o--> USB2UART --o--> UART --o--> FAST FORTH ---> UARTI2CS  --o--> I2C --o-->    FAST FORTH with         |──┘
-\ |   terminal    |          ║               |   6 MBds  |                  (I2C MASTER)  ║          |         I2C TERMINAL          |
+\ |   terminal    |          ║               |   6 MBds  |                  (I2C MASTER)  ║          |         I2C TERMINAL          | 
 \ |               |          ║───────────────┘           └────────────────────────────────║          └───────────────────────────────┘
-\ |               |          ║               |<- l=20cm->|                                ║
-\ └───────────────┘          ╚════════════════════════════════════════════════════════════╝
+\ |               |          ║               |<- l=20cm->|                                ║ 
+\ └───────────────┘          ╚════════════════════════════════════════════════════════════╝              
 \
 \ test results :
 \ ------------
@@ -66,13 +66,13 @@
 \ downloading (+ interpret + compile + execute) CORETEST.4TH to I2C Master target = 1016ms.
 \ downloading (+ interpret + compile + execute) CORETEST.4TH to I2C Slave target = 1422ms.
 \ the difference (406 ms) is the time of the I2C Half duplex exchange.
-\ [(45906 chars * 9 bits) + (1533 * 31)] / 0,406 = 1,135 MHz (9 bits / char + (2*START + 2*STOP + 2*addr + CTRL_Char) / line)
+\ [(45906 chars * 9 bits) + (1533 * 31)] / 0,406 = 1,135 MHz (9 bits / char + (2*START + 2*STOP + 2*addr + CTRL_Char) / line) 
 \ ==> 113 % of I2C Fast-mode Plus (Fm+)!
-\
+\ 
 \ also connected to and tested with another I2C_FastForth target with MCLK = 1MHz (I2C CLK = MCLK ! ).
 \
 \ The I2C_Slave address is defined as 'MYSLAVEADR' in forthMSP430FR.asm source file of I2C_Slave target.
-\ You can use any pin for SDA and SCL, preferably in the interval Px0...Px3.
+\ You can use any pin for SDA and SCL, preferably in the interval Px0...Px3.  
 \ don't forget to add 3.3k pullup resitors on wires SDA and SCL.
 \
 \
@@ -86,10 +86,10 @@
 \ 1- the I2C bus is Master to Slave oriented, the Slave does not decide anything.
 \    This order of things allows in any case to establish the connection.
 \    The I2C Master device is therefore placed on the TERMINAL side and the FastForth target on the I2C Slave side.
-\    But once the link is established, we have to find a trick to reverse the roles,
+\    But once the link is established, we have to find a trick to reverse the roles, 
 \    so that the slave can take control of the data exchange.
 \
-\ 2- The I2C bus operates on half duplex.
+\ 2- The I2C bus operates on half duplex. 
 \    Another trick will be to simulate an I2C_Master TERMINAL in Full Duplex mode.
 \
 \ 3- Without forgetting a visual effect to show the lack of I2C connection...
@@ -109,7 +109,7 @@
 \   Finally, if the master receives a $FF as data, he considers the link broken,
 \   it performs ABORT which forces a START RX into a 500 ms loop with an appropriate visual effect...
 \
-\ Once the slave sends the CTRL_Char $00, he falls asleep,
+\ Once the slave sends the CTRL_Char $00, he falls asleep, 
 \ On its receipt, the master also falls asleep, awaiting a UART RX interruption.
 \ As long as the TERMINAL is silent, the master and the slave remain in SLEEP mode,
 \ (a part the Tx0_INT interrupt every 1/2 s).
@@ -138,10 +138,10 @@
 \                                                                     |
 \                      GND------------------------------GND           |
 \                      Vcc-------------o---o------------Vcc           |
-\                                      |   |                          |
-\                                      3   3                          |
-\                                      k   k                          |
-\                                      3   3                          v
+\                                      |   |                          | 
+\                                      3   3                          | 
+\                                      k   k                          | 
+\                                      3   3                          v 
 \   I2C_FastForth                      |   |                       UARTI2CS        +---------------------------------------+
 \      hardware         +--------------|---o-------------+         Software        |    +-----------------------------+    |
 \      I2C Slave        |      +-------o----------+      |         I2C Master      |    |    +------(option)-----+    |    |
@@ -151,12 +151,12 @@
 \ MSP_EXP430FR5739     P1.7   P1.6               P4.0   P4.1   MSP_EXP430FR5739   P2.0 P2.1 P2.2                               PL2303TA                 TERATERM.EXE
 \ MSP_EXP430FR5969     P1.7   P1.6               P1.2   P1.3   MSP_EXP430FR5969   P2.0 P2.1 P4.1                               PL2303HXD
 \ MSP_EXP430FR5994     P7.1   P7.0               P8.2   P8.1   MSP_EXP430FR5994   P2.0 P2.1 P4.2                               CP2102
-\ MSP_EXP430FR6989     P1.7   P1.6               P1.3   P1.5   MSP_EXP430FR6989   P3.4 P3.5 P3.0
-\ MSP_EXP430FR4133     P5.3   P5.2               P8.2   P8.3   MSP_EXP430FR4133   P1.0 P1.1 P2.3
-\ CHIPSTICK_FR2433     P1.3   P1.2               P2.0   P2.2   CHIPSTICK_FR2433   P1.4 P1.5 P3.2
-\ MSP_EXP430FR2433     P1.3   P1.2               P3.2   P3.1   MSP_EXP430FR2433   P1.4 P1.5 P1.0
-\ MSP_EXP430FR2355     P1.3   P1.2               P3.2   P3.3   MSP_EXP430FR2355   P4.3 P4.2 P2.0
-\ LP_MSP430FR2476      P4.3   P4.4               P3.2   P3.3   LP_MSP430FR2476    P1.4 P1.5 P6.1
+\ MSP_EXP430FR6989     P1.7   P1.6               P1.3   P1.5   MSP_EXP430FR6989   P3.4 P3.5 P3.0       
+\ MSP_EXP430FR4133     P5.3   P5.2               P8.2   P8.3   MSP_EXP430FR4133   P1.0 P1.1 P2.3       
+\ CHIPSTICK_FR2433     P1.3   P1.2               P2.0   P2.2   CHIPSTICK_FR2433   P1.4 P1.5 P3.2           
+\ MSP_EXP430FR2433     P1.3   P1.2               P3.2   P3.1   MSP_EXP430FR2433   P1.4 P1.5 P1.0           
+\ MSP_EXP430FR2355     P1.3   P1.2               P3.2   P3.3   MSP_EXP430FR2355   P4.3 P4.2 P2.0      
+\ LP_MSP430FR2476      P4.3   P4.4               P3.2   P3.3   LP_MSP430FR2476    P1.4 P1.5 P6.1                                                                     
 
 \ first, we do some tests allowing the download
 \   ------------------------\
@@ -187,7 +187,7 @@
 \                         USER_PARAM+8 addr = {UARTI2CS}+8  <-- I2C_Slave_Addr << 1
 \                         USER_PARAM+9 addr = {UARTI2CS}+9  <-- Half_Duplex flag : 4 --> NOECHO, <> 4 --> ECHO
 
-    [UNDEFINED] TSTBIT
+    [UNDEFINED] TSTBIT  
     [IF]
     CODE TSTBIT         \ addr bit_mask -- true/flase flag
     MOV @PSP+,X
@@ -223,7 +223,7 @@ BW1                             \ <-- TERATERM(ALT+B)|USBtoI2C_bridge(SW2)|SYS_f
 \   ^^^^^^^^^^^^ OPTION ^^^^^^^^\
     CALL #I2CM_STOP             \ stop properly I2C_BUS
     MOV #SM_BUS,W               \
-    BIC.B W,&I2CSM_DIR          \ restore I2C_BUS I/O as input
+    BIC.B W,&I2CSM_DIR          \ restore I2C_BUS I/O as input 
     BIS.B W,&I2CSM_OUT          \         with pull up resistors
     BIS.B W,&I2CSM_REN          \
 \   ----------------------------\
@@ -239,7 +239,7 @@ BW1                             \ <-- TERATERM(ALT+B)|USBtoI2C_bridge(SW2)|SYS_f
         MOV @W+,&HARD_APP       \ restore previous (default) HARD_APP value
         MOV @W+,&SLEEP_APP      \ restore previous (default) SLEEP_APP value
         MOV @W+,&TERM_VEC       \ restore previous (default) TERM_VEC value
-        MOV @W+,&P1_VEC         \ restore previous (default) P1_VEC value
+        MOV @W+,&P1_VEC         \ restore previous (default) P1_VEC value 
     THEN
 \   ----------------------------\
     MOV #1,TOS                  \ TOS = USERSYS value we want for TERATERM(ALT+B)|USBtoI2C_bridge(SW2)|SYS_failures events
@@ -307,9 +307,9 @@ BW1                             \ <-- TERATERM(ALT+B)|USBtoI2C_bridge(SW2)|SYS_f
     0<> UNTIL                               \ 2 h       because Slave can strech SCL low (wake up from interrupt)
     BIT.B #SM_SDA,&I2CSM_IN                 \ 3 h _     get SDA state
     BIS.B #SM_SCL,&I2CSM_DIR                \ 3 h  v_   SCL as output : force SCL low
-\   ^^^^^^^^^^^ Multi-Master-Mode ^^^^^^^^^^\
+\   ^^^^^^^^^^^ Multi-Master-Mode ^^^^^^^^^^\ 
     MOV @RSP+,0(RSP)                        \           remove RET to ReStart after a collision detection
-\   vvvvvvvvvvv Multi-Master-Mode vvvvvvvvvv\
+\   vvvvvvvvvvv Multi-Master-Mode vvvvvvvvvv\   
     MOV @RSP+,PC                            \           RET to Nack/Ack select
     ENDCODE
 \   ----------------------------------------\
@@ -317,7 +317,7 @@ BW1                             \ <-- TERATERM(ALT+B)|USBtoI2C_bridge(SW2)|SYS_f
 
 \   ****************************************\
     HDNCODE U2I_TERM_INT                    \ UART RX interrupt starts on first char of each line sent by TERMINAL
-\   ****************************************\
+\   ****************************************\ 
     ADD #4,RSP                              \ 1 remove unused PC_RET and SR_RET
 \   ----------------------------------------\
 \   get one line from UART TERMINAL to PAD  \ S = 'CR', T = 0
@@ -335,9 +335,9 @@ BW1                             \ <-- TERATERM(ALT+B)|USBtoI2C_bridge(SW2)|SYS_f
             0<> UNTIL                       \ 2 )
             MOV.B Y,&TERM_TXBUF             \ 3 return all characters to UART_TERMINAL except CR+LF which will be later by I2C_SLAVE
         THEN                                \
-        BEGIN                               \
+        BEGIN                               \ 
             BIT #1,&TERM_IFG                \ 3 wait for next char received
-        0<> UNTIL                           \ 2
+        0<> UNTIL                           \ 2 
     REPEAT                                  \ 2 2 cycles loop ==> up to UART 2.58 Mbds @ 8MHz
     CALL #UART_RXOFF                        \ stops UART RX still char CR is received, the LF char is being transmitted.
     BEGIN                                   \
@@ -350,11 +350,11 @@ BW2                                         \   <=== KEY input from TERMINAL, vi
     MOV.B S,PAD_ORG(T)                      \ 3 store it into buffer
 \   ========================================\ here I2C_Slave is sleeping in its ACCEPT routine
 \   I2C MASTER TX                           \ now we transmit UART RX buffer (PAD) to I2C_Slave, S = LF|KEY = last char to transmit
-\   ========================================\
+\   ========================================\          
 \   ----------------------------------------\
 \   I2C_Master_TX_Start                     \ S = last char UART RXed
 \   ----------------------------------------\
-\   ^^^^^^^^^^^ Multi-Master-Mode ^^^^^^^^^^\
+\   ^^^^^^^^^^^ Multi-Master-Mode ^^^^^^^^^^\ 
     PUSH PC                                 \           PUSH next address as RET for START with collision detection
 \   vvvvvvvvvvv Multi-Master-Mode vvvvvvvvvv\
     MOV #0,X                                \           to Start I2C_Master_TX
@@ -417,18 +417,18 @@ BW2                                         \   <=== KEY input from TERMINAL, vi
     ENDCODE                                 \                               |
 \   ****************************************\                               v
 
-\ wakes up every 1/2s by P1.6 int to listen I2C Slave or
+\ wakes up every 1/2s by P1.6 int to listen I2C Slave or 
 \ break from TERMINAL/USB_to_I2C_bridge.
 \   ********************************************\                           |
     HDNCODE 500MS_INT                           \                           |
 \   ********************************************\                           |
     ADD #4,RSP                                  \ 1 remove PC_RET, SR_RET   |
-\   --------------------------------------------\                           |
+\   --------------------------------------------\                           |    
 FW1                                             \ <────── does START <──────┘
 FW2                                             \ <────── if Nack on Address Master TX
-\   ^^^^^^^^^^^ Multi-Master-Mode ^^^^^^^^^^^^^^\
+\   ^^^^^^^^^^^ Multi-Master-Mode ^^^^^^^^^^^^^^\ 
     PUSH PC                                     \   PUSH next address as RET for START with collision detection
-\   vvvvvvvvvvv Multi-Master-Mode vvvvvvvvvvvvvv\
+\   vvvvvvvvvvv Multi-Master-Mode vvvvvvvvvvvvvv\   
 \   ============================================\
 \   I2C_MASTER RX                               \ le driver I2C_Master envoie START RX en boucle continue (X < 4) ou discontinue (X >= 4).
 \   ============================================\ le test d'un break en provenance de l'UART est intégré dans cette boucle.
@@ -445,14 +445,14 @@ FW2                                             \ <────── if Nack on
 \       ----------------------------------------\       _
         BIC.B #SM_SCL,&I2CSM_DIR                \ 3 l _^    release SCL to enable START RX
         MOV #1,X                                \           to Start I2C_Master as RX
-            CALL #I2CM_START                    \           Start MASTER RX
+            CALL #I2CM_START                    \           Start MASTER RX               
         0<> IF                                  \           if Nack_On_Address
             CALL #I2CM_STOP                     \           I2C_Master Send STOP
             MOV #'.',&TERM_TXBUF                \           to view the absence of I2C_target at the I2C_Addr provided.
             MOV #SLEEP,PC                       \           which executes SLEEP_U2I then RXON before LPM0 shut down.
         THEN                                    \
 \       ----------------------------------------\
-\       I2C_Master_RX_data                      \
+\       I2C_Master_RX_data                      \           End of RX_Data only on Ctrl_Char {$00|$01|$02|$FF}
 \       ----------------------------------------\
 \       vvvvvvvvvvvvv OPTION vvvvvvvvvvvvvvvvvvv\
         BIS.B #LED2,&LED2_OUT                   \           green led ON = I2C RX
@@ -483,7 +483,7 @@ FW2                                             \ <────── if Nack on
             U>= WHILE                           \ 2 l       ASCII char received, from char 'BS' up to char $7F.
 \               --------------------------------\
 \               I2C_Master_RX Send Ack          \           on ASCII char >= $08
-\               --------------------------------\
+\               --------------------------------\ 
                 BIS.B #SM_SDA,&I2CSM_DIR        \ 3 l   _   set SDA as Ack
                 BIC.B #SM_SCL,&I2CSM_DIR        \ 3 l _^    release SCL (high)
                 BEGIN                           \           we must wait I2C_Slave software (data processing)
@@ -493,42 +493,45 @@ FW2                                             \ <────── if Nack on
 \               --------------------------------\
 \               I2C_Master echoes to TERMINAL   \
 \               --------------------------------\
-                BEGIN                           \
-                    BIT #2,&TERM_IFG            \ 3 l       UART TX buffer empty ?
-                0<> UNTIL                       \ 2 l       loop if no
-                MOV.B X,&TERM_TXBUF             \ 3 h       send RXed ASCII char to UART TERMINAL
+                CMP.B #4,&{UARTI2CS}+9          \ 3 W = HALF_DUPLEX = $04 if NOECHO, $05 if ECHO
+                0<> IF
+                    BEGIN                       \
+                        BIT #2,&TERM_IFG        \ 3 l       UART TX buffer empty ?
+                    0<> UNTIL                   \ 2 l       loop if no
+                    MOV.B X,&TERM_TXBUF         \ 3 h       send RXed ASCII char to UART TERMINAL
+                THEN
             REPEAT                              \ 2 l       loop back to I2C_Master_RX_data for chars >= 8
 \           ------------------------------------\
 \           case of RX CTRL_Chars < $08         \           here Master holds SCL low, Slave can test it: CMP #8,&TERM_STATW
 \           ------------------------------------\           see forthMSP430FR_TERM_I2C.asm
-            CMP.B #4,X                          \ 1
+            CMP.B #4,X                          \ 1         
             U>= IF                              \ 2
                 MOV.B X,&{UARTI2CS}+9           \           set NOECHO = $04, ECHO = $05
                 BIS.B #SM_SDA,&I2CSM_DIR        \ 3 l       prepare Ack for Ctrl_Chars $04 $05
             THEN                                \
 \           ------------------------------------\
 \           Master_RX send Ack/Nack on data     \           Ack for $04, $05, Nack for $00, $01, $02
-\           ------------------------------------\       _
+\           ------------------------------------\       _   
             BIC.B #SM_SCL,&I2CSM_DIR            \ 3 l _^    release SCL (high)
             BEGIN                               \           we must wait I2C_Slave software (data processing)
                 BIT.B #SM_SCL,&I2CSM_IN         \ 3 h       by testing SCL released
             0<> UNTIL                           \ 2 h       (because Slave can strech SCL low)
             BIT.B #SM_SDA,&I2CSM_IN             \ 3 h _     get SDA as TX Ack/Nack state
             BIS.B #SM_SCL,&I2CSM_DIR            \ 3 h  v_   SCL as output : force SCL low
-\           ------------------------------------\   l
+\           ------------------------------------\   l    
         0<> UNTIL                               \           if Ack, loop back to Master_RX data for CTRL_Char $04,$05
-\       ----------------------------------------\
+\       ----------------------------------------\   
 \       Nack is sent by Master                  \   l       case of CTRL-Char {$00|$01|$02}
-\       ----------------------------------------\
+\       ----------------------------------------\   
         CMP.B #2,X                              \           $02 = ctrl_char for ABORT request
     U>= WHILE                                   \
-\       ----------------------------------------\
+\       ----------------------------------------\   
 \       CTRL_Char $02|$03                       \   l       if ABORT request, SDA is high, SCL is low
 \       ----------------------------------------\
         0= IF                                   \           if ABORT request $02 :
             MOV.B #0,&{UARTI2CS}+9              \               set echo ON I2C_Master side
             CALL #UART_RXON                     \               resume UART downloading source file
-            BEGIN                               \
+            BEGIN                               \   
                 BIC #UCRXIFG,&TERM_IFG          \               clear UCRXIFG
                 MOV &FREQ_KHZ,X                 \               1000, 2000, 4000, 8000, 16000, 240000
 \                BEGIN MOV #32,W                 \           2~        <-------+ windows 10 seems very slow...
@@ -543,11 +546,11 @@ FW2                                             \ <────── if Nack on
                0= UNTIL                         \           2~ 200~ loop -----+
                 BIT #UCRXIFG,&TERM_IFG          \               4 new char in TERMRXBUF during this delay ?
             0= UNTIL                            \               2 yes, the input stream may be still active: loop back
-        THEN
+        THEN    
     REPEAT                                      \           loop back to reSTART RX
 \   --------------------------------------------\
 \   I2C_Master_RX Send STOP                     \           remainder: CTRL_Chars $00,$01
-\   --------------------------------------------\
+\   --------------------------------------------\ 
     CALL #I2CM_STOP                             \
 \   vvvvvvvvvvvvvvv OPTION vvvvvvvvvvvvvvvvvvvvv\
     BIC.B #LED2,&LED2_OUT                       \ green led OFF = endof I2C RX
@@ -568,7 +571,7 @@ FW2                                             \ <────── if Nack on
 \   ou en fin du temps TxIFG ==> 500MS_INT      \
     0= IF                                       \ prepare U2I_TERM_INT environment
         MOV #SLEEP,PC                           \ which executes SLEEP_U2I then RXON, enabling TERMINAL TX, before LPM0 shut down.
-    THEN                                        \
+    THEN                                        \                             
 \   --------------------------------------------\
 \   I2C_Slave KEY ctl_char $01                  \ I2C_Slave request for KEY input
 \   --------------------------------------------\
@@ -578,11 +581,11 @@ FW2                                             \ <────── if Nack on
     CALL #UART_RXON                             \ enables TERMINAL to TX; use no registers
     BEGIN                                       \ wait for a char
         BIT #UCRXIFG,&TERM_IFG                  \ received char ?
-    0<> UNTIL                                   \
+    0<> UNTIL                                   \ 
     CALL #UART_RXOFF                            \ stops UART RX; use no registers
     MOV #0,T                                    \ ready to store KEY char as last char to be received
     GOTO BW2                                    \ goto end of UART RX line input
-    ENDCODE                                     \
+    ENDCODE                                     \ 
 \   ********************************************\
 
 \   --------------------------------------------\
@@ -602,9 +605,9 @@ FW2                                             \ <────── if Nack on
 
 \   ----------------------------\
     HDNCODE INIT_U2I            \ adds the INIT_HARD_APP to HARD_APP called by PUC|WARM
-\   ----------------------------\
+\   ----------------------------\ 
 \   init 500MS_INT              \ used to scan I2C_Slave hard RESET and to slow down (re)START RX loop
-\   ----------------------------\
+\   ----------------------------\ 
 \    MOV #%10_1101_0100,&TB0_CTL \ ACLK/4=8192Hz, up mode, clear timer
     MOV #4096,&TB0CCR0          \ time  0.5s
 \ ------------------------------\
@@ -614,7 +617,7 @@ FW2                                             \ <────── if Nack on
     MOV #4095,&TB0CCR2          \ 0.12 ms pulse
     BIS.B #BIT7,&P1DIR          \ P1.7 as output
     BIS.B #BIT7,&P1SEL1         \ P1.7 as TB0.2 output
-    BIS.B #BIT6,&P1IE
+    BIS.B #BIT6,&P1IE  
 \   ----------------------------\
 \   init I2C_MASTER I/O         \ see \inc\your_target.pat to find I2C MASTER SDA & SCL pins (as SM_BUS)
 \   ----------------------------\
@@ -629,7 +632,7 @@ FW2                                             \ <────── if Nack on
 \   run previous INIT_HARD_APP  \
 \   ----------------------------\
     CALL &{UARTI2CS}            \ execute previous INIT_HARD_APP to init TERM_UC, activates I/O.
-\   ----------------------------\ TOS = SYSRSTIV = $00|$02|$04|$0E|$xx = POWER_ON|RST|SVSH_threshold|SYS_failures
+\   ----------------------------\ TOS = SYSRSTIV = $00|$02|$04|$0E|$xx = POWER_ON|RST|SVSH_threshold|SYS_failures 
 \   define new SYSRSTIV select  \
 \   ----------------------------\
     CMP #$0E,TOS                \ SVSHIFG SVSH event ?
@@ -653,9 +656,9 @@ FW2                                             \ <────── if Nack on
 
 \ UARTI2CS starts the USB to I2C bridge, to quit: TERATERM(Alt-B) or USB_to_I2C_bridge(SW2)
 \   --------------------------------\
-    : UARTI2CS                      \ I2C_Addr&b0 --
+    : UARTI2CS                      \ I2C_Addr&b0 --        
 \   --------------------------------\               init UARTI2CS environment.
-    'CR' EMIT 'LF' EMIT             \
+    'CR' EMIT 'LF' EMIT             \   
     HI2LO
     MOV @RSP+,IP                    \
     BEGIN
@@ -680,6 +683,6 @@ FW2                                             \ <────── if Nack on
     ENDCODE                         \
 \   --------------------------------\
 
-    RST_SET ECHO
+    RST_SET ECHO    
 
     $12 UARTI2CS   ; TERATERM(Alt-B) or USB_to_I2C_bridge(SW2) to quit

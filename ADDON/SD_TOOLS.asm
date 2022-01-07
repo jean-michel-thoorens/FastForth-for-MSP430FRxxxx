@@ -4,7 +4,7 @@
 ;https://forth-standard.org/standard/core/AND
 ;C AND    x1 x2 -- x3           logical AND
             FORTHWORD "AND"
-ANDD        AND @PSP+,TOS    
+ANDD        AND @PSP+,TOS
             MOV @IP+,PC
     .ENDIF
 
@@ -147,7 +147,7 @@ DUMP4       .word   II,CFETCH
     FORTHWORD "{SD_TOOLS}"
     MOV @IP+,PC
 
-; read logical sector and dump it 
+; read logical sector and dump it
 ; ----------------------------------;
             FORTHWORD "SECTOR."     ; sector. --            don't forget to add decimal point to your sector number (if < 65536)
 ; ----------------------------------;
@@ -160,7 +160,7 @@ DisplaySector
             .word   NUMGREATER      ; ud --            display the double number
             .word   TYPE,SPACE      ;
             .word   lit,SD_BUF
-            .word   lit,200h,DUMP   ;    
+            .word   lit,200h,DUMP   ;
             .word   EXIT            ;
 ; ----------------------------------;
 
@@ -180,7 +180,7 @@ CLUSTERLOOP ADD X,X                 ; (RLA) shift one left MULTIPLICANDlo16
 CLUSTER1    RRA W                   ; shift one right multiplicator
             JNC CLUSTERLOOP         ; if not carry
             ADD &OrgClusters,X      ; add OrgClusters = sector of virtual cluster 0 (word size)
-            MOV X,0(PSP)            
+            MOV X,0(PSP)
             ADDC #0,TOS             ; don't forget carry
             JMP SECTOR              ; jump to a defined word
 ; ----------------------------------;

@@ -68,8 +68,6 @@ I2C_ACCEPT  MOV.B #0,Y              ; ACCEPT request Ctrl_Char = $00
 I2C_CTRL_CH BIT #TX_TERM,&TERM_IFG  ; send it to I2C_Master_RX to restart it in TX mode
             JZ I2C_CTRL_CH          ; wait TX buffer empty
             MOV.B Y,&TERM_TXBUF     ; send Ctrl_Char
-WAITCHAREND BIT #4,&TERM_IFG        ; I2C_Master (re)STARTed ?
-            JZ WAITCHAREND          ; loop back if no
 ; ----------------------------------;
 I2C_COLD_TERM
 ; ----------------------------------;

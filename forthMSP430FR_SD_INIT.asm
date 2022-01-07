@@ -123,11 +123,27 @@
 
 ; ===========================================================
 ; WARNING! SD_INIT DRAW BIG CURRENT; IF THE SUPPLY IS TOO WEAK
-; THE SD_CARD LOW VOLTAGE THRESHOLD MAY BE REACHED ==> SD_ERROR 8FF !
+; THE SD_CARD LOW VOLTAGE THRESHOLD MAY BE REACHED ==> SD_ERROR 4FF !
 ; ===========================================================
 
 ; ===========================================================
-; Init hardware SD_Card, called by WARM
+; Init SD_Card software, called by INIT_FORTH(INIT_SOFT_APP)
+; ===========================================================
+;-----------------------------------;
+INIT_SOFT_SD                        ; called by INI_FORTH common part of ?ABORT|RST
+;-----------------------------------;
+;            CMP #0,TOS              ; USERSYS = 0 ?
+;            JZ INIT_HSD_END         ; no hardware init if USERSYS = 0 SYS
+;            MOV #HandlesLen,X       ; clear all handles
+;ClearHandle SUB #2,X                ; 1
+;            MOV #0,FirstHandle(X)   ; 3
+;            JNZ ClearHandle         ; 2
+            MOV #0,&CurrentHdl      ;
+            MOV #INIT_SOFT_TERM,PC  ; link to previous INI_SOFT_APP then RET
+;-----------------------------------;
+
+; ===========================================================
+; Init hardware SD_Card, called by WARM(INIT_HARD_APP)
 ; ===========================================================
 
 ; web search: "SDA simplified specifications"
@@ -263,8 +279,7 @@ FATxx_SetFileSystem                 ;
     ADD     W,X                     ;
     MOV     X,&OrgFAT2              ; X = OrgFAT1 + FATsize = OrgFAT2 (8959)
 ; ----------------------------------;
-    ADD     W,X                     ; X = OrgFAT2 + FATsize = FAT32 OrgDatas = OrgRootDIR sector = 16384
-;    MOV     X,&OrgRootDIR           ;
+    ADD     W,X                     ; X = OrgFAT2 + FATsize = FAT32 OrgDatas (16384)
 FATxx_SetFileSystemNext             ;
     MOV.B   13(Y),Y                 ; Logical sectors per cluster (8)
     MOV     Y,&SecPerClus           ;
@@ -275,18 +290,3 @@ INIT_HSD_END                        ;
     MOV     @RSP+,PC                ; RET
 ;-----------------------------------;
 
-; ===========================================================
-; Init SD_Card software, called by INIT_FORTH
-; ===========================================================
-;-----------------------------------;
-INIT_SOFT_SD                        ; called by INI_FORTH common part of ?ABORT|RST
-;-----------------------------------;
-;            CMP #0,TOS              ; USERSYS = 0 ?
-;            JZ INIT_HSD_END         ; no hardware init if USERSYS = 0 SYS
-;            MOV #HandlesLen,X       ; clear all handles
-;ClearHandle SUB #2,X                ; 1
-;            MOV #0,FirstHandle(X)   ; 3
-;            JNZ ClearHandle         ; 2
-            MOV #0,&CurrentHdl      ;
-            MOV #INIT_SOFT_TERM,PC  ; link to previous INI_SOFT_APP then RET
-;-----------------------------------;

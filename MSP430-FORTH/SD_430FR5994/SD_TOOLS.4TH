@@ -27,14 +27,14 @@
 
     MARKER {SD_TOOLS}
 
-    [UNDEFINED] HERE 
+    [UNDEFINED] HERE
     [IF]
     CODE HERE
     MOV #$4032,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] + 
+    [UNDEFINED] +
     [IF]
     CODE +
     ADD @R15+,R14
@@ -42,7 +42,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] MAX 
+    [UNDEFINED] MAX
     [IF]
     CODE MAX
     CMP @R15,R14
@@ -59,7 +59,7 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] C@ 
+    [UNDEFINED] C@
     [IF]
     CODE C@
     MOV.B @R14,R14
@@ -67,13 +67,13 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] SPACE 
+    [UNDEFINED] SPACE
     [IF]
     : SPACE
     $20 EMIT ;
     [THEN]
 
-    [UNDEFINED] SPACES 
+    [UNDEFINED] SPACES
     [IF]
     CODE SPACES
     CMP #0,R14
@@ -83,17 +83,17 @@ FW1 MOV @R15+,R14
             LO2HI
             $20 EMIT
             HI2LO
-            SUB #2,R13 
+            SUB #2,R13
             SUB #1,R14
         0= UNTIL
         MOV @R1+,R13
     THEN
     MOV @R15+,R14
-    MOV @R13+,R0              
+    MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] SWAP 
+    [UNDEFINED] SWAP
     [IF]
     CODE SWAP
     MOV @R15,R10
@@ -103,7 +103,7 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] OVER 
+    [UNDEFINED] OVER
     [IF]
     CODE OVER
     MOV R14,-2(R15)
@@ -113,7 +113,7 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] >R 
+    [UNDEFINED] >R
     [IF]
     CODE >R
     PUSH R14
@@ -122,7 +122,7 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] R> 
+    [UNDEFINED] R>
     [IF]
     CODE R>
     SUB #2,R15
@@ -132,7 +132,7 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] - 
+    [UNDEFINED] -
     [IF]
     CODE -
     SUB @R15+,R14
@@ -142,10 +142,10 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] U.R 
+    [UNDEFINED] U.R
     [IF]
     : U.R
-    >R  <# 0 # #S #>  
+    >R  <# 0 # #S #>
     R> OVER - 0 MAX SPACES TYPE
     ;
     [THEN]
@@ -162,7 +162,7 @@ FW1 MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE
 
-    CODE DO            
+    CODE DO
     SUB #2,R15
     MOV R14,0(R15)
     ADD #2,&$1DC8
@@ -217,7 +217,7 @@ BW2 ADD #4,&$1DC8
     [THEN]
 
 
-    [UNDEFINED] I 
+    [UNDEFINED] I
     [IF]
     CODE I
     SUB #2,R15
@@ -228,18 +228,18 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] CR 
+    [UNDEFINED] CR
     [IF]
     CODE CR
     MOV #$40B4,R0
     ENDCODE
-        
+
     :NONAME
     $0D EMIT $0A EMIT
     ; IS CR
     [THEN]
 
-    [UNDEFINED] DUMP 
+    [UNDEFINED] DUMP
     [IF]
     CODE DUMP
     PUSH R13
@@ -248,14 +248,13 @@ BW2 ADD #4,&$1DC8
     ADD @R15,R14
     LO2HI
     SWAP
-    $FFF0 AND
     DO  CR
         I 4 U.R SPACE
         I 8 + I
         DO I C@ 3 U.R LOOP
         SPACE
         I $10 + I 8 +
-        DO I C@ 3 U.R LOOP  
+        DO I C@ 3 U.R LOOP
         SPACE SPACE
         I $10 + I
         DO I C@ $7E MIN $20 MAX EMIT LOOP
@@ -284,9 +283,9 @@ BW2 BIT.B   #4,&$260
     U< WHILE
         ADD R9,R9
         ADDC R14,R14
-    REPEAT  
+    REPEAT
     ADD     &$2010,R9
-    MOV     R9,0(R15)      
+    MOV     R9,0(R15)
     ADDC    #0,R14
     GOTO    BW1
     ENDCODE

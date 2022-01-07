@@ -24,6 +24,32 @@
 ; SD card OPEN, LOAD subroutines
 ;-----------------------------------------------------------------------
 
+; ==================================;
+ReadFAT1SectorW                     ;SWX (< 65536)
+; ==================================;
+    ADD     &OrgFAT1,W              ;
+    MOV     #0,X                    ; FAT1_SectorHI = 0
+    JMP     ReadSectorWX            ;SWX read FAT1SectorW
+; ----------------------------------;
+
+   .IFDEF SD_CARD_READ_WRITE
+
+; this subroutine is called by Write_File (bufferPtr=512) and CloseHandle (0 =< BufferPtr =< 512)
+; ==================================;
+WriteSD_Buf                         ;SWX input: T = CurrentHDL
+; ==================================;
+    ADD &BufferPtr,HDLL_CurSize(T)  ; update handle CurrentSizeL
+    ADDC    #0,HDLH_CurSize(T)      ;
+; ==================================;
+WriteSectorHL                       ;SWX
+; ==================================;
+    MOV     &SectorL,W              ; Low
+    MOV     &SectorH,X              ; High
+    JMP     WriteSectorWX           ; ...then RET
+; ----------------------------------;
+
+    .ENDIF
+
 ; rules for registers use
 ; S = error
 ; T = CurrentHdl, pathname
@@ -39,31 +65,23 @@ HDLcurClus2FATsecWofstY             ;WXY Input: T=Handle, HDL_CurClustHL  Output
     MOV HDLH_CurClust(T),&ClusterH  ;
 ; ==================================;
 ClusterHLtoFAT1sectWofstY           ;WXY Input : ClusterHL   Output: ClusterHL, FATsector, W = FATsector, Y = FAToffset
-; ==================================;
+; ==================================;limited to $10000 sectors ==> $800000 clusters ==> 32GB for 4k clusters
     MOV.B &ClusterL+1,W             ;3 W = ClusterLoHI
     MOV.B &ClusterL,Y               ;3 Y = ClusterLOlo
-; input : Cluster n, max = 7FFFFF (SDcard up to 256 GB)
+; input : Cluster n, max = 7FFFFF,  (SD_card up to 256 GB with 64k clusters)
 ; ClusterLoLo*4 = displacement in 512 bytes sector   ==> FAToffset
 ; ClusterHiLo&ClusterLoHi +C  << 1 = relative FATsector + orgFAT1       ==> FATsector
 ; ----------------------------------;
-    MOV.B &ClusterH,X               ;  X = 0:ClusterHIlo
-    SWPB X                          ;  X = ClusterHIlo:0
-    BIS X,W                         ;  W = ClusterHIlo:ClusterLOhi
+    MOV.B &ClusterH,X               ;3 X = 0:ClusterHIlo
+    SWPB X                          ;1 X = ClusterHIlo:0
+    BIS X,W                         ;1 W = ClusterHIlo:ClusterLOhi
 ; ----------------------------------;
-    SWPB Y                          ;  Y = ClusterLOlo:0
-    ADD Y,Y                         ;1 Y = ClusterLOlo:0 << 1  (+ carry for FATsector)
-    ADDC W,W                        ;  FATsector = W = ClusterHIlo:ClusterLOhi<<1 + Carry
-    SWPB Y                          ;  Y = 0:ClusterLOlo
-    ADD Y,Y                         ;  FAToffset = Y = 0:ClusterLOlo << 1 for FAT16 and 0:ClusterLOlo<<2 for FAT32
+    SWPB Y                          ;1 Y = ClusterLOlo:0
+    ADD Y,Y                         ;1 Y = ClusterLOlo:0 << 1  (carry report for FATsector)
+    ADDC W,W                        ;1 FATsector = W = ClusterHIlo:ClusterLOhi<<1 + Carry
+    SWPB Y                          ;1 Y = 0:ClusterLOlo
+    ADD Y,Y                         ;1 FAToffset = Y = 0:ClusterLOlo<<2 for FAT32
     MOV @RSP+,PC                    ;4
-; ----------------------------------;
-
-; ==================================;
-ReadFAT1SectorW                     ;SWX (< 65536)
-; ==================================;
-    ADD     &OrgFAT1,W              ;
-    MOV     #0,X                    ; FAT1_SectorHI = 0
-    JMP     ReadSectorWX            ;SWX read FAT1SectorW
 ; ----------------------------------;
 
 ; use no registers
@@ -105,7 +123,6 @@ CCFS_NEXT                           ;  C = 1, it's done
 CCFS_RET                            ;
     MOV @RSP+,PC                    ;
 ; ----------------------------------;
-
 
 
 ; ==================================;
@@ -289,7 +306,6 @@ CloseHandleRet                      ;
     MOV @RSP+,PC                    ; Z = 1 if no more handle
 ; ----------------------------------;
 
-
 ; ==================================;
 CloseHandle                         ; <== CLOSE, Read_File, TERM2SD", OPEN_DEL
 ; ==================================;
@@ -299,20 +315,35 @@ CloseHandle                         ; <== CLOSE, Read_File, TERM2SD", OPEN_DEL
 ; ----------------------------------;
     .IFDEF SD_CARD_READ_WRITE
     CMP.B #4,HDLB_Token(T)          ; WRITE file ?
-    JNZ TestClosedToken             ; no, case of DEL READ LOAD file
+    JL TestClosedToken              ; no, case of DEL READ LOAD file
 ;; ----------------------------------; optionnal
 ;    MOV &BufferPtr,W                ;
-;FullFillZero                        ;the remainder of sector
+;RemFillZero                         ;the remainder of sector
 ;    CMP     #BytsPerSec,W           ;2 buffer full ?
-;    JZ      CloseWriteHandle        ;2 remainding of buffer is full filled with 0
+;    JZ      UpdateWriteSector       ;2 remainding of buffer is full filled with 0
 ;    MOV.B   #0,SD_BUF(W)            ;3
 ;    ADD     #1,W                    ;1
-;    JMP     FullFillZero            ;2
+;    JMP     RemFillZero             ;2
 ;; ----------------------------------;
-WriteBeforeClose
+UpdateWriteSector
     CALL #WriteSD_Buf               ;SWX
-CloseWriteHandle
-    CALL #LoadUpdateSaveDirEntry    ;SWXY
+; ----------------------------------;
+;Load Update Save DirEntry          ;SWXY
+; ----------------------------------;
+    MOV     HDLL_DIRsect(T),W       ;
+    MOV     HDLH_DIRsect(T),X       ;
+    CALL    #readSectorWX           ;SWX SD_buffer = DIRsector
+    MOV     HDLW_DIRofst(T),Y       ; Y = DirEntryOffset
+    CALL    #GetYMDHMSforDIR        ; X=DATE,  W=TIME
+    MOV     X,SD_BUF+18(Y)          ; access date
+    MOV     W,SD_BUF+22(Y)          ; modified time
+    MOV     X,SD_BUF+24(Y)          ; modified date
+    MOV HDLL_CurSize(T),SD_BUF+28(Y); save new filesize
+    MOV HDLH_CurSize(T),SD_BUF+30(Y);
+    MOV     HDLL_DIRsect(T),W       ;
+    MOV     HDLH_DIRsect(T),X       ;
+    CALL    #WriteSectorWX          ;SWX
+; ----------------------------------;
     .ENDIF                          ;
 ; ----------------------------------;
 TestClosedToken                     ;
@@ -367,8 +398,15 @@ PENSL_END                           ;
     MOV @RSP+,PC                    ;
 ; ----------------------------------;
 
-
    .IFDEF SD_CARD_READ_WRITE
+
+; ==================================;
+HDLFrstClus2FATsecWofstY            ;WXY Input: T=Handle, HDL_CurClustHL  Output: ClusterHL, FATsector, W = FATsector, Y = FAToffset
+; ==================================;
+    MOV HDLL_FirstClus(T),&ClusterL ;
+    MOV HDLH_FirstClus(T),&ClusterH ;
+    JMP ClusterHLtoFAT1sectWofstY   ;
+; ----------------------------------;
 
 ;-----------------------------------------------------------------------
 ; SD_READ_WRITE FORTH words
@@ -717,16 +755,12 @@ OPEN_Error                          ; S= error
 ; XBOOT          [SYSRSTIV|USERSTIV] --
 ; here we are after INIT_FORTH
 ; performs bootstrap from SD_CARD\BOOT.4th file, ready to test SYSRSTIV|USERSYS value
-XBOOT   ;    BIT #1,TOS              ; USERSYS request ?
-        ;    JNZ AbortBoot           ;
-        ;    CMP #0,TOS              ; WARM request ?
-        ;    JZ AbortBoot            ; if yes
+XBOOT       CALL &HARD_APP          ; WARM first calls HARD_APP (which includes INIT_HARD_SD)
             BIT.B #CD_SD,&SD_CDIN   ; SD_memory in SD_Card socket ?
             JZ BOOT_YES             ; if yes
-AbortBoot   MOV #WARM,PC            ; goto WARM without return
+AbortBoot   MOV #WARM+4,PC          ; if no, resume with WARM+4, without return
 ; ----------------------------------;
-BOOT_YES    CALL &HARD_APP          ; CALL HARD_APP (which includes INIT_HARD_SD)
-            MOV #PSTACK-2,PSP       ; preserve SYSRSTIV|USERSYS in TOS for BOOT.4TH tests
+BOOT_YES    MOV #PSTACK-2,PSP       ; preserve SYSRSTIV|USERSYS in TOS for BOOT.4TH tests
             MOV #0,0(PSP)           ; set 0 for next SYS use
             mDOCOL                  ;
     .word XSQUOTE                   ; -- SYSRSTIV|USERSYS addr u

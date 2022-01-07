@@ -17,7 +17,7 @@
     MARKER {TSTWORDS}
 
 
-    [UNDEFINED] 0= 
+    [UNDEFINED] 0=
     [IF]
     CODE 0=
     SUB #1,R14
@@ -41,7 +41,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] IF 
+    [UNDEFINED] IF
     [IF]
 
     CODE IF
@@ -53,7 +53,7 @@ BW1 SUB #2,R15
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
-    
+
     CODE THEN
     MOV &$1DC8,0(R14)
     MOV @R15+,R14
@@ -61,7 +61,7 @@ BW1 SUB #2,R15
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] ELSE 
+    [UNDEFINED] ELSE
     [IF]
     CODE ELSE
     ADD #4,&$1DC8
@@ -74,7 +74,7 @@ BW1 SUB #2,R15
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] SWAP 
+    [UNDEFINED] SWAP
     [IF]
     CODE SWAP
     PUSH R14
@@ -84,13 +84,13 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] BEGIN 
+    [UNDEFINED] BEGIN
     [IF]
 
     CODE BEGIN
     MOV #$4032,R0
     ENDCODE IMMEDIATE
-    
+
     CODE UNTIL
     MOV #$40AC,R9
 BW1 ADD #4,&$1DC8
@@ -100,22 +100,22 @@ BW1 ADD #4,&$1DC8
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
-    
+
     CODE AGAIN
     MOV #$40B2,R9
     GOTO BW1
     ENDCODE IMMEDIATE
-    
+
     : WHILE
     POSTPONE IF SWAP
     ; IMMEDIATE
-    
+
     : REPEAT
     POSTPONE AGAIN POSTPONE THEN
     ; IMMEDIATE
     [THEN]
 
-    [UNDEFINED] DO 
+    [UNDEFINED] DO
     [IF]
 
     HDNCODE XDO
@@ -169,7 +169,7 @@ BW2 ADD #4,&$1DC8
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
-    
+
     HDNCODE XPLOO
     ADD R14,0(R1)
     MOV @R15+,R14
@@ -189,7 +189,7 @@ LOAD" \misc\TestASM.4th"
 ECHO
 
 
-: LOOP_TEST 8 0 DO I . LOOP 
+: LOOP_TEST 8 0 DO I . LOOP
 ;
 
 LOOP_TEST
@@ -198,18 +198,18 @@ LOOP_TEST
 : LOOP_TEST1
     BEGIN   DUP U. 1 -
     ?DUP
-    0= UNTIL 
+    0= UNTIL
 ;
 : FIND_TEST
    $20 WORD
-       50000 0 
+       50000 0
        DO
-           DUP   
+           DUP
            FIND DROP DROP
        LOOP
     FIND
     0=  IF ABORT" <-- not found !"
         ELSE ABORT" <-- found !"
-        THEN 
+        THEN
  ;
-\ 
+\

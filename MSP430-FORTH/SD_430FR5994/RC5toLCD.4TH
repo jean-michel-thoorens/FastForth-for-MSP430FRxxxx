@@ -23,7 +23,7 @@
 
 
 
-    [UNDEFINED] TSTBIT  
+    [UNDEFINED] TSTBIT
     [IF]
     CODE TSTBIT
     MOV @R15+,R9
@@ -32,7 +32,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] = 
+    [UNDEFINED] =
     [IF]
     CODE =
     SUB @R15+,R14
@@ -45,7 +45,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] IF 
+    [UNDEFINED] IF
     [IF]
     CODE IF
     SUB #2,R15
@@ -64,7 +64,7 @@
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] ELSE 
+    [UNDEFINED] ELSE
     [IF]
     CODE ELSE
     ADD #4,&$1DC8
@@ -78,18 +78,18 @@
     [THEN]
 
 
-    [UNDEFINED] CR 
+    [UNDEFINED] CR
     [IF]
     CODE CR
     MOV #$40B4,R0
     ENDCODE
-    
+
     :NONAME
     $0D EMIT $0A EMIT
     ; IS CR
     [THEN]
 
-    [UNDEFINED] >BODY 
+    [UNDEFINED] >BODY
     [IF]
     CODE >BODY
     ADD #4,R14
@@ -139,7 +139,7 @@ BW1 SUB #2,R15
     BIS.B #$0F,&$224
     COLON
     TOP_LCD 2 20_US
-    TOP_LCD 2 20_US 
+    TOP_LCD 2 20_US
     ;
 
     CODE LCD_WRF
@@ -245,7 +245,7 @@ FW2 BIC #%1111_1000,0(R1)
         [THEN]
         MOV @R10+,&$FFEA
         MOV @R10+,&$FFDE
-    THEN 
+    THEN
     MOV @R1+,R0
     ENDCODE
 
@@ -258,12 +258,12 @@ BW1 CALL #STOP_R2L
 
     HDNCODE INIT_R2L
     MOV #%10_1101_0100,&$3C0
-    $1800 @ 16000 = 
+    $1800 @ 16000 =
     [IF]
         MOV #1,&$3A0
         MOV #1,&$3E0
     [THEN]
-    $1800 @ 24000 = 
+    $1800 @ 24000 =
     [IF]
         MOV #2,&$3A0
         MOV #2,&$3E0

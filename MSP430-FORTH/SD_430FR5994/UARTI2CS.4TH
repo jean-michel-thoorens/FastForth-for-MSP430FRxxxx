@@ -56,7 +56,6 @@ BW1
     BIS.B R10,&$263
     BIS.B R10,&$267
     MOV #0,&$3C0
-    MOV #0,&$3C6
     BIC.B #$80,&$20C
     BIC.B #$80,&$204
     BIC.B #$40,&$21A
@@ -70,7 +69,7 @@ BW1
         MOV @R10+,&$FFDE
     THEN
     MOV #1,R14
-    MOV #UART_WARM+4,R0
+    MOV #$4186+4,R0
     ENDCODE
 
     HDNCODE I2CM_START
@@ -166,7 +165,9 @@ BW2
                 BIS.B #4,&$265
             THEN
             BIC.B #2,&$265
-            MOV R0,R0
+            BEGIN
+                BIT.B #2,&$261
+            0<> UNTIL
             BIS.B #2,&$265
             SUB #1,R10
         0= UNTIL
@@ -227,10 +228,13 @@ FW2
                     BIT.B #2,&$261
                 0<> UNTIL
                 BIS.B #2,&$265
-                BEGIN
-                    BIT #2,&$5DC
-                0<> UNTIL
-                MOV.B R9,&$5CE
+                CMP.B #4,&{UARTI2CS}+9
+                0<> IF
+                    BEGIN
+                        BIT #2,&$5DC
+                    0<> UNTIL
+                    MOV.B R9,&$5CE
+                THEN
             REPEAT
             CMP.B #4,R9
             U>= IF

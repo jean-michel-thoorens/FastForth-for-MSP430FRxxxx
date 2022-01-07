@@ -7,7 +7,7 @@ MARKER {CORETEST}
 
 : ABORT_TEST        \ flag --
 $0D EMIT            \ return to column 1
-POSTPONE {CORETEST} \ remove all test words 
+POSTPONE {CORETEST} \ remove all test words
 ABORT" {CORE_ANS} word set not found !"
 ;
 
@@ -16,7 +16,7 @@ ABORT" {CORE_ANS} word set not found !"
 : CORETESTSUCCESS
 $0D EMIT        \ -- $0D    return to column 1
 $0A BASE !      \           set decimal
-{CORETEST}      \           remove all test words 
+{CORETEST}      \           remove all test words
 ." CORETEST + COREPLUSTEST success!" \ true --
 ;
 
@@ -105,7 +105,7 @@ VARIABLE VERBOSE
 \             DO 0 LOOP
 \             ELSE 0 DO DROP LOOP THEN
 \             THEN ;
-\ 
+\
 \ : ERROR     \ ( C-ADDR U -- ) DISPLAY AN ERROR MESSAGE FOLLOWED BY
 \         \ THE LINE THAT HAD THE ERROR.
 \     TYPE SOURCE TYPE CR          \ DISPLAY LINE CORRESPONDING TO ERROR
@@ -1137,7 +1137,7 @@ CREATE ABUF 80 CHARS ALLOT
 
 : ACCEPT-TEST
     CR ." PLEASE TYPE UP TO 80 CHARACTERS: "
-ABUF 80 \ ACCEPT            \ JMT 
+ABUF 80 \ ACCEPT            \ JMT
           ['] ACCEPT >BODY  \ JMT: find default part of deferred ACCEPT
           EXECUTE           \ JMT: execute ACCEPT
     CR ." RECEIVED: " [CHAR] " EMIT
@@ -1170,7 +1170,7 @@ CR .( End of Core word set tests) \ "
 \ but WITHOUT ANY WARRANTY; without even the implied warranty of
 \ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-\ The tests are not claimed to be comprehensive or correct 
+\ The tests are not claimed to be comprehensive or correct
 
 \ -----------------------------------------------------------------------------
 \ The tests are based on John Hayes test program for the core word set
@@ -1295,7 +1295,7 @@ T{ 0 MIN-INT 1+ DUP MIN-INT GD8  -> 1 }T
 \ n2 is the value of I in a DO ... +LOOP
 \ n3 is a test value
 \ If n2=n3 then return n1-n2 else return 1
-: SET-I  ( n1 n2 n3 -- n1-n2 | 1 ) 
+: SET-I  ( n1 n2 n3 -- n1-n2 | 1 )
    OVER = IF - ELSE 2DROP 1 THEN
 ;
 
@@ -1380,7 +1380,7 @@ TESTING parsing behaviour of S" ." and (
 T{ : GC5 S" A string"2DROP ; GC5 -> }T
 T{ ( A comment)1234 -> 1234 }T
 T{ : PB1 CR ." You should see 2345: "." 2345"( A comment) CR ; PB1 -> }T
- 
+
 \ -----------------------------------------------------------------------------
 TESTING number prefixes # $ % and 'c' character input
 \ Adapted from the Forth 200X Draft 14.5 document
@@ -1461,7 +1461,7 @@ TESTING ALLOT ( n -- ) where n <= 0
 
 T{ HERE 5 ALLOT -5 ALLOT HERE = -> <TRUE> }T
 T{ HERE 0 ALLOT HERE = -> <TRUE> }T
- 
+
 \ -----------------------------------------------------------------------------
 
 CR .( End of additional Core tests) \ "

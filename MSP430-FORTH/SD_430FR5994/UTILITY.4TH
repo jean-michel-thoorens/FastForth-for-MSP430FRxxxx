@@ -17,9 +17,9 @@
 
     ABORT_UTILITY
 
-    MARKER {UTILITY} 
+    MARKER {UTILITY}
 
-    [UNDEFINED] EXIT 
+    [UNDEFINED] EXIT
     [IF]
     CODE EXIT
     MOV @R1+,R13
@@ -28,7 +28,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] SWAP 
+    [UNDEFINED] SWAP
     [IF]
     CODE SWAP
     MOV @R15,R10
@@ -38,7 +38,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] U< 
+    [UNDEFINED] U<
     [IF]
     CODE U<
     SUB @R15+,R14
@@ -52,7 +52,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] IF 
+    [UNDEFINED] IF
     [IF]
     CODE IF
     SUB #2,R15
@@ -75,7 +75,7 @@
     CODE BEGIN
     MOV #$4032,R0
     ENDCODE IMMEDIATE
-    
+
     CODE UNTIL
     MOV #$40AC,R9
 BW1 ADD #4,&$1DC8
@@ -85,22 +85,22 @@ BW1 ADD #4,&$1DC8
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
-    
+
     CODE AGAIN
     MOV #$40B2,R9
     GOTO BW1
     ENDCODE IMMEDIATE
-    
+
     : WHILE
     POSTPONE IF SWAP
     ; IMMEDIATE
-    
+
     : REPEAT
     POSTPONE AGAIN POSTPONE THEN
     ; IMMEDIATE
     [THEN]
 
-    [UNDEFINED] DO 
+    [UNDEFINED] DO
     [IF]
     HDNCODE XDO
     MOV #$8000,R9
@@ -153,7 +153,7 @@ BW2 ADD #4,&$1DC8
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
-    
+
     HDNCODE XPLOO
     ADD R14,0(R1)
     MOV @R15+,R14
@@ -166,7 +166,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] I 
+    [UNDEFINED] I
     [IF]
     CODE I
     SUB #2,R15
@@ -177,7 +177,7 @@ BW2 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DUP 
+    [UNDEFINED] DUP
     [IF]
     CODE DUP
 BW1 SUB #2,R15
@@ -192,7 +192,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DROP 
+    [UNDEFINED] DROP
     [IF]
     CODE DROP
     MOV @R15+,R14
@@ -200,7 +200,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] >R 
+    [UNDEFINED] >R
     [IF]
     CODE >R
     PUSH R14
@@ -209,7 +209,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] R> 
+    [UNDEFINED] R>
     [IF]
     CODE R>
     SUB #2,R15
@@ -219,13 +219,13 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] SPACE 
+    [UNDEFINED] SPACE
     [IF]
     : SPACE
     $20 EMIT ;
     [THEN]
 
-    [UNDEFINED] SPACES 
+    [UNDEFINED] SPACES
     [IF]
     CODE SPACES
     CMP #0,R14
@@ -235,17 +235,17 @@ BW1 SUB #2,R15
             LO2HI
             $20 EMIT
             HI2LO
-            SUB #2,R13 
+            SUB #2,R13
             SUB #1,R14
         0= UNTIL
         MOV @R1+,R13
     THEN
     MOV @R15+,R14
-    MOV @R13+,R0              
+    MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2DUP 
+    [UNDEFINED] 2DUP
     [IF]
     CODE 2DUP
     MOV R14,-2(R15)
@@ -255,7 +255,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 1+ 
+    [UNDEFINED] 1+
     [IF]
     CODE 1+
     ADD #1,R14
@@ -263,7 +263,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] + 
+    [UNDEFINED] +
     [IF]
     CODE +
     ADD @R15+,R14
@@ -271,7 +271,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] - 
+    [UNDEFINED] -
     [IF]
     CODE -
     SUB @R15+,R14
@@ -281,7 +281,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] C@ 
+    [UNDEFINED] C@
     [IF]
     CODE C@
     MOV.B @R14,R14
@@ -289,7 +289,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] AND 
+    [UNDEFINED] AND
     [IF]
     CODE AND
     AND @R15+,R14
@@ -297,7 +297,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] ROT 
+    [UNDEFINED] ROT
     [IF]
     CODE ROT
     MOV @R15,R10
@@ -308,7 +308,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] MAX 
+    [UNDEFINED] MAX
     [IF]
     CODE MAX
     CMP @R15,R14
@@ -316,7 +316,7 @@ BW1 SUB #2,R15
 BW1 ADD #2,R15
     MOV @R13+,R0
     ENDCODE
-    
+
     CODE MIN
     CMP @R15,R14
     S< ?GOTO BW1
@@ -325,7 +325,7 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] OVER 
+    [UNDEFINED] OVER
     [IF]
     CODE OVER
     MOV R14,-2(R15)
@@ -368,9 +368,9 @@ FW1 MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] CONSTANT 
+    [UNDEFINED] CONSTANT
     [IF]
-    : CONSTANT 
+    : CONSTANT
     CREATE
     HI2LO
     MOV R14,-2(R10)
@@ -380,12 +380,12 @@ FW1 MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] BASE 
+    [UNDEFINED] BASE
     [IF]
     $1DBE  CONSTANT BASE
     [THEN]
 
-    [UNDEFINED] .S 
+    [UNDEFINED] .S
     [IF]
     CODE .S
     MOV     R14,-2(R15)
@@ -404,12 +404,12 @@ BW1 MOV     R14,-4(R15)
     $08 EMIT
     $3E EMIT SPACE
     2DUP 1+
-    U< IF 
+    U< IF
         DROP DROP EXIT
     THEN
     BASE @ >R
     $10 BASE !
-    DO 
+    DO
         '$' EMIT
         I @ U.
     2 +LOOP
@@ -417,7 +417,7 @@ BW1 MOV     R14,-4(R15)
     ;
     [THEN]
 
-    [UNDEFINED] .RS 
+    [UNDEFINED] .RS
     [IF]
     CODE .RS
     MOV     R14,-2(R15)
@@ -427,15 +427,15 @@ BW1 MOV     R14,-4(R15)
     ENDCODE
     [THEN]
 
-    [UNDEFINED] ? 
+    [UNDEFINED] ?
     [IF]
-    CODE ?          
+    CODE ?
     MOV @R14,R14
     MOV #U.,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] CR 
+    [UNDEFINED] CR
     [IF]
 
     CODE CR
@@ -447,7 +447,7 @@ BW1 MOV     R14,-4(R15)
     ; IS CR
     [THEN]
 
-    [UNDEFINED] 2/ 
+    [UNDEFINED] 2/
     [IF]
     CODE 2/
     RRA R14
@@ -455,10 +455,10 @@ BW1 MOV     R14,-4(R15)
     ENDCODE
     [THEN]
 
-    [UNDEFINED] WORDS 
+    [UNDEFINED] WORDS
     [IF]
     : WORDS
-    CR 
+    CR
     $1DCE @ $1CE4
     $180C @ DUP +
     MOVE
@@ -469,7 +469,7 @@ BW1 MOV     R14,-4(R15)
             DUP I $1CE4 + @
                 U< IF
                     DROP DROP
-                    I DUP 
+                    I DUP
                     $1CE4 + @
                 THEN
             2 +LOOP
@@ -488,15 +488,15 @@ BW1 MOV     R14,-4(R15)
     ;
     [THEN]
 
-    [UNDEFINED] U.R 
+    [UNDEFINED] U.R
     [IF]
     : U.R
-    >R  <# 0 # #S #>  
+    >R  <# 0 # #S #>
     R> OVER - 0 MAX SPACES TYPE
     ;
     [THEN]
 
-    [UNDEFINED] DUMP 
+    [UNDEFINED] DUMP
     [IF]
     CODE DUMP
     PUSH R13
@@ -512,7 +512,7 @@ BW1 MOV     R14,-4(R15)
         DO I C@ 3 U.R LOOP
         SPACE
         I $10 + I 8 +
-        DO I C@ 3 U.R LOOP  
+        DO I C@ 3 U.R LOOP
         SPACE SPACE
         I $10 + I
         DO I C@ $7E MIN $20 MAX EMIT LOOP
