@@ -1,4 +1,8 @@
 
+; --------------------
+; RTC.4th for MSP_EXP430FR5994
+; --------------------
+
     CODE ABORT_RTC
     SUB #4,R15
     MOV R14,2(R15)
@@ -7,41 +11,37 @@
     0<> IF MOV #0,R14 THEN
     MOV R14,0(R15)
     MOV &$180A,R14
-    SUB #309,R14
+    SUB #400,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V3.9 please!"
+    ABORT" FastForth V4.0 please!"
     ABORT" target without LF_XTAL !"
     RST_RET
     ;
 
     ABORT_RTC
 
-; --------------------
-; RTC.4th for MSP_EXP430FR5994
-; --------------------
-
-
     MARKER {RTC}
 
-    [UNDEFINED] OR
-    [IF]
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.4th for MSP_EXP430FR5994)
+; ------------------------------------------------------------------
+
+    [UNDEFINED] OR [IF]
     CODE OR
     BIS @R15+,R14
     MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] C@
-    [IF]
+    [UNDEFINED] C@ [IF]
     CODE C@
     MOV.B @R14,R14
     MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] C!
-    [IF]
+    [UNDEFINED] C! [IF]
     CODE C!
     MOV.B @R15+,0(R14)
     ADD #1,R15
@@ -50,8 +50,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] SWAP
-    [IF]
+    [UNDEFINED] SWAP [IF]
     CODE SWAP
     MOV @R15,R10
     MOV R14,0(R15)
@@ -60,8 +59,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] OVER
-    [IF]
+    [UNDEFINED] OVER [IF]
     CODE OVER
     MOV R14,-2(R15)
     MOV @R15,R14
@@ -70,8 +68,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DUP
-    [IF]
+    [UNDEFINED] DUP [IF]
     CODE DUP
 BW1 SUB #2,R15
     MOV R14,0(R15)
@@ -85,16 +82,14 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DROP
-    [IF]
+    [UNDEFINED] DROP [IF]
     CODE DROP
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DEPTH
-    [IF]
+    [UNDEFINED] DEPTH [IF]
     CODE DEPTH
     MOV R14,-2(R15)
     MOV #$1C80,R14
@@ -105,8 +100,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] >R
-    [IF]
+    [UNDEFINED] >R [IF]
     CODE >R
     PUSH R14
     MOV @R15+,R14
@@ -114,8 +108,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] R>
-    [IF]
+    [UNDEFINED] R> [IF]
     CODE R>
     SUB #2,R15
     MOV R14,0(R15)
@@ -124,16 +117,14 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 1+
-    [IF]
+    [UNDEFINED] 1+ [IF]
     CODE 1+
     ADD #1,R14
     MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 1-
-    [IF]
+    [UNDEFINED] 1- [IF]
     CODE 1-
     SUB #1,R14
     MOV @R13+,R0
@@ -154,8 +145,7 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] =
-    [IF]
+    [UNDEFINED] = [IF]
     CODE =
     SUB @R15+,R14
     0<> IF
@@ -167,40 +157,40 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] IF
-    [IF]
+    [UNDEFINED] IF [IF]
+
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC8,R14
-    ADD #4,&$1DC8
-    MOV #$40AC,0(R14)
+    MOV &$1DC0,R14
+    ADD #4,&$1DC0
+    MOV #$4096,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC8,0(R14)
+    MOV &$1DC0,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] ELSE
-    [IF]
+    [UNDEFINED] ELSE [IF]
     CODE ELSE
-    ADD #4,&$1DC8
-    MOV &$1DC8,R10
-    MOV #$40B2,-4(R10)
+    ADD #4,&$1DC0
+    MOV &$1DC0,R10
+    MOV #$409C,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
+
     [THEN]
 
-    [UNDEFINED] DO
-    [IF]
+    [UNDEFINED] DO [IF]
+
     HDNCODE XDO
     MOV #$8000,R9
     SUB @R15+,R9
@@ -214,8 +204,8 @@ BW1 SUB #2,R15
     CODE DO
     SUB #2,R15
     MOV R14,0(R15)
-    ADD #2,&$1DC8
-    MOV &$1DC8,R14
+    ADD #2,&$1DC0
+    MOV &$1DC0,R14
     MOV #XDO,-2(R14)
     ADD #2,&$1C00
     MOV &$1C00,R10
@@ -237,8 +227,8 @@ BW1 BIT #$100,R2
 
     CODE LOOP
     MOV #XLOOP,R9
-BW2 ADD #4,&$1DC8
-    MOV &$1DC8,R10
+BW2 ADD #4,&$1DC0
+    MOV &$1DC0,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     BEGIN
@@ -263,19 +253,19 @@ BW2 ADD #4,&$1DC8
     MOV #XPLOO,R9
     GOTO BW2
     ENDCODE IMMEDIATE
+
     [THEN]
 
-    [UNDEFINED] BEGIN
-    [IF]
+    [UNDEFINED] BEGIN [IF]
 
     CODE BEGIN
-    MOV #$4032,R0
+    MOV #BEGIN,R0
     ENDCODE IMMEDIATE
 
     CODE UNTIL
-    MOV #$40AC,R9
-BW1 ADD #4,&$1DC8
-    MOV &$1DC8,R10
+    MOV #$4096,R9
+BW1 ADD #4,&$1DC0
+    MOV &$1DC0,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     MOV @R15+,R14
@@ -283,7 +273,7 @@ BW1 ADD #4,&$1DC8
     ENDCODE IMMEDIATE
 
     CODE AGAIN
-    MOV #$40B2,R9
+    MOV #$409C,R9
     GOTO BW1
     ENDCODE IMMEDIATE
 
@@ -294,27 +284,27 @@ BW1 ADD #4,&$1DC8
     : REPEAT
     POSTPONE AGAIN POSTPONE THEN
     ; IMMEDIATE
+
     [THEN]
 
-    [UNDEFINED] CASE
-    [IF]
+    [UNDEFINED] CASE [IF]
     : CASE
     0
     ; IMMEDIATE
 
     : OF
-    1+
-    >R
+    1+	
+    >R	
     POSTPONE OVER POSTPONE =
-    POSTPONE IF
-    POSTPONE DROP
-    R>
+    POSTPONE IF	
+    POSTPONE DROP	
+    R>	
     ; IMMEDIATE
 
     : ENDOF
-    >R
+    >R	
     POSTPONE ELSE
-    R>
+    R>	
     ; IMMEDIATE
 
     : ENDCASE
@@ -325,16 +315,14 @@ BW1 ADD #4,&$1DC8
     ; IMMEDIATE
     [THEN]
 
-    [UNDEFINED] +
-    [IF]
+    [UNDEFINED] + [IF]
     CODE +
     ADD @R15+,R14
     MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] -
-    [IF]
+    [UNDEFINED] - [IF]
     CODE -
     SUB @R15+,R14
     XOR #-1,R14
@@ -343,8 +331,7 @@ BW1 ADD #4,&$1DC8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] MAX
-    [IF]
+    [UNDEFINED] MAX [IF]
     CODE MAX
     CMP @R15,R14
     S<  ?GOTO FW1
@@ -361,16 +348,14 @@ FW1 MOV @R15+,R14
 
     [THEN]
 
-    [UNDEFINED] 2*
-    [IF]
+    [UNDEFINED] 2* [IF]
     CODE 2*
     ADD R14,R14
     MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] UM*
-    [IF]
+    [UNDEFINED] UM* [IF]
     CODE UM*
     MOV @R15,&$4C0
 BW1 MOV R14,&$4C8
@@ -385,13 +370,16 @@ BW1 MOV R14,&$4C8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] UM/MOD
-    [IF]
+    [UNDEFINED] UM/MOD [IF]
     CODE UM/MOD
     PUSH #DROP
-    MOV #$403E,R0
+    MOV #$4028,R0
     ENDCODE
     [THEN]
+
+; --------------------------
+; end of definitions we need
+; --------------------------
 
     : U*/
     >R UM* R> UM/MOD SWAP DROP
@@ -409,8 +397,7 @@ BW1 MOV R14,&$4C8
     U/MOD SWAP DROP
     ;
 
-    [UNDEFINED] SPACES
-    [IF]
+    [UNDEFINED] SPACES [IF]
     : SPACES
     BEGIN
         ?DUP
@@ -498,31 +485,18 @@ BW1 MOV R14,&$4C8
     ." we are on " DATE?
     ;
 
-    RST_SET
-
-    [UNDEFINED] S_
-    [IF]
+    [UNDEFINED] S_ [IF]
     CODE S_
-    MOV #0,&$1DC0
-    COLON
-    $401E ,
-    $20 WORD
-    HI2LO
-    MOV.B @R14,R14
-    ADD #1,R14
-    BIT #1,R14
-    ADDC R14,&$1DC8
-    MOV @R15+,R14
-    MOV @R1+,R13
-    MOV #$20,&$1DC0
-    MOV @R13+,R0
+    SUB #2,R15
+    MOV R14,0(R15)
+    MOV #$20,R14
+    MOV #S"+10,R0
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] ESC
-    [IF]
+    [UNDEFINED] ESC [IF]
     CODE ESC
-    CMP #0,&$1DBC
+    CMP #0,&$1DB4
     0= IF MOV @R13+,R0
     THEN
     COLON
@@ -534,16 +508,14 @@ BW1 MOV R14,&$4C8
     ; IMMEDIATE
     [THEN]
 
-    [UNDEFINED] >BODY
-    [IF]
+    [UNDEFINED] >BODY [IF]
     CODE >BODY
     ADD #4,R14
     MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] EXECUTE
-    [IF]
+    [UNDEFINED] EXECUTE [IF]
     CODE EXECUTE
     PUSH R14
     MOV @R15+,R14
@@ -551,30 +523,35 @@ BW1 MOV R14,&$4C8
     ENDCODE
     [THEN]
 
-    [UNDEFINED] EVALUATE
-    [IF]
+    [UNDEFINED] EVALUATE [IF]
+
+    CODENNM
+    MOV @R1+,&$1DBE
+    MOV @R1+,&$1DBC
+    MOV @R1+,&$1DBA
+    MOV @R1+,R13
+    MOV @R13+,R0
+    ENDCODE
+
     CODE EVALUATE
-    MOV #$1DC2,R9
+    MOV #$1DBA,R9
     MOV @R9+,R12
     MOV @R9+,R11
     MOV @R9+,R10
     PUSHM #4,R13
-    LO2HI
-    [ ' \ 8 + , ]
-    HI2LO
-    MOV @R1+,&$1DC6
-    MOV @R1+,&$1DC4
-    MOV @R1+,&$1DC2
-    MOV @R1+,R13
-    MOV @R13+,R0
+    MOV R0,R13
+    ADD #8,R13
+    MOV #\+$08,R0
+    MOV #0,R3
     ENDCODE
+    ,
+
     [THEN]
 
-    [UNDEFINED] CR
-    [IF]
+    [UNDEFINED] CR [IF]
 
     CODE CR
-    MOV #$40B4,R0
+    MOV #$409E,R0
     ENDCODE
 
     :NONAME
@@ -583,7 +560,7 @@ BW1 MOV R14,&$4C8
     [THEN]
 
     : SET_TIME
-    ESC [8;40;80t
+    ESC [8;42;80t
     39 0 DO CR LOOP
     ESC [H
     CR ." DATE (DMY): "
@@ -598,8 +575,9 @@ BW1 MOV R14,&$4C8
     EXECUTE
     EVALUATE
     CR TIME!
-    RST_RET
     ;
 
-ECHO
-SET_TIME
+    RST_SET
+
+    ECHO
+    SET_TIME

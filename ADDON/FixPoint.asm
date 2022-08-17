@@ -3,16 +3,23 @@
             FORTHWORD "{FIXPOINT}"
             MOV @IP+,PC
 
-    .IFNDEF DABS
-DABS        AND #-1,TOS         ; clear V, set N
-            JGE DABSEND         ; if positive (N=0)
-            XOR #-1,0(PSP)      ;4
-            XOR #-1,TOS         ;1
-            ADD #1,0(PSP)       ;4
-            ADDC #0,TOS         ;1
-DABSEND     MOV @IP+,PC
-    .ENDIF
+    .IFNDEF DNEGATE
+; https://forth-standard.org/standard/double/DNEGATE
+            FORTHWORD "DNEGATE"
+DNEGATE     XOR #-1,0(PSP)
+            XOR #-1,TOS
+            ADD #1,0(PSP)
+            ADDC #0,TOS
+            MOV @IP+,PC         ; 4
 
+; https://forth-standard.org/standard/double/DABS
+; DABS     d1 -- |d1|     absolute value
+            FORTHWORD "DABS"
+DABS        CMP #0,TOS       ;  1
+            JL DNEGATE
+            MOV @IP+,PC
+
+    .ENDIF
 ; https://forth-standard.org/standard/core/HOLDS
 ; Adds the string represented by addr u to the pictured numeric output string
 ; compilation use: <# S" string" HOLDS #>
@@ -86,7 +93,6 @@ UDMT4       ADD IP,IP           ; 1 (RLA LSBs) MDlo *2
             MOV @RSP+,IP        ; 2
             MOV @IP+,PC
 
-
             FORTHWORD "F*"          ; s15.16 * s15.16 --> s15.16 result
             MOV 2(PSP),S        ;
             XOR TOS,S           ; MDhi XOR MRhi --> S keep sign of result
@@ -109,7 +115,6 @@ FSTARSIGN   AND #-1,S           ; clear V, set N
             ADD #1,0(PSP)
             ADDC #0,TOS
 FSTAREND    MOV @IP+,PC
-
 
             FORTHWORD "F/"          ; s15.16 / s15.16 --> s15.16 result
 FDIV        PUSHM #4,rDOVAR     ; 6 save rDOVAR to rDOCOL regs to use M to R alias

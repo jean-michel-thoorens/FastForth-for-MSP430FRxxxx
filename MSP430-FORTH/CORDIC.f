@@ -34,6 +34,10 @@
 \ ASSEMBLER conditionnal usage with IF UNTIL WHILE  S<  S>=  U<   U>=  0=  0<>  0>=
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
+; ----------
+; CORDIC.f
+; ----------
+
     CODE ABORT_CORDIC
     SUB #4,PSP
     MOV TOS,2(PSP)
@@ -42,19 +46,15 @@
     0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (FIXPOINT_INPUT), set TOS = 0
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #309,TOS        \                   FastForth V3.9
+    SUB #400,TOS        \                   FastForth V4.0
     COLON
     $0D EMIT            \ return to column 1 without CR
-    ABORT" FastForth V3.9 please!"
+    ABORT" FastForth V4.0 please!"
     ABORT" build FastForth with FIXPOINT_INPUT addon"
     RST_RET             \ if no abort remove this word
     ;
 
     ABORT_CORDIC
-
-; ----------
-; CORDIC.f
-; ----------
 
 MARKER {CORDIC}
 
@@ -105,10 +105,9 @@ MARKER {CORDIC}
     39797 ,
     39797 ,
 
+    [UNDEFINED] DABS [IF]
 \ https://forth-standard.org/standard/double/DABS
 \ DABS     d1 -- |d1|     absolute value
-    [UNDEFINED] DABS
-    [IF]
     CODE DABS
     AND #-1,TOS         \ clear V, set N
     S< IF               \
@@ -121,10 +120,9 @@ MARKER {CORDIC}
     ENDCODE
     [THEN]
 
+    [UNDEFINED] R> [IF]
 \ https://forth-standard.org/standard/core/Rfrom
 \ R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
-    [UNDEFINED] R>
-    [IF]
     CODE R>
     SUB #2,PSP      \ 1
     MOV TOS,0(PSP)  \ 3
@@ -181,65 +179,67 @@ MARKER {CORDIC}
 
     [IF]   ; MSP430FRxxxx with hardware_MPY
 
+        [UNDEFINED] HOLDS [IF]
 \ https://forth-standard.org/standard/core/HOLDS
 \ Adds the string represented by addr u to the pictured numeric output string
 \ compilation use: <# S" string" HOLDS #>
 \ free chars area in the 32+2 bytes HOLD buffer = {26,23,2} chars with a 32 bits sized {hexa,decimal,binary} number.
 \ (2 supplementary bytes are room for sign - and decimal point)
 \ C HOLDS    addr u --
-        [UNDEFINED] HOLDS
-        [IF]
-    CODE HOLDS
-    MOV @PSP+,X         \ 2     X=src
-BW3 ADD TOS,X           \ 1     X=src_end
-    MOV &HP,Y           \ 3     Y=dst
-    BEGIN
-       SUB #1,X            \ 1     src-1
-        SUB #1,TOS          \ 1     cnt-1
-    U>= WHILE
-        SUB #1,Y            \ 1     dst-1
-        MOV.B @X,0(Y)       \ 4
-    REPEAT
-    MOV Y,&HP           \ 3
-    MOV @PSP+,TOS       \ 2
-    MOV @IP+,PC         \ 4  15 words
-    ENDCODE
+        CODE HOLDS
+        MOV @PSP+,X         \ 2     X=src
+BW3     ADD TOS,X           \ 1     X=src_end
+        MOV &HP,Y           \ 3     Y=dst
+        BEGIN
+        SUB #1,X            \ 1     src-1
+            SUB #1,TOS          \ 1     cnt-1
+        U>= WHILE
+            SUB #1,Y            \ 1     dst-1
+            MOV.B @X,0(Y)       \ 4
+        REPEAT
+        MOV Y,&HP           \ 3
+        MOV @PSP+,TOS       \ 2
+        MOV @IP+,PC         \ 4  15 words
+        ENDCODE
         [THEN]
 
+        [UNDEFINED] F#S [IF]
 \ F#S    Qlo Qhi u -- Qhi 0   convert fractionnal part of Q15.16 fixed point number
 \                             with u digits
-        [UNDEFINED] F#S
-        [IF]
-    CODE F#S
-                MOV 2(PSP),X        \ -- Qlo Qhi u      X = Qlo
-                MOV @PSP,2(PSP)     \ -- Qhi Qhi u
-                MOV X,0(PSP)        \ -- Qhi Qlo u
-                MOV TOS,T           \                   T = len
-                MOV #0,S            \                   S = count
-    BEGIN       MOV @PSP,&MPY       \                   Load 1st operand
-                MOV &BASEADR,&OP2   \                   Load 2nd operand
-                MOV &RES0,0(PSP)    \ -- Qhi RESlo x        low result on stack
-                MOV &RES1,TOS       \ -- Qhi RESlo REShi    high result in TOS
-                CMP #10,TOS         \                   digit to char
-        U>= IF  ADD #7,TOS
-        THEN    ADD #$30,TOS
-                MOV.B TOS,HOLDS_ORG(S)  \ -- Qhi RESlo char     char to string
-                ADD #1,S            \                   count+1
-                CMP T,S             \                   count=len ?
-    0= UNTIL    MOV T,TOS           \ -- len RESlo len
-                MOV #0,0(PSP)       \ -- Qhi 0 len
-                MOV #HOLDS_ORG,X    \ -- Qhi 0 len          X=HOLDS_ORG
-                GOTO BW3            \ 35~ JMP HOLDS+2
-    ENDCODE
+        CODE F#S
+        MOV 2(PSP),X            \ -- Qlo Qhi u      X = Qlo
+        MOV @PSP,2(PSP)         \ -- Qhi Qhi u
+        MOV X,0(PSP)            \ -- Qhi Qlo u
+        MOV TOS,T               \                   T = len
+        MOV #0,S                \                   S = count
+        BEGIN
+            MOV @PSP,&MPY       \                   Load 1st operand
+            MOV &BASEADR,&OP2   \                   Load 2nd operand
+            MOV &RES0,0(PSP)    \ -- Qhi RESlo x        low result on stack
+            MOV &RES1,TOS       \ -- Qhi RESlo REShi    high result in TOS
+            CMP #10,TOS         \                   digit to char
+            U>= IF
+                ADD #7,TOS
+            THEN
+            ADD #$30,TOS
+            MOV.B TOS,HOLDS_ORG(S)  \ -- Qhi RESlo char     char to string
+            ADD #1,S            \                   count+1
+            CMP T,S             \                   count=len ?
+        0= UNTIL
+        MOV T,TOS               \ -- len RESlo len
+        MOV #0,0(PSP)           \ -- Qhi 0 len
+        MOV #HOLDS_ORG,X        \ -- Qhi 0 len          X=HOLDS_ORG
+        GOTO BW3                \ 35~ JMP HOLDS+2
+        ENDCODE
         [THEN]
 
-    HDNCODE XSCALE              \ X = X*Cordic_Gain
-    MOV T_SCALE(W),&MPYS32L     \ 3     CORDIC Gain * 65536
-    MOV #0,&MPYS32H
-    MOV X,&OP2                  \ 3     Load 1st operand
-    MOV &RES1,X                 \ 3     hi result
-    MOV @RSP+,PC                \ RET
-    ENDCODE
+        HDNCODE XSCALE          \ X = X*Cordic_Gain
+        MOV T_SCALE(W),&MPYS32L \ 3     CORDIC Gain * 65536
+        MOV #0,&MPYS32H
+        MOV X,&OP2              \ 3     Load 1st operand
+        MOV &RES1,X             \ 3     hi result
+        MOV @RSP+,PC            \ RET
+        ENDCODE
 
     [ELSE] ; no hardware multiplier
 
@@ -251,74 +251,81 @@ BW3 ADD TOS,X           \ 1     X=src_end
 \ C HOLDS    addr u --
         [UNDEFINED] HOLDS
         [IF]
-    CODE HOLDS
-    MOV @PSP+,X         \ 2     X=src
-BW3 ADD TOS,X           \ 1     X=src_end
-    MOV &HP,Y           \ 3     Y=dst
-    BEGIN
-       SUB #1,X            \ 1     src-1
-        SUB #1,TOS          \ 1     cnt-1
-    U>= WHILE
-        SUB #1,Y            \ 1     dst-1
-        MOV.B @X,0(Y)       \ 4
-    REPEAT
-    MOV Y,&HP           \ 3
-    MOV @PSP+,TOS       \ 2
-    MOV @IP+,PC         \ 4  15 words
-    ENDCODE
+        CODE HOLDS
+        MOV @PSP+,X         \ 2     X=src
+BW3     ADD TOS,X           \ 1     X=src_end
+        MOV &HP,Y           \ 3     Y=dst
+        BEGIN
+        SUB #1,X            \ 1     src-1
+            SUB #1,TOS      \ 1     cnt-1
+        U>= WHILE
+            SUB #1,Y        \ 1     dst-1
+            MOV.B @X,0(Y)   \ 4
+        REPEAT
+        MOV Y,&HP           \ 3
+        MOV @PSP+,TOS       \ 2
+        MOV @IP+,PC         \ 4  15 words
+        ENDCODE
         [THEN]
 
 \ F#S    Qlo Qhi len -- Qhi 0   convert fractional part Qlo of Q15.16 fixed point number
 \                               with len digits
         [UNDEFINED] F#S
         [IF]
-    CODE F#S
-                MOV @PSP,S          \ -- Qlo Qhi len        S = Qhi
-                MOV #0,T            \                       T = count
-                PUSHM #3,IP         \                       R-- IP Qhi count
-                MOV 2(PSP),0(PSP)   \ -- Qlo Qlo len
-                MOV TOS,2(PSP)      \ -- len Qlo len
-    BEGIN       MOV &BASEADR,TOS    \ -- len Qlo base
-                LO2HI
-                UM*                 \                       u1 u2 -- RESlo REShi
-                HI2LO               \ -- len RESlo digit
-                CMP #10,TOS         \                       digit to char
-        U>= IF  ADD #7,TOS
-        THEN    ADD #$30,TOS        \ -- len RESlo char
-                MOV @RSP,T          \                       T=count
-                MOV.B TOS,HOLDS_ORG(T)  \                   char to string_org(T)
-                ADD #1,T            \                       count+1
-                MOV T,0(RSP)        \
-                CMP 2(PSP),T        \ -- len RESlo char     count=len ?
-    U>= UNTIL   POPM #3,IP          \                       S=Qhi, T=len
-                MOV T,TOS           \ -- len RESlo len
-                MOV S,2(PSP)        \ -- Qhi RESlo len
-                MOV #0,0(PSP)       \ -- Qhi 0 len
-                MOV #HOLDS_ORG,X    \ -- Qhi 0 len          X=HOLDS_ORG
-                GOTO BW3            \ 36~ JMP HOLDS
-    ENDCODE
+        CODE F#S
+        MOV @PSP,S              \ -- Qlo Qhi len        S = Qhi
+        MOV #0,T                \                       T = count
+        PUSHM #3,IP             \                       R-- IP Qhi count
+        MOV 2(PSP),0(PSP)       \ -- Qlo Qlo len
+        MOV TOS,2(PSP)          \ -- len Qlo len
+        BEGIN
+            MOV &BASEADR,TOS    \ -- len Qlo base
+            LO2HI
+            UM*                 \                       u1 u2 -- RESlo REShi
+            HI2LO               \ -- len RESlo digit
+            CMP #10,TOS         \                       digit to char
+            U>= IF
+                ADD #7,TOS
+            THEN
+            ADD #$30,TOS        \ -- len RESlo char
+            MOV @RSP,T          \                       T=count
+            MOV.B TOS,HOLDS_ORG(T)  \                   char to string_org(T)
+            ADD #1,T            \                       count+1
+            MOV T,0(RSP)        \
+            CMP 2(PSP),T        \ -- len RESlo char     count=len ?
+        U>= UNTIL
+        POPM #3,IP              \                       S=Qhi, T=len
+        MOV T,TOS               \ -- len RESlo len
+        MOV S,2(PSP)            \ -- Qhi RESlo len
+        MOV #0,0(PSP)           \ -- Qhi 0 len
+        MOV #HOLDS_ORG,X        \ -- Qhi 0 len          X=HOLDS_ORG
+        GOTO BW3                \ 36~ JMP HOLDS
+        ENDCODE
         [THEN]
 
 \ T.I. UNSIGNED MULTIPLY SUBROUTINE: U1 x U2 -> Ud
 \ https://forth-standard.org/standard/core/UMTimes
 \ UM*     u1 u2 -- ud   unsigned 16x16->32 mult.
-    HDNCODE XSCALE              \ X --> X*Cordic_Gain
-                MOV T_SCALE(W),rDOCON   \ rDOCON=MR, X=MDlo
-    UMSTAR1     MOV #0,Y                \ 1 MDhi=0
-                MOV #0,S                \ 1 RES0=0
-                MOV #0,T                \ 1 RES1=0
-                MOV #1,W                \ 1 BIT TEST REGISTER
-    BEGIN       BIT W,rDOCON            \ 1 TEST ACTUAL BIT MRlo
-        0<> IF  ADD X,S                 \ 1 IF 1: ADD MDlo TO RES0
-                ADDC Y,T                \ 1      ADDC MDhi TO RES1
-        THEN    ADD X,X                 \ 1 (RLA LSBs) MDlo x 2
-                ADDC Y,Y                \ 1 (RLC MSBs) MDhi x 2
-                ADD W,W                 \ 1 (RLA) NEXT BIT TO TEST
-    U>= UNTIL                           \ S = RESlo, T=REShi
-                MOV T,X                 \ 2 IF BIT IN CARRY: FINISHED    10~ loop
-                MOV #XDOCON,rDOCON      \ restore rDOCON
-                MOV @RSP+,PC            \ RET
-    ENDCODE
+        HDNCODE XSCALE              \ X --> X*Cordic_Gain
+        MOV T_SCALE(W),rDOCON   \ rDOCON=MR, X=MDlo
+        MOV #0,Y                \ 1 MDhi=0
+        MOV #0,S                \ 1 RES0=0
+        MOV #0,T                \ 1 RES1=0
+        MOV #1,W                \ 1 BIT TEST REGISTER
+        BEGIN
+            BIT W,rDOCON        \ 1 TEST ACTUAL BIT MRlo
+            0<> IF
+                ADD X,S         \ 1 IF 1: ADD MDlo TO RES0
+                ADDC Y,T        \ 1      ADDC MDhi TO RES1
+            THEN
+        ADD X,X                 \ 1 (RLA LSBs) MDlo x 2
+        ADDC Y,Y                \ 1 (RLC MSBs) MDhi x 2
+        ADD W,W                 \ 1 (RLA) NEXT BIT TO TEST
+        U>= UNTIL                           \ S = RESlo, T=REShi
+        MOV T,X                 \ 2 IF BIT IN CARRY: FINISHED    10~ loop
+        MOV #XDOCON,rDOCON      \ restore rDOCON
+        MOV @RSP+,PC            \ RET
+        ENDCODE
 
     [THEN]  ; endcase of hardware multiplier
 
@@ -511,8 +518,7 @@ FW1     RRA S               \ shift right scale factor
     ENDCODE
 
 
-    [UNDEFINED] F.
-    [IF]
+    [UNDEFINED] F. [IF]
     CODE F.             \ display a Q15.16 number with 4/5/16 digits after comma
     MOV TOS,S           \ S = sign
     MOV #4,T            \ T = 4     preset 4 digits for base 16 and by default
@@ -542,8 +548,7 @@ RST_SET
 
 \ https://forth-standard.org/standard/core/SWAP
 \ SWAP     x1 x2 -- x2 x1    swap top two items
-    [UNDEFINED] SWAP
-    [IF]
+    [UNDEFINED] SWAP [IF]
     CODE SWAP
     MOV @PSP,W      \ 2
     MOV TOS,0(PSP)  \ 3
@@ -554,8 +559,7 @@ RST_SET
 
 \ https://forth-standard.org/standard/core/ROT
 \ ROT    x1 x2 x3 -- x2 x3 x1
-    [UNDEFINED] ROT
-    [IF] \
+    [UNDEFINED] ROT [IF] \
     CODE ROT
     MOV @PSP,W          \ 2 fetch x2
     MOV TOS,0(PSP)      \ 3 store x3

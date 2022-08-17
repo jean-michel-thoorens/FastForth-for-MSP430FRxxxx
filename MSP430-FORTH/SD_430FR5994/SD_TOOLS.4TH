@@ -2,40 +2,47 @@
 
 ; ---------------------------------------------------------------
 ; SD_TOOLS.4th for MSP_EXP430FR5994
-; BASIC TOOLS for SD Card : DIR FAT SECTOR CLUSTER
+; BASIC TOOLS for SD Card : DIR FAT SECTOR. CLUSTER.
 ; ---------------------------------------------------------------
 
     CODE ABORT_SD_TOOLS
     SUB #4,R15
     MOV R14,2(R15)
-    [UNDEFINED] LOAD"       \ "
+    [UNDEFINED] LOAD"   \ "
     [IF]
-    MOV #-1,0(R15)
+        MOV #-1,0(R15)
     [ELSE]
-    MOV #0,0(R15)
+        MOV #0,0(R15)
     [THEN]
     MOV &$180A,R14
-    SUB #309,R14
+    SUB #400,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V3.9 please!"
-    ABORT" Builds FastForth with SD_CARD_LOADER addon.."
+    ABORT" FastForth V4.0 please!"
+    ABORT" Build FastForth with SD_CARD_LOADER addon!"
     RST_RET
     ;
 
     ABORT_SD_TOOLS
 
+    [DEFINED] {SD_TOOLS} 
+    [IF] {SD_TOOLS}
+    [THEN]
+    [UNDEFINED] {SD_TOOLS}
+    [IF]
     MARKER {SD_TOOLS}
 
-    [UNDEFINED] HERE
-    [IF]
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.4th for MSP_EXP430FR5994)
+; ------------------------------------------------------------------
+
+    [UNDEFINED] HERE [IF]
     CODE HERE
-    MOV #$4032,R0
+    MOV #BEGIN,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] +
-    [IF]
+    [UNDEFINED] + [IF]
     CODE +
     ADD @R15+,R14
     MOV @R13+,R0
@@ -142,14 +149,6 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] U.R
-    [IF]
-    : U.R
-    >R  <# 0 # #S #>
-    R> OVER - 0 MAX SPACES TYPE
-    ;
-    [THEN]
-
     [UNDEFINED] DO
     [IF]
     HDNCODE XDO
@@ -165,8 +164,8 @@ FW1 MOV @R15+,R14
     CODE DO
     SUB #2,R15
     MOV R14,0(R15)
-    ADD #2,&$1DC8
-    MOV &$1DC8,R14
+    ADD #2,&$1DC0
+    MOV &$1DC0,R14
     MOV #XDO,-2(R14)
     ADD #2,&$1C00
     MOV &$1C00,R10
@@ -188,8 +187,8 @@ BW1 BIT #$100,R2
 
     CODE LOOP
     MOV #XLOOP,R9
-BW2 ADD #4,&$1DC8
-    MOV &$1DC8,R10
+BW2 ADD #4,&$1DC0
+    MOV &$1DC0,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     BEGIN
@@ -216,7 +215,6 @@ BW2 ADD #4,&$1DC8
     ENDCODE IMMEDIATE
     [THEN]
 
-
     [UNDEFINED] I
     [IF]
     CODE I
@@ -231,7 +229,7 @@ BW2 ADD #4,&$1DC8
     [UNDEFINED] CR
     [IF]
     CODE CR
-    MOV #$40B4,R0
+    MOV #$409E,R0
     ENDCODE
 
     :NONAME
@@ -239,34 +237,50 @@ BW2 ADD #4,&$1DC8
     ; IS CR
     [THEN]
 
+; ------------------------------------------------------------------
+; then we download the set of definitions we need (from UTILITY.4th for MSP_EXP430FR5994)
+; ------------------------------------------------------------------
+
+    [UNDEFINED] U.R
+    [IF]
+    : U.R
+    >R  <# 0 # #S #>
+    R> OVER - 0 MAX SPACES TYPE
+    ;
+    [THEN]
+
     [UNDEFINED] DUMP
     [IF]
     CODE DUMP
     PUSH R13
-    PUSH &$1DBE
-    MOV #$10,&$1DBE
+    PUSH &$1DB6
+    MOV #$10,&$1DB6
     ADD @R15,R14
     LO2HI
     SWAP
+    CR
+    4 SPACES $10 0
+    DO I 3 U.R  LOOP
     DO  CR
-        I 4 U.R SPACE
-        I 8 + I
-        DO I C@ 3 U.R LOOP
-        SPACE
-        I $10 + I 8 +
+        I 4 U.R
+        I $10 + I
         DO I C@ 3 U.R LOOP
         SPACE SPACE
         I $10 + I
         DO I C@ $7E MIN $20 MAX EMIT LOOP
     $10 +LOOP
-    R> $1DBE !
+    R> $1DB6 !
     ;
     [THEN]
+
+; --------------------------
+; end of definitions we need
+; --------------------------
 
     CODE SECTOR.
 BW1 MOV     R14,R9
     MOV     @R15,R10
-    CALL    #R_SECT_WX
+    CALL    #RD_SECT
     COLON
     SPACE <# #S #> TYPE
     $1E00 $200 DUMP CR ;
@@ -274,7 +288,7 @@ BW1 MOV     R14,R9
     CODE CLUSTER.
 BW2 BIT.B   #4,&$260
     0<> IF
-        MOV #SYS+$16,R0
+        MOV #COLD,R0
     THEN
     MOV.B &$2012,R10
     MOV @R15,R9
@@ -303,7 +317,16 @@ BW2 BIT.B   #4,&$260
     MOV     R14,2(R15)
     MOV     &$202C,0(R15)
     MOV     &$202E,R14
-    GOTO    BW2
+    CMP     #0,R14
+    0<>     ?GOTO BW2
+    CMP     #1,0(R15)
+    0<>     ?GOTO BW2
+    MOV     &$200E,0(R15)
+    GOTO    BW1
     ENDCODE
 
-    RST_SET ECHO
+    RST_SET 
+
+    [THEN]
+
+    ECHO

@@ -35,19 +35,18 @@
 @exit /b
 
 :SelectDevice
-::%1 = "SelectDevice"
-::%2 = file.pat name
+:: fonction called by FET_prog.bat and preprocess.bat with variable %target%
+@if /I %target:~0,16%  == MSP_EXP430FR5739 set device=MSP430FR5739
+@if /I %target:~0,16%  == MSP_EXP430FR5969 set device=MSP430FR5969
+@if /I %target:~0,16%  == MSP_EXP430FR5994 set device=MSP430FR5994
+@if /I %target:~0,16%  == MSP_EXP430FR6989 set device=MSP430FR6989
+@if /I %target:~0,16%  == MSP_EXP430FR4133 set device=MSP430FR4133
+@if /I %target:~0,16%  == MSP_EXP430FR2433 set device=MSP430FR2433
+@if /I %target:~0,16%  == CHIPSTICK_FR2433 set device=MSP430FR2433
+@if /I %target:~0,16%  == MSP_EXP430FR2355 set device=MSP430FR2355
+@if /I %target:~0,15%  == LP_MSP430FR2476  set device=MSP430FR2476
 
-@set device=%~n2
-@if /I %device:~0,16%  == MSP_EXP430FR5739 set device=MSP430FR5739
-@if /I %device:~0,16%  == MSP_EXP430FR5969 set device=MSP430FR5969
-@if /I %device:~0,16%  == MSP_EXP430FR5994 set device=MSP430FR5994
-@if /I %device:~0,16%  == MSP_EXP430FR6989 set device=MSP430FR6989
-@if /I %device:~0,16%  == MSP_EXP430FR4133 set device=MSP430FR4133
-@if /I %device:~0,16%  == MSP_EXP430FR2433 set device=MSP430FR2433
-@if /I %device:~0,16%  == CHIPSTICK_FR2433 set device=MSP430FR2433
-@if /I %device:~0,16%  == MSP_EXP430FR2355 set device=MSP430FR2355
-@if /I %device:~0,15%  == LP_EXP430FR2476  set device=MSP430FR2476
+::pause
 
 @exit /b
 
@@ -55,16 +54,16 @@
 :: fonction called by SendSource.bat
 
 ::echo %~n2
-@set deviceid=%~n2
-@if /I %deviceid:~0,16%  == MSP_EXP430FR5739 set deviceid=$8103
-@if /I %deviceid:~0,16%  == MSP_EXP430FR5969 set deviceid=$8169
-@if /I %deviceid:~0,16%  == MSP_EXP430FR5994 set deviceid=$82A1
-@if /I %deviceid:~0,16%  == MSP_EXP430FR6989 set deviceid=$81A8
-@if /I %deviceid:~0,16%  == MSP_EXP430FR4133 set deviceid=$81F0
-@if /I %deviceid:~0,16%  == MSP_EXP430FR2433 set deviceid=$8240
-@if /I %deviceid:~0,16%  == CHIPSTICK_FR2433 set deviceid=$8240
-@if /I %deviceid:~0,16%  == MSP_EXP430FR2355 set deviceid=$830C
-@if /I %deviceid:~0,15%  == LP_EXP430FR2476  set deviceid=$832A
+@set target=%~n2
+@if /I %target:~0,16%  == MSP_EXP430FR5739 set deviceid=$8103
+@if /I %target:~0,16%  == MSP_EXP430FR5969 set deviceid=$8169
+@if /I %target:~0,16%  == MSP_EXP430FR5994 set deviceid=$82A1
+@if /I %target:~0,16%  == MSP_EXP430FR6989 set deviceid=$81A8
+@if /I %target:~0,16%  == MSP_EXP430FR4133 set deviceid=$81F0
+@if /I %target:~0,16%  == MSP_EXP430FR2433 set deviceid=$8240
+@if /I %target:~0,16%  == CHIPSTICK_FR2433 set deviceid=$8240
+@if /I %target:~0,16%  == MSP_EXP430FR2355 set deviceid=$830C
+@if /I %target:~0,15%  == LP_MSP430FR2476  set deviceid=$832A
 
 ::echo %deviceid%
 ::%1 = "SelectDevice"

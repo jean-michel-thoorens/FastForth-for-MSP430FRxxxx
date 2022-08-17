@@ -2,29 +2,28 @@
 \ MSP-EXP430FR5969_TSTWORDS.f
 \ -----------------------------
 
-\ first, we test for downloading driver only if UART TERMINAL target
+\ first, we do some tests allowing the download
     CODE ABORT_TSTWORDS
     SUB #2,PSP
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #309,TOS        \                   FastForth V3.9
+    SUB #400,TOS        \ FastForth V4.0
     COLON
     'CR' EMIT            \ return to column 1 without 'LF'
-    ABORT" FastForth V3.9 please!"
+    ABORT" FastForth V4.0 please!"
     RST_RET           \ remove ABORT_TEST_ASM definition before resuming
     ;
 
     ABORT_TSTWORDS      \ abort test
 
-    [DEFINED] {TSTWORDS} [IF]  {TSTWORDS} [THEN] \ remove it
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.f)
+; ------------------------------------------------------------------
 
-    MARKER {TSTWORDS}
-
-
-\ https://forth-standard.org/standard/core/ZeroEqual
-\ 0=     n/u -- flag    return true if TOS=0
     [UNDEFINED] 0=
     [IF]
+\ https://forth-standard.org/standard/core/ZeroEqual
+\ 0=     n/u -- flag    return true if TOS=0
     CODE 0=
     SUB #1,TOS      \ 1 borrow (clear cy) if TOS was 0
     SUBC TOS,TOS    \ 1 TOS=-1 if borrow was set
@@ -51,11 +50,11 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
-\ https://forth-standard.org/standard/core/IF
-\ IF       -- IFadr    initialize conditional forward branch
     [UNDEFINED] IF
     [IF]     \ define IF THEN
 
+\ https://forth-standard.org/standard/core/IF
+\ IF       -- IFadr    initialize conditional forward branch
     CODE IF
     SUB #2,PSP              \
     MOV TOS,0(PSP)          \
@@ -75,10 +74,10 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE IMMEDIATE
     [THEN]
 
-\ https://forth-standard.org/standard/core/ELSE
-\ ELSE     IFadr -- ELSEadr        resolve forward IF branch, leave ELSEadr on stack
     [UNDEFINED] ELSE
     [IF]
+\ https://forth-standard.org/standard/core/ELSE
+\ ELSE     IFadr -- ELSEadr        resolve forward IF branch, leave ELSEadr on stack
     CODE ELSE
     ADD #4,&DP              \ make room to compile two words
     MOV &DP,W               \ W=HERE+4
@@ -90,10 +89,10 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE IMMEDIATE
     [THEN]
 
-\ https://forth-standard.org/standard/core/SWAP
-\ SWAP     x1 x2 -- x2 x1    swap top two items
     [UNDEFINED] SWAP
     [IF]
+\ https://forth-standard.org/standard/core/SWAP
+\ SWAP     x1 x2 -- x2 x1    swap top two items
     CODE SWAP
     PUSH TOS            \ 3
     MOV @PSP,TOS        \ 2
@@ -102,13 +101,13 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
-\ https://forth-standard.org/standard/core/BEGIN
-\ BEGIN    -- BEGINadr             initialize backward branch
     [UNDEFINED] BEGIN
     [IF]  \ define BEGIN UNTIL AGAIN WHILE REPEAT
 
+\ https://forth-standard.org/standard/core/BEGIN
+\ BEGIN    -- BEGINadr             initialize backward branch
     CODE BEGIN
-    MOV #HEREXEC,PC
+    MOV #BEGIN,PC
     ENDCODE IMMEDIATE
 
 \ https://forth-standard.org/standard/core/UNTIL
@@ -170,8 +169,6 @@ BW1 ADD #4,&DP          \ compile two words
     MOV @IP+,PC
     ENDCODE IMMEDIATE
 
-\ https://forth-standard.org/standard/core/LOOP
-\ LOOP    DOadr --         L-- an an-1 .. a1 0
     HDNCODE XLOOP       \   LOOP run time
     ADD #1,0(RSP)       \ 4 increment INDEX
 BW1 BIT #$100,SR        \ 2 is overflow bit set?
@@ -184,6 +181,8 @@ BW1 BIT #$100,SR        \ 2 is overflow bit set?
     MOV @IP+,PC         \ 4 14~ taken or not taken xloop/loop
     ENDCODE             \
 
+\ https://forth-standard.org/standard/core/LOOP
+\ LOOP    DOadr --         L-- an an-1 .. a1 0
     CODE LOOP
     MOV #XLOOP,X
 BW2 ADD #4,&DP          \ make room to compile two words
@@ -202,32 +201,37 @@ BW2 ADD #4,&DP          \ make room to compile two words
     MOV @IP+,PC
     ENDCODE IMMEDIATE
 
-\ https://forth-standard.org/standard/core/PlusLOOP
-\ +LOOP   adrs --   L-- an an-1 .. a1 0
     HDNCODE XPLOO   \   +LOOP run time
     ADD TOS,0(RSP)  \ 4 increment INDEX by TOS value
     MOV @PSP+,TOS   \ 2 get new TOS, doesn't change flags
     GOTO BW1        \ 2
     ENDCODE         \
 
+\ https://forth-standard.org/standard/core/PlusLOOP
+\ +LOOP   adrs --   L-- an an-1 .. a1 0
     CODE +LOOP
     MOV #XPLOO,X
     GOTO BW2
     ENDCODE IMMEDIATE
     [THEN]
 
+; --------------------------
+; end of definitions we need
+; --------------------------
 
-    RST_SET
-\ -----------------------------------------------------------------------
-\ test some assembler words and show how to mix FORTH/ASSEMBLER routines
-\ -----------------------------------------------------------------------
+ECHO
+
+; -----------------------------------------------------------------------
+; test some assembler words and show how to mix FORTH/ASSEMBLER routines
+; -----------------------------------------------------------------------
+
 LOAD" \misc\TestASM.4th"
 
 ECHO
 
-\ -------------------------------------
-\ here we returned in the TestWords.4th
-\ -------------------------------------
+; -------------------------------------
+; here we returned in the TestWords.4th
+; -------------------------------------
 
 \ ----------
 \ LOOP tests
@@ -303,4 +307,4 @@ LOOP_TEST   \ you should see 0 1 2 3 4 5 6 7 -->
 \     KEY EMIT    \ wait for a KEY, then emit it
 \ ;
 \ \ KEY_TEST
-\
+

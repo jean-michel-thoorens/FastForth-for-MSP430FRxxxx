@@ -4,7 +4,7 @@
     .listing off
 
 DEVICE = "MSP430FR5948"
-
+HMPY    ; hardware multiplier
 ; ----------------------------------------------
 ; MSP430FR5948 MEMORY MAP
 ; ----------------------------------------------

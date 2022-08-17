@@ -127,30 +127,28 @@
 ; ===========================================================
 
 ; ===========================================================
-; Init SD_Card software, called by INIT_FORTH(INIT_SOFT_APP)
+; Init SD_Card software, called by INIT_FORTH(SOFT_APP)
 ; ===========================================================
 ;-----------------------------------;
 INIT_SOFT_SD                        ; called by INI_FORTH common part of ?ABORT|RST
 ;-----------------------------------;
-;            CMP #0,TOS              ; USERSYS = 0 ?
-;            JZ INIT_HSD_END         ; no hardware init if USERSYS = 0 SYS
 ;            MOV #HandlesLen,X       ; clear all handles
 ;ClearHandle SUB #2,X                ; 1
 ;            MOV #0,FirstHandle(X)   ; 3
 ;            JNZ ClearHandle         ; 2
             MOV #0,&CurrentHdl      ;
-            MOV #INIT_SOFT_TERM,PC  ; link to previous INI_SOFT_APP then RET
+            MOV #INIT_SOFT,PC       ; link to previous INI_SOFT_APP then RET
 ;-----------------------------------;
 
 ; ===========================================================
-; Init hardware SD_Card, called by WARM(INIT_HARD_APP)
+; Init hardware SD_Card, called by WARM(HARD_APP)
 ; ===========================================================
 
 ; web search: "SDA simplified specifications"
 
 ;-----------------------------------;
-INIT_HARD_SD CALL @PC+              ; link to previous INI_HARD_APP
-            .word INIT_TERM         ; which activates all previous I/O settings and set TOS = RSTIV_MEM.
+INIT_HARD_SD CALL @PC+              ; link to previous HARD_APP first, because used by ERROR outputs
+            .word INIT_TERM         ; which activates all previous I/O settings.
 ;-----------------------------------;
             BIT.B #CD_SD,&SD_CDIN   ; SD_memory in SD_Card module ?
             JNZ INIT_HSD_END        ; no
@@ -166,30 +164,27 @@ ClearSDdata SUB #2,X                ; 1
             MOV #0,SD_ORG(X)        ; 3
             JNZ ClearSDdata         ; 2
 ;-----------------------------------;
-SD_POWER_ON
-; ----------------------------------;
-    MOV     #8,X                    ; send 8*8 = 64 clk on SPI
-    CALL    #SPI_X_GET              ;
     BIC.B   #CS_SD,&SD_CSOUT        ; preset Chip Select output low to switch in SPI mode
 ; ----------------------------------;
-INIT_CMD0                           ; SD_CMD_FRM+2 is already cleared...
+INIT_CMD0                           ; SD_CMD_FRM is zero fullfilled...
 ; ----------------------------------;
     MOV     #4,S                    ; preset error 4R1 for CMD0
     MOV     #0095h,&SD_CMD_FRM      ; $(95 00 00 00 00 00)
+    MOV     #0,&SD_CMD_FRM+2        ;
     MOV     #4000h,&SD_CMD_FRM+4    ; $(95 00 00 00 00 40) = CMD0
+    MOV     #8,Y                    ; CMD0 necessary loop, not documented in "SDA simplified specifications"
 ; ----------------------------------;
-SEND_CMD0                           ; GO_IDLE_STATE, expected SPI_R1 response = 1 = idle state
+SEND_CMD0                           ; GO_IDLE_STATE (software reset), expected SPI_R1 response = 1 = idle state
 ; ----------------------------------;
     CALL    #sendCommandIdleRet     ;X send command (does little to big endian conversion), see forthMSP430FR_SD_lowLvl.asm
-    JZ      INIT_CMD8               ; if idle state
+    JZ      INIT_CMD8               ; if idle state reached (W=1)
+    SUB     #1,Y                    ;
+    JNZ     SEND_CMD0               ; else loop back 8 times, because init time of SD_Card can be long...
 SD_INIT_ERROR                       ;
-    MOV     #SD_CARD_ERROR,PC       ; ReturnError = $04R1, case of defectuous card (or insufficient SD_POWER_ON clk)
+    JMP     SD_CARD_ERROR           ; ReturnError = $04R1, case of defectuous card (or insufficient SD_POWER_ON clk)
 ; ----------------------------------; see forthMSP430FR_SD_lowLvl.asm
 INIT_CMD8                           ; mandatory if SD_Card >= V2.x     [11:8]supply voltage(VHS)
 ; ----------------------------------;
-    CALL    #SPI_GET                ; (needed to pass SanDisk ultra 8GB "HC I")
-    CMP.B   #-1,W                   ; FFh expected value <==> MISO = high level
-    JNE     INIT_CMD8               ; loop back while yet busy
     MOV     #0AA87h,&SD_CMD_FRM     ; $(87 AA ...)  (CRC:CHECK PATTERN)
     MOV     #1,&SD_CMD_FRM+2        ; $(87 AA 01 00 ...)  (CRC:CHECK PATTERN:VHS set as 2.7to3.6V:0)
     MOV     #4800h,&SD_CMD_FRM+4    ; $(87 AA 01 00 00 48)
@@ -205,8 +200,6 @@ INIT_ACMD41                         ; no more CRC needed from here
 ; ----------------------------------;
     MOV     #1,&SD_CMD_FRM          ; $(01 00 ...   set stop bit
     MOV     #0,&SD_CMD_FRM+2        ; $(01 00 00 00 ...
-;    MOV.B   #16,Y                   ; init 16 * ACMD41 repeats (fails with SanDisk ultra 8GB "HC I" and Transcend 2GB)
-;    MOV.B   #32,Y                   ; init 32 * ACMD41 repeats ==> ~400ms time out
     MOV.B   #-1,Y                   ; init 255 * ACMD41 repeats ==> ~3 s time out
     MOV     #8,S                    ; preset error 8R1 for ACMD41
 ; ----------------------------------;
@@ -219,19 +212,10 @@ SEND_CMD55                          ; CMD55 = APP_CMD; expected SPI_R1 response 
 SEND_CMD41                          ; CMD41 = APP OPERATING CONDITION
     MOV     #6940h,&SD_CMD_FRM+4    ; $(01 00 00 00 40 69) (30th bit = HCS = High Capacity Support request)
     CALL    #WaitIdleBeforeSendCMD  ; wait until idle (needed to pass SanDisk ultra 8GB "HC I") then send Command CMD41
-    JZ      SetBLockLength          ; if SD_Card ready (R1=0)
+    JZ      SwitchSPIhighSpeed      ; if SD_Card ready (R1=0)
     SUB.B   #1,Y                    ; else decr time out delay
     JNZ     INIT_CMD55              ; then loop back while count of repeat not reached
-    JMP     SD_INIT_ERROR           ; ReturnError on time out : unusable card  (or insufficient Vdd SD)
-; ----------------------------------;
-setBLockLength                      ; set block = 512 bytes (buffer size), usefull only for FAT16 SD Cards
-; ----------------------------------;
-    ADD     S,S                     ; preset error $10 for CMD16
-SEND_CMD16                          ; CMD16 = SET_BLOCKLEN
-    MOV     #02h,&SD_CMD_FRM+2      ; $(01 00 02 00 ...)
-    MOV     #5000h,&SD_CMD_FRM+4    ; $(01 00 02 00 00 50)
-    CALL    #WaitIdleBeforeSendCMD  ; wait until idle then send CMD16
-    JNZ     SD_INIT_ERROR           ; if W = R1 <> 0, ReturnError = $20R1 ; send command ko
+    JMP     SD_CARD_ERROR           ; ReturnError on time out : unusable card  (or insufficient Vdd SD)
 ; ----------------------------------; W = R1 = 0
 SwitchSPIhighSpeed                  ; end of SD init ==> SD_CLK = SMCLK
 ; ----------------------------------;
@@ -243,50 +227,56 @@ Read_EBP_FirstSector                ; BS_FirstSectorHL=0
 ; ----------------------------------;
     MOV     #0,W                    ;
     MOV     #0,X                    ;
-    CALL    #readSectorWX           ; read physical first sector, W=0
+    CALL    #ReadSectorWX           ; read physical first sector, W=0
     MOV     #SD_BUF,Y               ;
-    MOV     454(Y),&BS_FirstSectorL ; so, from here, sectors become logical
-    MOV     456(Y),&BS_FirstSectorH ;
-    MOV.B   450(Y),S                ; S = partition ID
+; ----------------------------------;
+    CMP     #0AA55h,1FEh(Y)         ; valid boot sector ?
+    JZ      SetMBR                  ;
+    MOV     #1000h,S                ; error Boot Sector
+    JMP     SD_CARD_INIT_ERROR      ;
+; ----------------------------------;
+SetMBR                              ;
+; ----------------------------------;
+    MOV     1C6h(Y),&BS_FirstSectorL; logical sector = physical sector + BS_FirstSector
+    MOV     1C8h(Y),&BS_FirstSectorH;
 ; ----------------------------------;
 TestPartitionID                     ;
 ; ----------------------------------;
+    MOV.B   1C2h(Y),S               ; S = partition ID
     SUB.B   #0Ch,S                  ; ID=0Ch Partition FAT32 using LBA ?
     JZ      Read_MBR_FirstSector    ;
     ADD.B   #1,S                    ; ID=0Bh Partition FAT32 using CHS & LBA ?
     JZ      Read_MBR_FirstSector    ;
-    ADD.B   #4,S                    ; ID=07h assigned to FAT 32 by MiniTools Partition Wizard....
+    ADD.B   #4,S                    ; ID=07h assigned to FAT32 by MiniTools Partition Wizard....
     JZ      Read_MBR_FirstSector    ;
-    ADD     #02007h,S               ; set ReturnError = $20 & restore ID value
-    MOV     #SD_CARD_ID_ERROR,PC    ; see: https://en.wikipedia.org/wiki/Partition_type
+    ADD     #01007h,S               ; set ReturnError = $10 & restore ID value
+    JMP     SD_CARD_INIT_ERROR      ; see: https://en.wikipedia.org/wiki/Partition_type
 ; ----------------------------------;
 Read_MBR_FirstSector                ; read first logical sector
 ; ----------------------------------;
     MOV     #0,X                    ; W = 0
-    CALL    #readSectorWX           ; ...with the good CMD17 bytes/sectors frame ! (good switch FAT16/FAT32)
+    CALL    #ReadSectorWX           ;
 ; ----------------------------------;
-FATxx_SetFileSystem                 ;
+FAT32_SetFileSystem                 ;
 ; ----------------------------------;
-;    MOV     44(Y),&DIRClusterL      ; init DIRcluster as FAT32 RootDIR
-    MOV     #2,&DIRClusterL         ; init DIRcluster as FAT32 RootDIR
-; ----------------------------------;
-    MOV     14(Y),X                 ;3 X = BPB_RsvdSecCnt (05FEh=1534)
+    MOV     0Eh(Y),X                ;3 X = BPB_RsvdSecCnt (05FEh=1534)
     MOV     X,&OrgFAT1              ;3 set OrgFAT1
 ; ----------------------------------;
-    MOV     36(Y),W                 ; no set W = BPB_FATSz32 (1D01h=7425)
+    MOV     24h(Y),W                ; no set W = BPB_FATSz32 (1D01h=7425)
     MOV     W,&FATSize              ; limited to 32767 sectors....
 ; ----------------------------------;
     ADD     W,X                     ;
-    MOV     X,&OrgFAT2              ; X = OrgFAT1 + FATsize = OrgFAT2 (8959)
+    MOV     X,&OrgFAT2              ; X = OrgFAT1 + FATsize = OrgFAT32 (8959)
 ; ----------------------------------;
     ADD     W,X                     ; X = OrgFAT2 + FATsize = FAT32 OrgDatas (16384)
 FATxx_SetFileSystemNext             ;
-    MOV.B   13(Y),Y                 ; Logical sectors per cluster (8)
+    MOV.B   0Dh(Y),Y                ; Logical sectors per cluster (8)
     MOV     Y,&SecPerClus           ;
     SUB     Y,X                     ; OrgDatas - SecPerClus*2 = OrgClusters
     SUB     Y,X                     ; no borrow expected
     MOV     X,&OrgClusters          ; X = virtual cluster 0 address (clusters 0 and 1 don't exist)
+    MOV     #2,&DIRClusterL         ; init DIRcluster as FAT32 RootDIR
+    MOV     #0,&DIRClusterH         ;
 INIT_HSD_END                        ;
     MOV     @RSP+,PC                ; RET
 ;-----------------------------------;
-

@@ -1,63 +1,74 @@
 ## FastForth for MSP430FRxxxx TI's CPUs, light, fast, reliable.
 
-Tested on TI MSP-EXP430FR 5739,
-[5969](https://duckduckgo.com/?q=MSP-EXP430FR5969),
-[5994](https://duckduckgo.com/?q=MSP-EXP430FR5994),
-6989,
-4133,
-[2476](https://duckduckgo.com/?q=Lp-MSP430FR2476),
-[2355](https://duckduckgo.com/?q=MSP-EXP430FR2355),
-2433) launchpads, at 1, 2, 4, 8, 12, 16 MHz plus 20 & 24 MHz with MSP430FR(23xx,57xx) devices.
 
-FastForth is a "load interpret compile execute" operating system for the CPU's MSP430 Texas Instruments with FRAM:
+Tested on TI MSP-EXP430FR
+[5739](https://duckduckgo.com/?q=MSP-EXP430FR5739&iax=images&ia=images),
+[**5969**](https://duckduckgo.com/?q=MSP-EXP430FR5969&iax=images&ia=images),
+[**5994**](https://duckduckgo.com/?q=MSP-EXP430FR5994&iax=images&ia=images),
+[6989](https://duckduckgo.com/?q=MSP-EXP430FR6989&iax=images&ia=images),
+[4133](https://duckduckgo.com/?q=MSP-EXP430FR4133&iax=images&ia=images),
+[2476](https://duckduckgo.com/?q=LP-MSP430FR2476&iax=images&ia=images),
+[**2355**](https://duckduckgo.com/?q=MSP-EXP430FR2355&iax=images&ia=images),
+[2433](https://duckduckgo.com/?q=MSP-EXP430FR2433&iax=images&ia=images) launchpads, at 1, 2, 4, 8, 12, 16 MHz plus 20 & 24 MHz with MSP430FR(23xx,57xx) devices.
 
-* LOAD: choice of the TERMINAL (TERATERM.exe) interface:
 
-    * UART TERMINAL up to 6MBds @ MCLK=24MHz, with software (XON/XOFF) and/or hardware (RTS) control flow, **transmit delay: 0 ms/char, 0 ms/line**
+note: if you want to write a program to make a LED flash, i suggest you to go [here](https://www.raspberrypi.com),
+      but if you want to deepen your programming basics, you've come to the right place.
 
-    * a very well designed **I2C TERMINAL up to 1MHz**, with a behaviour full duplex, ready to communicate with all modules **I2C_FastForth** wired onto bus,
+FastForth is a "Just In First" Load-Interpret-Compile Operating System for all the 16/20 bits CPU MSP430FRxxxx (MSP430 with FRAM) :
+
+* LOAD: choice of the TERMINAL interface:
+
+    * UART TERMINAL up to 6MBds @ MCLK=24MHz, with software (XON/XOFF) or hardware (RTS) control flow, **transmit delay: 0 ms/char, 0 ms/line**
+
+    * a very well designed **I2C TERMINAL**, with a full duplex behaviour, ready to communicate with all the targets **I2C_FastForth** wired on its I2C bus,
     
 * INTERPRET: with a 16-entry word-set that speeds up the FORTH interpreter by 4,
 
-* COMPILE: in addition to the FORTH engine, the **MSP430 assembler (label free) with syntax TI's**,
+* COMPILE: in addition to the FORTH engine, the **MSP430 assembler, label free, with the TI's syntax** (not the FORTH one!),
 
-and as result **"load interpret compile" a source file is faster and easier than loading its binary equivalent** via the TI's eZFET interface:    
-For example, with MCLK=24MHz, THREADS=16, UART=6MBds 8n1, a [PL2303GC](https://duckduckgo.com/?q=DSD+TECH+SH-U06A+PL2303GC) and Teraterm.exe as TERMINAL, the download/interpret/execute process of the file CORETEST is done at an effective rate close to 43KB/s (430kBds).     
-with a bridge UARTtoI2C and an I2C_Slave target MCLK=24MHz, THREADS=16, the effective rate is the same ( I don't understand but it's like this...)
+and as result "Load Interpret Compile" a source file is faster and easier than **just** loading its equivalent TI.txt binary file via the TI's eZFET interface. 
+For example, with a target running at 24MHz, UART=6MBds 8n1, an USBtoUART bridge [PL2303GC](https://duckduckgo.com/?q=DSD+TECH+SH-U06A) 
+and [Teraterm.exe](https://osdn.net/projects/ttssh2/releases/) as TERMINAL, 
+the "JIF" process of the /MSP430-FORTH/CORETEST.4TH file is done at an **effective rate** up to 800 kBds, up to 500 kBds with an I2C_Slave target running at 24MHz, and beyond 1Mbit/s from a SD_CARD.  
+This is, by far, unparalleled on the planet FORTH, and on others too.   
 
-Despite its **size of 5 kb** FastForth includes:
+Despite its **size of 4.75 kb** FastForth includes:
 
 * FORTH kernel with interpreting decimal, hex, binary (#,$,% prefixed) numbers, digits separator '_', 'char', double numbers and Q15.16 numbers,
 
-* the MSP430 16 bits assembler (1,5 kb),
+* the assembler for MSP430 (with TI's syntax),
 
-* a good error management which interrupts the downloading at the slightest error,
+* a good error handling which discards the "JIF" process of source files and thus avoids system crash,
 
-* a memory management which can be modulated according to these 3 levels: MARKER, RESET, DEEP_RESET,
+* a memory management which can be modulated according to these 3 levels (software|hardware): `-1 SYS`|`<SW1+RST>`, `MARKER`|, `6 SYS`|`<RST>`.
 
-* everything you need to write a real time application made of a mix of FORTH/assembler:
+* everything you need to write a real time application:
 
-    * the complete set of the FORTH building words,
+    * the complete set of the FORTH building definitions,
 
     * conditional compilation,
 
     * thanks to [GEMA preprocessor](http://gema.sourceforge.net/new/index.shtml), the compilation of all symbolic addresses without having to declare them in FORTH, 
 
-    * easy roundtrip between FORTH and assembler with only two switches 'one word' `HI2LO` and `LO2HI`,
+    * easy roundtrip between FORTH and ASSEMBLER levels with only two 'one word' switches: `HI2LO`, `LO2HI`,
 
-    * automatic releasing memory with MARKER tags,
+    * automatic releasing memory with `MARKER` and `RST_SET`/`RST_RET` tags,
 
-    * Fully configurable sequences: reset, initialisation and background,
+    * Fully configurable sequences reset, init and background,
 
     * CPU in sleep mode LPM0|LPM4 in awaiting a command from UART|I2C TERMINAL, and ready to process any interrupts.
 
-For only 3 kbytes in addition, we have the primitives to access the SD_CARD FAT16 and FAT32: read, write, del, download source files and also to copy them from PC to the SD_Card.
-It works with all SD\_CARD memories from 64MB to 64GB with FAT32 format.
-The cycle to read/write a **byte** is below 1us @ 16 MHz.
+If you want to quickly get an idea of what Fast Forth can do, see the /MSP430-FORTH/UARTI2CS.f application file. 
+You will see that the FORTH language is used here as packaging of the program written in assembler.
+See /MSP430-FORTH/FF_SPECS.f for another point of view.
+
+For only 3 kbytes in addition, we have the primitives to access the SD_CARD FAT32: read, write, del, download source files and also to copy them from PC to the SD_Card.
+It works with all SD\_CARD memories from 4GB to 64GB with FAT32 format.
 
 With all the kernel addons, including the 20 bits MSP430\_X assembler and the SD\_Card driver, FastForth size is **10 kB**.
 
-After downloading CORE_ANS.f file (+2 kb), FastForth passes successfully the CORE ANS94 + COREPLUSTEST tests.
+Once downloading /MSP430-FORTH/CORE_ANS.f file (2.25 kb), FastForth passes the tests: /MSP430-FORTH/CORETEST.4TH ( CORE ANS94 + COREPLUSTEST ), thus proving its compliance with the ANS94 standard.
 
 However, if all works well with Windows 10, it works less well with Linux due to the lack of a good alternative to TERATERM...
 
@@ -66,7 +77,7 @@ Note: please, for each update download all subdirectories to correctly update th
 ## how to connect TERMINAL
 
     The files \binaries\launchpad_xMHz.txt are the executables ready to use with a serial terminal 
-    (TERATERM.exe), 115200Bds, with XON/XOFF or RTS_hardware flow controls and a PL2303TA/CP2102 cable.
+    (TERATERM.exe), with XON/XOFF or RTS_hardware flow controls and a PL2303TA/CP2102 cable.
     ------------------------------------------------------------------------------------------
     WARNING! doesn't use it to supply your launchpad: red wire is 5V ==> MSP430FRxxxx destroyed!
     ------------------------------------------------------------------------------------------
@@ -77,35 +88,18 @@ Note: please, for each update download all subdirectories to correctly update th
             J101 connector
                     |
                     v
-     TI Launchpad <--> FET interface  <-------------> USB <-------------> MSP430Flasher.exe/UniFlash
+     TI Launchpad <--> FET interface  <-------------> USB <-------->COMx<----> MSP430Flasher.exe/UniFlash
               Vcc <--- 3V3
-       TST/SBWTCK <--> SBWTCK
-              GND <--> GND
-      RST/SBWTDIO <--> SBWTDIO
+       TST/SBWTCK <--> SBWTCK        ) 
+              GND <--> GND           > used to program MAIN
+      RST/SBWTDIO <--> SBWTDIO       ) 
 
-     TI Launchpad <--> CP2102/PL2302TA cable <------> USB <-------------> TERATERM.exe 
+     TI Launchpad <--> CP2102/PL2303 cable <--------> USB <-------->COMy<----> TERATERM.exe 
                RX <--- TX            )
-              GND <--> GND           > used by FastForth TERMINAL
+              GND <--> GND           > FastForth TERMINAL
                TX ---> RX            )
-              RTS ---> CTS (optionnal) RTS pin Px.y is described in your \inc\launchpad.asm)
+     Pin Px.y RTS ---> CTS (optionnal) RTS pin Px.y is described in your \inc\launchpad.asm)
     
-### programming with BSL_Scripter.exe (don't work with MSP-EXP430FR2355 launchpad)
-
-            J101 connector
-                    |
-                    v
-     MSP430FRxxxx <--> CP2102/PL2303TA cable <------> USB <-------->+<--> TERATERM.exe
-               RX <--- TX   )                                       |
-              GND <--> GND  > used by FastForth TERMINAL            +<--> BSL_Scripter.exe
-               TX ---> RX   )
-              Vcc <--- 3V3      )
-       TST/SBWTCK <--- RTS      )
-              GND <--> GND      > used by BSL_Scripter
-      RST/SBWTDIO <--> DTR      ) 
-    
-    Before programming device, close teraterm TERMINAL and connect the wire RST/SBWTDIO <--> DTR 
-    Once device is programmed, open teraterm TERMINAL then disconnect the wire RST/SBWTDIO <--> DTR.
-
 ## Out of the box
 
 Once FastForth is loaded in the target FRAM memory, you add assembly code or FORTH code, or both,
@@ -123,32 +117,52 @@ Beyond 1 MBds, shorten the PL2303HXD cable, down to 50 cm for 6MBds.
 
 XON/XOFF flow control allows 3.75kV galvanic isolation of terminal input with SOIC8 Si8622EC|ISO7021.
 
-If you choose I2C_FastForth for your project, you will need of one more launchpad to make the USBtoI2C bridge.
-See driver for I2C_FastForth:  \MSP430-FORTH\UARTI2CS.f.
-
-After downloading of complementary words in \MSP430-FORTH\ANS_COMP.f, FastForth executes CORETEST.4th
-in one second, and without errors which ensures its compatibility with the FORTH CORE ANS94 standard.
+If you choose I2C_FastForth for your project, you will need of one more launchpad to make the UARTtoI2C bridge.
+See driver for it :  \MSP430-FORTH\UARTI2CS.f.
 
 Notice that FAST FORTH interprets lines up to 84 chars, only SPACE as delimiter, only CR+LF as
-End Of Line, and BACKSPACE. 
-And that the high limit of a FORTH program memory is $FF80. 
+End Of Line, and BACKSPACE; all other control chars are discarded. 
+And that the high limit of a FORTH program memory is $FF40. 
 
 Finally, using the SCITE editor as IDE, all is ready to do everything from its "tools" menu.
 
 What is new ?
 -------------
 
-### V309   
+### V4.0, the last.   
 
-* = V308 - 344 bytes.
+* = V3.9 - 26 bytes.
+
+* `HNDCODE` and `TICK` fixed
+
+* `KEY` and `EMIT` rewritten, also `ECHO` and `NOECHO`
+
+* the assembler handles correctly argument+/-offset
+
+* the SD_Card driver is re-rewritten
+
+    * it only supports FAT32 format and SD Cards from 4 GB to 64 GB
+
+    * FAT32 Directories can be enlarged
+
+    * fixed errors handling
+
+* the driver UART to I2C is enhanced and more reliable
+
+* added DOUBLE.asm in /ADDONS (DOUBLE word set)
+
+
+### V3.9   
+
+* = V3.8 - 350 bytes.
 
 * removed `INTERPRET`, `CR` and the useless error line displaying.
 
 * Removed `PWR_HERE` and `PWR_STATE`, replaced `RST_HERE` by `RST_SET` and `RST_STATE` by `RST_RET`.
 
-* Replaced `WIPE` by `-1 SYS`, `COLD` by `6 SYS` and `WARM` by `0 SYS` or simply `SYS`.
+* Replaced `WIPE` by `-1 SYS`, `COLD` by `4 SYS` and `WARM` by `0 SYS` or simply `SYS`.
 
-* replaced `VOCABULARY` with `WORDSET`. `ALSO` is also :-) removed because the executing of a definition created by `WORDSET` adds it into the CONTEXT stack. For example, typing `FORTH` adds it into CONTEXT. Note that as result the use of ONLY is modified: `FORTH ONLY` instead of `ONLY FORTH`.
+* replaced `VOCABULARY` with `WORDSET`. `ALSO` is removed because the executing of a definition created by `WORDSET` adds it into the CONTEXT stack. For example, typing `FORTH` adds it into CONTEXT. Note that as result the use of ONLY is modified: `FORTH ONLY` instead of ~~`ONLY FORTH`~~.
 
 * modified QNUMBER QABORT `ABORT` `QUIT` `HI2LO` `PREVIOUS` `WORD` `FIND` `>NUMBER` `TYPE` `#>` `COUNT` `SWAP` `TICK` `POSTPONE` `COLON` `[ELSE]` plus the assembler.
 
@@ -156,12 +170,12 @@ What is new ?
 
 * the word-set `ASSEMBLER` is renamed `hidden` because it stores not only the ASM instructions definitions but also HDNCODE definitions.
 
-* when you executes a `MARKER` definition, it starts by removing its previous definition if exists.
+* when you execute a `MARKER` definition, it starts by removing from its previous definition if exists.
 
 * Some bugs corrected:  
     * QNUMBER FORWDOES `TYPE` `WORD`, 
     * `M*/` in \MSP430-FORTH\DOUBLE.f file, 
-    * the assembler handles correctly argument+/-offset.
+    * ~~the assembler handles correctly argument+/-offset.~~
 
 * User can choose floored or symmetric division. See \MSP430-FORTH\ANS_CORE.f
 
@@ -173,14 +187,14 @@ What is new ?
 * FF_SPECS.f displays all word-sets, including the `hidden` one.
 
 * the SD_Card driver is rewritten. Only FAT32 format is supported. I suggest 4kb sized clusters.   
-  The old WRITE" command is duplicated :  
-    ** `WRITE"` to create a new file (or to overwrite it if exists),  
-    ** `APPEND"` to append to a file (or to create it if not exists)
+  The old `WRITE"` command is duplicated :  
+    * `WRITE"` to create a new file (to overwrite if found),  
+    * `APPEND"` to append to a file (to create it if not found)
 
 
-### V308
+### V3.8
 
-* = V307 - 16 bytes.
+* = V3.7 - 16 bytes.
     
 * Source file copy from TERMINAL to the SD\_Card of any I2C\_FastForth target works fine.
     
@@ -196,7 +210,7 @@ What is new ?
 * Double number word `D<` corrected in \MSP430-FORTH\DOUBLE.f
 
 
-### V307
+### V3.7
 
 * 54 bytes added to (Kernel + Conditional_Compilation + Assembler).
 
@@ -212,64 +226,65 @@ What is new ?
     When use in source.f files, all ASCII special chars are available. See \inc\FastForthREGtoTI.pat.
 
 * Assembler allows "argument+offset" into FORTH area (0 to $FFFF). Examples:  
- `MOV #RXON,&SLEEP+2` to store RXON addr at SLEEP+2 addr.  
- `MOV.B BUFFER+-1(X),TOS` to load the byte at BUFFER-1(X) addr in the register TOS.
+ `MOV #RXON,&BACKGRND+2` to store RXON addr at BACKGRND+2 addr.  
+ `MOV.B BUFFER-1(X),TOS` to load the byte at BUFFER-1(X) addr in the register TOS.
     
-* ~~`COLD` does same than hardware RST~~.  
-  `6 SYS` does same than hardware RST.  
-  ~~`WIPE` does same than hardware SW1+RST (DEEP_RESET)~~.  
+* `6 SYS` does same than hardware RST.  
   `-1 SYS` does same than hardware SW1+RST (DEEP_RESET).  
 
 
 * More complicated:
 
-In the FastForth init process, COLD WARM SLEEP are modified and INIT_FORTH is added.
-They start each with a call to a paired assembly subroutine:
+  In the FastForth init process, COLD WARM BACKGRND are modified and INIT_FORTH is added.  
+  They start each with a call to a paired assembly subroutine:
       
-          RST_SYS failures --------->+       +<- ABORT_TERM <--------(error)<------------+<--COMPILE/EXECUTE<-INTERPRET<-+
-                                     |       |                                           |                               ^
-          RST ------------>+         |       v                                           v                               |
-                           v         |       +-> INIT_FORTH -> ABORT" ->+-> ABORT->QUIT->+->ACCEPT->+         +->ACCEPT->+
-          SW1+RST -------->+         |           ==========             ^                           |         ^
-                           v         v                                  |                           v         |  
-          -n SYS --------->+->COLD-->+->PUC->+-> INIT_FORTH --> WARM" ->+                           +->SLEEP->+  
-                           ^  ====           ^   ==========     ====                                   =====  
-                           |                 |
-          +n SYS (even) -->+              (NOPUC)
-                                             |
-          +n SYS (odd) --------------------->+
-                                             ^ 
-          [0] SYS -------------------------->+
+          RST_SYS failures ------------>+       +<- ABORT_TERM <--- ABORT" <--- (error) <---+<-- COMPILE/EXECUTE<-INTERPRET <--+
+                                        |       |                                           |                                  ^
+          RST ----------->+             |       v                                           v                                  |
+                          v             |       +-> INIT_FORTH ----------->+-> ABORT->QUIT->+->ACCEPT->+            +->ACCEPT->+
+          SW1+RST ------->+             |           ==========             ^                           |            ^
+                          v             v                                  |                           v            |  
+          -n SYS -------->+---> COLD -->+->PUC->+-> INIT_FORTH --> WARM -->+                           +->BACKGRND->o  
+                          ^     ====            ^   ==========     ====                                   ========  ^
+                          |                     |                                                                   \
+          +n SYS (even) ->+                     |                                                                   /
+                                                |                                                                   \
+          +n SYS (odd) -->+--> (NOPUC) -------->+                                                        UART_RX_INT/I2C_START_INT
+                          ^     ==== 
+          [0] SYS ------->+
+   
+                      CALL...   &STOP_APP          &SOFT_APP      &HARD_APP                              &BACKGRND_APP
+                                =========          =========      =========                              =============
 
-                  CALL...     &COLD_APP          &SOFT_APP      &HARD_APP                              &SLEEP_APP
-                              =========          =========      =========                              ==========
-    Default subroutine...     COLD_TERM          RET_ADR        INIT_TERM                              RXON
-        Default action...     wait TERM idle     do nothing     init TERM UC, unlock I/O               enable TERMINAL to TX
-                                                        
-    note: -n SYS|SW1+RST reset the default subroutine of these four calls.  
+           Default subroutine   INIT_STOP          INIT_SOFT      INIT_TERM                              INIT_BACKGRND
+               Default action   UART: wait idle    do nothing     init TERM UC..                         UART: send RXON
+                                I2C: do nothing                   ..unlock I/O                           I2C: send Ctrl_Char $00 
+          
+          note: -n SYS|SW1+RST reset the default subroutine of these four calls. 
+                don't use TOS in these subroutines.
 
-On the other hand, MARKER is modified in such a way that MARKER\_DOES executes a CALL to
-the content of USER_BODY-2,   by default RET_ADR:
+    On the other hand, MARKER is modified in such a way that MARKER\_DOES executes a CALL to
+    the content of USER_BODY-2,   by default RET_ADR:
     
-    MARKER [CFA]         = DODOES
-           [PFA]         = MARKER_DOES
-           [BODY]        = previous DP (Dictionnary Pointer)
-           ...
-           [USER_PARAM-2] = RET_ADR  as REMOVE_APP by default
+        MARKER [CFA]         = DODOES
+               [PFA]         = MARKER_DOES
+               [BODY]        = previous DP (Dictionnary Pointer)
+               ...
+               [USER_PARAM-2] = RET_ADR  as REMOVE_APP by default
 
 
 By replacing [USER_PARAM-2] with the address of a new defined subroutine (named for example: REMOVE_XXX), 
 MARKER_DOES will execute it to restore n critical pointers (room made by 2n ALLOT) at USER_PARAM, USER_PARAM+2, ...
 
-Thus, with MARKER and the definition of subroutines STOP_XXX, INIT_SOFT_XXX, INIT_HARD_XXX, BACKGND_XXX, 
+Thus, with MARKER and the definition of subroutines STOP_XXX, SOFT_XXX, HARD_XXX, BACKGRND_XXX, 
 the programmer has full control of his "XXX" real time application using interrupts, 
-with everything he needs to start, stop and remove it properly, thanks to a 'soft' MARKER definition, 
-avoiding the (SW1+RST) of the last chance. 
+with everything he needs to start, stop and remove it properly, thanks to this 'soft' MARKER definition, 
+avoiding the hardware (SW1+RST) of the last chance. 
 
 See example in  /MSP430-FORTH/UARTI2CS.f.
 
 
-### V306
+### V3.6
 
 * 8 bytes added to (Kernel + Conditional_Compilation + Assembler).
     
@@ -291,11 +306,11 @@ See example in  /MSP430-FORTH/UARTI2CS.f.
     
 * Added the word set DOUBLE in the \MSP430-FORTH\DOUBLE.f file.
 
-### V305
+### V3.5
 
-    48 bytes removed.
+* 48 bytes removed.
     
-    from Scite menu, we can program MSP430FRxxxx also with BSL_Scripter.
+* from Scite menu, we can program MSP430FRxxxx also with BSL_Scripter.
     
     To do, save file \prog\BSL_Scripter.exe from: 
     https://github.com/drcrane/bslscripter-vs2017/releases/download/v3.4.2/BSL-Scripter-v3.4.2.zip,
@@ -308,54 +323,55 @@ See example in  /MSP430-FORTH/UARTI2CS.f.
     So, we download both binaries and source files with only one CP2102|PL2303TA module,
     the XON/XOFF TERMINAL and BSL_Scripter. Bye bye T.I. FET!
     
-    ABORT messages display first the I2C address, if applicable.
-    QNUMBER some issues solved.
-    UART version of ACCEPT and KEY are shortened.
-    EVALUATE is moved to CORE_ANS.
+* ABORT messages display first the I2C address, if applicable.
 
-### V304
+* QNUMBER some issues solved.
+* UART version of ACCEPT and KEY are shortened.
+* EVALUATE is moved to CORE_ANS.
 
-    36 bytes removed.
-    
-    Fixed: word F. issue in FIXPOINT.asm
-    
-    the new kernel DEFERRED option adds :NONAME CODENNM DEFER IS.
-    
-    pin RESET is software replaced by pin NMI and so, RESET executes COLD, allowing code insert before BOR.
-    however SYSRSTIV numbering remains unchanged: = 4 for RESET, = 6 for COLD.
-    
-    Hardware Deep RESET (S1+RST) reinitializes vectors interrupts and SIGNATURES area, as WIPE.
-    
-    
-    A newcomer: FastForth for I2C TERMINAL. With the driver UART2I2CS running on another FastForth target,
-                we have the USB to I2C_Slave bridge we need: one TERMINAL for up to 112 I2C_FastForth targets.
+### V3.4
 
-                                                                                    +-------------------------+
-      notebook                     USB to I2C_Slave bridge                    +-I2C-| others I2C_slave target |
-    +-----------+      +-------------------------------------------------+   /    +-------------------------+ |
-    |           |      ¦ PL2303HXD         target running UARTI2CS @24MHz¦  +-I2C-|  MSP430FR4133 @ 1 MHz   | |
-    |           |      ¦------------+       +----------------------------¦ /   +--------------------------+ |-+
-    |           |      ¦            | 3wires|   MSP430FR2355 @ 24MHz     ¦/    |   MSP430FR5738 @ 24 MHz  | |
-    | TERATERM -o->USB-o->USB2UART->o->UART-o-> FAST FORTH -> UARTI2CS  -o-I2C-o-> FAST FORTH with option |-+
-    | terminal  |      ¦            | 6MBds |               (I2C MASTER) ¦     |  TERMINAL_I2C (I2C SLAVE)| 
-    |           |      ¦------------+       +----------------------------¦     +--------------------------+
-    |           |      ¦            |< 20cm>|                            ¦       up to 112 I2C_Slave targets  
-    +-----------+      +-------------------------------------------------+
-
-    With the indicated MCLK and UART speed, Coretest.4th is downloaded to (and executed by) I2C_Slave in 800ms.
-    The driver UARTI2CS works without error from 1MHz to 24MHz MCLK and from 115200Bds up to 6MBds UART.
-    With I2C_Master running at 24 MHz, the I2C bus frequency is about 1MHz, and it works fine
-    even if I2C_slave is running at 1 MHz.
-    Don't forget to add two 3k3 pullup resistors on SCL and SDA...
-
-    the Multi Master Mode works but is not tested in multi master environment.
+* 36 bytes removed.
     
-    "cerise sur le gâteau": when they wait for a TERMINAL input (idle state), 
-    both I2C_Master and I2C_Slave(s) are sleeping in LPMx mode and the bus I2C is freed. 
-    The I2C_slave driver handles LPM4 mode.
+* Fixed: word F. issue in FIXPOINT.asm
     
-    The UART2I2CS does not use TI's horrible UCBx_I2C_Master driver, but a much faster software driver,
-    with the UCBx still available for an I2C_Slave or SPI driver.
+* the new kernel DEFERRED option adds :NONAME CODENNM DEFER IS.
+    
+* pin RESET is software replaced by pin NMI and so, RESET executes COLD, allowing code insert before BOR.
+  however SYSRSTIV numbering remains unchanged: = 4 for RESET, = 6 for COLD.
+    
+* Hardware Deep RESET (S1+RST) reinitializes vectors interrupts and SIGNATURES area, as WIPE.
+    
+    
+* A newcomer: FastForth for I2C TERMINAL. With the driver UART2I2CS running on another FastForth target, 
+we have the USB to I2C_Slave bridge we need: one TERMINAL for up to 112 I2C_FastForth targets.
+
+                                                                                      +-------------------------+ 
+        notebook                     USB to I2C_Slave bridge                    +-I2C-| others I2C_slave target | 
+      +-----------+      +-------------------------------------------------+   /    +-------------------------+ | 
+      |           |      ¦ PL2303HXD         target running UARTI2CS @24MHz¦  +-I2C-|  MSP430FR4133 @ 1 MHz   | |
+      |           |      ¦------------+       +----------------------------¦ /   +--------------------------+ |-+
+      |           |      ¦            | 3wires|   MSP430FR2355 @ 24MHz     ¦/    |   MSP430FR5738 @ 24 MHz  | |
+      | TERATERM -o->USB-o->USB2UART->o->UART-o-> FAST FORTH -> UARTI2CS  -o-I2C-o-> FAST FORTH with option |-+
+      | terminal  |      ¦            | 6MBds |               (I2C MASTER) ¦     |  TERMINAL_I2C (I2C SLAVE)| 
+      |           |      ¦------------+       +----------------------------¦     +--------------------------+
+      |           |      ¦            |< 20cm>|                            ¦       up to 112 I2C_Slave targets  
+      +-----------+      +-------------------------------------------------+
+
+With the indicated MCLK and UART speed, Coretest.4th (45896 bytes) is downloaded to (and executed by) I2C_Slave in 1220ms.   
+The driver UARTI2CS works without error from 1MHz to 24MHz MCLK and from 115200Bds up to 6MBds UART.  
+With I2C_Master running at 24 MHz, the I2C bus frequency is about 1MHz, and it works fine
+even if I2C_slave is running at 1 MHz.
+Don't forget to add two 3k3 pullup resistors on SCL and SDA...
+
+the Multi Master Mode works but is not tested in multi master environment.
+    
+"Cerise sur le gâteau": when they wait for a TERMINAL input (idle state), 
+both I2C_Master and I2C_Slave(s) are sleeping in LPMx mode and the bus I2C is freed. 
+The I2C_slave driver handles LPM4 mode.
+    
+The UART2I2CS does not use TI's horrible UCBx_I2C_Master driver, but a much faster software driver,
+with one more UCBx still available for an I2C_Slave or SPI driver.
 
 ##### HOW TO DO ?
 
@@ -371,112 +387,64 @@ See example in  /MSP430-FORTH/UARTI2CS.f.
     At the end of UART2I2CS.f file set the <slave address you want>, i.e. $10.
     then download it, it's done: TERMINAL is linked to I2C_Slave.
     
-    Type `Alt+B` on teraterm (send UART break) to unlink I2C_Slave.
-
-### V302
-
-    646 bytes removed
-    Kernel + FIXPOINT input + DOUBLE input + Conditional Compilation + Assembler under 5 kB.
-    
-    the FORTH kernel is drastically reduced to 55 words.
-    All others are moved in the \ADDON\ANS_COMPLEMENT.asm file, 
-    the conditionnal compilation with the assembler allowing to reuse them on request.
-    
-    Fixed:  QNUMBER, 
-            ACCEPT (XON/XOFF TERMINAL with MSP430FR2xxx).
-    Modified: [ELSE].
-    
-    FF_SPECS.f displays FastForth environment.
-
-### V301
-
-    584 bytes removed, Kernel + Conditional Compilation + Assembler under 5.5 kb.
-    
-    the FORTH kernel is drastically reduced to 82 words, just what the operating system needs.
-    All others are moved in the \ADDON\ANS_COMPLEMENT.asm file, the conditionnal compilation
-    allowing you to use them on request.
-    
-    Taking into account the new TI launchpad LP_MSP430FR2476.
-    
-    Fixed: :NONAME (now aligned), LOAD" (no more crash on error).
-    Modified: ACCEPT, WORD, HEADER, CODE, ENDCODE, ASM, GOTO, ?GOTO, RPT.
-    Removed JMP <word> and ?JMP <word> from assembler (replaced by GOTO BWx and ?GOTO BWx).
-    
-    ACCEPT is modified to include the RXON call in the word SLEEP. 
-    By rewriting the defered word SLEEP, we can easily disable the TERMINAL_INPUT interrupt.
-    See BACKGROUND, START and STOP  in \MSP430-FORTH\RC5toLCD.f.
-
-### V300
-
-    4 bytes removed.
-    The prompt "ok" becomes a compilation option.
-    
-    Taking into account the digit separator '_' in ?NUMBER, to better see when typing binary numbers.
-        example: %1010100011000111 can be typed as well: %1010_1000_1100_0111
-    
-    Corrected >NUMBER
-    
-    Modified GetFreeHandle CloseHandle
-    
-    Tested with BLE 5.0 terminal (a couple of BGX13P EVK) at 16MHz, 921600 bds + terminal 5 wires: 
-        download throughput = 5 kbytes/s (and with errors when ECHO is ON), disappointing...
-        (Bluetooth 2.1 terminal with one RN42 works well).
-    
-    RePeaTed instructions RRUX,RRCX,RLAX,ADDX,SUBX work fine! See TESTASMX.4TH
-
+    Type `Alt+B` on teraterm (send a BREAK) or press S2 on UARTtoI2C module to unlink I2C_Slave.
 
 ### PREVIOUS versions
     
 Unlocking I/O's is transfered from RESET to WARM.
-Thus, by redirecting WARM, you can add I/O's configuration of your application before unlocking.
+Thus, by redefining HARD_APP, you can add I/O's configuration for your application before a global unlocking.
 
 
-The structure of primary DEFERred words as KEY,EMIT,CR,WARM... is modified,
-the address of their default execute part, without name, can be found with:
- `' <name> >BODY`
+The structure of primary DEFERred words as KEY,EMIT,CR,ACCEPT... is modified,
+the address of their default execute part, without name, can be found with: `' <name> >BODY`
 
-example, after this entry: `' DROP IS KEY` KEY runs DROP i.e. runs the redirection
-made by IS,  
+example, after this entry: `' DROP IS KEY` KEY runs DROP i.e. runs the redirection made by IS,  
+
 but `' KEY >BODY EXECUTE` runs KEY, the default action at the BODY address.
 
-and: `' KEY >BODY IS KEY`
-restore the default action of this **primary** DEFERred word.
+and `' KEY >BODY IS KEY` restores the default action of this **primary** DEFERred word.
 
 
-WARNING! you cannot do that with words created by DEFER which creates only **secondary** DEFERred words, without BODY !
+to build a **primary** DEFERred definition, you must create a CODE definition followed by a :NONAME definition:
 
-to build a **primary** DEFERred FORTH word, you must create a DEFERred word followed by a
-:NONAME definition:
+    CODE SPACES         \ create a CODE definition named 'SPACES' which does a jump to the NEXT_ADR instruction to do nothing
+    MOV #NEXT_ADR,PC    \ CFA = code of the instruction, PFA = parameter I of the instruction = NEXT_ADR
+    ENDCODE             \ this definition 'SPACES' does nothing, for the moment...
 
-    DEFER truc
-    :NONAME         \ does nothing (for the example)
-        DUP
-        DROP
-    ; IS truc       \
+    :NONAME             \ starts a FORTH definition without name
+    BEGIN
+        ?DUP
+    WHILE
+        'SP' EMIT
+        1-
+    REPEAT
+    ;
+    IS SPACES           \ this :NONAME execution_address is stored at PFA of SPACES, replacing NEXT_ADR
     
-The advantage of creating primary DEFERred words is to set their
-default state, enabling to reinitialize them easily.
+The advantage of creating primary DEFERred definitionss is to set their
+default execution subroutine at their BODY address, enabling to reinitialize them easily:
+' truc >BODY IS truc
 
-CODENNM is the low level equivalent of :NONAME
+Same with CODENNM definition, as low level equivalent of :NONAME
 
-to build the primary DEFERred low level definition "machin" :
-             -------
+    CODE TSTBIT         \ create a CODE definition named 'TSTBIT' which does a jump to the NEXT_ADR instruction to do nothing
+    MOV #NEXT_ADR,PC    \ CFA = instruction, PFA = NEXT_ADR
+    ENDCODE             \ this definition 'TSTBIT' does nothing, for the moment...
 
-    DEFER machin
-
-    CODENNM
-        NOP2        \ assembly instruction
-        NOP3        \ assembly instruction
-        MOV @IP+,PC \ mandatory before ENDCODE
-    ENDCODE IS machin
+    CODENNM             \ starts an assembly definition without name
+    MOV @PSP+,X
+    AND @X,TOS
+    MOV @IP+,PC
+    ENDCODE             \ -- execution_address_of_CODENNM
+    IS TSTBIT           \ this CODENNM execution_address is stored at PFA of TSTBIT, replacing NEXT_ADR
 
 you can obviously mix LOW/HIGH levels in CODENNM and :NONAME
 
-All interpretation/compilation errors now execute ~~`PWR_RET`~~~ `RST_RET`, so any incorrect definition
+All interpretation/compilation errors now execute ~~`PWR_RET`~~ `RST_RET`, so any incorrect definition
 and all its source file will be automatically erased.
     
 
-Accept SD_Card from 64 MB (FAT16) up to 64 GB (FAT32).  
+Accept SD_Card from 4 to 64 GB (FAT32).  
 Note that Windows 10 no longer offers the FAT32 format for the highest sizes of SD_CARD memory.
 So you must use an alternative to do, for example: https://www.partitionwizard.com.
 
@@ -496,8 +464,6 @@ And also to Matthias Koch for its ideas about Q15.16 implementation.
 
 Unlike CamelForth FASTFORTH is a "Direct Threaded Code", with an embedded assembler following the standard syntax,
 not the one used in the world Forth.
-
-Its core is fully compliant with the standard ANS.
 
 It is optimized for the speed, especially in the interpreter mode, so that you can load an application program written in FORTH/Assembler faster than its binary via MSP430 Flasher.exe.
 Everything can be done from your text editor, the preprocessor and a serial terminal.
@@ -749,55 +715,53 @@ then compile for your target
 
 ### the commands
 
-With the LOAD" pathame" command FastForth loads source files from a SD_CARD memory.
+With the `LOAD"` pathame" command FastForth loads source files from a SD_CARD memory.
 
-See "SD_TESTS.f", a FORTH program done for example
+    * LOAD" path\filename.4th" relative path,
 
-If you remove the SD memory card reader and then reset, all SD\_IO pins are available except SD_CD.  
-Drive letters are always ignored.  
-
-    LOAD" path\filename.4th" relative path,
-    LOAD" \path\filename.4th" absolute path.
+    * LOAD" \path\filename.4th" absolute path.
 
 The file is interpreted by FORTH in same manner than from the serial terminal.  
 When EOF is reached, the file is automatically closed.  
-A source file can LOAD" another source file, and so on in the limit of 8 handles. 
+A source file can `LOAD"` another source file, and so on in the limit of 8 handles. 
 
-LOAD" may be used as Change Directory command: 
+`LOAD"` may be used as Change Directory command: 
 
-    LOAD" \misc".       \misc becomes the current folder.
-    LOAD" ..\"          parent folder becomes the current folder.
-    LOAD" \"            Root becomes the current folder.
+    * LOAD" \misc".       \misc becomes the current folder.
+
+    * LOAD" ..\"          parent folder becomes the current folder.
+
+    * LOAD" \"            Root becomes the current folder.
 
 
-    READ" filename.ext" reads a file in current directory,
-    READ" \filename.ext" reads a file in root directory.
+To read a file: `READ"` pathname"
 
-The first sector of this file is loaded in BUFFER.
-To read next sectors, use the command READ which loads the next sector in the buffer
-and leaves on the stack a true flag when the EOF is reached. 
-The file is automatically closed. See tstwords.4th for basic usage.
+* open it, the first sector is loaded in SD_BUF
 
+The command `READ` sequentially loads the next sector in the buffer and leaves on the stack a true flag when the EOF is reached.    
 The variable BufferLen keep the count of bytes to be read (1 to 512).
 
-If you want to anticipate the end, remove the false flag left by the previous READ then use the CLOSE command.
+The file is automatically closed.  
+  
+If you want to anticipate the end, remove the false flag left by the previous `READ` then use the `CLOSE` command.
 
-    WRITE" path\filename.ext".
+To overwrite a file: `WRITE"` path\filename.ext".
 
-If the file does not exist, create it else open it, and set the write pointer at the end of the file, 
-ready to append chars.
+* If the file does not exist, create it
 
-The command WRITE writes the buffer and increments the current sector.
+* set the write pointer at the **beginning** of the file, ready to append chars.
 
-See example of use in \MSP430-FORTH\SD_TEST.f.
+To write a file: `APPEND"` path\filename.ext".
 
-To overwrite an existing file:
+* If the file does not exist, create it
 
-    DEL" path\filename.ext" (no error issued),
-    WRITE" path\filename.ext".
+* set the write pointer at the **end** of the file, ready to append chars.
 
-Use CLOSE to close this file.
+The command `WRITE` sequentially writes the SD_BUF in SD_CARD and increments the current sector.
 
+Use `CLOSE` to close a WRITE file.
+
+See examples of use in \MSP430-FORTH\SD_TEST.f.
 
 
 #### Copy source file to SD_Card
@@ -820,64 +784,79 @@ as it was after the last `RST_SET` command.
 If the system does not restart again, press `SW1+RESET`. 
 FORTH restarts in the state of its object file.
 
-Here is the FastForth memory management, one of its major assets, with both hardware events and software equivalent for COLD and WIPE levels:
+Here is the FastForth memory management, one of its major assets, with both hardware events and software equivalent:
 
 *  RST_RET 
     
     *  when you type `RST_RET` the program beyond the last RST_SET is lost.
 
-    *  Running a `MARKER` definition will remove it and the program beyond. In addition the user can link it a routine to remove modified configuration in system: vectors, hardware, IOs... 
+    *  Running a `MARKER` definition will remove it and the program beyond. In addition the user can link it a routine to remove the modified configuration in system: vectors, hardware, I/Os... 
 
-*  WARM level :  SYS --> WARM display --> SLEEP.
 
-    *  when you type `0 SYS`, FORTH interpreter is restarted without program lost, without WARM display. 
+*  WARM level : `SYS` -->(no PUC)--> INIT_FORTH --> INIT_HARD --> WARM display --> ABORT --> ACCEPT --> BACKGRND --> SLEEP.
+
+    *  when you type `SYS`, FORTH restarts, the WARM display starts by #0. 
     
-    *  when you type `SYS`, FORTH restarts, the program beyond RST_SET is lost, INIT_FORTH and INIT_HARD_APP (INIT_TERM by default) are executed, the WARM display starts by "#1". 
-    
-    *  when you type `+n SYS` (n>0, odd), same effects, the WARM display starts by "#+n". 
+    *  when you type `+n SYS` (n>0, odd), the WARM display starts by #+n. 
 
-*  COLD level : PUC --> `SYS` --> WARM display --> SLEEP.
+        * same effect as RST_RET
 
-    *  Power ON : the WARM display starts with the SYSRSTIV value "#2".
+        * words ACCEPT, EMIT, KEY are initialised with their default value,
     
-    *  SVSHIFG SVSH event (dropout supply) : the WARM display starts with the SYSRSTIV value: "#14".
+        * TIB is initialised with its default value.
 
-    *  hardware `RST` : the WARM display starts with the SYSRSTIV value "#4".
+
+*  COLD level : `+n SYS` --> PUC --> INIT_FORTH --> INIT_HARD --> WARM display --> ABORT --> ACCEPT --> BACKGRND --> SLEEP.
+
+    *  Power ON : the WARM display starts with the SYSRSTIV value #2.
     
+    *  hardware `RST` : the WARM display starts with the SYSRSTIV value #6, because RST pin acts as NMI pin.
+    
+    *  SVSHIFG SVSH event (supply dropout) : the WARM display starts with the SYSRSTIV value: #14.
+
     *  PUC on failure : the WARM display starts with the SYSRSTIV value: #n.
 
-    *  `+n SYS` (n>0 and even) is the software RESET : the WARM display starts with the SYSRSTIV value "#+n" (even).
+    *  other `+n SYS` (n>0 and even) are software RESET : the WARM display starts with the SYSRSTIV value "#+n" (even).
+
+        * same effects as WARM level, plus:
+
+        * performs a PUC.
+
     
 
-*  WIPE level : PUC --> `-n SYS` --> WARM display --> SLEEP
+*  DEEP RESET level:
 
-    *  `-n SYS` (n<0) performs the software Deep Reset:
+    *  `-n SYS` (n<0) performs the software Deep Reset, WARM display = #-n.
  
-        *  INIT_FORTH and INIT_HARD_APP (INIT_TERM by default) are executed,
-        *  all programs donwloaded from the terminal or from the SD_Card are lost,
-        *  the default state of COLD_APP, INI_SOFT_APP, INI_HARD_APP and BACKGND_APP is restored,
-        *  all "defered" words are initialised with their default value,
-        *  all interrupts vectors also, 
+    *  hardware `SW1+RESET`, WARM display = #-1.
+    
+    *  recompiling FastForth, WARM display = #-3.
+
+        * same effects as COLD level, plus:
+
+        *  all programs donwloaded from the TERMINAL or from the SD_CARD are lost,
+
+        *  COLD_APP, SOFT_APP, HARD_APP and BACKGND_APP default values are restored,
+
+        *  all interrupts vectors are initialised with their default value, 
+
         *  SIGNATURES area is FFh full filled.
-        *  WARM display = #-n.
 
-    *  hardware `SW1+RESET` does same effects, WARM display = #-1.
+
+* ERROR : ABORT" your_text" --> INIT_FORTH --> display = "your_text" --> ABORT --> ACCEPT --> BACKGRND --> SLEEP. 
     
-    *  recompiling FastForth, too, WARM display = #-3.
-
-* ERROR : ABORT" --> ABORT" display --> SLEEP.  
-    
-    *  when an error occurs, FASTFORTH discards the end of current downloading if any, does same as `SYS` then displays the error message. In this way, any error is followed by the complete erasure of the bad defined word causing this error, and also by discarding the end of downloading of the source file including it. 
-
-    *  It is strongly recommended to end any source file with `RST_SET` to protect it program from any subsequent error.
+    *  when an error occurs, FASTFORTH discards the end of current downloading if any. In this way, any error is followed by the complete erasure of the bad defined word causing this error, and also by discarding the end of downloading of the source file including it. 
 
 
+Once validate, it is strongly recommended to end any source file with `RST_SET` to protect the resulting program from a subsequent download error.
 
-As all other words FORTH, RST_SET RST_RET and MARKER definitions may be freely used in compiling mode.    
+As all other FORTH words, `RST_SET` `RST_RET` and` MARKER` definitions may be freely used in compiling mode.    
 
-If you have previously set 'NOECHO', there is no WARM, COLD, WIPE display.
+If you have previously set `NOECHO`, there is no WARM display.
 
-With I2C_FastForth version, WARM display is preceded by the decimal I2C slave address, example: `@18`. 
+If you don't want to display an ABORT" message, type: `ABORT" "`
+
+With I2C_FastForth version, WARM and `ABORT"` displays are preceded by the decimal I2C slave address, example: `@18`. 
 
 
 ## VOCABULARY ADD-ON
@@ -886,15 +865,14 @@ These words are not ANS94 compliant.
 
 The CONTEXT stack is 8 word_set sized.
 
-after typing: WORDSET TRUC   \ a new word-set called TRUC is created
+after typing: `WORDSET TRUC`   a new word-set called TRUC is created, then:
 
-    TRUC            adds the word-set TRUC first in the CONTEXT stack, the interpreter search existing definitions first in TRUC
-    PREVIOUS        removes TRUC from CONTEXT
+* `TRUC`            adds the word-set TRUC first in the CONTEXT stack, the interpreter search existing definitions first in TRUC
 
-    DEFINITIONS     adds news definitions in the first word-set in the CONTEXT stack, i.e. TRUC,
-    PREVIOUS        removes TRUC from CONTEXT but new definitions are still added in TRUC
-    DEFINITIONS     new definitions are added into the previous first word-set in the CONTEXT stack,
-                    after `-1 SYS`: the FORTH word-set.
+* `DEFINITIONS`     adds news definitions in the first word-set in the CONTEXT stack, i.e. TRUC,
+* `PREVIOUS`        removes TRUC from CONTEXT but new definitions are still added in TRUC
+* `DEFINITIONS`     new definitions are added into the previous first word-set in the CONTEXT stack,
+*  after `-1 SYS`, FORTH is the CONTEXT and the CURRENT word-set.
 
 
 ## EMBEDDED ASSEMBLER
@@ -904,13 +882,19 @@ See files \\inc\\Target.pat.
 
 ### HOW TO MIX assembly and FORTH ?
 
-FAST FORTH knows three kinds of definitions :
+FAST FORTH knows two modes of definitions :
 
 * high level FORTH definitions `: <name> ... ;`
 
-* low level definitions `CODE <name> ... ENDCODE`
+* assembly low level definitions `CODE <name> ... ENDCODE`
 
-* low level hidden definitions `HDNCODE <name> ... ENDCODE` which are deliberately hidden because they are not executable by FORTH.
+there is also some variations of these two modes :
+
+* high level definitions `NONAME: ... ;`
+
+* low level definitions `CODENNM ... ENDCODE`, low-level equivalent of `NONAME:`
+    
+* low level definitions `HDNCODE <name> ... ENDCODE`, these definitions are 'hidden' and can be accessed only from assembly level.
     
 Examples:
     
@@ -926,21 +910,21 @@ Examples:
     ENDCODE
 
 
-    HDNCODE WDT_INT     \ low level hidden definition "WDT_INT" (Watchdog interrupt)
-    BIT #8,&TERM_STATW  \ break (ALT+b) sent by TERMINAL ?
-    0<> IF              \ if yes
-        MOV #ABORT,PC   \   continue with ABORT (no return)
+    HDNCODE WDT_INT         \ low level hidden definition "WDT_INT" (Watchdog interrupt)
+    BIT #8,&TERM_STATW      \ break (ALT+b) sent by TERMINAL ?
+    0<> IF                  \ if yes
+        MOV #ABORT,PC       \   continue with ABORT (no return)
     THEN
-                        \ else return to background task SLEEP
-    MOV @RSP+,SR        \ restore SR flags
-    BIC #%0111_1000,SR  \ but force CPU Active Mode, disable all interrupts
-    RET                 \ (instead of RETI)
+                            \ else return to background task SLEEP
+    BIC #%0111_1000,0(RSP)  \ force CPU Active Mode, disable all interrupts
+    RETI                    \
     ENDCODE
     
     
 At the end of low level CODE definition, the instruction MOV @IP+,PC jumps to the next definition. 
 This faster (4 cycles) and shorter (one word) instruction replaces the famous pair of assembly 
-instructions : CALL #LABEL ... RET (4+4 cycles, 2+1 words). The register IP is the Interpretative Pointer. 
+instructions : CALL #LABEL ... RET (4+4 cycles, 2+1 words).  
+The register IP is the Interpretative Pointer. 
 
 High level FORTH definitions starts with a boot code "DOCOL" which saves the IP pointer and loads it with the first address
 of a list of execution addresses, then performs a postincrement branch to the first one. 
@@ -955,8 +939,7 @@ here, the compilation of low level ADD definition :
 and the one of the high level word NOOP :
 
                     header          \ compiled by the word :
-    execution addr
-    DOCOL           PUSH IP         \ boot code "DOCOL"...
+    execution addr  PUSH IP         \ boot code "DOCOL"...
                     CALL rDOCOL     \ ...compiled by the word :
                     addr of DUP     \ execution addr of DUP
                     addr of DROP    \ execution addr of DROP
@@ -1342,7 +1325,7 @@ FastForth embedded assembler doesn't recognize the (useless) TI's symbolic addre
 
 REGISTERS correspondence (you can freely use ASM or TI or FASTFORTH registers's names).
 
-        ASM         TI      FASTFORTH   comment 
+        REG         TI      FASTFORTH   comment 
     
         R0          PC      PC          Program Counter
         R1          SP      RSP         Return Stack Pointer
@@ -1373,7 +1356,7 @@ or use them directly then restore FastForth default values:
 `MOV @X+,rDOCON`  
 `MOV @X,rDOVAR`
 
-(Search `INIT_DOXXX` in your \inc\device.pat)
+(Search `INIT_DOXXX` in \inc\MSP430xxxx.pat)
 
 If you want to restore only rDODOES, rDOCON and rDOVAR:
 
@@ -1387,13 +1370,13 @@ If you want to restore only rDODOES and rDOCON:
 `MOV #XDODOES,rDODOES`  
 `MOV #XDOCON,rDOCON`  
 
-When you use these registers you can't call any FORTH words created by them at the same time! 
+When you use these registers you can't call any FORTH words using them at the same time! 
 
 don't use R3 and use R2 (SR) only with BIC, BIT, BIS instructions in register mode.
 
 The bits 0-11 of SR register are saved by interrupts and restored by the instruction RETI.
 you can use freely UF9 UF10 and UF11 as SR bits 9-11. 
-FastForth uses UF9 for double numbers interpreting.
+FastForth uses UF9 for double numbers interpreting and also by TO ... VALUE.
     
 
 **PARAMETERS STACK**
@@ -1405,7 +1388,7 @@ to push one cell on the PSP stack :
 
     SUB #2,PSP                  \ insert a empty 2th cell
     MOV TOS,0(PSP)              \ fill this 2th cell with first cell
-    MOV <what you want>,TOS     \ MOV or MOV.B <what you want>,TOS ; i.e. update first cell
+    MOV(.B) <what you want>,TOS \ i.e. update first cell
 
 to pop one cell from the PSP stack :
 
@@ -1459,15 +1442,15 @@ Error occurs if #n is out of bounds.
 
     RETURN-STACK-CELLS  = 48            max size of the return stack, in cells  
     STACK-CELLS         = 48            max size of the data stack, in cells  
-    /COUNTED-STRING	 = 255           max size of a counted string, in characters  
+    /COUNTED-STRING	 = 255              max size of a counted string, in characters  
     /HOLD	           = 34            size of the pictured numeric output string buffer, in characters  
     /PAD	            = 84            size of the scratch area pointed to by PAD, in characters  
     ADDRESS-UNIT-BITS   = 16            size of one address unit, in bits
-    FLOORED	         = true          true if floored division is the default
+    FLOORED	         = true             true if floored division is the default
     MAX-CHAR	        = 255           max value of any character in the implementation-defined character set
     MAX-N               = 32767         largest usable signed integer  
     MAX-U               = 65535         largest usable unsigned integer  
-    MAX-D	           = 2147483647    largest usable signed double number  
+    MAX-D	           = 2147483647     largest usable signed double number  
     MAX-UD              = 4294967295    largest usable unsigned double number  
     DeFiNiTiOnS aRe CaSe-InSeNsItIvE    they are compiled in their CAPS_ON form.
 
@@ -1531,66 +1514,23 @@ SYS.
 Words ACCEPT KEY EMIT are DEFERred definitions. ACCEPT doesn't use KEY.
 
     RST_SET         defines the bound of the program memory protected against any PUC.  
-    RST_RET         removes all words defined after RST_SET  
+    RST_RET         removes all words defined after RST_SET.  
     HI2LO           used to switch compilation from high level (FORTH) to low level (assembler).
     CODENNM         the assembler counterpart of :NONAME.
     CODE <name>     creates a definition written in assembler.
                     this defined <name> must be ended with ENDCODE unless COLON or LO2HI use. 
-    HDNCODE <name>  creates a word same as CODE but in the hidden word-set to be visible only in the assembly mode.
+    HDNCODE <name>  same as CODE but the definition is in the hidden word-set to be visible only in the assembly mode.
     NOECHO          disables display on the TERMINAL  
     ECHO            enables display on the TERMINAL
-    SYS             0 SYS | SYS   restarts the interpreter,
-                    +n (odd) SYS  initializes the hardware and restarts the FORTH engine,
-                    +n (even) SYS does software RESET, initializes the hardware and restarts the FORTH engine, 
+    SYS             0 SYS | SYS   executes WARM
+                    +n (odd) SYS  same,
+                    +n (even) SYS does software RESET then executes WARM 
                     -n SYS        same as +n (even) SYS, plus resets the program memory to its original state.
 
-### Other words/addresses which are usable in any generic source_files.f
+### Other constants/addresses which are usable in any generic source_files.f
 
-**All constants, variables and definitions included in \inc\device.pat and \inc\target.pat files are usable by
-the assembler and also by the FORTH interpreter (except the definitions).**
-
-    see definitions in forthMSP430FR.asm:
-    SLEEP               ASM CODE_WITHOUT_RETURN: CPU shutdown  
-    LIT                 CODE compiled by LITERAL  
-    XSQUOTE             CODE compiled by S" and S_  
-    HEREXEC             CODE HERE and BEGIN execute address  
-    QFBRAN              CODE compiled by IF UNTIL  
-    BRAN                CODE compiled by ELSE REPEAT AGAIN  
-    NEXT_ADR            CODE NEXT instruction (MOV @IP+,PC)  
-    MUSMOD              ASM 32/16 unsigned division, used by ?NUMBER, UM/MOD  
-    MDIV1DIV2           ASM input for 48/16 unsigned division with DVDhi=0, see DOUBLE M*/  
-    MDIV1               ASM input for 48/16 unsigned division, see DOUBLE M*/  
-    RET_ADR             ASM RET address,  
-    SETIB               CODE Set Input Buffer with org & len values, reset >IN pointer  
-    REFILL              CODE accept one line from input and leave org len of input buffer  
-    CIB_ORG             Current Input Buffer address, default value: TIB_ORG; may be redirected to SDIB_ORG  
-    XDODOES             to restore rDODOES: `MOV #XDODOES,rDODOES`  
-    XDOCON              to restore rDOCON: `MOV #XDOCON,rDOCON`  
-    XDOVAR              to restore rDOVAR: `MOV #XDOVAR,rDOVAR`  
-                        to restore rDOCOL: `MOV &INIT_DOCOL,rDOCOL`  
-    INIT_FORTH          CODE_WITHOUT_RETURN, common part of SYS and QABORT, starts FORTH engine  
-    QABORT              CODE_WITHOUT_RETURN, run-time part of ABORT"  
-    ABORT               ABORT address
-    QUIT                QUIT address
-
-    see definitions in forthMSP430FR_TERM_UART.asm:
-    ABORT_TERM          CODE_WITHOUT_RETURN, called by QABORT, QREVEAL and INTERPRET     
-    UART_WARM
-    UART_INIT_TERM      ASM CODE, content of UART_WARM+2 by default
-    UART_COLD_TERM      ASM CODE, content of UART_COLD+2 by default 
-    UART_INIT_SOFT      ASM CODE, content of INIT_FORTH+2 by default = RET address
-    UART_RXON           ASM CODE, content of SLEEP+2 by default
-    UART_RXOFF          ASM CODE, called by ACCEPT
-
-    see definitions in forthMSP430FR_TERM_I2C.asm:
-    ABORT_TERM          CODE_WITHOUT_RETURN, called by QABORT, QREVEAL and INTERPRET     
-    I2C_WARM
-    I2C_INIT_TERM       ASM CODE, content of I2C_WARM+2 by default
-    I2C_COLD_TERM       ASM CODE, content of I2C_COLD+2 by default = RET address
-    I2C_INIT_SOFT       ASM CODE, content of INIT_FORTH+2 by default = RET address
-    I2C_RXON            ASM CODE, content of SLEEP+2 by default
-    I2C_CTRL_CH         ASM CODE, used as is: MOV.B #CTRL_CHAR,Y
-                                              CALL #I2C_CTRL_CH
+**All constants, variables and definitions included in \inc\any.pat files are usable by
+the assembler and also by the FORTH interpreter.**
 
 
 ## MSP430ASSEMBLER word-set (in the hidden word-set)
@@ -1734,26 +1674,16 @@ Once bootloader is enabled, any PUC event loads (and executes) the file \BOOT.4T
 
 ### SD_CARD_READ_WRITE ADD-ON
 
-TERM2SD",
-SD_EMIT,
-WRITE,
-READ,
-CLOSE,
-DEL",
-WRITE",
-APPEND",
-READ".
-
-    TERM2SD"        TERM2SD" SD_TEST.4TH" copy input file to SD_CARD
-                       (use CopySourceFileToTarget_SD_Card.bat to do)
-    SD_EMIT         sends output stream at the end of last opened as write file.
+    TERM2SD"        TERM2SD" SD_TEST.4TH" copy SD_TEST.4TH file to SD_CARD (use CopySourceFileToTarget_SD_Card.bat to do)
     WRITE           write sequentially the content of SD_buf to a file
     READ            read sequentially a file in SD_buf, leave a flag, false when the file is automatically closed.
     CLOSE           close last opened file.
-    DEL"            DEL" SD_TEST.4TH" remove this file from SD_CARD.
-    WRITE"          WRITE" TRUC" create or overwrite a file TRUC ready to write to its beginning.
-    APPEND"         APPEND" TRUC" open or create a file TRUC ready to write to the end of this file
-    READ"           READ" TRUC" open TRUC and load its first sector in SD_buf
+    DEL" TRUC"      remove the file TRUC from SD_CARD.
+    WRITE" TRUC"    create or overwrite a file TRUC ready to write to its beginning.
+    APPEND" TRUC"   open or create a file TRUC ready to write to the end of this file
+    READ" TRUC"     open TRUC and load its first sector in SD_buf
+    WR_SECT         Write SD_BUF in Sector loaded in  W=lo:X=hi
+    RD_SECT         load Sector W=lo:X=hi into SD_BUF, set BufferPtr=0
 
 
 ## OPTIONNAL ADD-ON

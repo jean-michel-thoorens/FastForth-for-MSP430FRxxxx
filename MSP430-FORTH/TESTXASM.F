@@ -34,10 +34,10 @@
     SUB #2,PSP
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #309,TOS        \                   FastForth V3.9
+    SUB #400,TOS        \ FastForth V4.0
     COLON
     'CR' EMIT            \ return to column 1 without 'LF'
-    ABORT" FastForth V3.9 please!"
+    ABORT" FastForth V4.0 please!"
     RST_RET              \ remove ABORT_TEST_ASM definition before resuming
     ;
 
@@ -284,7 +284,11 @@ BW2 ADD #4,&DP          \ make room to compile two words
 \ CR      --               send CR+LF to the output device
     [UNDEFINED] CR
     [IF]
-    DEFER CR    \ DEFERed definition, by default executes that of :NONAME
+\    DEFER CR    \ DEFERed definition, by default executes that of :NONAME
+\ create a primary defered word, i.e. with its default runtime beginning at the >BODY of the definition
+    CODE CR     \ part I : DEFERed definition of CR
+    MOV #NEXT_ADR,PC                \ [PFA] = NEXT_ADR
+    ENDCODE
 
     :NONAME
     'CR' EMIT 'LF' EMIT
@@ -326,7 +330,7 @@ BW2 ADD #4,&DP          \ make room to compile two words
     [UNDEFINED] HERE
     [IF]
     CODE HERE
-    MOV #HEREXEC,PC
+    MOV #BEGIN,PC
     ENDCODE
     [THEN]
 
@@ -479,7 +483,7 @@ RST_RET
 
 HERE
 CODE TT
-MOVA #$0.1,S
+MOVA #$.1,S
 ENDCODE
 HERE OVER - DUMP
 ; you should see:       8C 00  01 00

@@ -1,8 +1,4 @@
 \ -*- coding: utf-8 -*-
-
-; -----------
-; SD_TEST.f
-; -----------
 \
 \ to see kernel options, download FastForthSpecs.f
 \ FastForth kernel options: MSP430ASSEMBLER, CONDCOMP, SD_CARD_READ_WRITE
@@ -78,25 +74,34 @@
 \   copy PROG100k.f         to \PROG100k.4TH
 \   copy RTC.f              to \RTC.4TH             ( doesn't work with if FR2xxx or FR4xxx)
 
-\ first, we test for downloading driver only if UART TERMINAL target
+; --------------------------------
+; SD_TEST.f
+; --------------------------------
+
+\ first, we do some tests allowing the download
     CODE ABORT_SD_TEST
-    SUB #2,PSP
-    MOV TOS,0(PSP)
-    MOV &VERSION,TOS
-    SUB #309,TOS        \                   FastForth V3.9
-    COLON
-    'CR' EMIT            \ return to column 1 without 'LF'
-    ABORT" FastForth V3.9 please!"
-    [UNDEFINED] WRITE
+    SUB #4,PSP
+    MOV TOS,2(PSP)
+    [UNDEFINED] WRITE  
     [IF]
-        1 ABORT" no SD_CARD_READ_WRITE addon!"
+        MOV #-1,0(PSP)
+    [ELSE]
+        MOV #0,0(PSP)
     [THEN]
-    RST_RET           \ remove ABORT_SD_TEST definition before resuming
+    MOV &VERSION,TOS
+    SUB #400,TOS        \ FastForth V4.0
+    COLON
+    'CR' EMIT           \ return to column 1 without 'LF'
+    ABORT" FastForth V4.0 please!"
+    ABORT" build FastForth with SD_CARD_READ_WRITE addon!"
+    RST_RET             \ remove ABORT_SD_TEST definition before resuming
     ;
 
     ABORT_SD_TEST
 
-    MARKER {SD_TEST}
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.f)
+; ------------------------------------------------------------------
 
 \ https://forth-standard.org/standard/core/EXIT
 \ EXIT     --      exit a colon definition; CALL #EXIT performs ASMtoFORTH (10 cycles)
@@ -185,7 +190,7 @@
     [UNDEFINED] BEGIN
     [IF]  \ define BEGIN UNTIL AGAIN WHILE REPEAT
     CODE BEGIN
-    MOV #HEREXEC,PC
+    MOV #BEGIN,PC
     ENDCODE IMMEDIATE
 
 \ https://forth-standard.org/standard/core/UNTIL
@@ -476,45 +481,11 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ; IS CR
     [THEN]
 
-    [UNDEFINED] U.R
-    [IF]        \ defined in {UTILITY}
-    : U.R                       \ u n --           display u unsigned in n width (n >= 2)
-    >R  <# 0 # #S #>
-    R> OVER - 0 MAX SPACES TYPE
-    ;
-    [THEN]
-
 \ https://forth-standard.org/standard/core/BASE
 \ BASE    -- a-addr       holds conversion radix
     [UNDEFINED] BASE
     [IF]
     BASEADR  CONSTANT BASE
-    [THEN]
-
-\ https://forth-standard.org/standard/tools/DUMP
-    [UNDEFINED] DUMP
-    [IF]       \ defined in {UTILITY}
-    CODE DUMP               \ adr n  --   dump memory
-    PUSH IP
-    PUSH &BASE              \ save current base
-    MOV #$10,&BASE          \ HEX base
-    ADD @PSP,TOS            \ -- ORG END
-    LO2HI
-    SWAP                    \ -- END ORG
-    DO                      \ generate line
-        I 4 U.R SPACE       \ generate address
-        I 8 + I
-        DO I C@ 3 U.R LOOP
-        SPACE
-        I $10 + I 8 +
-        DO I C@ 3 U.R LOOP
-        SPACE SPACE
-        I $10 + I           \ display 16 chars
-        DO I C@ $7E MIN $20 MAX EMIT LOOP
-        CR
-    $10 +LOOP
-    R> BASE !               \ restore current base
-    ;
     [THEN]
 
     [UNDEFINED] HERE
@@ -523,7 +494,6 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     MOV #BEGIN,PC
     ENDCODE
     [THEN]
-
 
 \ https://forth-standard.org/standard/core/DROP
 \ DROP     x --          drop top of stack
@@ -594,24 +564,64 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ; IMMEDIATE
     [THEN]
 
-\ SD_EMIT  c --    output char c to a SD_CARD file opened as write
+; ------------------------------------------------------------------
+; then we download the set of definitions we need (from UTILITY.f)
+; ------------------------------------------------------------------
+
+    [UNDEFINED] U.R
+    [IF]        \ defined in {UTILITY}
+    : U.R                       \ u n --           display u unsigned in n width (n >= 2)
+    >R  <# 0 # #S #>
+    R> OVER - 0 MAX SPACES TYPE
+    ;
+    [THEN]
+
+; --------------------------
+; end of definitions we need
+; --------------------------
+
+\ https://forth-standard.org/standard/tools/DUMP
+    CODE DUMP               \ adr n  --   dump memory
+    PUSH IP
+    PUSH &BASE              \ save current base
+    MOV #$10,&BASE          \ HEX base
+    ADD @PSP,TOS            \ -- ORG END
+    LO2HI
+    SWAP                    \ -- END ORG
+    DO                      \ generate line
+        I 4 U.R SPACE       \ generate address
+        I 8 + I
+        DO I C@ 3 U.R LOOP
+        SPACE
+        I $10 + I 8 +
+        DO I C@ 3 U.R LOOP
+        SPACE SPACE
+        I $10 + I           \ display 16 chars
+        DO I C@ $7E MIN $20 MAX EMIT LOOP
+        CR
+    $10 +LOOP
+    R> BASE !               \ restore current base
+    ;
+
+ \ SD_EMIT  c --    output char c to a SD_CARD file opened as write
     CODE SD_EMIT
-    CMP #$200,&BufferPtr        \ 512 bytes by sector
-    U>= IF                      \ if file buffer is full
-        CALL &WRITE+2           \ CALL #Write_File ; BufferPtr = 0
-    THEN
     MOV &BufferPtr,Y            \ 3
     MOV.B TOS,SD_BUF(Y)         \ 3
-    ADD #1,&BufferPtr           \ 4
     MOV @PSP+,TOS               \ 2
-    MOV @IP+,PC
-    ENDCODE
+    ADD #1,Y                    \ 1
+    MOV Y,&BufferPtr            \ 3
+    CMP #$200,Y                 \ 2 512 bytes by sector
+    U>= IF                      \ 2 if buffer is full
+        CALL #Write_File        \   write it; BufferPtr = 0
+    THEN
+    MOV @IP+,PC                 \ 4
+    ENDCODE                     \ 20~
 
-    : DOESWRITE
-    ['] SD_EMIT IS EMIT
-    MAIN_ORG HERE OVER - DUMP
-    ['] EMIT >BODY IS EMIT
-    CLOSE
+    : WRITEDUMP        
+    ['] SD_EMIT IS EMIT         \ redirect output to SD_EMIT
+    MAIN_ORG HERE OVER - DUMP   \ dump MAIN memory up to HERE address
+    ['] EMIT >BODY IS EMIT      \ redirect output to default EMIT
+    CLOSE                       \ close YOURFILE.TXT
     ;
 
     : SD_TEST
@@ -625,7 +635,7 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ." 0 Set date and time" CR
     ." 1 Load {UTILITY} words" CR
     ." 2 Load {SD_TOOLS} words" CR
-    ." 3 Load {CORE_COMP} words" CR
+    ." 3 Load {CORE_ANS} words" CR
     ." 4 Load ANS core tests" CR
     ." 5 Load a source file to make 10k program" CR
     ." 6 Read it only (47k)" CR
@@ -633,9 +643,12 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ." 8 append FORTH dump to YOURFILE.TXT" CR
     ." 9 delete YOURFILE.TXT" CR
     ." your choice: "
-    KEY DUP EMIT CR
+    KEY DUP 'CR' = 
+                IF KEY DROP ." 'CR'"
+                ELSE DUP EMIT
+                THEN CR
     NOECHO
-    {SD_TEST}                           \ remove {SD_TEST} application
+    RST_RET                             \ remove all definitions
     CASE
     '?' OF  LOAD" FF_SPECS.4TH" ENDOF   \
     '0' OF  LOAD" RTC.4TH"      ENDOF
@@ -643,17 +656,15 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     '2' OF  LOAD" SD_TOOLS.4TH" ENDOF
     '3' OF  LOAD" CORE_ANS.4TH" ENDOF
     '4' OF  LOAD" CORETEST.4TH" ENDOF
-    '5' OF  LOAD" PROG10K.4TH"  ENDOF   \ download one ko, so no erasure here
-    '6' OF  READ" PROG10K.4TH"
-            BEGIN READ                  \ sequentially read 512 bytes
-            UNTIL               ENDOF   \ prog10k.4TH is closed
-    '7' OF  WRITE" YOURFILE.TXT"
-            DOESWRITE           ENDOF
-    '8' OF  APPEND" YOURFILE.TXT"
-            DOESWRITE           ENDOF
+    '5' OF  LOAD" PROG10K.4TH"  ENDOF
+    '6' OF  READ" PROG10K.4TH"          \ open file as read
+            BEGIN READ UNTIL    ENDOF   \ sequentially read 512 bytes, then file is closed
+    '7' OF  WRITE" YOURFILE.TXT"        \ overwrite existing file or create new file
+            WRITEDUMP           ENDOF
+    '8' OF  APPEND" YOURFILE.TXT"       \ append to existing file or create new file
+            WRITEDUMP           ENDOF
     '9' OF  DEL" YOURFILE.TXT"  ENDOF
     ENDCASE
-    CR
     ;
 
 SD_TEST

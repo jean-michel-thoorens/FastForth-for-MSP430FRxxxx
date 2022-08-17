@@ -84,35 +84,30 @@
 \ rc5   <--- OUT IR_Receiver (1 TSOP32236)
 
 
-\ first, we test for downloading driver only if UART TERMINAL target
+\ first, we do some tests allowing the download
     CODE ABORT_RC5TOLCD
     SUB #2,PSP
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #309,TOS        \                   FastForth V3.9
+    SUB #400,TOS        \ FastForth V4.0
     COLON
-    'CR' EMIT            \ return to column 1 without 'LF'
-    ABORT" FastForth V3.9 please!"
-    RST_RET              \ remove ABORT_UARTI2CS definition before resuming
+    'CR' EMIT           \ return to column 1 without 'LF'
+    ABORT" FastForth V4.0 please!"
+    RST_RET             \ remove ABORT_UARTI2CS definition before resuming
     ;
 
     ABORT_RC5TOLCD
 
     MARKER {RC5TOLCD}   \ restore the state before MARKER definition
 \                       \ {UARTI2CS}-2 = RET_ADR: by default MARKER_DOES does CALL #RET_ADR
-    8 ALLOT             \ {UARTI2CS}    make room to save previous INI_APP address
+    8 ALLOT             \ {UARTI2CS}    make room to save previous HARD_APP address
                         \ {RC5TOLCD}+2  make room to save previous WDT_TIM_0_VEC
                         \ {RC5TOLCD}+4  make room to save previous IR_VEC
                         \ {RC5TOLCD}+6  make room for 20 us count loop.
 
-    [UNDEFINED] TSTBIT
-    [IF]
-    CODE TSTBIT     \ addr bit_mask -- true/flase flag
-    MOV @PSP+,X
-    AND @X,TOS
-    MOV @IP+,PC
-    ENDCODE
-    [THEN]
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.f)
+; ------------------------------------------------------------------
 
 \ https://forth-standard.org/standard/core/Equal
 \ =      x1 x2 -- flag         test x1=x2
@@ -218,6 +213,10 @@
     MOV @IP+,PC
     ENDCODE
     [THEN]
+
+; --------------------------
+; end of definitions we need
+; --------------------------
 
     CODE 20_US                      \ n --
     BEGIN                           \          J_loop           8000    16000  24000  kHz
@@ -458,12 +457,7 @@ FW2 BIC #%1111_1000,0(RSP)          \ force CPU Active Mode and disable GIE in s
         MOV #0,&WDT_TIM_CCTL0       \ clear CCIFG0 disable CCIE0
         MOV #{RC5TOLCD},W           \
         MOV #RET_ADR,-2(W)          \ clear MARKER_DOES call
-        KERNEL_ADDON $3C00 TSTBIT   \ BIT13|BIT12|BIT11|BIT10 test (UART TERMINAL test)
-        [IF]
-        MOV @W+,&UART_WARM+2        \ restore previous ini_APP
-        [ELSE]
-        MOV @W+,&I2C_WARM+2         \ restore previous ini_APP
-        [THEN]
+        MOV @W+,&HARD_APP           \ restore previous ini_APP
         MOV @W+,&WDT_TIM_0_VEC      \ restore Vector previous value
         MOV @W+,&IR_VEC             \ restore Vector previous value
     THEN
@@ -622,14 +616,8 @@ BW1 CALL #STOP_R2L
         MOV @IP+,PC                 \ does nothing if already initialised
     THEN
     MOV #STOP_R2L,&{RC5TOLCD}-2     \ execution of {RC5TOLCD} will perform STOP_R2L.
-    KERNEL_ADDON $3C00 TSTBIT       \ BIT13|BIT12|BIT11|BIT10 test (UART TERMINAL test)
-    [IF]
-       MOV &UART_WARM+2,&{RC5TOLCD} \ save previous INI_APP subroutine
-       MOV #INIT_R2L,&UART_WARM+2   \ replace it by RC5toLCD INI_APP
-    [ELSE]
-       MOV &I2C_WARM+2,&{RC5TOLCD}  \ save previous INI_APP subroutine
-       MOV #INIT_R2L,&I2C_WARM+2    \ replace it by RC5toLCD INI_APP
-    [THEN]
+       MOV &HARD_APP,&{RC5TOLCD}    \ save previous HARD_APP subroutine
+       MOV #INIT_R2L,&HARD_APP      \ replace it by RC5toLCD INIT_R2L
     MOV &WDT_TIM_0_VEC,&{RC5TOLCD}+2 \ save Vector previous value
     MOV #WDT_INT,&WDT_TIM_0_VEC     \ for only CCIFG0 int, this interrupt clears automatically CCIFG0
     MOV &IR_VEC,&{RC5TOLCD}+4       \ save Vector previous value
@@ -661,7 +649,8 @@ BW1 CALL #STOP_R2L
     ENDCODE                         \
 \ ----------------------------------\
 
-RST_SET
+RST_SET 
+
 ECHO
 
 \ START

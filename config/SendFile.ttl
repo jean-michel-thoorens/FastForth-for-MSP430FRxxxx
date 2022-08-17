@@ -60,14 +60,18 @@ endif
 uptime timeend  ; stops chrono...
 diff = timeend - timestart
 
+;sprintf2 resultat " %s download and execute: %d msec" param2 diff
+filestat param2 size
+KBds = 10 * size / diff
+sprintf2 resultat " %s download compile execute: %d msec (%d kBds eff.)" param2 diff KBds
+
 showtt 1    ; display teraterm window
 
-sprintf2 resultat " %s download and execute: %d msec" param2 diff
 messagebox resultat "teraterm.exe"
 
 ;logclose
 
-unlink
+;unlink
 ;end
 
 

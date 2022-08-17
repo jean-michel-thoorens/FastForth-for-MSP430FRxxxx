@@ -5,7 +5,8 @@
 
 DEVICE = "MSP430FR2433"
 FR2_FAMILY
-
+HMPY    ; hardware multiplier
+FLL     ; Frequency Locked Loop CLOCK
 ; ----------------------------------------------
 ; MSP430FR2433 MEMORY MAP
 ; ----------------------------------------------

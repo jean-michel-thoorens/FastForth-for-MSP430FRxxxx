@@ -7,6 +7,7 @@
 \ MSP_EXP430FR5739  MSP_EXP430FR5969    MSP_EXP430FR5994    MSP_EXP430FR6989
 \ MSP_EXP430FR4133  MSP_EXP430FR2433    CHIPSTICK_FR2433    MSP_EXP430FR2355
 \ LP_MSP430FR2476
+\ MY_MSP430FR5738_2
 \
 \ from scite editor : copy your target selection in (shift+F8) parameter 1:
 \
@@ -36,12 +37,12 @@
     0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (DOUBLE input), set TOS = 0
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #309,TOS        \                   FastForth V3.9
+    SUB #400,TOS            \   FastForth V4.0
     COLON
-    $0D EMIT    \ return to column 1 without CR
-    ABORT" FastForth V3.9 please!"
-    ABORT" build FastForth with DOUBLE_INPUT addon !"
-    RST_RET           \ if no abort remove this word
+    $0D EMIT                \ return to column 1 without CR
+    ABORT" FastForth V4.0 please!"
+    ABORT" build FastForth with DOUBLE_INPUT addon!"
+    RST_RET                 \ if no abort remove this word
     ;
 
     ABORT_DOUBLE
@@ -49,13 +50,19 @@
 ; -----------------------------------------------------
 ; DOUBLE.f
 ; -----------------------------------------------------
+    [DEFINED] {DOUBLE} 
+    [IF] {DOUBLE} [THEN]
 
+    [UNDEFINED] {DOUBLE} [IF]
     MARKER {DOUBLE}
 
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS)
+; ------------------------------------------------------------------
+
+    [UNDEFINED] >R [IF]
 \ https://forth-standard.org/standard/core/toR
 \ >R    x --   R: -- x   push to return stack
-    [UNDEFINED] >R
-    [IF]
     CODE >R
     PUSH TOS
     MOV @PSP+,TOS
@@ -63,10 +70,9 @@
     ENDCODE
     [THEN]
 
+    [UNDEFINED] R> [IF]
 \ https://forth-standard.org/standard/core/Rfrom
 \ R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
-    [UNDEFINED] R>
-    [IF]
     CODE R>
     SUB #2,PSP      \ 1
     MOV TOS,0(PSP)  \ 3
@@ -75,10 +81,9 @@
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 0< [IF]
 \ https://forth-standard.org/standard/core/Zeroless
 \ 0<     n -- flag      true if TOS negative
-    [UNDEFINED] 0<
-    [IF]
     CODE 0<
     ADD TOS,TOS     \ 1 set carry if TOS negative
     SUBC TOS,TOS    \ 1 TOS=-1 if carry was clear
@@ -87,196 +92,165 @@
     ENDCODE
     [THEN]
 
+    [UNDEFINED] DROP [IF]
 \ https://forth-standard.org/standard/core/DROP
 \ DROP     x --          drop top of stack
-    [UNDEFINED] DROP
-    [IF]
     CODE DROP
     MOV @PSP+,TOS   \ 2
     MOV @IP+,PC     \ 4
     ENDCODE
     [THEN]
 
+    [UNDEFINED] DUP [IF]
 \ https://forth-standard.org/standard/core/DUP
 \ DUP      x -- x x      duplicate top of stack
-    [UNDEFINED] DUP
-    [IF]
     CODE DUP
 BW1 SUB #2,PSP      \ 2  push old TOS..
     MOV TOS,0(PSP)  \ 3  ..onto stack
     MOV @IP+,PC     \ 4
     ENDCODE
 
+    CODE ?DUP
 \ https://forth-standard.org/standard/core/qDUP
 \ ?DUP     x -- 0 | x x    DUP if nonzero
-    CODE ?DUP
     CMP #0,TOS      \ 2  test for TOS nonzero
     0<> ?GOTO BW1    \ 2
     MOV @IP+,PC     \ 4
     ENDCODE
     [THEN]
 
+    [UNDEFINED] NIP [IF]
 \ https://forth-standard.org/standard/core/NIP
 \ NIP      x1 x2 -- x2         Drop the first item below the top of stack
-    [UNDEFINED] NIP
-    [IF]
     CODE NIP
     ADD #2,PSP
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] UM/MOD [IF]
 \ https://forth-standard.org/standard/core/UMDivMOD
 \ UM/MOD   udlo|udhi u1 -- r q   unsigned 32/16->r16 q16
-    [UNDEFINED] UM/MOD
-    [IF]
     CODE UM/MOD
         PUSH #DROP      \
         MOV #MUSMOD,PC  \ execute MUSMOD then return to DROP
     ENDCODE
     [THEN]
 
-    KERNEL_ADDON @ 0<   ; test the switch: FLOORED / SYMETRIC DIVISION
-    [IF]                ; FLOORED DIVISION
+    KERNEL_ADDON @ 0<   ; test the switch: FLOORED/SYMETRIC DIVISION
+    [IF]
+        [UNDEFINED] FM/MOD [IF]
 \ https://forth-standard.org/standard/core/FMDivMOD
 \ FM/MOD   d1 n1 -- r q   floored signed div'n
-    [UNDEFINED] FM/MOD
-    [IF]
-    CODE FM/MOD
-    MOV TOS,S           \           S=DIV
-    MOV @PSP,T          \           T=DVDhi
-    CMP #0,TOS          \           n2 >= 0 ?
-    S< IF               \
-        XOR #-1,TOS
-        ADD #1,TOS      \ -- d1 u2
-    THEN
-    CMP #0,0(PSP)       \           d1hi >= 0 ?
-    S< IF               \
-        XOR #-1,2(PSP)  \           d1lo
-        XOR #-1,0(PSP)  \           d1hi
-        ADD #1,2(PSP)   \           d1lo+1
-        ADDC #0,0(PSP)  \           d1hi+C
-    THEN                \ -- uDVDlo uDVDhi uDIVlo
-    PUSHM #3,IP         \           save IP,S,T
-    LO2HI
-        UM/MOD          \ -- uREMlo uQUOTlo
-    HI2LO
-    POPM #3,IP          \           restore T,S,IP
-    CMP #0,T            \           T=DVDhi --> REM_sign
-    S< IF
-        XOR #-1,0(PSP)
-        ADD #1,0(PSP)
-    THEN
-    XOR S,T             \           S=DIV XOR T=DVDhi = Quot_sign
-    CMP #0,T            \ -- n3 u4  T=quot_sign
-    S< IF
-        XOR #-1,TOS
-        ADD #1,TOS
-    THEN                \ -- n3 n4  S=divisor
-
-    CMP #0,0(PSP)       \ remainder <> 0 ?
-    0<> IF
-        CMP #1,TOS      \ quotient < 1 ?
-        S< IF
-        ADD S,0(PSP)  \ add divisor to remainder
-        SUB #1,TOS    \ decrement quotient
+        CODE FM/MOD
+        MOV TOS,S           \           S=DIV
+        MOV @PSP,T          \           T=DVDhi
+        CMP #0,TOS          \           n2 >= 0 ?
+        S< IF               \
+            XOR #-1,TOS
+            ADD #1,TOS      \ -- d1 u2
         THEN
-    THEN
-    MOV @IP+,PC
-    ENDCODE
-    [THEN]
+        CMP #0,0(PSP)       \           d1hi >= 0 ?
+        S< IF               \
+            XOR #-1,2(PSP)  \           d1lo
+            XOR #-1,0(PSP)  \           d1hi
+            ADD #1,2(PSP)   \           d1lo+1
+            ADDC #0,0(PSP)  \           d1hi+C
+        THEN                \ -- uDVDlo uDVDhi uDIVlo
+        PUSHM #3,IP         \           save IP,S,T
+        LO2HI
+            UM/MOD          \ -- uREMlo uQUOTlo
+        HI2LO
+        POPM #3,IP          \           restore T,S,IP
+        CMP #0,T            \           T=DVDhi --> REM_sign
+        S< IF
+            XOR #-1,0(PSP)
+            ADD #1,0(PSP)
+        THEN
+        XOR S,T             \           S=DIV XOR T=DVDhi = Quot_sign
+        CMP #0,T            \ -- n3 u4  T=quot_sign
+        S< IF
+            XOR #-1,TOS
+            ADD #1,TOS
+        THEN                \ -- n3 n4  S=divisor
+    
+        CMP #0,0(PSP)       \ remainder <> 0 ?
+        0<> IF
+            CMP #1,TOS      \ quotient < 1 ?
+            S< IF
+            ADD S,0(PSP)  \ add divisor to remainder
+            SUB #1,TOS    \ decrement quotient
+            THEN
+        THEN
+        MOV @IP+,PC
+        ENDCODE
+        [THEN]
 
-    [ELSE]              ; SYMETRIC DIVISION
+    [ELSE]
+        [UNDEFINED] SM/REM [IF]
 \ https://forth-standard.org/standard/core/SMDivREM
 \ SM/REM   DVDlo DVDhi DIV -- r3 q4  symmetric signed div
-    [UNDEFINED] SM/REM
-    [IF]
-    CODE SM/REM
-    MOV TOS,S           \           S=DIV
-    MOV @PSP,T          \           T=DVDhi
-    CMP #0,TOS          \           n2 >= 0 ?
-    S< IF               \
-        XOR #-1,TOS
-        ADD #1,TOS      \ -- d1 u2
-    THEN
-    CMP #0,0(PSP)       \           d1hi >= 0 ?
-    S< IF               \
-        XOR #-1,2(PSP)  \           d1lo
-        XOR #-1,0(PSP)  \           d1hi
-        ADD #1,2(PSP)   \           d1lo+1
-        ADDC #0,0(PSP)  \           d1hi+C
-    THEN                \ -- uDVDlo uDVDhi uDIVlo
-    PUSHM #3,IP         \           save IP,S,T
-    LO2HI
-        UM/MOD          \ -- uREMlo uQUOTlo
-    HI2LO
-    POPM #3,IP          \           restore T,S,IP
-    CMP #0,T            \           T=DVDhi --> REM_sign
-    S< IF
-        XOR #-1,0(PSP)
-        ADD #1,0(PSP)
-    THEN
-    XOR S,T             \           S=DIV XOR T=DVDhi = Quot_sign
-    CMP #0,T            \ -- n3 u4  T=quot_sign
-    S< IF
-        XOR #-1,TOS
-        ADD #1,TOS
-    THEN                \ -- n3 n4  S=divisor
-    MOV @IP+,PC
-    ENDCODE
-    [THEN]
+        CODE SM/REM
+        MOV TOS,S           \           S=DIV
+        MOV @PSP,T          \           T=DVDhi
+        CMP #0,TOS          \           n2 >= 0 ?
+        S< IF               \
+            XOR #-1,TOS
+            ADD #1,TOS      \ -- d1 u2
+        THEN
+        CMP #0,0(PSP)       \           d1hi >= 0 ?
+        S< IF               \
+            XOR #-1,2(PSP)  \           d1lo
+            XOR #-1,0(PSP)  \           d1hi
+            ADD #1,2(PSP)   \           d1lo+1
+            ADDC #0,0(PSP)  \           d1hi+C
+        THEN                \ -- uDVDlo uDVDhi uDIVlo
+        PUSHM #3,IP         \           save IP,S,T
+        LO2HI
+            UM/MOD          \ -- uREMlo uQUOTlo
+        HI2LO
+        POPM #3,IP          \           restore T,S,IP
+        CMP #0,T            \           T=DVDhi --> REM_sign
+        S< IF
+            XOR #-1,0(PSP)
+            ADD #1,0(PSP)
+        THEN
+        XOR S,T             \           S=DIV XOR T=DVDhi = Quot_sign
+        CMP #0,T            \ -- n3 u4  T=quot_sign
+        S< IF
+            XOR #-1,TOS
+            ADD #1,TOS
+        THEN                \ -- n3 n4  S=divisor
+        MOV @IP+,PC
+        ENDCODE
+        [THEN]
     [THEN]
 
+    [UNDEFINED] / [IF]
 \ https://forth-standard.org/standard/core/Div
 \ /      n1 n2 -- n3       signed quotient
-    [UNDEFINED] /
-    [IF]
     : /
     >R DUP 0< R>
-    [ KERNEL_ADDON @ 0< ] [IF]
-        FM/MOD
-    [ELSE]
-        SM/REM
+    [ KERNEL_ADDON @ 0< ]
+    [IF]    FM/MOD
+    [ELSE]  SM/REM
     [THEN]
     NIP
     ;
     [THEN]
 
-\ https://forth-standard.org/standard/core/Fetch
-\ @     c-addr -- char   fetch char from memory
-    [UNDEFINED] @
-    [IF]
-    CODE @
-    MOV @TOS,TOS
-    MOV @IP+,PC
-    ENDCODE
-    [THEN]
-
-\ https://forth-standard.org/standard/core/Store
-\ !        x a-addr --   store cell in memory
-    [UNDEFINED] !
-    [IF]
-    CODE !
-    MOV @PSP+,0(TOS)    \ 4
-    MOV @PSP+,TOS       \ 2
-    MOV @IP+,PC         \ 4
-    ENDCODE
-    [THEN]
-
+    [UNDEFINED] C@ [IF]
 \ https://forth-standard.org/standard/core/CFetch
 \ C@     c-addr -- char   fetch char from memory
-    [UNDEFINED] C@
-    [IF]
     CODE C@
     MOV.B @TOS,TOS
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] SWAP [IF]
 \ https://forth-standard.org/standard/core/SWAP
 \ SWAP     x1 x2 -- x2 x1    swap top two items
-    [UNDEFINED] SWAP
-    [IF]
     CODE SWAP
     MOV @PSP,W      \ 2
     MOV TOS,0(PSP)  \ 3
@@ -285,10 +259,9 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
+    [UNDEFINED] OVER [IF]
 \ https://forth-standard.org/standard/core/OVER
 \ OVER    x1 x2 -- x1 x2 x1
-    [UNDEFINED] OVER
-    [IF]
     CODE OVER
     MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
     MOV @PSP,TOS        \ 2 -- x1 (x2) x1
@@ -297,10 +270,9 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
+    [UNDEFINED] ROT [IF]
 \ https://forth-standard.org/standard/core/ROT
 \ ROT    x1 x2 x3 -- x2 x3 x1
-    [UNDEFINED] ROT
-    [IF]
     CODE ROT
     MOV @PSP,W          \ 2 fetch x2
     MOV TOS,0(PSP)      \ 3 store x3
@@ -310,10 +282,9 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
+    [UNDEFINED] - [IF]
 \ https://forth-standard.org/standard/core/Minus
 \ -      n1/u1 n2/u2 -- n3/u3     n3 = n1-n2
-    [UNDEFINED] -
-    [IF]
     CODE -
     SUB @PSP+,TOS   \ 2  -- n2-n1 ( = -n3)
     XOR #-1,TOS     \ 1
@@ -322,10 +293,9 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
+    [UNDEFINED] < [IF]      \ define < and >
 \ https://forth-standard.org/standard/core/less
 \ <      n1 n2 -- flag        test n1<n2, signed
-    [UNDEFINED] <
-    [IF]      \ define < and >
     CODE <
     SUB @PSP+,TOS   \ 1 TOS=n2-n1
     S< ?GOTO FW1    \ 2 signed
@@ -345,70 +315,65 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE
     [THEN]
 
+    [UNDEFINED] IF [IF] \ define IF THEN
 \ https://forth-standard.org/standard/core/IF
 \ IF       -- IFadr    initialize conditional forward branch
-    [UNDEFINED] IF
-    [IF]     \ define IF THEN
-    CODE IF       \ immediate
-    SUB #2,PSP              \
-    MOV TOS,0(PSP)          \
-    MOV &DP,TOS             \ -- HERE
-    ADD #4,&DP            \           compile one word, reserve one word
-    MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
-    ADD #2,TOS              \ -- HERE+2=IFadr
+    CODE IF             \ immediate
+    SUB #2,PSP          \
+    MOV TOS,0(PSP)      \
+    MOV &DP,TOS         \ -- HERE
+    ADD #4,&DP          \           compile one word, reserve one word
+    MOV #QFBRAN,0(TOS)  \ -- HERE   compile QFBRAN
+    ADD #2,TOS          \ -- HERE+2=IFadr
     MOV @IP+,PC
     ENDCODE IMMEDIATE
 
 \ https://forth-standard.org/standard/core/THEN
 \ THEN     IFadr --                resolve forward branch
-    CODE THEN               \ immediate
-    MOV &DP,0(TOS)          \ -- IFadr
-    MOV @PSP+,TOS           \ --
+    CODE THEN           \ immediate
+    MOV &DP,0(TOS)      \ -- IFadr
+    MOV @PSP+,TOS       \ --
     MOV @IP+,PC
     ENDCODE IMMEDIATE
     [THEN]
 
+    [UNDEFINED] ELSE [IF]
 \ https://forth-standard.org/standard/core/ELSE
 \ ELSE     IFadr -- ELSEadr        resolve forward IF branch, leave ELSEadr on stack
-    [UNDEFINED] ELSE
-    [IF]
-    CODE ELSE     \ immediate
-    ADD #4,&DP              \ make room to compile two words
-    MOV &DP,W               \ W=HERE+4
-    MOV #BRAN,-4(W)
-    MOV W,0(TOS)            \ HERE+4 ==> [IFadr]
-    SUB #2,W                \ HERE+2
-    MOV W,TOS               \ -- ELSEadr
+    CODE ELSE           \ immediate
+    ADD #4,&DP          \ make room to compile two words
+    MOV &DP,W           \ W=HERE+4
+    MOV #BRAN,-4(W) 
+    MOV W,0(TOS)        \ HERE+4 ==> [IFadr]
+    SUB #2,W            \ HERE+2
+    MOV W,TOS           \ -- ELSEadr
     MOV @IP+,PC
     ENDCODE IMMEDIATE
     [THEN]
 
+    [UNDEFINED] TO [IF]
 \ https://forth-standard.org/standard/core/TO
-    [UNDEFINED] TO
-    [IF]
     CODE TO
     BIS #UF9,SR
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] DOES> [IF]
 \ https://forth-standard.org/standard/core/DOES
 \ DOES>    --          set action for the latest CREATEd definition
-    [UNDEFINED] DOES>
-    [IF]
     CODE DOES>
-    MOV &LAST_CFA,W         \ W = CFA of CREATEd word
-    MOV #DODOES,0(W)         \ replace CFA (CALL rDOCON) by new CFA (CALL rDODOES)
-    MOV IP,2(W)             \ replace PFA by the address after DOES> as execution address
+    MOV &LAST_CFA,W     \ W = CFA of CREATEd word
+    MOV #DODOES,0(W)    \ replace CFA (CALL rDOCON) by new CFA (CALL rDODOES)
+    MOV IP,2(W)         \ replace PFA by the address after DOES> as execution address
     MOV @RSP+,IP
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] SPACES [IF]
 \ https://forth-standard.org/standard/core/SPACES
 \ SPACES   n --            output n spaces
-    [UNDEFINED] SPACES
-    [IF]
     CODE SPACES
     CMP #0,TOS
     0<> IF
@@ -427,10 +392,9 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 2@ [IF]
 \ https://forth-standard.org/standard/core/TwoFetch
 \ 2@    a-addr -- x1 x2    fetch 2 cells ; the lower address will appear on top of stack
-    [UNDEFINED] 2@
-    [IF]
     CODE 2@
     SUB #2,PSP
     MOV 2(TOS),0(PSP)
@@ -439,10 +403,9 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 2! [IF]
 \ https://forth-standard.org/standard/core/TwoStore
 \ 2!    x1 x2 a-addr --    store 2 cells ; the top of stack is stored at the lower adr
-    [UNDEFINED] 2!
-    [IF]
     CODE 2!
     MOV @PSP+,0(TOS)
     MOV @PSP+,2(TOS)
@@ -451,10 +414,9 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 2DUP [IF]
 \ https://forth-standard.org/standard/core/TwoDUP
 \ 2DUP   x1 x2 -- x1 x2 x1 x2   dup top 2 cells
-    [UNDEFINED] 2DUP
-    [IF]
     CODE 2DUP
     SUB #4,PSP          \ -- x1 x x x2
     MOV TOS,2(PSP)      \ -- x1 x2 x x2
@@ -463,10 +425,9 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 2DROP [IF]
 \ https://forth-standard.org/standard/core/TwoDROP
 \ 2DROP  x1 x2 --          drop 2 cells
-    [UNDEFINED] 2DROP
-    [IF]
     CODE 2DROP
     ADD #2,PSP
     MOV @PSP+,TOS
@@ -474,10 +435,9 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 2SWAP [IF]
 \ https://forth-standard.org/standard/core/TwoSWAP
 \ 2SWAP  x1 x2 x3 x4 -- x3 x4 x1 x2
-    [UNDEFINED] 2SWAP
-    [IF]
     CODE 2SWAP
     MOV @PSP,W          \ -- x1 x2 x3 x4    W=x3
     MOV 4(PSP),0(PSP)   \ -- x1 x2 x1 x4
@@ -489,10 +449,9 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 2OVER [IF]
 \ https://forth-standard.org/standard/core/TwoOVER
 \ 2OVER  x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2
-    [UNDEFINED] 2OVER
-    [IF]
     CODE 2OVER
     SUB #4,PSP          \ -- x1 x2 x3 x x x4
     MOV TOS,2(PSP)      \ -- x1 x2 x3 x4 x x4
@@ -502,10 +461,9 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 2>R [IF]
 \ https://forth-standard.org/standard/core/TwotoR
 \ ( x1 x2 -- ) ( R: -- x1 x2 )   Transfer cell pair x1 x2 to the return stack.
-    [UNDEFINED] 2>R
-    [IF]
     CODE 2>R
     PUSH @PSP+
     PUSH TOS
@@ -514,10 +472,9 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 2R@ [IF]
 \ https://forth-standard.org/standard/core/TwoRFetch
 \ ( -- x1 x2 ) ( R: x1 x2 -- x1 x2 ) Copy cell pair x1 x2 from the return stack.
-    [UNDEFINED] 2R@
-    [IF]
     CODE 2R@
     SUB #4,PSP
     MOV TOS,2(PSP)
@@ -527,10 +484,9 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 2R> [IF]
 \ https://forth-standard.org/standard/core/TwoRfrom
 \ ( -- x1 x2 ) ( R: x1 x2 -- )  Transfer cell pair x1 x2 from the return stack
-    [UNDEFINED] 2R>
-    [IF]
     CODE 2R>
     SUB #4,PSP
     MOV TOS,2(PSP)
@@ -540,24 +496,26 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE
     [THEN]
 
-\ ===============================================
-\ DOUBLE word set
-\ ===============================================
+; --------------------------
+; end of definitions we need
+; --------------------------
 
+; ===============================================
+; DOUBLE word set
+; ===============================================
+
+    [UNDEFINED] D. [IF]
 \ https://forth-standard.org/standard/double/Dd
 \ D.     dlo dhi --           display d (signed)
-    [UNDEFINED] D.
-    [IF]
     CODE D.
-    MOV TOS,S       \ S will be pushed as sign
-    MOV #U.+10,PC   \ U. + 10 = D.
+    MOV TOS,S       \ S will be pushed as sign by DDOT
+    MOV #D.,PC   \ U. + 10 = DDOT
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 2ROT [IF]
 \ https://forth-standard.org/standard/double/TwoROT
 \ Rotate the top three cell pairs on the stack bringing cell pair x1 x2 to the top of the stack.
-    [UNDEFINED] 2ROT
-    [IF]
     CODE 2ROT
     MOV 8(PSP),X        \ 3
     MOV 6(PSP),Y        \ 3
@@ -571,110 +529,80 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE
     [THEN]
 
+    [UNDEFINED] D>S [IF]
 \ https://forth-standard.org/standard/double/DtoS
 \ D>S    d -- n          double prec -> single.
-    [UNDEFINED] D>S
-    [IF]
     CODE D>S
     MOV @PSP+,TOS
     NEXT
     ENDCODE
     [THEN]
 
+    [UNDEFINED] D0= [IF]    \ define: D0= D0< D= D< DU<
+
 \ https://forth-standard.org/standard/double/DZeroEqual
-    [UNDEFINED] D0=
-    [IF]
     CODE D0=
+    ADD #2,PSP
     CMP #0,TOS
     MOV #0,TOS
     0= IF
-        CMP #0,0(PSP)
+        CMP #0,-2(PSP)
         0= IF
-            MOV #-1,TOS
+BW1         MOV #-1,TOS
         THEN
     THEN
-    ADD #2,PSP
+BW2 AND #-1,TOS         \  to set N, Z flags
     NEXT
     ENDCODE
-    [THEN]
 
 \ https://forth-standard.org/standard/double/DZeroless
-    [UNDEFINED] D0<
-    [IF]
     CODE D0<
+    ADD #2,PSP
     CMP #0,TOS
     MOV #0,TOS
-    S< IF
-        MOV #-1,TOS
-    THEN
-    ADD #2,PSP
-    AND #-1,TOS         \  to set N, Z flags
-    NEXT
+    S< ?GOTO BW1
+    GOTO BW2
     ENDCODE
-    [THEN]
 
 \ https://forth-standard.org/standard/double/DEqual
-    [UNDEFINED] D=
-    [IF]
     CODE D=
-    CMP TOS,2(PSP)      \ 3 ud1H - ud2H
-    MOV #0,TOS          \ 1
-    0= IF               \ 2
-        CMP @PSP,4(PSP) \ 4 ud1L - ud2L
-        0= IF           \ 2
-        MOV #-1,TOS     \ 1
-        THEN
-    THEN
-    ADD #6,PSP          \ 2
-    MOV @IP+,PC         \ 4
+    ADD #6,PSP              \ 2
+    CMP TOS,-4(PSP)         \ 3 ud1H - ud2H
+    MOV #0,TOS              \ 1
+    0<> ?GOTO BW2           \ 2
+    CMP -6(PSP),-2(PSP)     \ 4 ud1L - ud2L
+    0= ?GOTO BW1            \ 2
+    GOTO BW2
     ENDCODE
-    [THEN]
 
 \ https://forth-standard.org/standard/double/Dless
 \ flag is true if and only if d1 is less than d2
-    [UNDEFINED] D<
-    [IF]
     CODE D<
-    CMP TOS,2(PSP)      \ 3 d1H - d2H
-    MOV #0,TOS          \ 1
-    S< IF               \ 2
-        MOV #-1,TOS     \ 1
+    ADD #6,PSP              \ 2
+    CMP TOS,-4(PSP)         \ 3 d1H - d2H
+    MOV #0,TOS              \ 1
+    S< IF
+BW1     MOV #-1,TOS
     THEN
-    0= IF               \ 2
-        CMP @PSP,4(PSP) \ 4 d1L - d2L
-        U< IF           \ 2
-            MOV #-1,TOS \ 1
-        THEN
-    THEN
-    ADD #6,PSP          \ 2
-    MOV @IP+,PC         \ 4
+BW3 0<> ?GOTO BW2           \ 2
+    CMP -6(PSP),-2(PSP)     \ 4 d1L - d2L
+    U>= ?GOTO BW2           \  to set N, Z flags
+    U< ?GOTO BW1            \ 2
     ENDCODE
-    [THEN]
 
 \ https://forth-standard.org/standard/double/DUless
 \ flag is true if and only if ud1 is less than ud2
-    [UNDEFINED] DU<
-    [IF]
     CODE DU<
-    CMP TOS,2(PSP)      \ 3 ud1H - ud2H
-    MOV #0,TOS          \ 1
-    U< IF               \ 2
-        MOV #-1,TOS     \ 1
-    THEN
-    0= IF               \ 2
-        CMP @PSP,4(PSP) \ 4 ud1L - ud2L
-        U< IF           \ 2
-            MOV #-1,TOS \ 1
-        THEN
-    THEN
-    ADD #6,PSP          \ 2
-    MOV @IP+,PC         \ 4
+    ADD #6,PSP              \ 2
+    CMP TOS,-4(PSP)         \ 3 ud1H - ud2H
+    MOV #0,TOS              \ 1
+    U>= ?GOTO BW3
+    U< ?GOTO BW1            \ 4
     ENDCODE
     [THEN]
 
+    [UNDEFINED] D+ [IF] \ define: D+ M+
 \ https://forth-standard.org/standard/double/DPlus
-    [UNDEFINED] D+
-    [IF]
     CODE D+
 BW1 ADD @PSP+,2(PSP)
     ADDC @PSP+,TOS
@@ -694,9 +622,8 @@ BW1 ADD @PSP+,2(PSP)
     ENDCODE
     [THEN]
 
+    [UNDEFINED] D- [IF]
 \ https://forth-standard.org/standard/double/DMinus
-    [UNDEFINED] D-
-    [IF]
     CODE D-
     SUB @PSP+,2(PSP)
     SUBC TOS,0(PSP)
@@ -705,34 +632,27 @@ BW1 ADD @PSP+,2(PSP)
     ENDCODE
     [THEN]
 
+    [UNDEFINED] DNEGATE [IF]    \ define DNEGATE DABS
 \ https://forth-standard.org/standard/double/DNEGATE
-    [UNDEFINED] DNEGATE
-    [IF]
     CODE DNEGATE
-    XOR #-1,0(PSP)
+BW1 XOR #-1,0(PSP)
     XOR #-1,TOS
     ADD #1,0(PSP)
     ADDC #0,TOS
     MOV @IP+,PC         \ 4
     ENDCODE
-    [THEN]
 
 \ https://forth-standard.org/standard/double/DABS
 \ DABS     d1 -- |d1|     absolute value
-    [UNDEFINED] DABS
-    [IF]
     CODE DABS
     CMP #0,TOS       \  1
-    0>= IF
-        MOV @IP+,PC
-    THEN
-    MOV #DNEGATE,PC
+    0< ?GOTO BW1
+    MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] D2/ [IF]
 \ https://forth-standard.org/standard/double/DTwoDiv
-    [UNDEFINED] D2/
-    [IF]
     CODE D2/
     RRA TOS
     RRC 0(PSP)
@@ -740,9 +660,8 @@ BW1 ADD @PSP+,2(PSP)
     ENDCODE
     [THEN]
 
+    [UNDEFINED] D2* [IF]
 \ https://forth-standard.org/standard/double/DTwoTimes
-    [UNDEFINED] D2*
-    [IF]
     CODE D2*
     ADD @PSP,0(PSP)
     ADDC TOS,TOS
@@ -750,9 +669,8 @@ BW1 ADD @PSP+,2(PSP)
     ENDCODE
     [THEN]
 
+    [UNDEFINED] DMAX [IF]
 \ https://forth-standard.org/standard/double/DMAX
-    [UNDEFINED] DMAX
-    [IF]
     : DMAX              \ -- d1 d2
     2OVER 2OVER         \ -- d1 d2 d1 d2
     D< IF               \ -- d1 d2
@@ -763,9 +681,8 @@ BW1 ADD @PSP+,2(PSP)
     ;
     [THEN]
 
+    [UNDEFINED] DMIN [IF]
 \ https://forth-standard.org/standard/double/DMIN
-    [UNDEFINED] DMIN
-    [IF]
     : DMIN              \ -- d1 d2
     2OVER 2OVER         \ -- d1 d2 d1 d2
     D< IF               \ -- d1 d2
@@ -776,123 +693,86 @@ BW1 ADD @PSP+,2(PSP)
     ;
     [THEN]
 
-    RST_SET
-\ \ https://forth-standard.org/standard/core/Equal
-\ \ =      x1 x2 -- flag         test x1=x2
-\     [UNDEFINED] =
-\     [IF]
-\     CODE =
-\     SUB @PSP+,TOS   \ 2
-\     0<> IF          \ 2
-\         AND #0,TOS  \ 1
-\         MOV @IP+,PC \ 4
-\     THEN
-\     XOR #-1,TOS     \ 1 flag Z = 1
-\     MOV @IP+,PC     \ 4
-\     ENDCODE
-\     [THEN]
-\
-\ \ https://forth-standard.org/standard/core/Uless
-\ \ U<    u1 u2 -- flag       test u1<u2, unsigned
-\     [UNDEFINED] U<
-\     [IF]
-\     CODE U<
-\     SUB @PSP+,TOS   \ 2 u2-u1
-\     0<> IF
-\         MOV #-1,TOS     \ 1
-\         U< IF           \ 2 flag
-\             AND #0,TOS  \ 1 flag Z = 1
-\         THEN
-\     THEN
-\     MOV @IP+,PC     \ 4
-\     ENDCODE
-\     [THEN]
-\
-\     $81EF DEVICEID @ U<
-\     DEVICEID @ $81F3 U<
-\     =
-
-    CODE TSTBIT     \ addr bit_mask -- true/flase flag
-    MOV @PSP+,X
-    AND @X,TOS
-    MOV @IP+,PC
-    ENDCODE
-
-    KERNEL_ADDON HMPY TSTBIT \ hardware MPY ?
-
-    RST_RET
-
-    [IF]   ; MSP430FRxxxx with hardware_MPY
-
-\   https://forth-standard.org/standard/double/MTimesDiv
-        [UNDEFINED] M*/
-        [IF]
-    CODE M*/                \ d1 * n1 / +n2 -- d2
-    MOV 4(PSP),&MPYS32L     \ 5             Load 1st operand    d1lo
-    MOV 2(PSP),&MPYS32H     \ 5                                 d1hi
-    MOV @PSP+,&OP2          \ 4 -- d1 n2    load 2nd operand    n1
-    MOV TOS,T               \ T = DIV
-    NOP3
-    MOV &RES0,S             \ 3 S = RESlo
-    MOV &RES1,TOS           \ 3 TOS = RESmi
-    MOV &RES2,W             \ 3 W = REShi
-    MOV #0,rDOCON           \ clear sign flag
-    CMP #0,W                \ negative product ?
-    S< IF                   \ compute ABS value if yes
-        XOR #-1,S
-        XOR #-1,TOS
-        XOR #-1,W
-        ADD #1,S
-        ADDC #0,TOS
-        ADDC #0,W
-        MOV #-1,rDOCON       \ set sign flag
-    THEN
-
-    [ELSE]  ; no hardware multiplier
+    [UNDEFINED] M*/ [IF]
 \ https://forth-standard.org/standard/double/MTimesDiv
-        [UNDEFINED] M*/
-        [IF]
-    CODE M*/    \ d1lo d1hi n1 +n2 -- d2lo d2hi
-    MOV #0,rDOCON               \ rDOCON = sign
-    CMP #0,2(PSP)               \ d1 < 0 ?
-    S< IF
-        XOR #-1,4(PSP)
-        XOR #-1,2(PSP)
-        ADD #1,4(PSP)
-        ADDC #0,2(PSP)
-        MOV #-1,rDOCON
-    THEN                        \ ud1
-    CMP #0,0(PSP)               \ n1 < 0 ?
-    S< IF
-        XOR #-1,0(PSP)
-        ADD #1,0(PSP)           \ u1
-        XOR #-1,rDOCON
-    THEN                        \ let's process UM*     -- ud1lo ud1hi u1 +n2
-                MOV 4(PSP),Y            \ 3 uMDlo
-                MOV 2(PSP),T            \ 3 uMDhi
-                MOV @PSP+,S             \ 2 uMRlo        -- ud1lo ud1hi +n2
-                MOV #0,rDODOES          \ 1 uMDlo=0
-                MOV #0,2(PSP)           \ 3 uRESlo=0
-                MOV #0,0(PSP)           \ 3 uRESmi=0     -- uRESlo uRESmi +n2
-                MOV #0,W                \ 1 uREShi=0
-                MOV #1,X                \ 1 BIT TEST REGlo
-    BEGIN       BIT X,S                 \ 1 test actual bit in uMRlo
-        0<> IF  ADD Y,2(PSP)            \ 3 IF 1: ADD uMDlo TO uRESlo
-                ADDC T,0(PSP)           \ 3      ADDC uMDmi TO uRESmi
-                ADDC rDODOES,W          \ 1      ADDC uMRlo TO uREShi
-        THEN    ADD Y,Y                 \ 1 (RLA LSBs) uMDlo *2
-                ADDC T,T                \ 1 (RLC MSBs) uMDhi *2
-                ADDC rDODOES,rDODOES    \ 1 (RLA LSBs) uMDlo *2
-                ADD X,X                 \ 1 (RLA) NEXT BIT TO TEST
-    U>= UNTIL                           \ 1 IF BIT IN CARRY: FINISHED   W=uREShi
-\   TOS     +n2
-\   W       REShi
-\   0(PSP)  RESmi
-\   2(PSP)  RESlo
-    MOV TOS,T
-    MOV @PSP,TOS
-    MOV 2(PSP),S
-        [THEN]
+
+        RST_SET
+
+        CODE TSTBIT     \ addr bit_mask -- true/flase flag
+        MOV @PSP+,X
+        AND @X,TOS
+        MOV @IP+,PC
+        ENDCODE
+
+        KERNEL_ADDON HMPY TSTBIT \ hardware MPY ?
+
+        RST_RET     \ remove TSTBIT definition
+
+        [IF]   ; MSP430FRxxxx with hardware_MPY
+
+        CODE M*/                \ d1 * n1 / +n2 -- d2
+        MOV 4(PSP),&MPYS32L     \ 5             Load 1st operand    d1lo
+        MOV 2(PSP),&MPYS32H     \ 5                                 d1hi
+        MOV @PSP+,&OP2          \ 4 -- d1 n2    load 2nd operand    n1
+        MOV TOS,T               \ T = DIV
+        NOP3
+        MOV &RES0,S             \ 3 S = RESlo
+        MOV &RES1,TOS           \ 3 TOS = RESmi
+        MOV &RES2,W             \ 3 W = REShi
+        MOV #0,rDOCON           \ clear sign flag
+        CMP #0,W                \ negative product ?
+        S< IF                   \ compute ABS value if yes
+            XOR #-1,S
+            XOR #-1,TOS
+            XOR #-1,W
+            ADD #1,S
+            ADDC #0,TOS
+            ADDC #0,W
+            MOV #-1,rDOCON       \ set sign flag
+        THEN
+
+        [ELSE]  ; no hardware multiplier
+
+        CODE M*/    \ d1lo d1hi n1 +n2 -- d2lo d2hi
+        MOV #0,rDOCON               \ rDOCON = sign
+        CMP #0,2(PSP)               \ d1 < 0 ?
+        S< IF
+            XOR #-1,4(PSP)
+            XOR #-1,2(PSP)
+            ADD #1,4(PSP)
+            ADDC #0,2(PSP)
+            MOV #-1,rDOCON
+        THEN                        \ ud1
+        CMP #0,0(PSP)               \ n1 < 0 ?
+        S< IF
+            XOR #-1,0(PSP)
+            ADD #1,0(PSP)           \ u1
+            XOR #-1,rDOCON
+        THEN                        \ let's process UM*     -- ud1lo ud1hi u1 +n2
+                    MOV 4(PSP),Y            \ 3 uMDlo
+                    MOV 2(PSP),T            \ 3 uMDhi
+                    MOV @PSP+,S             \ 2 uMRlo        -- ud1lo ud1hi +n2
+                    MOV #0,rDODOES          \ 1 uMDlo=0
+                    MOV #0,2(PSP)           \ 3 uRESlo=0
+                    MOV #0,0(PSP)           \ 3 uRESmi=0     -- uRESlo uRESmi +n2
+                    MOV #0,W                \ 1 uREShi=0
+                    MOV #1,X                \ 1 BIT TEST REGlo
+        BEGIN       BIT X,S                 \ 1 test actual bit in uMRlo
+            0<> IF  ADD Y,2(PSP)            \ 3 IF 1: ADD uMDlo TO uRESlo
+                    ADDC T,0(PSP)           \ 3      ADDC uMDmi TO uRESmi
+                    ADDC rDODOES,W          \ 1      ADDC uMRlo TO uREShi
+            THEN    ADD Y,Y                 \ 1 (RLA LSBs) uMDlo *2
+                    ADDC T,T                \ 1 (RLC MSBs) uMDhi *2
+                    ADDC rDODOES,rDODOES    \ 1 (RLA LSBs) uMDlo *2
+                    ADD X,X                 \ 1 (RLA) NEXT BIT TO TEST
+        U>= UNTIL                           \ 1 IF BIT IN CARRY: FINISHED   W=uREShi
+\       TOS     +n2
+\       W       REShi
+\       0(PSP)  RESmi
+\       2(PSP)  RESlo
+        MOV TOS,T
+        MOV @PSP,TOS
+        MOV 2(PSP),S
 
         [THEN]  ; endcase of software/hardware_MPY
 
@@ -940,32 +820,29 @@ BW1 ADD @PSP+,2(PSP)
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 2VARIABLE [IF]
 \ https://forth-standard.org/standard/double/TwoVARIABLE
-    [UNDEFINED] 2VARIABLE
-    [IF]
     : 2VARIABLE \  --
     CREATE
     HI2LO
     ADD #4,&DP
     MOV @RSP+,IP
-    NEXT
+    MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 2CONSTANT [IF]
 \ https://forth-standard.org/standard/double/TwoCONSTANT
-    [UNDEFINED] 2CONSTANT
-    [IF]
     : 2CONSTANT \  udlo/dlo/Flo udhi/dhi/Shi --         to create double or s15q16 CONSTANT
     CREATE
-    , ,             \ compile Shi then Flo
+    , ,             \ compile hi then lo
     DOES>
     2@              \ execution part
     ;
     [THEN]
 
+    [UNDEFINED] 2VALUE [IF]
 \ https://forth-standard.org/standard/double/TwoVALUE
-    [UNDEFINED] 2VALUE
-    [IF]
     : 2VALUE        \ x1 x2 "<spaces>name" --
     CREATE , ,      \ compile Shi then Flo
     DOES>
@@ -981,20 +858,18 @@ BW1 ADD @PSP+,2(PSP)
     [THEN]
 
 
+    [UNDEFINED] 2LITERAL [IF]
 \ https://forth-standard.org/standard/double/TwoLITERAL
-    [UNDEFINED] 2LITERAL
-    [IF]
-        CODE 2LITERAL
-        BIS #UF9,SR     \ see LITERAL
-        MOV #LITERAL,PC
-        ENDCODE IMMEDIATE
+    CODE 2LITERAL
+    BIS #UF9,SR     \ see LITERAL
+    MOV #LITERAL,PC
+    ENDCODE IMMEDIATE
     [THEN]
 
 
+    [UNDEFINED] D.R [IF]
 \ https://forth-standard.org/standard/double/DDotR
 \ D.R       d n --
-    [UNDEFINED] D.R
-    [IF]
     : D.R
     >R SWAP OVER DABS <# #S ROT SIGN #>
     R> OVER - SPACES TYPE
@@ -1003,51 +878,60 @@ BW1 ADD @PSP+,2(PSP)
 
     RST_SET
 
-\ ==============================================================================
-; Complement to pass DOUBLE TESTS
-\ ==============================================================================
+    [THEN] \ endof [UNDEFINED] {DOUBLE} 
 
+; -------------------------------
+; Complement to pass DOUBLE TESTS
+; -------------------------------
+
+    [UNDEFINED] SWAP [IF]
+\ https://forth-standard.org/standard/core/SWAP
+\ SWAP     x1 x2 -- x2 x1    swap top two items
+    CODE SWAP
+    MOV @PSP,W      \ 2
+    MOV TOS,0(PSP)  \ 3
+    MOV W,TOS       \ 1
+    MOV @IP+,PC     \ 4
+    ENDCODE
+    [THEN]
+
+    [UNDEFINED] VARIABLE [IF]
 \ https://forth-standard.org/standard/core/VARIABLE
-\ VARIABLE <name>       --                      define a Forth VARIABLE
-    [UNDEFINED] VARIABLE
-    [IF]
+\ VARIABLE <name>       --     define a Forth VARIABLE
     : VARIABLE
     CREATE
     HI2LO
-    MOV #DOVAR,-4(W)        \   CFA = CALL rDOVAR
+    MOV #DOVAR,-4(W)    \   CFA = CALL rDOVAR
     MOV @RSP+,IP
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] CONSTANT [IF]
 \ https://forth-standard.org/standard/core/CONSTANT
-\ CONSTANT <name>     n --                      define a Forth CONSTANT
-    [UNDEFINED] CONSTANT
-    [IF]
+\ CONSTANT <name>     n --    define a Forth CONSTANT
     : CONSTANT
     CREATE
     HI2LO
-    MOV TOS,-2(W)           \   PFA = n
+    MOV TOS,-2(W)       \   PFA = n
     MOV @PSP+,TOS
     MOV @RSP+,IP
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] CELLS [IF]
 \ https://forth-standard.org/standard/core/CELLS
 \ CELLS    n1 -- n2            cells->adrs units
-    [UNDEFINED] CELLS
-    [IF]
     CODE CELLS
     ADD TOS,TOS
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] DEPTH [IF]
 \ https://forth-standard.org/standard/core/DEPTH
 \ DEPTH    -- +n        number of items on stack, must leave 0 if stack empty
-    [UNDEFINED] DEPTH
-    [IF]
     CODE DEPTH
     MOV TOS,-2(PSP)
     MOV #PSTACK,TOS
@@ -1058,8 +942,43 @@ BW1 ADD @PSP+,2(PSP)
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DO
-    [IF]     \ define DO LOOP +LOOP
+    [UNDEFINED] IF [IF]     \ define IF THEN
+\ https://forth-standard.org/standard/core/IF
+\ IF       -- IFadr    initialize conditional forward branch
+    CODE IF       \ immediate
+    SUB #2,PSP              \
+    MOV TOS,0(PSP)          \
+    MOV &DP,TOS             \ -- HERE
+    ADD #4,&DP              \           compile one word, reserve one word
+    MOV #QFBRAN,0(TOS)      \ -- HERE   compile QFBRAN
+    ADD #2,TOS              \ -- HERE+2=IFadr
+    MOV @IP+,PC
+    ENDCODE IMMEDIATE
+
+\ https://forth-standard.org/standard/core/THEN
+\ THEN     IFadr --                resolve forward branch
+    CODE THEN               \ immediate
+    MOV &DP,0(TOS)          \ -- IFadr
+    MOV @PSP+,TOS           \ --
+    MOV @IP+,PC
+    ENDCODE IMMEDIATE
+    [THEN]
+
+    [UNDEFINED] ELSE [IF]
+\ https://forth-standard.org/standard/core/ELSE
+\ ELSE     IFadr -- ELSEadr        resolve forward IF branch, leave ELSEadr on stack
+    CODE ELSE     \ immediate
+    ADD #4,&DP              \ make room to compile two words
+    MOV &DP,W               \ W=HERE+4
+    MOV #BRAN,-4(W)
+    MOV W,0(TOS)            \ HERE+4 ==> [IFadr]
+    SUB #2,W                \ HERE+2
+    MOV W,TOS               \ -- ELSEadr
+    MOV @IP+,PC
+    ENDCODE IMMEDIATE
+    [THEN]
+
+    [UNDEFINED] DO [IF] \ define DO LOOP +LOOP
 
 \ https://forth-standard.org/standard/core/DO
 \ DO       -- DOadr   L: -- 0
@@ -1131,11 +1050,10 @@ BW2 ADD #4,&DP          \ make room to compile two words
     ENDCODE IMMEDIATE
     [THEN]
 
+    [UNDEFINED] I [IF]
 \ https://forth-standard.org/standard/core/I
 \ I        -- n   R: sys1 sys2 -- sys1 sys2
 \                  get the innermost loop index
-    [UNDEFINED] I
-    [IF]
     CODE I
     SUB #2,PSP              \ 1 make room in TOS
     MOV TOS,0(PSP)          \ 3
@@ -1145,20 +1063,18 @@ BW2 ADD #4,&DP          \ make room to compile two words
     ENDCODE
     [THEN]
 
+    [UNDEFINED] + [IF]
 \ https://forth-standard.org/standard/core/Plus
 \ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
-    [UNDEFINED] +
-    [IF]
     CODE +
     ADD @PSP+,TOS
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] = [IF]
 \ https://forth-standard.org/standard/core/Equal
 \ =      x1 x2 -- flag         test x1=x2
-    [UNDEFINED] =
-    [IF]
     CODE =
     SUB @PSP+,TOS   \ 2
     0<> IF          \ 2
@@ -1170,10 +1086,9 @@ BW2 ADD #4,&DP          \ make room to compile two words
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 0= [IF]
 \ https://forth-standard.org/standard/core/ZeroEqual
 \ 0=     n/u -- flag    return true if TOS=0
-    [UNDEFINED] 0=
-    [IF]
     CODE 0=
     SUB #1,TOS      \ borrow (clear cy) if TOS was 0
     SUBC TOS,TOS    \ TOS=-1 if borrow was set
@@ -1181,10 +1096,9 @@ BW2 ADD #4,&DP          \ make room to compile two words
     ENDCODE
     [THEN]
 
+    [UNDEFINED] SOURCE [IF]
 \ https://forth-standard.org/standard/core/SOURCE
 \ SOURCE    -- adr u    of current input buffer
-    [UNDEFINED] SOURCE
-    [IF]
     CODE SOURCE
     SUB #4,PSP
     MOV TOS,2(PSP)
@@ -1194,65 +1108,58 @@ BW2 ADD #4,&DP          \ make room to compile two words
     ENDCODE
     [THEN]
 
+    [UNDEFINED] >IN [IF]
 \ https://forth-standard.org/standard/core/toIN
 \ C >IN     -- a-addr       holds offset in input stream
-    [UNDEFINED] >IN
-    [IF]
     TOIN CONSTANT >IN
     [THEN]
 
+    [UNDEFINED] 1+ [IF]
 \ https://forth-standard.org/standard/core/OnePlus
 \ 1+      n1/u1 -- n2/u2       add 1 to TOS
-    [UNDEFINED] 1+
-    [IF]
     CODE 1+
     ADD #1,TOS
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] CHAR [IF]
 \ https://forth-standard.org/standard/core/CHAR
 \ CHAR   -- char           parse ASCII character
-    [UNDEFINED] CHAR
-    [IF]
     : CHAR
         $20 WORD 1+ C@
     ;
     [THEN]
 
+    [UNDEFINED] [CHAR] [IF]
 \ https://forth-standard.org/standard/core/BracketCHAR
 \ [CHAR]   --          compile character literal
-    [UNDEFINED] [CHAR]
-    [IF]
     : [CHAR]
         CHAR POSTPONE LITERAL
     ; IMMEDIATE
     [THEN]
 
+    [UNDEFINED] 2/ [IF]
 \ https://forth-standard.org/standard/core/TwoDiv
 \ 2/      x1 -- x2        arithmetic right shift
-    [UNDEFINED] 2/
-    [IF]
     CODE 2/
     RRA TOS
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] INVERT [IF]
 \ https://forth-standard.org/standard/core/INVERT
 \ INVERT   x1 -- x2            bitwise inversion
-    [UNDEFINED] INVERT
-    [IF]
     CODE INVERT
     XOR #-1,TOS
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] RSHIFT [IF]
 \ https://forth-standard.org/standard/core/RSHIFT
 \ RSHIFT  x1 u -- x2    logical R7 shift u places
-    [UNDEFINED] RSHIFT
-    [IF]
     CODE RSHIFT
     MOV @PSP+,W
     AND #$1F,TOS       \ no need to shift more than 16
@@ -1268,29 +1175,26 @@ BW2 ADD #4,&DP          \ make room to compile two words
     ENDCODE
     [THEN]
 
+    [UNDEFINED] S>D [IF]
 \ https://forth-standard.org/standard/core/StoD
 \ S>D    n -- d          single -> double prec.
-    [UNDEFINED] S>D
-    [IF]
     : S>D
         DUP 0<
     ;
     [THEN]
 
+    [UNDEFINED] 1- [IF]
 \ https://forth-standard.org/standard/core/OneMinus
 \ 1-      n1/u1 -- n2/u2     subtract 1 from TOS
-    [UNDEFINED] 1-
-    [IF]
     CODE 1-
     SUB #1,TOS
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] NEGATE [IF]
 \ https://forth-standard.org/standard/core/NEGATE
 \ C NEGATE   x1 -- x2            two's complement
-    [UNDEFINED] NEGATE
-    [IF]
     CODE NEGATE
     XOR #-1,TOS
     ADD #1,TOS
@@ -1298,27 +1202,24 @@ BW2 ADD #4,&DP          \ make room to compile two words
     ENDCODE
     [THEN]
 
-    [UNDEFINED] HERE
-    [IF]
+    [UNDEFINED] HERE [IF]
     CODE HERE
-    MOV #HEREXEC,PC
+    MOV #BEGIN,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] CHARS [IF]
 \ https://forth-standard.org/standard/core/CHARS
 \ CHARS    n1 -- n2            chars->adrs units
-    [UNDEFINED] CHARS
-    [IF]
     CODE CHARS
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] MOVE [IF]
 \ https://forth-standard.org/standard/core/MOVE
 \ MOVE    addr1 addr2 u --     smart move
 \             VERSION FOR 1 ADDRESS UNIT = 1 CHAR
-    [UNDEFINED] MOVE
-    [IF]
     CODE MOVE
     MOV TOS,W           \ W = cnt
     MOV @PSP+,Y         \ Y = addr2 = dst
@@ -1350,49 +1251,47 @@ BW2 ADD #4,&DP          \ make room to compile two words
     ENDCODE
     [THEN]
 
+    [UNDEFINED] DECIMAL [IF]
 \ https://forth-standard.org/standard/core/DECIMAL
-    [UNDEFINED] DECIMAL
-    [IF]
     CODE DECIMAL
     MOV #$0A,&BASEADR
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] BASE [IF]
 \ https://forth-standard.org/standard/core/BASE
 \ BASE    -- a-addr       holds conversion radix
-    [UNDEFINED] BASE
-    [IF]
     BASEADR CONSTANT BASE
     [THEN]
 
+    [UNDEFINED] ( [IF]
 \ https://forth-standard.org/standard/core/p
 \ (         --          skip input until char ) or EOL
-    [UNDEFINED] ( ; )
-    [IF]
     : (
     ')' WORD DROP
     ; IMMEDIATE
     [THEN]
 
+    [UNDEFINED] .( [IF] ; "
 \ https://forth-standard.org/standard/core/Dotp
 \ .(        --          type comment immediatly.
-    [UNDEFINED] .( ; "
-    [IF]
     CODE .(        ; "
     MOV #0,&CAPS    \ CAPS OFF
     COLON
     ')' WORD
     COUNT TYPE
-    $20 CAPS !       \ CAPS ON
+    $20 CAPS !      \ CAPS ON
     ; IMMEDIATE
     [THEN]
 
+    [UNDEFINED] CR [IF]
 \ https://forth-standard.org/standard/core/CR
 \ CR      --               send CR+LF to the output device
-    [UNDEFINED] CR
-    [IF]
-    DEFER CR    \ DEFERed definition, by default executes that of :NONAME
+\    DEFER CR       \ DEFERed definition, by default executes :NONAME part
+    CODE CR         \ replaced by this CODE definition
+    MOV #NEXT_ADR,PC
+    ENDCODE
 
     :NONAME
     'CR' EMIT 'LF' EMIT
@@ -1535,7 +1434,7 @@ ECHO
 \     - tester.fr (or ttester.fs), errorreport.fth and utilities.fth have been
 \       included prior to this file
 \     - the Core word set is available and tested
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING interpreter and compiler reading double numbers, with/without prefixes
 
 T{ 1. -> 1 0 }T
@@ -1551,10 +1450,10 @@ T{ $12aBcDeF. -> 313249263. }T
 T{ $-12AbCdEf. -> -313249263. }T
 T{ %10010110. -> 150. }T
 T{ %-10010110. -> -150. }T
-\ Check BASE is unchanged
+; Check BASE is unchanged
 T{ BASE @ OLD-DBASE @ = -> TRUE }T
 
-\ Repeat in Hex mode
+; Repeat in Hex mode
 16 OLD-DBASE ! 16 BASE !
 T{ #12346789. -> BC65A5. }T
 T{ #-12346789. -> -BC65A5. }T
@@ -1562,14 +1461,14 @@ T{ $12aBcDeF. -> 12AbCdeF. }T
 T{ $-12AbCdEf. -> -12ABCDef. }T
 T{ %10010110. -> 96. }T
 T{ %-10010110. -> -96. }T
-\ Check BASE is unchanged
+; Check BASE is unchanged
 T{ BASE @ OLD-DBASE @ = -> TRUE }T   \ 2
 
 DECIMAL
-\ Check number prefixes in compile mode
+; Check number prefixes in compile mode
 T{ : dnmp  #8327. $-2cbe. %011010111. ; dnmp -> 8327. -11454. 215. }T
 
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING 2CONSTANT
 
 T{ 1 2 2CONSTANT 2C1 -> }T
@@ -1582,15 +1481,15 @@ T{ 2C2 -> -1 -2 }T
 T{ 4 5 2CONSTANT 2C3 IMMEDIATE 2C3 -> 4 5 }T
 T{ : CD6 2C3 2LITERAL ; CD6 -> 4 5 }T
 
-\ ------------------------------------------------------------------------------
-\ Some 2CONSTANTs for the following tests
+; ----------------------------------------------------------------------------
+; Some 2CONSTANTs for the following tests
 
 1SD MAX-INTD 2CONSTANT MAX-2INT  \ 01...1
 0   MIN-INTD 2CONSTANT MIN-2INT  \ 10...0
 MAX-2INT 2/  2CONSTANT HI-2INT   \ 001...1
 MIN-2INT 2/  2CONSTANT LO-2INT   \ 110...0
 
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING DNEGATE
 
 T{ 0. DNEGATE -> 0. }T
@@ -1599,7 +1498,7 @@ T{ -1. DNEGATE -> 1. }T
 T{ MAX-2INT DNEGATE -> MIN-2INT SWAP 1+ SWAP }T
 T{ MIN-2INT SWAP 1+ SWAP DNEGATE -> MAX-2INT }T
 
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING D+ with small integers
 
 T{  0.  5. D+ ->  5. }T
@@ -1633,7 +1532,7 @@ T{ MAX-2INT LO-2INT D+ -> HI-2INT }T
 T{ HI-2INT MIN-2INT D+ 1. D+ -> LO-2INT }T
 T{ LO-2INT 2DUP D+ -> MIN-2INT }T
 
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING D- with small integers
 
 T{  0.  5. D- -> -5. }T
@@ -1669,7 +1568,7 @@ T{ LO-2INT  HI-2INT  D- -> MIN-2INT 1. D+ }T
 T{ MIN-2INT MIN-2INT D- -> 0. }T
 T{ MIN-2INT LO-2INT  D- -> LO-2INT }T
 
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING D0< D0=
 
 T{ 0. D0< -> FALSE }T
@@ -1688,7 +1587,7 @@ T{ 0. D0= -> TRUE }T
 T{ -1. D0= -> FALSE }T
 T{ 0 MIN-INTD D0= -> FALSE }T
 
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING D2* D2/
 
 T{ 0. D2* -> 0. D2* }T
@@ -1703,7 +1602,7 @@ T{ MAX-2INT D2/ -> HI-2INT }T
 T{ -1. D2/ -> -1. }T
 T{ MIN-2INT D2/ -> LO-2INT }T
 
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING D< D=
 
 T{  0.  1. D< -> TRUE  }T
@@ -1754,7 +1653,7 @@ T{ MIN-2INT MIN-2INT D= -> TRUE }T
 T{ MIN-2INT LO-2INT  D=  -> FALSE }T
 T{ MIN-2INT MAX-2INT D= -> FALSE }T
 
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING 2LITERAL 2VARIABLE
 
 T{ : CD3 [ MAX-2INT ] 2LITERAL ; -> }T
@@ -1774,7 +1673,7 @@ T{ 2V3 2@ -> 5 6 }T
 T{ : CD7 2V3 [ 2@ ] 2LITERAL ; CD7 -> 5 6 }T
 T{ : CD8 [ 6 7 ] 2V3 [ 2! ] ; 2V3 2@ -> 6 7 }T
 
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING DMAX DMIN
 
 T{  1.  2. DMAX -> 2. }T
@@ -1816,7 +1715,7 @@ T{ MAX-2INT -1. DMIN -> -1. }T
 T{ MIN-2INT  1. DMIN -> MIN-2INT }T
 T{ MIN-2INT -1. DMIN -> MIN-2INT }T
 
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING D>S DABS
 
 T{  1234  0 D>S ->  1234 }T
@@ -1829,7 +1728,7 @@ T{ -1. DABS -> 1. }T
 T{ MAX-2INT DABS -> MAX-2INT }T
 T{ MIN-2INT 1. D+ DABS -> MAX-2INT }T
 
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING M+ M*/
 
 T{ HI-2INT   1 M+ -> HI-2INT   1. D+ }T
@@ -1837,8 +1736,8 @@ T{ MAX-2INT -1 M+ -> MAX-2INT -1. D+ }T
 T{ MIN-2INT  1 M+ -> MIN-2INT  1. D+ }T
 T{ LO-2INT  -1 M+ -> LO-2INT  -1. D+ }T
 
-\ To correct the result if the division is floored, only used when
-\ necessary i.e. negative quotient and remainder <> 0
+; To correct the result if the division is floored, only used when
+; necessary i.e. negative quotient and remainder <> 0
 
 : ?FLOORED [ -3 2 / -2 = ] LITERAL IF 1. D- THEN ;
 
@@ -1857,10 +1756,10 @@ T{ MIN-2INT LO-2INT NIP 1- MAX-INTD M*/ -> MIN-INTD 3 + HI-2INT NIP 2 + }T
 T{ MAX-2INT LO-2INT NIP DUP NEGATE M*/ -> MAX-2INT DNEGATE }T
 T{ MIN-2INT MAX-INTD DUP M*/ -> MIN-2INT }T
 
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING D. D.R
 
-\ Create some large double numbers
+; Create some large double numbers
 MAX-2INT 71 73 M*/ 2CONSTANT DBL1
 MIN-2INT 73 79 M*/ 2CONSTANT DBL2
 
@@ -1885,8 +1784,7 @@ DBL2 D>ASCII 2CONSTANT "DBL2"
 ;
 
 T{ DOUBLEOUTPUT -> }T
-
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING 2ROT DU< (Double Number extension words)
 
 T{ 1. 2. 3. 2ROT -> 2. 3. 1. }T
@@ -1907,7 +1805,7 @@ T{ MAX-2INT MIN-2INT DU< -> TRUE }T
 T{ MIN-2INT MAX-2INT DU< -> FALSE }T
 T{ MIN-2INT LO-2INT  DU< -> TRUE }T
 
-\ ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
 TESTING 2VALUE
 
 T{ 1111 2222 2VALUE 2VAL -> }T
@@ -1916,7 +1814,5 @@ T{ 3333 4444 TO 2VAL -> }T
 T{ 2VAL -> 3333 4444 }T
 T{ : TO-2VAL TO 2VAL ; 5555 6666 TO-2VAL -> }T
 T{ 2VAL -> 5555 6666 }T
-
-\ ------------------------------------------------------------------------------
 
 CR .( End of Double-Number word tests) CR

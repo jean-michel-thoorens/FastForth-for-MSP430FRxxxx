@@ -39,43 +39,50 @@
 
 ; ---------------------------------------------------------------
 ; SD_TOOLS.f
-; BASIC TOOLS for SD Card : DIR FAT SECTOR CLUSTER
+; BASIC TOOLS for SD Card : DIR FAT SECTOR. CLUSTER.
 ; ---------------------------------------------------------------
 
-\ first, we test for downloading driver only if UART TERMINAL target
+\ first, we do some tests allowing the download
     CODE ABORT_SD_TOOLS
     SUB #4,PSP
     MOV TOS,2(PSP)
-    [UNDEFINED] LOAD"       \ "
+    [UNDEFINED] LOAD"   \ "
     [IF]
-    MOV #-1,0(PSP)
+        MOV #-1,0(PSP)
     [ELSE]
-    MOV #0,0(PSP)
+        MOV #0,0(PSP)
     [THEN]
     MOV &VERSION,TOS
-    SUB #309,TOS        \                   FastForth V3.9
+    SUB #400,TOS        \ FastForth V4.0
     COLON
-    'CR' EMIT            \ return to column 1 without 'LF'
-    ABORT" FastForth V3.9 please!"
-    ABORT" Builds FastForth with SD_CARD_LOADER addon.."
-    RST_RET              \ remove ABORT_UARTI2CS definition before resuming
+    'CR' EMIT           \ return to column 1 without 'LF'
+    ABORT" FastForth V4.0 please!"
+    ABORT" Build FastForth with SD_CARD_LOADER addon!"
+    RST_RET             \ remove ABORT_UARTI2CS definition before resuming
     ;
 
     ABORT_SD_TOOLS
 
+    [DEFINED] {SD_TOOLS} 
+    [IF] {SD_TOOLS}
+    [THEN]
+    [UNDEFINED] {SD_TOOLS}
+    [IF]
     MARKER {SD_TOOLS}
 
-    [UNDEFINED] HERE
-    [IF]
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.f)
+; ------------------------------------------------------------------
+
+    [UNDEFINED] HERE [IF]
     CODE HERE
-    MOV #HEREXEC,PC
+    MOV #BEGIN,PC
     ENDCODE
     [THEN]
 
 \ https://forth-standard.org/standard/core/Plus
 \ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
-    [UNDEFINED] +
-    [IF]
+    [UNDEFINED] + [IF]
     CODE +
     ADD @PSP+,TOS
     MOV @IP+,PC
@@ -198,14 +205,6 @@ FW1 MOV @PSP+,TOS
     ENDCODE
     [THEN]
 
-    [UNDEFINED] U.R
-    [IF]        \ defined in {UTILITY}
-    : U.R                       \ u n --           display u unsigned in n width (n >= 2)
-    >R  <# 0 # #S #>
-    R> OVER - 0 MAX SPACES TYPE
-    ;
-    [THEN]
-
 \ https://forth-standard.org/standard/core/DO
 \ DO       -- DOadr   L: -- 0
     [UNDEFINED] DO
@@ -278,7 +277,6 @@ BW2 ADD #4,&DP              \ make room to compile two words
     ENDCODE IMMEDIATE
     [THEN]
 
-
 \ https://forth-standard.org/standard/core/I
 \ I        -- n   R: sys1 sys2 -- sys1 sys2
 \                  get the innermost loop index
@@ -307,6 +305,18 @@ BW2 ADD #4,&DP              \ make room to compile two words
     ; IS CR
     [THEN]
 
+; ------------------------------------------------------------------
+; then we download the set of definitions we need (from UTILITY.f)
+; ------------------------------------------------------------------
+
+    [UNDEFINED] U.R
+    [IF]        \ defined in {UTILITY}
+    : U.R                       \ u n --           display u unsigned in n width (n >= 2)
+    >R  <# 0 # #S #>
+    R> OVER - 0 MAX SPACES TYPE
+    ;
+    [THEN]
+
 \ https://forth-standard.org/standard/tools/DUMP
     [UNDEFINED] DUMP
     [IF]       \ defined in {UTILITY}
@@ -317,13 +327,12 @@ BW2 ADD #4,&DP              \ make room to compile two words
     ADD @PSP,TOS                \ -- ORG END
     LO2HI
     SWAP                        \ -- END ORG
-\    $FFF0 AND                   \ -- END ORG_modulo_16
+    CR
+    4 SPACES $10 0
+    DO I 3 U.R  LOOP            \ -- END ORG
     DO  CR                      \ generate line
-        I 4 U.R SPACE           \ generate address
-        I 8 + I
-        DO I C@ 3 U.R LOOP
-        SPACE
-        I $10 + I 8 +
+        I 4 U.R                 \ generate address
+        I $10 + I
         DO I C@ 3 U.R LOOP
         SPACE SPACE
         I $10 + I             \ display 16 chars
@@ -333,13 +342,18 @@ BW2 ADD #4,&DP              \ make room to compile two words
     ;
     [THEN]
 
+; --------------------------
+; end of definitions we need
+; --------------------------
+
 \ display content of a sector
+\ to Display MBR_FirstSector, type : 0. SECTOR.
 \   --------------------------------\
     CODE SECTOR.                    \ sector. --     don't forget to add decimal point to your sector number
 \   --------------------------------\
 BW1 MOV     TOS,X                   \ X = SectorH
     MOV     @PSP,W                  \ W = sectorL
-    CALL    #R_SECT_WX              \ W = SectorLO  X = SectorHI
+    CALL    #RD_SECT                \ W = SectorLO  X = SectorHI
     COLON                           \
     SPACE <# #S #> TYPE             \ ud --            display the double number
     SD_BUF $200 DUMP CR ;           \ then dump the sector
@@ -386,8 +400,17 @@ BW2 BIT.B   #CD_SD,&SD_CDIN         \ test Card Detect: memory card present ?
     MOV     TOS,2(PSP)              \           save TOS
     MOV     &DIRclusterL,0(PSP)     \
     MOV     &DIRclusterH,TOS        \
-    GOTO    BW2                     \ jump to SECTOR
+    CMP     #0,TOS
+    0<>     ?GOTO BW2               \ jump to CLUSTER
+    CMP     #1,0(PSP)               \ cluster 1 ?
+    0<>     ?GOTO BW2               \ jump to CLUSTER
+    MOV     &OrgRootDir,0(PSP)      \ if yes, special case of FAT16 OrgRootDir
+    GOTO    BW1                     \ jump to SECTOR
     ENDCODE
 \   --------------------------------\
 
-    RST_SET ECHO
+    RST_SET 
+
+    [THEN] \ endof [UNDEFINED] {SD_TOOLS} 
+
+    ECHO

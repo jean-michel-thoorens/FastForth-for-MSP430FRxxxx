@@ -3,77 +3,81 @@
 \ ; CORETEST.4TH for any FastForth target
 \ ; -------------------------------------
 
-MARKER {CORETEST}
+    MARKER {CORETEST}
 
-: ABORT_TEST        \ flag --
-$0D EMIT            \ return to column 1
-POSTPONE {CORETEST} \ remove all test words
-ABORT" {CORE_ANS} word set not found !"
-;
+    : ABORT_TEST        \ flag --
+    $0D EMIT            \ return to column 1
+    POSTPONE {CORETEST} \ remove all test words
+    ABORT" {CORE_ANS} word set not found !"
+    ;
 
-[UNDEFINED] {CORE_ANS} ABORT_TEST
+    [UNDEFINED] {CORE_ANS} ABORT_TEST
 
-: CORETESTSUCCESS
-$0D EMIT        \ -- $0D    return to column 1
-$0A BASE !      \           set decimal
-{CORETEST}      \           remove all test words
-." CORETEST + COREPLUSTEST success!" \ true --
-;
+    : CORETESTSUCCESS
+    $0D EMIT        \ -- $0D    return to column 1
+    $0A BASE !      \           set decimal
+    {CORETEST}      \           remove all test words
+    ." CORETEST + COREPLUSTEST success!" \ true --
+    ;
 
-[UNDEFINED] SM/REM [IF]
-CODE SM/REM
-MOV R14,R12
-MOV @R15,R11
-CMP #0,R14
-S< IF
-    XOR #-1,R14
-    ADD #1,R14
-THEN
-CMP #0,0(R15)
-S< IF
-    XOR #-1,2(R15)
-    XOR #-1,0(R15)
-    ADD #1,2(R15)
-    ADDC #0,0(R15)
-THEN
-PUSHM #3,R13
-LO2HI
-    UM/MOD
-HI2LO
-POPM #3,R13
-CMP #0,R11
-S< IF
-    XOR #-1,0(R15)
-    ADD #1,0(R15)
-THEN
-XOR R12,R11
-CMP #0,R11
-S< IF
-    XOR #-1,R14
-    ADD #1,R14
-THEN
-MOV @R13+,R0
-ENDCODE
-[THEN]
+    [UNDEFINED] SM/REM
+    [IF]
+\ https://forth-standard.org/standard/core/SMDivREM
+\ SM/REM   d1 n1 -- r q   symmetric signed div'n
+    CODE SM/REM
+    MOV R14,R12
+    MOV @R15,R11
+    CMP #0,R14
+    S< IF
+        XOR #-1,R14
+        ADD #1,R14
+    THEN
+    CMP #0,0(R15)
+    S< IF
+        XOR #-1,2(R15)
+        XOR #-1,0(R15)
+        ADD #1,2(R15)
+        ADDC #0,0(R15)
+    THEN
+    PUSHM #3,R13
+    LO2HI
+        UM/MOD
+    HI2LO
+    POPM #3,R13
+    CMP #0,R11
+    S< IF
+        XOR #-1,0(R15)
+        ADD #1,0(R15)
+    THEN
+    XOR R12,R11
+    CMP #0,R11
+    S< IF
+        XOR #-1,R14
+        ADD #1,R14
+    THEN
+    MOV @R13+,R0
+    ENDCODE
+    [THEN]
 
-[UNDEFINED] FM/MOD [IF]
+    [UNDEFINED] FM/MOD
+    [IF]
 \ https://forth-standard.org/standard/core/FMDivMOD
 \ FM/MOD   d1 n1 -- r q   floored signed div'n
-: FM/MOD
-SM/REM
-HI2LO                   \ -- remainder quotient       S=divisor
-CMP #0,0(R15)           \ remainder <> 0 ?
-0<> IF
-    CMP #1,R14          \ quotient < 1 ?
-    S< IF
-      ADD R12,0(R15)    \ add divisor to remainder
-      SUB #1,R14        \ decrement quotient
+    : FM/MOD
+    SM/REM
+    HI2LO                   \ -- remainder quotient       S=divisor
+    CMP #0,0(R15)           \ remainder <> 0 ?
+    0<> IF
+        CMP #1,R14          \ quotient < 1 ?
+        S< IF
+        ADD R12,0(R15)    \ add divisor to remainder
+        SUB #1,R14        \ decrement quotient
+        THEN
     THEN
-THEN
-MOV @R1+,R13
-MOV @R13+,R0
-ENDCODE
-[THEN]
+    MOV @R1+,R13
+    MOV @R13+,R0
+    ENDCODE
+    [THEN]
 
 \ From: John Hayes S1I
 \ Subject: tester.fr
@@ -99,19 +103,19 @@ VARIABLE VERBOSE
     FALSE VERBOSE !
 \   TRUE VERBOSE !
 
-\ : EMPTY-STACK ( ... -- )  \ EMPTY STACK: HANDLES UNDERFLOWED STACK TOO.
-\     DEPTH ?DUP
-\             IF DUP 0< IF NEGATE 0
-\             DO 0 LOOP
-\             ELSE 0 DO DROP LOOP THEN
-\             THEN ;
-\
-\ : ERROR     \ ( C-ADDR U -- ) DISPLAY AN ERROR MESSAGE FOLLOWED BY
-\         \ THE LINE THAT HAD THE ERROR.
-\     TYPE SOURCE TYPE CR          \ DISPLAY LINE CORRESPONDING TO ERROR
-\     EMPTY-STACK              \ THROW AWAY EVERY THING ELSE
-\ \    QUIT  \ *** Uncomment this line to QUIT on an error
-\ ;
+: EMPTY-STACK ( ... -- )  \ EMPTY STACK: HANDLES UNDERFLOWED STACK TOO.
+    DEPTH ?DUP
+            IF DUP 0< IF NEGATE 0
+            DO 0 LOOP
+            ELSE 0 DO DROP LOOP THEN
+            THEN ;
+
+: ERROR     \ ( C-ADDR U -- ) DISPLAY AN ERROR MESSAGE FOLLOWED BY
+        \ THE LINE THAT HAD THE ERROR.
+    TYPE SOURCE TYPE CR          \ DISPLAY LINE CORRESPONDING TO ERROR
+    EMPTY-STACK              \ THROW AWAY EVERY THING ELSE
+    QUIT  \ *** Uncomment this line to QUIT on an error
+;
 
 VARIABLE ACTUAL-DEPTH           \ STACK RECORD
 CREATE ACTUAL-RESULTS 20 CELLS ALLOT
@@ -132,7 +136,7 @@ CREATE ACTUAL-RESULTS 20 CELLS ALLOT
         0 DO                    \ FOR EACH STACK ITEM
             ACTUAL-RESULTS I CELLS + @  \ COMPARE ACTUAL WITH EXPECTED
 \           = 0= IF S" INCORRECT RESULT: " ERROR LEAVE THEN \ jmt
-            = 0= IF TRUE ABORT" INCORRECT RESULT" THEN      \ jmt : abort with colorised message
+            = 0= ABORT" INCORRECT RESULT"                   \ jmt : abort with colorised message
         LOOP
         THEN
     ELSE                 \ DEPTH MISMATCH
@@ -143,11 +147,10 @@ CREATE ACTUAL-RESULTS 20 CELLS ALLOT
 : TESTING   \ ( -- ) TALKING COMMENT.
     SOURCE VERBOSE @
     IF DUP >R TYPE CR R> >IN !
-\    ELSE >IN ! DROP [CHAR] * EMIT
-    ELSE >IN ! DROP \ [CHAR] * EMIT
+    ELSE >IN ! DROP [CHAR] * EMIT
     THEN ;
 
-ECHO HEX
+HEX
 
 \ From: John Hayes S1I
 \ Subject: core.fr
@@ -845,7 +848,7 @@ T{ 2 GI6 -> 0 1 2 }T
 T{ 3 GI6 -> 0 1 2 3 }T
 T{ 4 GI6 -> 0 1 2 3 4 }T
 
-\ ------------------------------------------------------------------------
+\ ----------------------------------------------------------------------------
 TESTING DO LOOP +LOOP I J UNLOOP LEAVE EXIT
 
 T{ : GD1 DO I LOOP ; -> }T
@@ -1135,18 +1138,32 @@ TESTING INPUT: ACCEPT
 
 CREATE ABUF 80 CHARS ALLOT
 
-: ACCEPT-TEST
-    CR ." PLEASE TYPE UP TO 80 CHARACTERS: "
-ABUF 80 \ ACCEPT            \ JMT
-          ['] ACCEPT >BODY  \ JMT: find default part of deferred ACCEPT
-          EXECUTE           \ JMT: execute ACCEPT
-    CR ." RECEIVED: " [CHAR] " EMIT
-    ABUF SWAP TYPE [CHAR] " EMIT CR
-;
+\    ' ACCEPT DUP >BODY SWAP 2 + @ =     \ JMT:
+\    [IF]                                \ JMT: ACCEPT is not redirected
+    : ACCEPT-TEST
+        CR ." PLEASE TYPE UP TO 80 CHARACTERS: "
+        ABUF 80 ACCEPT
+        CR ." RECEIVED: " [CHAR] " EMIT
+        ABUF SWAP TYPE [CHAR] " EMIT CR
+    ;
+\    [ELSE]                              \ JMT: ACCEPT is redirected
+\    : ACCEPT-TEST
+\        ['] NOECHO >BODY DUP @ @        \ JMT: -- NOECHO_BODY YEMIT_exec
+\        SWAP 2 - @                      \ JMT: -- YEMIT_exec NOECHO_exec
+\        = DUP                           \ JMT: -- NOECHO_flag NOECHO_flag
+\        IF ECHO THEN                    \ JMT: -- NOECHO_flag
+\            CR ." PLEASE TYPE UP TO 80 CHARACTERS: "
+\            ['] ACCEPT >BODY            \ JMT: find default exec part of ACCEPT
+\            EXECUTE                     \ JMT: execute it
+\            CR ." RECEIVED: " [CHAR] " EMIT
+\            ABUF SWAP TYPE [CHAR] " EMIT CR
+\        IF NOECHO THEN                  \ JMT: --
+\    ;
+\    [THEN]
 
 T{ ACCEPT-TEST -> }T
 \ ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba
-\ ------------------------------------------------------------------------
+ \ ------------------------------------------------------------------------
 TESTING DICTIONARY SEARCH RULES
 
 T{ : GDX   123 ; : GDX   GDX 234 ; -> }T
@@ -1532,4 +1549,5 @@ T{ MA? MA0 MA? MA1 MA? MA2 -> TRUE TRUE FALSE }T
 T{ MA0 -> }T
 T{ MA? MA0 MA? MA1 MA? MA2 -> FALSE FALSE FALSE }T
 
+ECHO
 CORETESTSUCCESS

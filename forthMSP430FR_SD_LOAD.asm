@@ -17,7 +17,6 @@
 ; You should have received a copy of the GNU General Public License
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 ; used variables : BufferPtr, BufferLen
 
 ;-----------------------------------------------------------------------
@@ -29,7 +28,7 @@ ReadFAT1SectorW                     ;SWX (< 65536)
 ; ==================================;
     ADD     &OrgFAT1,W              ;
     MOV     #0,X                    ; FAT1_SectorHI = 0
-    JMP     ReadSectorWX            ;SWX read FAT1SectorW
+    JMP     ReadSectorWX            ;SWX read FAT1SectorW, W = 0
 ; ----------------------------------;
 
    .IFDEF SD_CARD_READ_WRITE
@@ -56,7 +55,6 @@ WriteSectorHL                       ;SWX
 ; W = SectorL, (RTC) TIME
 ; X = SectorH, (RTC) DATE
 ; Y = BufferPtr, (DIR) DIREntryOfst
-
 
 ; ==================================;
 HDLcurClus2FATsecWofstY             ;WXY Input: T=Handle, HDL_CurClustHL  Output: ClusterHL, FATsector, W = FATsector, Y = FAToffset
@@ -124,7 +122,6 @@ CCFS_RET                            ;
     MOV @RSP+,PC                    ;
 ; ----------------------------------;
 
-
 ; ==================================;
 HDLCurClusPlsOfst2sectorHL          ;SWX input: HDL (CurClust, ClustOfst) output: SectorHL
 ; ==================================;
@@ -140,7 +137,6 @@ ClusterHL2sectorHL                  ;W input: ClusterHL, ClustOfst output: Secto
     MOV @RSP+,PC                    ;
 ; ----------------------------------;
 
-
 ; if first open_load token, save DefaultInputStream
 ; if other open_load token, decrement token, save previous context
 
@@ -151,7 +147,7 @@ ClusterHL2sectorHL                  ;W input: ClusterHL, ClustOfst output: Secto
 ; ==================================; input : Cluster, DIREntryOfst
 GetFreeHandle                       ;STWXY init handle(HDLL_DIRsect,HDLW_DIRofst,HDLL_FirstClus = HDLL_CurClust,HDLL_CurSize)
 ; ==================================; output : T = new CurrentHdl
-    MOV #8,S                        ; prepare file already open error
+    MOV #4,S                        ; prepare file already open error
     MOV #FirstHandle,T              ;
     MOV #0,X                        ; X = init previous handle as 0
 ; ----------------------------------;
@@ -163,14 +159,14 @@ AlreadyOpenTest                     ; no
     CMP     &ClusterH,HDLH_FirstClus(T);
     JNE     SearchNextHandle        ;
     CMP     &ClusterL,HDLL_FirstClus(T);
-    JZ      OPEN_Error              ; error 8: Already Open abort ===>
+    JZ      OPEN_Error              ; error 4: Already Open abort ===>
 SearchNextHandle                    ;
     MOV     T,X                     ; handle is occupied, keep it in X as previous handle
     ADD     #HandleLenght,T         ;
     CMP     #HandleEnd,T            ;
     JNZ     SearchHandleLoop        ;
-    ADD     S,S                     ;
-    JMP     OPEN_Error              ; error 16 = no more handle error, abort ===>
+    MOV     #8,S                    ;
+    JMP     OPEN_Error              ; error 8 = no more handle error, abort ===>
 ; ----------------------------------;
 FreeHandleFound                     ; T = new handle, X = previous handle
 ; ----------------------------------;
@@ -283,28 +279,9 @@ ReadSectorHL                        ;
 ; ==================================;
     MOV     &SectorL,W              ; Low
     MOV     &SectorH,X              ; High
-    JMP     ReadSectorWX            ; SWX then RET
+    JMP     ReadSectorWX            ; SWX then RET with W = 0
 ; ----------------------------------;
 
-
-; ----------------------------------;
-CloseHandleT                        ;
-; ----------------------------------;
-    MOV.B #0,HDLB_Token(T)          ; release the handle
-    MOV @T,T                        ; T = previous handle
-    MOV T,&CurrentHdl               ; becomes current handle
-    CMP #0,T                        ;
-    JZ CloseHandleRet               ; if no more handle
-; ----------------------------------;
-RestorePreviousLoadedBuffer         ;
-; ----------------------------------;
-    MOV HDLW_BUFofst(T),&BufferPtr  ; restore previous BufferPtr
-    CALL    #SetBufLenLoadCurSector ; then reload previous buffer
-    BIC #Z,SR                       ;
-; ----------------------------------;
-CloseHandleRet                      ;
-    MOV @RSP+,PC                    ; Z = 1 if no more handle
-; ----------------------------------;
 
 ; ==================================;
 CloseHandle                         ; <== CLOSE, Read_File, TERM2SD", OPEN_DEL
@@ -332,7 +309,7 @@ UpdateWriteSector
 ; ----------------------------------;
     MOV     HDLL_DIRsect(T),W       ;
     MOV     HDLH_DIRsect(T),X       ;
-    CALL    #readSectorWX           ;SWX SD_buffer = DIRsector
+    CALL    #ReadSectorWX           ;SWX SD_buffer = DIRsector
     MOV     HDLW_DIRofst(T),Y       ; Y = DirEntryOffset
     CALL    #GetYMDHMSforDIR        ; X=DATE,  W=TIME
     MOV     X,SD_BUF+18(Y)          ; access date
@@ -366,9 +343,26 @@ ReturnOfSD_ACCEPT                   ;
     ADD #6,RSP                      ; R-- QUIT3     empties return stack
     MOV @RSP+,IP                    ;               skip return to SD_ACCEPT
 ; ----------------------------------;
-    CALL #CloseHandleT              ;               Z = 1 if no more handle
+    PUSH #CheckFirstLoadedFile      ; defines the RETurn of CloseHandleT
 ; ----------------------------------;
-CheckFirstLoadedFileIsClosed        ;
+CloseHandleT                        ;
+; ----------------------------------;
+    MOV.B #0,HDLB_Token(T)          ; release the handle
+    MOV @T,T                        ; T = previous handle
+    MOV T,&CurrentHdl               ; becomes current handle
+    CMP #0,T                        ;
+    JZ CloseHandleRet               ; if no more handle
+; ----------------------------------;
+RestorePreviousLoadedBuffer         ;
+; ----------------------------------;
+    MOV HDLW_BUFofst(T),&BufferPtr  ; restore previous BufferPtr
+    CALL    #SetBufLenLoadCurSector ; then reload previous buffer
+    BIC #Z,SR                       ;
+; ----------------------------------;
+CloseHandleRet                      ;
+    MOV @RSP+,PC                    ; Z = 1 if no more handle, then RET
+; ----------------------------------;
+CheckFirstLoadedFile                ;
 ; ----------------------------------;
     JZ RestoreDefaultACCEPT         ;
     MOV #NOECHO,PC                  ; -- org len    if return to SD_ACCEPT
@@ -378,24 +372,6 @@ RestoreDefaultACCEPT                ;               if no more handle, first loa
     MOV #TIB_ORG,&CIB_ORG           ;               restore TIB as Current Input Buffer for next line (next QUIT)
     MOV #BODYACCEPT,&PFAACCEPT      ;               restore default ACCEPT for next line (next QUIT)
     MOV #ECHO,PC                    ; -- org len    if return to Terminal ACCEPT
-; ----------------------------------;
-
-
-; ==================================; input : X = countdown_of_spaces, Y = DIRsector_buffer ptr
-ParseEntryNameSpaces                ;XY
-; ==================================; output: Z flag, Y is set after the last space char
-    CMP     #0,X                    ;
-    JZ      PENSL_END               ;
-; ----------------------------------;
-ParseEntryNameSpacesLoop            ;
-; ----------------------------------;
-    CMP.B   #32,SD_BUF(Y)           ; SPACE ?
-    JNZ     PENSL_END               ; no: RET
-    ADD     #1,Y                    ;
-    SUB     #1,X                    ;
-    JNZ     ParseEntryNameSpacesLoop;
-PENSL_END                           ;
-    MOV @RSP+,PC                    ;
 ; ----------------------------------;
 
    .IFDEF SD_CARD_READ_WRITE
@@ -515,7 +491,6 @@ APPENDQ
 ; compile state : compile OpenType, compile SQUOTE and the string of provided pathname
 ; exec state :  open a file from SD card via its pathname
 ;               convert counted string found at HERE in a String then parse it
-;                   media identifiers "A:", "B:" ... are ignored (only one SD_Card),
 ;                   char "\" as first one initializes rootDir as SearchDir.
 ;               if file found, if not already open and if free handle...
 ;                   ...open the file as read and return the handle in CurrentHdl.
@@ -540,134 +515,180 @@ OPEN_COMP                           ;
 OPEN_EXEC                           ;
     mDOCOL                          ; if exec state
     .word   lit,'"',WORDD,COUNT     ; -- open_type addr cnt
-    .word   $+2                     ;
+    mNEXTADR                        ;
     MOV     @RSP+,IP                ;
 ; ----------------------------------;
 ParenOpen                           ; -- open_type addr cnt
 ; ----------------------------------;
-    MOV     @PSP+,rDOCON            ; rDOCON = addr = pathname PTR
-    ADD     rDOCON,TOS              ; TOS = EOS (End Of String) = pathname end
+    MOV #0,S                        ;
+Q_SD_present                        ;
+    BIT.B #CD_SD,&SD_CDIN           ;                               SD_memory in SD_Card module ?
+    JZ Q_SD_not_init                ;                               yes
+    BIC #BUS_SD,&SD_SEL             ;                               no, hide SIMO, SOMI & SCK pins (SD not initialized memory)
+Q_SD_not_init                       ;          
+    BIT #BUS_SD,&SD_SEL             ;                               is SD init by SYS ? 
+    JNZ OPEN_LetUsGo                ;                               no --> with TOS = -1 does abort
+    MOV #NO_SD_CARD,PC              ;                               S = 0 --> error 0
+; ----------------------------------;
+OPEN_LetUsGo                        ;
+; ----------------------------------;
+    MOV     #1,S                    ;                       error 1
+    CMP     #0,TOS                  ;                       cnt = 0 ?
+    JZ      OPEN_Error              ;                       yes: error 1 ===>
+    MOV     @PSP+,rDOCON            ; -- open_type cnt      rDOCON = addr = pathname PTR
+    ADD     rDOCON,TOS              ; -- open_type EOS      TOS = EOS (End Of String) = pathname end
     .IFDEF SD_CARD_READ_WRITE       ;
     MOV     TOS,&PathName_END       ; for WRITE CREATE part
     .ENDIF
+    MOV     &DIRClusterL,&ClusterL  ; set DIR cluster
+    MOV     &DIRClusterH,&ClusterH  ;
 ; ----------------------------------;
-;OPN_PathName                       ;
+OPN_AntiSlashFirstTest              ;
 ; ----------------------------------;
-    MOV     #2,&ClusterL            ; set root DIR cluster
-    MOV     #0,&ClusterH            ;
-    MOV     #1,S                    ; error 1
-    CMP     rDOCON,TOS              ; PTR = EOS ? (end of pathname ?)
-    JZ      OPEN_Error              ; yes: error 1 ===>
-; ----------------------------------;
-    CMP.B   #':',1(rDOCON)          ; A: B: C: ... in pathname ?
-    JNZ     OPN_AntiSlashStartTest  ; no
-    ADD     #2,rDOCON               ; yes : skip drive because not used, only one SD_card
-; ----------------------------------;
-OPN_AntiSlashStartTest              ;
     CMP.B   #'\\',0(rDOCON)         ; "\" as first char ?
-    JNZ     OPN_SearchDirSector     ; no
+    JNZ     OPN_SearchInDIR         ; no
     ADD     #1,rDOCON               ; yes : skip '\' char
+    MOV     #0,&ClusterH            ;
+    JMP     OPN_AntiSlashFirstNext  ;
 ; ----------------------------------;
-OPN_EndOfStringTest                 ;
-; ----------------------------------;
-    CMP     rDOCON,TOS              ; PTR = EOS ? (end of pathname ?)
-    JZ      OPN_SetCurrentDIR       ; if pathname ptr = end of string
-; ----------------------------------;
-OPN_SearchDirSector                 ; <=== dir found in path
+OPN_SearchInDIR                     ; <=== dir found in path
 ; ----------------------------------;
     MOV     rDOCON,&PathName_PTR    ; save Pathname ptr
-    CALL    #ClusterHLtoFrstSectorHL; output: SectorHL
-    MOV     &SecPerClus,rDODOES     ; DIR sectors = one cluster sectors
 ; ----------------------------------;
-OPN_LoadDIRsector                   ; <=== Dir Sector loopback
+OPN_LoadDIRcluster                  ; <=== next DIR cluster loopback
 ; ----------------------------------;
-    CALL    #ReadSectorHL           ;SWX
+    CALL    #ClusterHLtoFrstSectorHL; output: first Sector of this cluster
+    MOV     &SecPerClus,rDODOES     ; set sectors count down
 ; ----------------------------------;
-    MOV     #2,S                    ; prepare no such file error
-    MOV     #0,W                    ; init entries count
+OPN_LoadDIRsector                   ; <=== next DIR Sector loopback
 ; ----------------------------------;
-OPN_SearchDIRentry                  ; <=== DIR Entry loopback
+    CALL    #ReadSectorHL           ;SWX,
+    MOV     #2,S                    ; prepare error 2
+; ----------------------------------; W = 0 = DIREntryOfst
+OPN_SearchDIRentry                  ; <=== next DIR_Entry loopback
 ; ----------------------------------;
-    MOV     W,Y                     ; 1
-    RLAM    #4,Y                    ;             --> * 16
-    ADD     Y,Y                     ; 1           --> * 2
-    MOV     Y,&DIREntryOfst         ; DIREntryOfst
-    CMP.B   #0,SD_BUF(Y)            ; free entry ? (end of entries in DIR)
-    JZ      OPN_NoSuchFile          ; error 2 NoSuchFile, used by create ===>
+    MOV     W,&DIREntryOfst         ; update DIREntryOfst
+    CMP.B   #0,SD_BUF(W)            ; free entry ?
+    JZ      OPN_NoSuchFile          ; NoSuchFile error = 2 ===>
+    MOV     W,Y                     ; 1         W = DIREntryOfst, Y = Entry_name pointer
     MOV     #8,X                    ; count of chars in entry name
 ; ----------------------------------;
-OPN_CompareName8chars               ;
+OPN_CompareName                     ;
 ; ----------------------------------;
-    CMP.B   @rDOCON+,SD_BUF(Y)      ; compare Pathname(char) with DirEntry(char)
-    JNZ     OPN_FirstCharMismatch   ;
+    MOV.B   @rDOCON+,T              ;
+    CMP.B   T,SD_BUF(Y)             ; compare Pathname with DirEntry1to8, char by char
+    JNZ     OPN_CompareNameNext     ;
     ADD     #1,Y                    ;
     SUB     #1,X                    ;
-    JNZ     OPN_CompareName8chars   ; loopback if chars 1 to 7 of string and DirEntry are equal
-    ADD     #1,rDOCON               ; 9th char of Pathname is always a dot
+    JNZ     OPN_CompareName         ;
+    MOV.B   @rDOCON+,T              ; 9th char of Pathname should be '.'
+    JZ      OPN_CompareNameDone     ; if X = 0
 ; ----------------------------------;
-OPN_FirstCharMismatch               ;
+OPN_CompareNameNext                 ; remainder of 8 chars of DIR_entry name must be spaces
 ; ----------------------------------;
-    CMP.B   #'.',-1(rDOCON)         ; FirstNotEqualChar of Pathname = dot ?
-    JZ      OPN_DotFound            ;
+    CMP.B   #32,SD_BUF(Y)           ; parse DIR entry up to 8th chars
+    JNZ     OPN_DIRentryMismatch    ; if a char of DIR entry name <> space
+    ADD     #1,Y                    ;
+    SUB     #1,X                    ;
+    JNZ     OPN_CompareNameNext     ;
 ; ----------------------------------;
-OPN_DotNotFound                     ;
+OPN_CompareNameDone                 ; T = "." or FirstNotEqualChar
 ; ----------------------------------;
-    ADD     #3,X                    ; for next cases not equal chars of DIRentry until 11 must be spaces
-    CALL    #ParseEntryNameSpaces   ; for X + 3 chars
-    JNZ     OPN_DIRentryMismatch    ; if a char entry <> space
-    CMP.B   #'\\',-1(rDOCON)        ; FirstNotEqualChar of Pathname = "\" ?
+    CMP.B   #'\\',T                 ; FirstNotEqualChar of Pathname = "\" ?
     JZ      OPN_EntryFound          ;
-    CMP     rDOCON,TOS              ; EOS exceeded ?
-    JNC     OPN_EntryFound          ; yes
+; ----------------------------------;
+    MOV     #3,X                    ; to compare 3 char extension
+    CMP.B   #'.',T                  ; FirstNotEqualChar of Pathname = dot ?
+    JNZ     OPN_CompExtensionNext   ; if not
+; ----------------------------------;
+OPN_CompareExtension                ;
+; ----------------------------------;
+    CMP.B   @rDOCON+,SD_BUF(Y)      ; compare Pathname_ext(char) with DirEntry9to11(char)
+    JNZ     OPN_CompExtensionNext   ;
+    ADD     #1,Y                    ;
+    SUB     #1,X                    ;
+    JNZ     OPN_CompareExtension    ;
+    JZ      OPN_CompExtensionDone   ;
+; ----------------------------------;
+OPN_CompExtensionNext               ; remainder of 8 chars of DIR_entry extension must be spaces
+; ----------------------------------;
+    CMP.B   #32,SD_BUF(Y)           ; parse DIR entry up to 11th chars
+    JNZ     OPN_DIRentryMismatch    ; if a char of DIR entry extension <> space
+    ADD     #1,Y                    ;
+    SUB     #1,X                    ;
+    JNZ     OPN_CompExtensionNext   ;
+; ----------------------------------;
+OPN_CompExtensionDone               ;
+; ----------------------------------;
+    CMP.B   #'.',-2(rDOCON)         ; LastCharEqual = dot ? (case of Pathname = "..\" which matches with first DIR entry = ".")
+    JZ      OPN_DIRentryMismatch    ; to compare with 2th DIR entry, the good one.
+    CMP     TOS,rDOCON              ; EOS reached ?
+    JC      OPN_EntryFound          ; yes
 ; ----------------------------------;
 OPN_DIRentryMismatch                ;
 ; ----------------------------------;
-    MOV     &PathName_PTR,rDOCON    ; reload PathName_PTR as it was at last OPN_SearchDirSector
-    ADD     #1,W                    ; inc entry
-    CMP     #16,W                   ; 16 entries in a sector
-    JNZ     OPN_SearchDIRentry      ; ===> loopback for search next DIR entry
+    MOV     &PathName_PTR,rDOCON    ; reload PathName_PTR as it was at last OPN_SearchInDIR
+    ADD     #32,W                   ; W = DIREntryOfst + DIRentrySize
+    CMP     #512,W                  ; out of sector bound ?
+    JNZ     OPN_SearchDIRentry      ; no, loopback for search next DIR entry in same sector
 ; ----------------------------------;
     ADD     #1,&SectorL             ;
     ADDC    #0,&SectorH             ;
-    SUB     #1,rDODOES              ; dec count of Dir sectors
-    JNZ     OPN_LoadDIRsector       ; ===> loopback for search next DIR sector
+    SUB     #1,rDODOES              ; count of Dir sectors reached ?
+    JNZ     OPN_LoadDIRsector       ; no, loopback to load next DIR sector in same cluster
 ; ----------------------------------;
-    MOV     #4,S                    ;
-    JMP     OPEN_Error              ; ENd of DIR error 4 ===>
+    CALL #ClusterHLtoFAT1sectWofstY ; load FATsector in SD_Buffer, set Y = FAToffset
+    CMP     #-1,0(Y)                ; last DIR cluster ?
+    JNZ     OPN_SetNextDIRcluster   ;
+    CMP     #0FFFh,2(Y)             ;
+    .IFNDEF SD_CARD_READ_WRITE      ;
+    JZ      OPN_NoSuchFile          ; yes, NoSuchFile error = 2 ===>
+    .ELSE                           ;
+    JNZ     OPN_SetNextDIRcluster   ; no
+OPN_QcreateDIRentry                 ; -- open_type EOS
+    CMP     #4,0(PSP)               ;               open type = WRITE" or APPEND" ?
+    JNC     OPN_NoSuchFile          ; no: NoSuchFile error = 2 ===>
+OPN_AddDIRcluster                   ; yes
+    PUSH    #OPN_LoadDIRcluster     ; as RETurn of GetNewCluster: ===> loopback to load this new DIR cluster
+; ==================================;
+GetNewCluster                       ; called by Write_File
+; ==================================;
+    PUSH    Y                       ; push previous FAToffset
+    PUSH    W                       ; push previous FATsector
+    CALL    #SearchMarkNewClusterHL ;SWXY input: W = FATsector Y = FAToffset, output: ClusterHL, W = FATsector of New cluster
+    CMP     @RSP,W                  ; previous and new clusters are in same FATsector?
+    JZ      LinkClusters            ;     yes
+; ----------------------------------;
+UpdateNewClusterFATs                ;
+; ----------------------------------;
+    MOV     @RSP,W                  ; W = previous FATsector
+    CALL    #ReadFAT1SectorW        ;SWX  reload previous FATsector in buffer to link clusters
+; ----------------------------------;
+LinkClusters                        ;
+; ----------------------------------;
+    MOV     @RSP+,W                 ; W = previous FATsector
+    MOV     @RSP+,Y                 ; Y = previous FAToffset
+    MOV     &ClusterL,SD_BUF(Y)     ; store new cluster to current cluster address in previous FATsector buffer
+    MOV     &ClusterH,SD_BUF+2(Y)   ;
+    JMP     SaveSectorWtoFATs       ;SWXY update FATs from SD_BUF to W = previous FATsector, then RET
+; ==================================;
+    .ENDIF ; SD_CARD_READ_WRITE     ;
+; ----------------------------------;
+OPN_SetNextDIRcluster               ;
+; ----------------------------------;
+    MOV     @Y+,&ClusterL           ;
+    MOV     @Y,&ClusterH            ;
+    JMP     OPN_LoadDIRcluster      ; ===> loop back to load this new DIR cluster
 ; ----------------------------------;
 
 ; ----------------------------------;
-OPN_DotFound                        ; not equal chars of entry name until 8 must be spaces
-; ----------------------------------;
-    CMP.B   #'.',-2(rDOCON)         ; LastCharEqual = dot ?
-    JZ      OPN_DIRentryMismatch    ; case of first DIR entry = "." and Pathname = "..\"
-    CALL    #ParseEntryNameSpaces   ; parse X spaces, X{0,...,7}
-    JNZ     OPN_DIRentryMismatch    ; if a char entry <> space
-    MOV     #3,X                    ;
-; ----------------------------------;
-OPN_CompareExt3chars                ;
-; ----------------------------------;
-    CMP.B   @rDOCON+,SD_BUF(Y)      ; compare string(char) with DirEntry(char)
-    JNZ     OPN_ExtNotEqualChar     ;
-    ADD     #1,Y                    ;
-    SUB     #1,X                    ;
-    JNZ     OPN_CompareExt3chars    ; nothing to do if chars equal
-    JMP     OPN_EntryFound          ;
-OPN_ExtNotEqualChar                 ;
-    CMP     rDOCON,TOS              ; EOS exceeded ?
-    JC      OPN_DIRentryMismatch    ; no, loop back
-    CMP.B   #'\\',-1(rDOCON)        ; FirstNotEqualChar = "\" ?
-    JNZ     OPN_DIRentryMismatch    ;
-    CALL    #ParseEntryNameSpaces   ; parse X spaces, X{0,...,3}
-    JNZ     OPN_DIRentryMismatch    ; if a char entry <> space, loop back
-; ----------------------------------;
 OPN_EntryFound                      ; Y points on the file attribute (11th byte of entry)
 ; ----------------------------------;
-    MOV     &DIREntryOfst,Y         ; reload DIRentry
-    MOV     SD_BUF+26(Y),&ClusterL  ; first clusterL of file
-    MOV     SD_BUF+20(Y),&ClusterH  ; first clusterH of file
+;    MOV     W,&DIREntryOfst         ;
+    MOV     SD_BUF+14H(W),&ClusterH ; first clusterH of file
+    MOV     SD_BUF+1Ah(W),&ClusterL ; first clusterL of file
 OPN_EntryFoundNext
-    BIT.B   #10h,SD_BUF+11(Y)       ; test if Directory or File
+    BIT.B   #10h,SD_BUF+0Bh(W)      ; test if Directory or File
     JZ      OPN_FileFound           ; is a file
 ; ----------------------------------;
 OPN_DIRfound                        ; entry is a DIRECTORY
@@ -676,16 +697,17 @@ OPN_DIRfound                        ; entry is a DIRECTORY
     JNZ     OPN_DIRfoundNext        ;
     CMP     #0,&ClusterL            ; case of ".." entry, when parent directory is root
     JNZ     OPN_DIRfoundNext        ;
-    MOV     #2,&ClusterL            ; set cluster as RootDIR cluster
+OPN_AntiSlashFirstNext
+    MOV     #2,&ClusterL            ; set clusterL as RootDIR cluster
 OPN_DIRfoundNext                    ;
-    CMP     rDOCON,TOS              ; EOS reached ?
-    JNZ     OPN_SearchDirSector     ; no: (we presume that FirstNotEqualChar = "\") ==> loop back
+    CMP     TOS,rDOCON              ; EOS reached ?
+    JNC     OPN_SearchInDIR         ; no: (rDOCON points after "\") ==> loop back
 ; ----------------------------------;
 OPN_SetCurrentDIR                   ; -- open_type ptr  PathName_PTR is set on name of this DIR
 ; ----------------------------------;
     MOV     &ClusterL,&DIRClusterL  ;
     MOV     &ClusterH,&DIRclusterH  ;
-    MOV     #0,0(PSP)               ; -- open_type ptr      open_type = 0
+    MOV     #0,0(PSP)               ; -- open_type ptr      set open_type = 0 = DIR
     JMP     OPN_Dir
 ; ----------------------------------;
 OPN_FileFound                       ; -- open_type ptr  PathName_PTR is set on name of file
@@ -714,7 +736,8 @@ OPN_Dir                             ;
 OPEN_QDIR                           ;
 ; ----------------------------------;
     CMP     #0,W                    ;
-    JZ      OPEN_LOAD_END           ; nothing to do
+    JNZ     OPEN_QLOAD              ; nothing else to do
+    MOV @IP+,PC                     ;
 ; ----------------------------------;
 OPEN_QLOAD                          ;
 ; ----------------------------------;
@@ -737,15 +760,10 @@ OPEN_Error                          ; S= error
 ; ----------------------------------;
 ; Error 1  : PathNameNotFound       ; S = error 1
 ; Error 2  : NoSuchFile             ; S = error 2
-; Error 4  : DIRisFull              ; S = error 4
-; Error 8  : alreadyOpen            ; S = error 8
-; Error 16 : NomoreHandle           ; S = error 16
+; Error 4  : alreadyOpen            ; S = error 4
+; Error 8  : NomoreHandle           ; S = error 8
 ; ----------------------------------;
-    mDOCOL                          ; set ECHO, type Pathname, type #error, type "< OpenError"; no return
-    .word   ECHO                    ;
-    .word   XSQUOTE                 ; don't use S register
-    .byte   11,"< OpenError"        ;
-    .word   BRAN,ABORT_SD           ; to insert S error as flag, no return
+    MOV #SD_CARD_FILE_ERROR,PC      ;
 ; ----------------------------------;
 
     .IFDEF BOOTLOADER
@@ -756,17 +774,12 @@ OPEN_Error                          ; S= error
 ; here we are after INIT_FORTH
 ; performs bootstrap from SD_CARD\BOOT.4th file, ready to test SYSRSTIV|USERSYS value
 XBOOT       CALL &HARD_APP          ; WARM first calls HARD_APP (which includes INIT_HARD_SD)
-            BIT.B #CD_SD,&SD_CDIN   ; SD_memory in SD_Card socket ?
-            JZ BOOT_YES             ; if yes
-AbortBoot   MOV #WARM+4,PC          ; if no, resume with WARM+4, without return
-; ----------------------------------;
-BOOT_YES    MOV #PSTACK-2,PSP       ; preserve SYSRSTIV|USERSYS in TOS for BOOT.4TH tests
-            MOV #0,0(PSP)           ; set 0 for next SYS use
-            mDOCOL                  ;
-    .word XSQUOTE                   ; -- SYSRSTIV|USERSYS addr u
-    .byte 15,"LOAD\34 BOOT.4TH\34"  ; LOAD" BOOT.4TH" issues error 2 if no such file...
-;    .byte 22,"NOECHO LOAD\34 BOOT.4TH\34"  ; LOAD" BOOT.4TH" issues error 2 if no such file...
-    .word BRAN,QUIT4                ; to interpret this string, then loop back to QUIT
+            MOV #PSTACK-2,PSP       ; preserve SYSRSTIV|USERSYS in TOS for BOOT.4TH tests
+            MOV #0,0(PSP)           ; set TOS = 0 for the next of XBOOT
+            mASM2FORTH              ;
+            .word XSQUOTE           ; -- SYSRSTIV|USERSYS addr u
+            .byte 15,"LOAD\34 BOOT.4TH\34"  ; LOAD" BOOT.4TH" issues error 2 if no such file...
+            .word BRAN,QUIT4        ; to interpret this string, then loop back to QUIT1/QUIT2
 ; ----------------------------------;
 
 ; ==================================;
@@ -778,6 +791,6 @@ BOOT_YES    MOV #PSTACK-2,PSP       ; preserve SYSRSTIV|USERSYS in TOS for BOOT.
 ; ==================================;
             FORTHWORD "NOBOOT"      ; to disable BOOT
 ; ==================================;
-            MOV #WARM,&PUCNEXT      ; removes XBOOT from PUC chain.
+NOBOOT      MOV #WARM,&PUCNEXT      ; removes XBOOT from PUC chain.
             MOV @IP+,PC             ;
     .ENDIF

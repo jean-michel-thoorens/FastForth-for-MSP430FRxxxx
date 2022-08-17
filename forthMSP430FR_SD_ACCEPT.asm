@@ -62,11 +62,11 @@ SDA_EndOfLine                       ; -- SDIB_org len
 SDA_MoveChar                        ;
 ; ----------------------------------;
         CMP     TOS,X               ; 1 len = SDIB_len ?
-        JZ      YEMIT               ; 2 yes, don't move char to dst
+        JZ      QYEMIT              ; 2 yes, don't move char to dst
         MOV.B   Y,0(W)              ; 3 move char to dst
         ADD     #1,W                ; 1 increment SDIB_ptr
         ADD     #1,TOS              ; 1 increment len of moved chars
-        JMP     YEMIT               ; 9/6~ send echo to terminal if ECHO, do nothing if NOECHO
+        JMP     QYEMIT              ; 9/6~ send echo to terminal if ECHO, do nothing if NOECHO
 ; ----------------------------------; 29/26~ char loop, add 14~ for readsectorW one char ==> 43/40~ ==> 186/200 kbytes/s @ 8MHz
 SDA_GetFileNextSect                 ; -- SDIB_org len
 ; ----------------------------------;

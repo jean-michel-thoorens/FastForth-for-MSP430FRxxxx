@@ -4,7 +4,7 @@
 ::echo %2
 ::echo %~dp1..\inc\%~n2.pat
 
-@ECHO OFF
+::@ECHO OFF
 
 ::first select part .4TH or .f
 
@@ -51,22 +51,22 @@ exit
 
 
 :preprocessF
-@%~d1\prog\gema.exe -nobackup -line -t '-\r\n=\r\n' -f  %~dp1..\inc\%~n2.pat %~dpn1.f %~dpn1.4TH
-@call  %~d1\config\Select.bat SelectDeviceId %~dp1..\inc\%~n2.pat
+%~dp1..\prog\gema.exe -nobackup -line -t '-\r\n=\r\n' -f  %~dp1..\inc\%~n2.pat %~dpn1.f %~dpn1.4TH
+call  %~dp1..\config\Select.bat SelectDeviceId %~dp1..\inc\%~n2.pat
 
 :DownloadF
-@taskkill /F /IM ttermpro.exe 1> NUL 2>&1
+taskkill /F /IM ttermpro.exe 1> NUL 2>&1
 
 :Win32F
-@"C:\Program Files\teraterm\ttpmacro.exe" /V %~d1\config\SendFile.ttl %~dpn1.4TH /C %3 %deviceid% 1> NUL 2>&1
-@IF NOT ERRORLEVEL 1 GOTO EndF
+"C:\Program Files\teraterm\ttpmacro.exe" /V %~dp1..\config\SendFile.ttl %~dpn1.4TH /C %3 %deviceid% 1> NUL 2>&1
+IF NOT ERRORLEVEL 1 GOTO EndF
 
 :Win64F
-@"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d1\config\SendFile.ttl %~dpn1.4TH /C %3 %deviceid%
+"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~dp1..\config\SendFile.ttl %~dpn1.4TH /C %3 %deviceid%
 
 :EndF
-@MOVE "%~dpn1.4TH" "%~dp1LAST.4TH" > NUL
-call  %~d1\config\Select.bat SelectDevice %~dp1..\inc\%~n2.pat
+MOVE "%~dpn1.4TH" "%~dp1LAST.4TH" > NUL
+call  %~dp1..\config\Select.bat SelectDevice %~dp1..\inc\%~n2.pat
 if not exist  %~dp1SD_%device:~3% MD %~dp1SD_%device:~3% > NUL 
 COPY /y %~dp1LAST.4TH %~dp1SD_%device:~3%\%~n1.4TH > NUL
 exit
@@ -103,16 +103,16 @@ goto badend
 
 :Download4th
 
-@taskkill /F /IM ttermpro.exe 1> NUL 2>&1
+taskkill /F /IM ttermpro.exe 1> NUL 2>&1
 
 :Win324th
-@"C:\Program Files\teraterm\ttpmacro.exe" /V %~d1\config\SendFile.ttl %~dpn1.4TH /C %2 0 1> NUL 2>&1
-@IF NOT ERRORLEVEL 1 GOTO End4th
+"C:\Program Files\teraterm\ttpmacro.exe" /V %~dp1..\config\SendFile.ttl %~dpn1.4TH /C %2 0 1> NUL 2>&1
+IF NOT ERRORLEVEL 1 GOTO End4th
 
 :Win644th
-@"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~d1\config\SendFile.ttl %~dpn1.4TH /C %2 0
+"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~dp1..\config\SendFile.ttl %~dpn1.4TH /C %2 0
 
 :End4th
-@COPY "%~dpn1.4TH" "%~dp1LAST.4TH" > NUL
+::@COPY "%~dpn1.4TH" "%~dp1LAST.4TH" > NUL
 exit
 

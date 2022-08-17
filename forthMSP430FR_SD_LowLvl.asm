@@ -10,9 +10,6 @@ BytsPerSec      .equ 512
 RW_Sector_CMD                       ;WX <=== CMD17 or CMD24 (read or write Sector CMD)
 ; ==================================;
     BIC.B   #CS_SD,&SD_CSOUT        ; set Chip Select low
-    BIT.B   #CD_SD,&SD_CDIN         ; test Card Detect: memory card present ?
-    JZ      ComputePhysicalSector   ; yes
-    MOV     #COLD,PC                ; no: force COLD
 ; ----------------------------------;
 ComputePhysicalSector               ; input = logical sector...
 ; ----------------------------------;
@@ -119,7 +116,9 @@ SPI_PUT_END MOV.B &SD_RXBUF,W       ;3
             MOV @RSP+,PC            ;4
 ; ----------------------------------;
 
-        ASMWORD "R_SECT_WX"         ; Read SECTor W=lo, X=Hi
+    .IFDEF SD_CARD_READ_WRITE
+        ASMWORD "RD_SECT"           ; ReaD SECTor W=lo, X=Hi
+    .ENDIF ; SD_CARD_READ_WRITE
 ; ==================================;
 ReadSectorWX                        ; SWX read a logical sector
 ; ==================================;
@@ -154,7 +153,7 @@ ReadWriteHappyEnd                   ; <==== WriteSector
 
     .IFDEF SD_CARD_READ_WRITE
 
-        ASMWORD "W_SECT_WX"         ; Write SECTor W=lo, X=Hi
+        ASMWORD "WR_SECT"           ; WRite SECTor W=lo, X=Hi
 ; ==================================;
 WriteSectorWX                       ; write a logical sector
 ; ==================================;
@@ -188,53 +187,76 @@ CheckWriteState                     ;
 
     .ENDIF ; SD_CARD_READ_WRITE
 
-; SD Error n°
-; High byte
+; ----------------------------------;
+; SD ERRORS
+; ----------------------------------;
+; 0   = NO SD_CARD
+; ----------------------------------;
+; 
+; ----------------------------------;
+; High byte = 0 : FILE level error
+; ----------------------------------;
+;       low byte
+;       $1  = PathNameNotFound
+;       $2  = NoSuchFile      
+;       $4  = alreadyOpen     
+;       $8  = NomoreHandle    
+;       $10 = InvalidPathname
+;       $20 = DiskFull
+;       
+; ----------------------------------;
+; High byte <> 0 : SD_CARD level error 
+; ----------------------------------;
 ; 1   = CMD17    read error
 ; 2   = CMD24    write error
 ; 4   = CMD0     time out (GO_IDLE_STATE)
 ; 8   = ACMD41   time out (APP_SEND_OP_COND)
-; $10 = CMD16    time out (SET_BLOCKLEN)
-; $20 = not FAT32 media, low byte = partition ID
+; $10 = partition error, low byte = partition ID <> FAT32
+;
+;       low byte, if CMD R1 response:
+;       bit0 = In Idle state
+;       bit1 = Erase reset
+;       bit2 = Illegal command
+;       bit3 = Command CRC error
+;       bit4 = erase sequence error
+;       bit5 = address error
+;       bit6 = parameter error
 
-; low byte, if CMD R1 response : %0xxx_xxxx
-; 1th bit = In Idle state
-; 2th bit = Erase reset
-; 3th bit = Illegal command
-; 4th bit = Command CRC error
-; 5th bit = erase sequence error
-; 6th bit = address error
-; 7th bit = parameter error
+;       low byte if Data Response Token
+;       Every data block written to the card will be acknowledged by a data response token.
+;       It is one byte long and has the following format:
+;       %xxxx_sss0 with bits(3-1) = Status
+;       The meaning of the status bits is defined as follows:
+;       '010' - Data accepted.
+;       '101' - Data rejected due to a CRC error.
+;       '110' - Data Rejected due to a Write Error
 
-; Data Response Token
-; Every data block written to the card will be acknowledged by a data response token.
-; It is one byte long and has the following format:
-; %xxxx_sss0 with bits(3-1) = Status
-;The meaning of the status bits is defined as follows:
-;'010' - Data accepted.
-;'101' - Data rejected due to a CRC error.
-;'110' - Data Rejected due to a Write Error
-
-; ----------------------------------;
-SD_CARD_ERROR                       ; <=== SD_INIT errors 4,8,$10 from forthMSP430FR_SD_INIT.asm
-; ----------------------------------;
-    SWPB S                          ; High Level error in High byte
-    ADD &SD_RXBUF,S                 ; add SPI(GET) return value as low byte error
-SD_CARD_ID_ERROR                    ; <=== SD_INIT error $20 from forthMSP430FR_SD_INIT.asm
-    BIS.B #CS_SD,&SD_CSOUT          ; Chip Select high
-    mASM2FORTH                      ;
-    .word   ECHO
-    .word   XSQUOTE                 ; don't use S register
-    .byte   11,"< SD Error!"        ;
-; ----------------------------------;
-ABORT_SD                            ; <=== OPEN file errors from forthMSP430FR_SD_LOAD.asm
-; ----------------------------------;
-    mNEXTADR                        ;
-    SUB #2,PSP                      ;
-    MOV TOS,0(PSP)                  ;
-    MOV #10h,&BASEADR               ; select hex
-    MOV S,TOS                       ;
-    mASM2FORTH                      ;
-    .word UDOT,ABORT_TERM           ; no return...
-; ----------------------------------;
+; ------------------------------;
+SD_CARD_ERROR                   ; <=== SD_INIT errors 4,8,$10 from forthMSP430FR_SD_INIT.asm
+; ------------------------------;
+        SWPB S                  ; High Level error in High byte
+        BIS &SD_RXBUF,S         ; add SPI(GET) return value as low byte error
+SD_CARD_INIT_ERROR              ; <=== from forthMSP430FR_SD_INIT.asm
+SD_CARD_FILE_ERROR              ; <=== from forthMSP430FR_SD_LOAD.asm, forthMSP430FR_SD_RW.asm 
+NO_SD_CARD                      ; from forthMSP430FR_SD_LOAD(Open_File)
+        MOV S,TOS               ;
+        CALL #ABORT_TERM+4      ;
+        CALL #INIT_FORTH        ;
+    .IFDEF BOOTLOADER           ;
+        .word   NOBOOT          ;
+    .ENDIF
+        .word   ECHO            ;
+        .word   XSQUOTE         ;
+        .byte   4,27,"[7m"      ;
+        .word   TYPE            ;
+        .word   XSQUOTE         ;
+        .byte   10,"SD_ERROR $" ;
+        .word   TYPE            ;
+        .word   LIT,10h         ;
+        .word   LIT,BASEADR,STORE;
+        .word   UDOT            ;
+        .word   LIT,10          ;
+        .word   LIT,BASEADR,STORE;
+        .word   BRAN,SDABORT_END;   to set normal video display then goto ABORT
+; ------------------------------;
 

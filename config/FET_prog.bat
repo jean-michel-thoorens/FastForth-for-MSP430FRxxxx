@@ -1,26 +1,35 @@
 ::@echo off
 
-@if F%1==F (
-    @echo no file to do that! 
+set target=%~n1
+IF EXIST config\Select.bat (
+:: used by scite commands Ctrl+1 or Ctrl+4
+	call config\Select.bat SelectDevice  %%target%%
+    	IF EXIST %~dp1binaries\%~n1.txt (	
+	    call %~dp1prog\msp430flasher -s -m SBW2 -u -n %%device%% -v -w %~dp1binaries\%~n1.txt  -z [RESET,VCC]
+	) else ( 
+:: hex files generate error 60: verify error 
+            IF EXIST %~dp1binaries\%~n1.hex (
+                call %~dp1prog\msp430flasher -s -m SBW2 -u -n %%device%% -v -w %~dp1binaries\%~n1.hex  -z [RESET,VCC]
+                )
+	)
 ) else (
-    @call  %~d1\config\Select.bat SelectDevice %1
-    @IF EXIST %~dp1binaries\%~n1.txt GOTO progtxt
-    @IF EXIST %~dp1binaries\%~n1.hex GOTO proghex
+    IF EXIST %~dp1..\config\Select.bat (
+:: used by drag n drop on \binaries\FET_prog.bat
+	call  %~dp1..\config\Select.bat SelectDevice %%target%%
+        IF EXIST %~n1.txt (
+	    call %~dp1..\prog\msp430flasher -s -m SBW2 -u -n %%device%% -v -w %~n1.txt  -z [RESET,VCC]
+        ) else (
+:: hex files generate error 60: verify error 
+            IF EXIST %~n1.hex (
+                call %~dp1..\prog\msp430flasher -s -m SBW2 -u -n %%device%% -v -w %~n1.hex  -z [RESET,VCC]
+                )
+        )
+    )
 )
+::pause
 @exit
-
-:progtxt
-%~d1\prog\msp430flasher -s -m SBW2 -u -n %device% -v -w %~dp1binaries\%~n1.txt  -z [RESET,VCC]
-@exit
-
-:proghex
-%~d1\prog\msp430flasher -s -m SBW2 -u -n %device% -v -w %~dp1binaries\%~n1.hex  -z [RESET,VCC]
-@exit
-
-:: your git copy must be the root of a virtual drive
 
 :: %n1 = filename of file to flash
-:: %nx1 = filename.ext of file to flash
 :: -s : force update
 :: -m : select SBW2 mode
 :: -u : Unlocks locked flash memory (INFOA) for writing.

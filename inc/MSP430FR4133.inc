@@ -5,7 +5,7 @@
 
 DEVICE = "MSP430FR4133"
 FR2_FAMILY
-
+FLL     ; Frequency Locked Loop CLOCK
 ; ----------------------------------------------
 ; MSP430FR4133 MEMORY MAP
 ; ----------------------------------------------

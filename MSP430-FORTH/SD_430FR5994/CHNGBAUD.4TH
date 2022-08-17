@@ -1,4 +1,8 @@
 
+; ------------
+; CHNGBAUD.4th for MSP_EXP430FR5994
+; ------------
+
     CODE I2CTERM_ABORT
     SUB #4,R15
     MOV R14,2(R15)
@@ -7,19 +11,19 @@
     0<> IF MOV #0,R14 THEN
     MOV R14,0(R15)
     MOV &$180A,R14
-    SUB #309,R14
+    SUB #400,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V3.9 please!"
+    ABORT" FastForth V4.0 please!"
     ABORT" <-- Ouch! unexpected I2C_FastForth target!"
     RST_RET
     ;
 
 I2CTERM_ABORT
 
-; ------------
-; CHNGBAUD.4th for MSP_EXP430FR5994
-; ------------
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.4th for MSP_EXP430FR5994)
+; ------------------------------------------------------------------
 
     [UNDEFINED] DUP [IF]
     CODE DUP
@@ -52,7 +56,10 @@ BW1 SUB #2,R15
     [THEN]
 
     [UNDEFINED] CR [IF]
-    DEFER CR
+
+    CODE CR
+    MOV #$409E,R0
+    ENDCODE
 
     :NONAME
     $0D EMIT $0A EMIT
@@ -70,7 +77,7 @@ BW1 SUB #2,R15
     CODE U/
     SUB #2,R15
     MOV #0,0(R15)
-    CALL #$403E
+    CALL #$4028
     MOV @R15,R14
     ADD #4,R15
     MOV @R13+,R0
@@ -128,15 +135,15 @@ FW1 AND #0,R14
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC8,R14
-    ADD #4,&$1DC8
-    MOV #$40AC,0(R14)
+    MOV &$1DC0,R14
+    ADD #4,&$1DC0
+    MOV #$4096,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC8,0(R14)
+    MOV &$1DC0,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -144,9 +151,9 @@ FW1 AND #0,R14
 
     [UNDEFINED] ELSE [IF]
     CODE ELSE
-    ADD #4,&$1DC8
-    MOV &$1DC8,R10
-    MOV #$40B2,-4(R10)
+    ADD #4,&$1DC0
+    MOV &$1DC0,R10
+    MOV #$409C,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -154,8 +161,7 @@ FW1 AND #0,R14
     ENDCODE IMMEDIATE
     [THEN]
 
-    [UNDEFINED] DO
-    [IF]
+    [UNDEFINED] DO [IF]
     HDNCODE XDO
     MOV #$8000,R9
     SUB @R15+,R9
@@ -169,8 +175,8 @@ FW1 AND #0,R14
     CODE DO
     SUB #2,R15
     MOV R14,0(R15)
-    ADD #2,&$1DC8
-    MOV &$1DC8,R14
+    ADD #2,&$1DC0
+    MOV &$1DC0,R14
     MOV #XDO,-2(R14)
     ADD #2,&$1C00
     MOV &$1C00,R10
@@ -192,8 +198,8 @@ BW1 BIT #$100,R2
 
     CODE LOOP
     MOV #XLOOP,R9
-BW2 ADD #4,&$1DC8
-    MOV &$1DC8,R10
+BW2 ADD #4,&$1DC0
+    MOV &$1DC0,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     BEGIN
@@ -223,20 +229,19 @@ BW2 ADD #4,&$1DC8
     [UNDEFINED] CASE [IF]
     : CASE 0 ; IMMEDIATE
 
-
     : OF
-    1+
-    >R
+    1+	
+    >R	
     POSTPONE OVER POSTPONE =
-    POSTPONE IF
-    POSTPONE DROP
-    R>
+    POSTPONE IF	
+    POSTPONE DROP	
+    R>	
     ; IMMEDIATE
 
     : ENDOF
-    >R
+    >R	
     POSTPONE ELSE
-    R>
+    R>	
     ; IMMEDIATE
 
     : ENDCASE
@@ -247,27 +252,22 @@ BW2 ADD #4,&$1DC8
     ; IMMEDIATE
     [THEN]
 
+; --------------------------
+; end of definitions we need
+; --------------------------
+
     [UNDEFINED] S_ [IF]
     CODE S_
-    MOV #0,&$1DC0
-    COLON
-    $401E ,
-    $20 WORD
-    HI2LO
-    MOV.B @R14,R14
-    ADD #1,R14
-    BIT #1,R14
-    ADDC R14,&$1DC8
-    MOV @R15+,R14
-    MOV @R1+,R13
-    MOV #$20,&$1DC0
-    MOV @R13+,R0
+    SUB #2,R15
+    MOV R14,0(R15)
+    MOV #$20,R14
+    MOV #S"+10,R0
     ENDCODE IMMEDIATE
     [THEN]
 
     [UNDEFINED] ESC [IF]
     CODE ESC
-    CMP #0,&$1DBC
+    CMP #0,&$1DB4
     0= IF MOV @R13+,R0
     THEN
     COLON
@@ -461,6 +461,7 @@ BW2 ADD #4,&$1DC8
     $1802 !
     CR ESC [7m
     ." Change baudrate in Teraterm, save its setup, then reset target."
+    ESC [0m
     ;
 
     CHNGBAUD

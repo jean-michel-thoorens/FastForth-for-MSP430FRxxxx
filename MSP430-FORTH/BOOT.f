@@ -41,13 +41,14 @@
 \ #44 $2C MPUSEG2IFG segment 2 memory violation (PUC)
 \ #46 $2E MPUSEG3IFG segment 3 memory violation (PUC)
 \
-\ emulated SYSRSTIV values added by FastForth SYS
-\ -----------------------------------------------
-\ n SYS  ( n<0)     : user WIPE = Deep Reset: restores FastForth as it was "flashed"
-\ -3                : reset after FastForth "flashing".
-\ SYS               : WARM
-\ n SYS  (n even )  : user COLD (don't reuse hardware SYSRSTIV!)
-\ n SYS  (n odd )   : user WARM.
+\ emulated SYSRSTIV values added by FastForth
+\ -------------------------------------------
+\ -n SYS            : BOR + Deep Reset --> WARM display #-1  
+\ <SW1+RESET>       : BOR + Deep Reset --> WARM display #-1
+\ SYS               : NO PUC -->  -->  --> WARM display #0
+\ n SYS  (n odd )   : NO PUC -->  -->  --> WARM display #n (odd)
+\ n SYS  (n even )  : BOR    -->  -->  --> WARM display #n (even)
+\ <RESET>           : BOR    -->  -->  --> WARM display #4
 \
 \ note
 \ ------------------------------------------------------------------------------
@@ -60,10 +61,13 @@
 \
 \ it's an example:
 
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.f)
+; ------------------------------------------------------------------
+
+    [UNDEFINED] DUP [IF]
 \ https://forth-standard.org/standard/core/DUP
 \ DUP      x -- x x      duplicate top of stack
-    [UNDEFINED] DUP
-    [IF]
     CODE DUP
 BW1 SUB #2,PSP      \ 2  push old TOS..
     MOV TOS,0(PSP)  \ 3  ..onto stack
@@ -79,18 +83,16 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
+    [UNDEFINED] DROP [IF]
 \ https://forth-standard.org/standard/core/DROP
 \ DROP     x --          drop top of stack
-    [UNDEFINED] DROP
-    [IF]
     CODE DROP
     MOV @PSP+,TOS   \ 2
     MOV @IP+,PC     \ 4
     ENDCODE
     [THEN]
 
-    [UNDEFINED] =
-    [IF]
+    [UNDEFINED] = [IF]
 \ https://forth-standard.org/standard/core/Equal
 \ =      x1 x2 -- flag         test x1=x2
     CODE =
@@ -101,8 +103,7 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
-    [UNDEFINED] +
-    [IF]
+    [UNDEFINED] + [IF]
 \ https://forth-standard.org/standard/core/Plus
 \ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
     CODE +
@@ -111,8 +112,7 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
-    [UNDEFINED] EXECUTE
-    [IF]
+    [UNDEFINED] EXECUTE [IF]
 \ https://forth-standard.org/standard/core/EXECUTE
 \ EXECUTE   i*x xt -- j*x   execute Forth word at 'xt'
     CODE EXECUTE
@@ -122,18 +122,23 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
-\ ------------------------------------------------------------------------------
-\ WARNING !
-\ ------------------------------------------------------------------------------
-\ it is not recommended here to compile then execute a definition
-\ because the risk of crushing thereafter.
-\ Interpreting mode as below is required:
-\ ------------------------------------------------------------------------------
-    DUP 4 =                 \ TOS = SYS value
-    [IF]                    \ if PUC event is <SW1+RESET> or -1 SYS
-        DROP
+; --------------------------
+; end of definitions we need
+; --------------------------
+
+; ------------------------------------------------------------------------------
+; WARNING !
+; ------------------------------------------------------------------------------
+; it is not recommended here to compile then execute a definition
+; because the risk of crushing thereafter.
+; Interpreting mode as below is required:
+; ------------------------------------------------------------------------------
+
+    DUP 6 =                 \ TOS = SYS value
+    [IF]                    \ if <RESET> | 6 SYS
+        DROP                \
         RST_RET             \ remove definitions above
         LOAD" SD_TEST.4TH"  \ load a file to test the SD_Card driver
     [ELSE]                  \ else
-        ' SYS $0A + EXECUTE \ return to n SYS to remove definitions above
+        ' SYS $0E + EXECUTE \ TOS2WARM address, does same as n SYS (n odd)
     [THEN]                  \ then

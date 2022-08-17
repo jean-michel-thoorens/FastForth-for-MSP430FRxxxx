@@ -14,6 +14,11 @@
 \
 \ COLD            \ uncomment for this TEST which must not disrupt the downloading process
 
+; ------------
+; CHNGBAUD.f
+; ------------
+
+\ first, we do some tests allowing the download
     CODE I2CTERM_ABORT
     SUB #4,PSP
     MOV TOS,2(PSP)
@@ -22,23 +27,23 @@
     0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (UART TERMINAL), set TOS = 0
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #309,TOS            \ FastForth V3.9
+    SUB #400,TOS            \ FastForth V4.0
     COLON
     $0D EMIT                \ return to column 1 without CR
-    ABORT" FastForth V3.9 please!"
+    ABORT" FastForth V4.0 please!"
     ABORT" <-- Ouch! unexpected I2C_FastForth target!"
     RST_RET             \ remove ABORT_UARTI2CS definition before resuming
     ;
 
 I2CTERM_ABORT
 
-; ------------
-; CHNGBAUD.f
-; ------------
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.f)
+; ------------------------------------------------------------------
 
+    [UNDEFINED] DUP [IF]    \ define DUP and DUP?
 \ https://forth-standard.org/standard/core/DUP
 \ DUP      x -- x x      duplicate top of stack
-    [UNDEFINED] DUP [IF]    \ define DUP and DUP?
     CODE DUP
 BW1 SUB #2,PSP      \ 2  push old TOS..
     MOV TOS,0(PSP)  \ 3  ..onto stack
@@ -54,18 +59,18 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
+    [UNDEFINED] DROP [IF]
 \ https://forth-standard.org/standard/core/DROP
 \ DROP     x --          drop top of stack
-    [UNDEFINED] DROP [IF]
     CODE DROP
     MOV @PSP+,TOS   \ 2
     MOV @IP+,PC     \ 4
     ENDCODE
     [THEN]
 
+    [UNDEFINED] OVER [IF]
 \ https://forth-standard.org/standard/core/OVER
 \ OVER    x1 x2 -- x1 x2 x1
-    [UNDEFINED] OVER [IF]
     CODE OVER
     MOV TOS,-2(PSP)     \ 3 -- x1 (x2) x2
     MOV @PSP,TOS        \ 2 -- x1 (x2) x1
@@ -74,27 +79,31 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
+    [UNDEFINED] CR [IF]
 \ https://forth-standard.org/standard/core/CR
 \ CR      --               send CR+LF to the output device
-    [UNDEFINED] CR [IF]
-    DEFER CR    \ DEFERed definition, by default executes that of :NONAME
+
+\    DEFER CR    \ DEFERed definition, by default executes that of :NONAME
+    CODE CR
+    MOV #NEXT_ADR,PC    \ compile same as DEFER
+    ENDCODE
 
     :NONAME
     'CR' EMIT 'LF' EMIT
     ; IS CR
     [THEN]
 
+    [UNDEFINED] 1+ [IF]
 \ https://forth-standard.org/standard/core/OnePlus
 \ 1+      n1/u1 -- n2/u2       add 1 to TOS
-    [UNDEFINED] 1+ [IF]
     CODE 1+
     ADD #1,TOS
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
-\ U/   u1 u2 -- q   unsigned 16/16->q16
     [UNDEFINED] U/ [IF]
+\ U/   u1 u2 -- q   unsigned 16/16->q16
     CODE U/
     SUB #2,PSP
     MOV #0,0(PSP)   \ -- u1lo u1hi u2
@@ -105,9 +114,9 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
+    [UNDEFINED] >R [IF]
 \ https://forth-standard.org/standard/core/toR
 \ >R    x --   R: -- x   push to return stack
-    [UNDEFINED] >R [IF]
     CODE >R
     PUSH TOS
     MOV @PSP+,TOS
@@ -115,9 +124,9 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
+    [UNDEFINED] R> [IF]
 \ https://forth-standard.org/standard/core/Rfrom
 \ R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
-    [UNDEFINED] R> [IF]
     CODE R>
     SUB #2,PSP      \ 1
     MOV TOS,0(PSP)  \ 3
@@ -126,9 +135,9 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
+    [UNDEFINED] = [IF]
 \ https://forth-standard.org/standard/core/Equal
 \ =      x1 x2 -- flag         test x1=x2
-    [UNDEFINED] = [IF]
     CODE =
     SUB @PSP+,TOS   \ 2
     0<> IF          \ 2
@@ -140,9 +149,9 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
+    [UNDEFINED] < [IF]  \ define < and >
 \ https://forth-standard.org/standard/core/less
 \ <      n1 n2 -- flag        test n1<n2, signed
-    [UNDEFINED] < [IF]  \ define < and >
     CODE <
     SUB @PSP+,TOS   \ 1 TOS=n2-n1
     S< ?GOTO FW1    \ 2 signed
@@ -162,9 +171,9 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE
     [THEN]
 
+    [UNDEFINED] IF [IF] \ define IF THEN
 \ https://forth-standard.org/standard/core/IF
 \ IF       -- IFadr    initialize conditional forward branch
-    [UNDEFINED] IF [IF]
     CODE IF
     SUB #2,PSP          \
     MOV TOS,0(PSP)      \
@@ -184,9 +193,9 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE IMMEDIATE
     [THEN]
 
+    [UNDEFINED] ELSE [IF]
 \ https://forth-standard.org/standard/core/ELSE
 \ ELSE     IFadr -- ELSEadr        resolve forward IF branch, leave ELSEadr on stack
-    [UNDEFINED] ELSE [IF]
     CODE ELSE
     ADD #4,&DP              \ make room to compile two words
     MOV &DP,W               \ W=HERE+4
@@ -198,10 +207,9 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE IMMEDIATE
     [THEN]
 
+    [UNDEFINED] DO [IF] \ define DO LOOP +LOOP
 \ https://forth-standard.org/standard/core/DO
 \ DO       -- DOadr   L: -- 0
-    [UNDEFINED] DO
-    [IF]                \ define DO LOOP +LOOP
     HDNCODE XDO         \ DO run time
     MOV #$8000,X        \ 2 compute 8000h-limit = "fudge factor"
     SUB @PSP+,X         \ 2
@@ -270,11 +278,11 @@ BW2 ADD #4,&DP              \ make room to compile two words
     ENDCODE IMMEDIATE
     [THEN]
 
+    [UNDEFINED] CASE [IF]   \ define CASE OF ENDOF ENDCASE
 \ https://forth-standard.org/standard/core/CASE
-    [UNDEFINED] CASE [IF]
     : CASE 0 ; IMMEDIATE \ -- #of-1
 
-    \ https://forth-standard.org/standard/core/OF
+\ https://forth-standard.org/standard/core/OF
     : OF \ #of-1 -- orgOF #of
     1+	                    \ count OFs
     >R	                    \ move off the stack in case the control-flow stack is the data stack.
@@ -300,21 +308,16 @@ BW2 ADD #4,&DP              \ make room to compile two words
     ; IMMEDIATE
     [THEN]
 
+; --------------------------
+; end of definitions we need
+; --------------------------
+
     [UNDEFINED] S_ [IF]
-    CODE S_             \           Squote alias with blank separator instead quote
-    MOV #0,&CAPS        \           turn CAPS OFF
-    COLON
-    XSQUOTE ,           \           compile run-time code
-    $20 WORD            \ -- c-addr (= HERE)
-    HI2LO
-    MOV.B @TOS,TOS      \ -- len    compile string
-    ADD #1,TOS          \ -- len+1
-    BIT #1,TOS          \           C = ~Z
-    ADDC TOS,&DP        \           store aligned DP
-    MOV @PSP+,TOS       \ --
-    MOV @RSP+,IP        \           pop paired with push COLON
-    MOV #$20,&CAPS      \           turn CAPS ON (default state)
-    MOV @IP+,PC         \ NEXT
+    CODE S_             \           Squote alias with blank instead quote separator
+    SUB #2,PSP
+    MOV TOS,0(PSP)
+    MOV #'SP',TOS
+    MOV #S"+10,PC       \           addr S" + 10 --> PC
     ENDCODE IMMEDIATE
     [THEN]
 
@@ -514,6 +517,7 @@ BW2 ADD #4,&DP              \ make room to compile two words
     TERMBRW_RST !               \ set UCAxBRW value in FRAM
     CR ESC [7m                  \ escape sequence to set reverse video
     ." Change baudrate in Teraterm, save its setup, then reset target."
+    ESC [0m
     ;
 
     CHNGBAUD

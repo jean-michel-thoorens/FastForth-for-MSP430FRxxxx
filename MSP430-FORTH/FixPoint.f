@@ -37,6 +37,10 @@
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 \
 
+; -----------------------------------------------------
+; FIXPOINT.f
+; -----------------------------------------------------
+
     CODE ABORT_FIXPOINT
     SUB #4,PSP
     MOV TOS,2(PSP)
@@ -45,37 +49,40 @@
     0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (FIXPOINT input), set TOS = 0
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #309,TOS        \                   FastForth V3.9
+    SUB #400,TOS            \ FastForth V4.0
     COLON
-    $0D EMIT    \ return to column 1 without CR
-    ABORT" FastForth V3.9 please!"
+    $0D EMIT                \ return to column 1 without CR
+    ABORT" FastForth V4.0 please!"
     ABORT" build FastForth with Q15.16_INPUT addon !"
-    RST_RET             \ if no abort remove this word
-    $1B EMIT $63 EMIT   \ send 'ESC c' (clear screen)
+    RST_RET                 \ if no abort remove this word
+    $1B EMIT $63 EMIT       \ send 'ESC c' (clear screen)
     ;
 
     ABORT_FIXPOINT
 
-; -----------------------------------------------------
-; FIXPOINT.f
-; -----------------------------------------------------
-
+    [DEFINED] {FIXPOINT} 
+    [IF] {FIXPOINT}
+    [THEN]
+    [UNDEFINED] {FIXPOINT}
+    [IF]
     MARKER {FIXPOINT}
 
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.f)
+; ------------------------------------------------------------------
+
+    [UNDEFINED] + [IF]
 \ https://forth-standard.org/standard/core/Plus
 \ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
-    [UNDEFINED] +
-    [IF]
     CODE +
     ADD @PSP+,TOS
     MOV @IP+,PC
     ENDCODE
     [THEN]
 
+    [UNDEFINED] R> [IF]
 \ https://forth-standard.org/standard/core/Rfrom
 \ R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
-    [UNDEFINED] R>
-    [IF]
     CODE R>
     SUB #2,PSP      \ 1
     MOV TOS,0(PSP)  \ 3
@@ -84,10 +91,9 @@
     ENDCODE
     [THEN]
 
+    [UNDEFINED] = [IF]
 \ https://forth-standard.org/standard/core/Equal
 \ =      x1 x2 -- flag         test x1=x2
-    [UNDEFINED] =
-    [IF]
     CODE =
     SUB @PSP+,TOS   \ 2
     0<> IF          \ 2
@@ -99,10 +105,9 @@
     ENDCODE
     [THEN]
 
+    [UNDEFINED] U< [IF]
 \ https://forth-standard.org/standard/core/Uless
 \ U<    u1 u2 -- flag       test u1<u2, unsigned
-    [UNDEFINED] U<
-    [IF]
     CODE U<
     SUB @PSP+,TOS   \ 2 u2-u1
     0<> IF
@@ -115,10 +120,9 @@
     ENDCODE
     [THEN]
 
+    [UNDEFINED] DABS [IF]
 \ https://forth-standard.org/standard/double/DABS
 \ DABS     d1 -- |d1|     absolute value
-    [UNDEFINED] DABS
-    [IF]
     CODE DABS
     AND #-1,TOS         \ clear V, set N
     S< IF               \
@@ -131,14 +135,13 @@
     ENDCODE
     [THEN]
 
+    [UNDEFINED] HOLDS [IF]
 \ https://forth-standard.org/standard/core/HOLDS
 \ Adds the string represented by addr u to the pictured numeric output string
 \ compilation use: <# S" string" HOLDS #>
 \ free chars area in the 32+2 bytes HOLD buffer = {26,23,2} chars with a 32 bits sized {hexa,decimal,binary} number.
 \ (2 supplementary bytes are room for sign - and decimal point)
 \ C HOLDS    addr u --
-    [UNDEFINED] HOLDS
-    [IF]
     CODE HOLDS
     MOV @PSP+,X         \ 2     X=src
 BW3 ADD TOS,X           \ 1     X=src_end
@@ -156,23 +159,32 @@ BW3 ADD TOS,X           \ 1     X=src_end
     ENDCODE
     [THEN]
 
+; --------------------------
+; end of definitions we need
+; --------------------------
+
+    [UNDEFINED] F+ [IF]
     CODE F+ \ add Q15.16|double numbers
     ADD @PSP+,2(PSP)    \ -- sumlo  d1hi d2hi
     ADDC @PSP+,TOS      \ -- sumlo sumhi
     MOV @IP+,PC
     ENDCODE
+    [THEN]
 
+    [UNDEFINED] F- [IF]
     CODE F- \ substract Q15.16|double numbers
     SUB @PSP+,2(PSP)    \ -- diflo d1hi d2hi
     SUBC TOS,0(PSP)     \ -- diflo difhi d2hi
     MOV @PSP+,TOS
     MOV @IP+,PC
     ENDCODE
+    [THEN]
 
     TLV_ORG 4 + @ $81F3 U<
     $81EF TLV_ORG 4 + @ U<
     = [IF]              ; MSP430FR413x subfamily without hardware_MPY
 
+    [UNDEFINED] UDM* [IF]
 \ unsigned multiply 32*32 = 64
 \ don't use S reg (keep sign)
     CODE UDM*
@@ -215,7 +227,9 @@ BW3 ADD TOS,X           \ 1     X=src_end
     MOV @RSP+,IP            \ 2
     MOV @IP+,PC
     ENDCODE
+    [THEN]
 
+    [UNDEFINED] F* [IF]
     CODE F*                         \ s15.16 * s15.16 --> s15.16 result
     MOV 2(PSP),S        \
     XOR TOS,S           \ 1s15 XOR 2s15 --> S keep sign of result
@@ -241,10 +255,12 @@ BW3 ADD TOS,X           \ 1     X=src_end
     THEN
     MOV @IP+,PC
     ENDCODE
+    [THEN]
 
+    [UNDEFINED] F#S [IF]
+    CODE F#S
 \ F#S    Qlo Qhi len -- Qhi 0   convert fractional part Qlo of Q15.16 fixed point number
 \                               with len digits
-    CODE F#S
     MOV @PSP,S          \ -- Qlo Qhi len        S = Qhi
     MOV #0,T            \                       T = count
     PUSHM #3,IP         \                       R-- IP Qhi count
@@ -273,9 +289,11 @@ BW3 ADD TOS,X           \ 1     X=src_end
     MOV #HOLDS_ORG,X    \ -- Qhi 0 len          X=HOLDS_ORG
     GOTO BW3            \ 36~ JMP HOLDS
     ENDCODE
+    [THEN]
 
     [ELSE] ; hardware multiplier
 
+    [UNDEFINED] F* [IF]
     CODE F* \ signed s15.16 multiplication --> s15.16 result
     MOV 4(PSP),&MPYS32L \ 5 Load 1st operand
     MOV 2(PSP),&MPYS32H \ 5
@@ -286,8 +304,9 @@ BW3 ADD TOS,X           \ 1     X=src_end
     MOV &RES2,TOS       \ 5
     MOV @IP+,PC
     ENDCODE
+    [THEN]
 
-
+    [UNDEFINED] F#S [IF]
 \ F#S    Qlo Qhi len -- Qhi 0   convert fractionnal part of Q15.16 fixed point number
 \                             with len digits
     CODE F#S
@@ -315,9 +334,11 @@ BW3 ADD TOS,X           \ 1     X=src_end
     MOV #HOLDS_ORG,X    \ -- Qhi 0 len          X=HOLDS_ORG
     GOTO BW3            \ 35~ JMP HOLDS+2
     ENDCODE
+    [THEN]
 
     [THEN]  ; end of hardware/software multiplier
 
+    [UNDEFINED] F/ [IF]
     CODE F/             \ Q15.16 / Q15.16 --> Q15.16 result
     MOV TOS,Y           \ 1 Y=DVRhi
     MOV @PSP+,W         \ 2 W=DVRlo
@@ -399,7 +420,9 @@ BW1 CMP Y,P             \ 1 REMhi = DVRhi ?
     MOV S,0(PSP)            \ 3 QUOTlo
     MOV @IP+,PC             \ 4
     ENDCODE
+    [THEN]
 
+    [UNDEFINED] F. [IF]
     CODE F. \ display a Q15.16 number with 4/5/16 digits after comma
     MOV TOS,S           \ S = sign
     MOV #4,T            \ T = 4     preset 4 digits for base 16 and by default
@@ -422,47 +445,27 @@ BW1 CMP Y,P             \ 1 REMhi = DVRhi ?
     R> SIGN #>      \ -- addr len       R-- IP
     TYPE $20 EMIT   \ --
     ;
+    [THEN]
 
+    [UNDEFINED] S>F [IF]
     CODE S>F    \ convert a signed number to a Q15.16 (signed) number
     SUB #2,PSP
     MOV #0,0(PSP)
     MOV @IP+,PC
     ENDCODE
+    [THEN]
 
     RST_SET
+
+    [THEN] \ endof [UNDEFINED] {FIXPOINT}
 
 ; -----------------------
 ; complement (volatile) for tests below
 ; -----------------------
 
-\ https://forth-standard.org/standard/core/Store
-\ !        x a-addr --   store cell in memory
-    [UNDEFINED] !
-    [IF]
-    CODE !
-    MOV @PSP+,0(TOS)    \ 4
-    MOV @PSP+,TOS       \ 2
-    MOV @IP+,PC         \ 4
-    ENDCODE
-    [THEN]
-
-\ https://forth-standard.org/standard/core/DOES
-\ DOES>    --          set action for the latest CREATEd definition
-    [UNDEFINED] DOES>
-    [IF]
-    CODE DOES>
-    MOV &LAST_CFA,W         \ W = CFA of CREATEd word
-    MOV #DODOES,0(W)        \ replace CFA (DOCON) by new CFA (DODOES)
-    MOV IP,2(W)             \ replace PFA by the address after DOES> as execution address
-    MOV @RSP+,IP
-    MOV @IP+,PC
-    ENDCODE
-    [THEN]
-
 \ https://forth-standard.org/standard/core/CONSTANT
 \ CONSTANT <name>     n --                      define a Forth CONSTANT
-    [UNDEFINED] CONSTANT
-    [IF]
+    [UNDEFINED] CONSTANT [IF]
     : CONSTANT
     CREATE
     HI2LO
@@ -474,8 +477,7 @@ BW1 CMP Y,P             \ 1 REMhi = DVRhi ?
     [THEN]
 
 \ https://forth-standard.org/standard/double/TwoCONSTANT
-    [UNDEFINED] 2CONSTANT
-    [IF]
+    [UNDEFINED] 2CONSTANT [IF]
     : 2CONSTANT \  udlo/dlo/Qlo udhi/dhi/Qhi --         to create double or Q15.16 CONSTANT
     CREATE , ,  \ compile Qhi then Qlo
     DOES>       \ execution part    addr -- Qhi Qlo
@@ -490,27 +492,23 @@ BW1 CMP Y,P             \ 1 REMhi = DVRhi ?
 
 \ https://forth-standard.org/standard/double/Dd
 \ D.     dlo dhi --           display d (signed)
-    [UNDEFINED] D.
-    [IF]
+    [UNDEFINED] D. [IF]
     CODE D.
-    MOV #U.,W   \ U. + 10 = D.
-    ADD #10,W
-    MOV W,PC
+    MOV #U.+10,PC   \ U. + 10 = D.
     ENDCODE
     [THEN]
 
 \ https://forth-standard.org/standard/core/BASE
 \ BASE    -- a-addr       holds conversion radix
-    [UNDEFINED] BASE
-    [IF]
+    [UNDEFINED] BASE [IF]
     BASEADR CONSTANT BASE
     [THEN]
 
     ECHO
 
-; -----------------------
-; (volatile) tests for FIXPOINT.asm|FIXPOINT.f
-; -----------------------
+; ------------------------------------------------
+; (volatile) tests for FIXPOINT.asm | FIXPOINT.4th
+; ------------------------------------------------
 
 3,14159 2CONSTANT PI
 PI -1,0 F* 2CONSTANT -PI

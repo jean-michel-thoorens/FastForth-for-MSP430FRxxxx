@@ -34,8 +34,8 @@
 
 
 @set PortCOM=%2
-@if 1%PortCOM% == 1 CALL %~d1\config\Select.bat SelectPortCOM
+@if 1%PortCOM% == 1 CALL %~dp1..\config\Select.bat SelectPortCOM
 
-@%~d1\prog\BSL-Scripter.exe --log --quiet --initComm [INVOKE,%PortCOM%,UART,9600,PARITY] --device FRxx --erase ERASE_ALL --exit [RESET]
-@%~d1\prog\BSL-Scripter.exe --log --initComm [INVOKE,%PortCOM%,UART,9600,PARITY] --device FRxx --speed FAST  --bslPwd %~dp1binaries\pass32_default.txt -w %~dp1binaries\%~nx1 --exit [RESET]
+@%~dp1..\prog\BSL-Scripter.exe --log --quiet --initComm [INVOKE,%PortCOM%,UART,9600,PARITY] --device FRxx --erase ERASE_ALL --exit [RESET]
+@%~dp1..\prog\BSL-Scripter.exe --log --initComm [INVOKE,%PortCOM%,UART,9600,PARITY] --device FRxx --speed FAST  --bslPwd %~dp1binaries\pass32_default.txt -w %~dp1binaries\%~nx1 --exit [RESET]
 @pause

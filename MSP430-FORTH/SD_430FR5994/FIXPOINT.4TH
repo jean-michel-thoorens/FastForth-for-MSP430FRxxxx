@@ -1,4 +1,8 @@
 
+; -----------------------------------------------------
+; FIXPOINT.4th for MSP_EXP430FR5994
+; -----------------------------------------------------
+
     CODE ABORT_FIXPOINT
     SUB #4,R15
     MOV R14,2(R15)
@@ -7,10 +11,10 @@
     0<> IF MOV #0,R14 THEN
     MOV R14,0(R15)
     MOV &$180A,R14
-    SUB #309,R14
+    SUB #400,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V3.9 please!"
+    ABORT" FastForth V4.0 please!"
     ABORT" build FastForth with Q15.16_INPUT addon !"
     RST_RET
     $1B EMIT $63 EMIT
@@ -18,22 +22,25 @@
 
     ABORT_FIXPOINT
 
-; -----------------------------------------------------
-; FIXPOINT.4th for MSP_EXP430FR5994 
-; -----------------------------------------------------
-
+    [DEFINED] {FIXPOINT} 
+    [IF] {FIXPOINT}
+    [THEN]
+    [UNDEFINED] {FIXPOINT}
+    [IF]
     MARKER {FIXPOINT}
 
-    [UNDEFINED] + 
-    [IF]
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.4th for MSP_EXP430FR5994)
+; ------------------------------------------------------------------
+
+    [UNDEFINED] + [IF]
     CODE +
     ADD @R15+,R14
     MOV @R13+,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] R> 
-    [IF]
+    [UNDEFINED] R> [IF]
     CODE R>
     SUB #2,R15
     MOV R14,0(R15)
@@ -42,8 +49,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] = 
-    [IF]
+    [UNDEFINED] = [IF]
     CODE =
     SUB @R15+,R14
     0<> IF
@@ -55,8 +61,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] U< 
-    [IF]
+    [UNDEFINED] U< [IF]
     CODE U<
     SUB @R15+,R14
     0<> IF
@@ -69,8 +74,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DABS 
-    [IF]
+    [UNDEFINED] DABS [IF]
     CODE DABS
     AND #-1,R14
     S< IF
@@ -83,8 +87,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] HOLDS 
-    [IF]
+    [UNDEFINED] HOLDS [IF]
     CODE HOLDS
     MOV @R15+,R9
 BW3 ADD R14,R9
@@ -102,23 +105,32 @@ BW3 ADD R14,R9
     ENDCODE
     [THEN]
 
+; --------------------------
+; end of definitions we need
+; --------------------------
+
+    [UNDEFINED] F+ [IF]
     CODE F+
     ADD @R15+,2(R15)
     ADDC @R15+,R14
     MOV @R13+,R0
     ENDCODE
+    [THEN]
 
+    [UNDEFINED] F- [IF]
     CODE F-
     SUB @R15+,2(R15)
     SUBC R14,0(R15)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE
+    [THEN]
 
     $1A00 4 + @ $81F3 U<
-    $81EF $1A00 4 + @ U< 
+    $81EF $1A00 4 + @ U<
     = [IF]              ; MSP430FR413x subfamily without hardware_MPY
 
+    [UNDEFINED] UDM* [IF]
     CODE UDM*
     PUSH R13
     PUSHM #4,R7
@@ -134,7 +146,7 @@ BW3 ADD R14,R9
     MOV #1,R9
     MOV #0,R8
     BEGIN
-        CMP #0,R9    
+        CMP #0,R9
         0<> IF
             BIT R9,R10
         ELSE
@@ -159,7 +171,9 @@ BW3 ADD R14,R9
     MOV @R1+,R13
     MOV @R13+,R0
     ENDCODE
+    [THEN]
 
+    [UNDEFINED] F* [IF]
     CODE F*
     MOV 2(R15),R12
     XOR R14,R12
@@ -185,7 +199,9 @@ BW3 ADD R14,R9
     THEN
     MOV @R13+,R0
     ENDCODE
+    [THEN]
 
+    [UNDEFINED] F#S [IF]
     CODE F#S
     MOV @R15,R12
     MOV #0,R11
@@ -193,7 +209,7 @@ BW3 ADD R14,R9
     MOV 2(R15),0(R15)
     MOV R14,2(R15)
     BEGIN
-        MOV &$1DBE,R14
+        MOV &$1DB6,R14
         LO2HI
         UM*
         HI2LO
@@ -215,9 +231,11 @@ BW3 ADD R14,R9
     MOV #$1D90,R9
     GOTO BW3
     ENDCODE
+    [THEN]
 
     [ELSE] ; hardware multiplier
 
+    [UNDEFINED] F* [IF]
     CODE F*
     MOV 4(R15),&$4D4
     MOV 2(R15),&$4D6
@@ -228,8 +246,9 @@ BW3 ADD R14,R9
     MOV &$4E8,R14
     MOV @R13+,R0
     ENDCODE
+    [THEN]
 
-
+    [UNDEFINED] F#S [IF]
     CODE F#S
     MOV 2(R15),R9
     MOV @R15,2(R15)
@@ -238,7 +257,7 @@ BW3 ADD R14,R9
     MOV #0,R12
     BEGIN
         MOV @R15,&$4C0
-        MOV &$1DBE,&$4C8
+        MOV &$1DB6,&$4C8
         MOV &$4E4,0(R15)
         MOV &$4E6,R14
         CMP #10,R14
@@ -255,9 +274,11 @@ BW3 ADD R14,R9
     MOV #$1D90,R9
     GOTO BW3
     ENDCODE
+    [THEN]
 
     [THEN]  ; end of hardware/software multiplier
 
+    [UNDEFINED] F/ [IF]
     CODE F/
     MOV R14,R8
     MOV @R15+,R10
@@ -270,14 +291,14 @@ BW3 ADD R14,R9
         XOR #-1,R8
         ADD #1,R10
         ADDC #0,R8
-    THEN    
+    THEN
     AND #-1,R9
     S< IF
         XOR #-1,R11
         XOR #-1,R9
         ADD #1,R11
         ADDC #0,R9
-    THEN        
+    THEN
     MOV R9,R7
     MOV R11,R9
     MOV #0,R11
@@ -317,11 +338,13 @@ BW1 CMP R8,R6
     MOV R12,0(R15)
     MOV @R13+,R0
     ENDCODE
+    [THEN]
 
+    [UNDEFINED] F. [IF]
     CODE F.
     MOV R14,R12
     MOV #4,R11
-    MOV &$1DBE,R10
+    MOV &$1DB6,R10
     CMP #$0A,R10
     0= IF
         ADD #1,R11
@@ -340,42 +363,26 @@ BW1 CMP R8,R6
     R> SIGN #>
     TYPE $20 EMIT
     ;
+    [THEN]
 
+    [UNDEFINED] S>F [IF]
     CODE S>F
     SUB #2,R15
     MOV #0,0(R15)
     MOV @R13+,R0
     ENDCODE
+    [THEN]
 
     RST_SET
+
+    [THEN]
 
 ; -----------------------
 ; complement (volatile) for tests below
 ; -----------------------
 
-    [UNDEFINED] ! 
-    [IF]
-    CODE !
-    MOV @R15+,0(R14)
-    MOV @R15+,R14
-    MOV @R13+,R0
-    ENDCODE
-    [THEN]
-
-    [UNDEFINED] DOES> 
-    [IF]
-    CODE DOES> 
-    MOV &$1DB8,R10
-    MOV #$1285,0(R10)
-    MOV R13,2(R10)
-    MOV @R1+,R13
-    MOV @R13+,R0
-    ENDCODE
-    [THEN]
-
-    [UNDEFINED] CONSTANT 
-    [IF]
-    : CONSTANT 
+    [UNDEFINED] CONSTANT [IF]
+    : CONSTANT
     CREATE
     HI2LO
     MOV R14,-2(R10)
@@ -385,8 +392,7 @@ BW1 CMP R8,R6
     ENDCODE
     [THEN]
 
-    [UNDEFINED] 2CONSTANT 
-    [IF]
+    [UNDEFINED] 2CONSTANT [IF]
     : 2CONSTANT
     CREATE , ,
     DOES>
@@ -399,81 +405,77 @@ BW1 CMP R8,R6
     ENDCODE
     [THEN]
 
-    [UNDEFINED] D. 
-    [IF]
+    [UNDEFINED] D. [IF]
     CODE D.
-    MOV #U.,R10
-    ADD #10,R10
-    MOV R10,R0
+    MOV #U.+10,R0
     ENDCODE
     [THEN]
 
-    [UNDEFINED] BASE 
-    [IF]
-    $1DBE CONSTANT BASE
+    [UNDEFINED] BASE [IF]
+    $1DB6 CONSTANT BASE
     [THEN]
 
     ECHO
 
-; -----------------------
-; (volatile) tests for FIXPOINT.asm|FIXPOINT.4th for MSP_EXP430FR5994
-; -----------------------
+; ------------------------------------------------
+; (volatile) tests for FIXPOINT.asm | FIXPOINT.4th
+; ------------------------------------------------
 
 3,14159 2CONSTANT PI
 PI -1,0 F* 2CONSTANT -PI
 
-PI D.   ; D. is not appropriate --> 
+PI D.   ; D. is not appropriate -->
 -PI D.  ; D. is not appropriate -->
 
-PI F.   ; F. is a good choice! ---> 
+PI F.   ; F. is a good choice! --->
 -PI F.  ; F. is a good choice! --->
 
-$10 BASE !   PI F. 
+$10 BASE !   PI F.
             -PI F.
-%10 BASE !   PI F. 
+%10 BASE !   PI F.
             -PI F.
-#10 BASE !   PI F. 
+#10 BASE !   PI F.
             -PI F.
 
- PI  2,0 F* F.     
- PI -2,0 F* F.    
--PI  2,0 F* F.    
--PI -2,0 F* F.     
+ PI  2,0 F* F.
+ PI -2,0 F* F.
+-PI  2,0 F* F.
+-PI -2,0 F* F.
 
- PI  2,0 F/ F.     
- PI -2,0 F/ F.    
--PI  2,0 F/ F.    
--PI -2,0 F/ F.     
+ PI  2,0 F/ F.
+ PI -2,0 F/ F.
+-PI  2,0 F/ F.
+-PI -2,0 F/ F.
 
  32768,0  1,0 F* F. ; overflow! -->
  32768,0  1,0 F/ F. ; overflow! -->
 -32768,0 -1,0 F* F. ; overflow! -->
 -32768,0 -1,0 F/ F. ; overflow! -->
 
-32767,99999 1,0  F* F. 
-32767,99999 1,0  F/ F. 
-32767,99999 2,0  F/ F. 
-32767,99999 4,0  F/ F. 
-32767,99999 8,0  F/ F. 
-32767,99999 16,0 F/ F. 
+32767,99999 1,0  F* F.
+32767,99999 1,0  F/ F.
+32767,99999 2,0  F/ F.
+32767,99999 4,0  F/ F.
+32767,99999 8,0  F/ F.
+32767,99999 16,0 F/ F.
 
--32768,0 -2,0    F/ F. 
--32768,0 -4,0    F/ F. 
--32768,0 -8,0    F/ F. 
--32768,0 -16,0   F/ F. 
--32768,0 -32,0   F/ F. 
--32768,0 -64,0   F/ F. 
+-32768,0 -2,0    F/ F.
+-32768,0 -4,0    F/ F.
+-32768,0 -8,0    F/ F.
+-32768,0 -16,0   F/ F.
+-32768,0 -32,0   F/ F.
+-32768,0 -64,0   F/ F.
 
--3276,80 -1,0    F/ F. 
--327,680 -1,0    F/ F. 
--32,7680 -1,0    F/ F. 
--3,27680 -1,0    F/ F. 
--0,32768 -1,0    F/ F. 
+-3276,80 -1,0    F/ F.
+-327,680 -1,0    F/ F.
+-32,7680 -1,0    F/ F.
+-3,27680 -1,0    F/ F.
+-0,32768 -1,0    F/ F.
 
 ; SQRT(32768)^2 = 32768
- 181,01933598375  181,01933598375 F* F. 
+ 181,01933598375  181,01933598375 F* F.
  181,01933598375 -181,01933598375 F* F.
 -181,01933598375  181,01933598375 F* F.
--181,01933598375 -181,01933598375 F* F. 
- 
+-181,01933598375 -181,01933598375 F* F.
+
 RST_RET

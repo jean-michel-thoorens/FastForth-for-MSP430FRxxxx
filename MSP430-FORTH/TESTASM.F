@@ -33,21 +33,25 @@
 \
 \ FORTH conditionnal    : 0= 0< = < > U<
 
-\ first, we test for downloading driver only if UART TERMINAL target
+\ first, we do some tests allowing the download
     CODE ABORT_TEST_ASM
     SUB #2,PSP
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #309,TOS        \                   FastForth V3.9
+    SUB #400,TOS        \   FastForth V4.0
     COLON
     'CR' EMIT            \ return to column 1 without 'LF'
-    ABORT" FastForth V3.9 please!"
-    RST_RET           \ remove ABORT_TEST_ASM definition before resuming
+    ABORT" FastForth V4.0 please!"
+\    RST_RET           \ remove ABORT_TEST_ASM definition before resuming
     ;
 
     ABORT_TEST_ASM      \ abort test
 
-    MARKER {TEST_ASM}
+ECHO
+
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.f)
+; ------------------------------------------------------------------
 
     [UNDEFINED] >R
     [IF]
@@ -159,26 +163,6 @@ FW1 MOV @PSP+,TOS
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DEFER
-    [IF]
-\ https://forth-standard.org/standard/core/DEFER
-\ DEFER "<spaces>name"   --
-\Skip leading space delimiters. Parse name delimited by a space.
-\Create a definition for name with the execution semantics defined below.
-
-\name Execution:   --
-\Execute the xt that name is set to execute, i.e. NEXT (nothing),
-\until the phrase ' word IS name is executed, causing a new value of xt to be assigned to name.
-    : DEFER
-    CREATE
-    HI2LO
-    MOV #$4030,-4(W)        \ CFA = MOV @PC+,PC = BR MOV @IP+,PC
-    MOV #NEXT_ADR,-2(W)     \ PFA = address of MOV @IP+,PC to do nothing.
-    MOV @RSP+,IP
-    MOV @IP+,PC
-    ENDCODE
-    [THEN]
-
     [UNDEFINED] >BODY
     [IF]
 \ https://forth-standard.org/standard/core/toBODY
@@ -238,6 +222,16 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
+    [UNDEFINED] DROP
+    [IF]
+\ https://forth-standard.org/standard/core/DROP
+\ DROP     x --          drop top of stack
+    CODE DROP
+    MOV @PSP+,TOS   \ 2
+    MOV @IP+,PC     \ 4
+    ENDCODE
+    [THEN]
+
     [UNDEFINED] OVER
     [IF]
 \ https://forth-standard.org/standard/core/OVER
@@ -248,14 +242,6 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     SUB #2,PSP          \ 1 -- x1 x2 x1
     MOV @IP+,PC
     ENDCODE
-    [THEN]
-
-    [UNDEFINED] U.R
-    [IF]            \ defined in {UTILITY}
-    : U.R                       \ u n --           display u unsigned in n width (n >= 2)
-    >R  <# 0 # #S #>
-    R> OVER - 0 MAX SPACES TYPE
-    ;
     [THEN]
 
 \ https://forth-standard.org/standard/core/IF
@@ -300,7 +286,7 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     [IF]  \ define BEGIN UNTIL AGAIN WHILE REPEAT
 
     CODE BEGIN
-    MOV #HEREXEC,PC
+    MOV #BEGIN,PC
     ENDCODE IMMEDIATE
 
 \ https://forth-standard.org/standard/core/UNTIL
@@ -422,10 +408,10 @@ BW2 ADD #4,&DP          \ make room to compile two words
     ENDCODE
     [THEN]
 
-\ https://forth-standard.org/standard/core/BASE
-\ BASE    -- a-addr       holds conversion radix
     [UNDEFINED] BASE
     [IF]
+\ https://forth-standard.org/standard/core/BASE
+\ BASE    -- a-addr       holds conversion radix
     BASEADR  CONSTANT BASE
     [THEN]
 
@@ -433,11 +419,49 @@ BW2 ADD #4,&DP          \ make room to compile two words
 \ CR      --               send CR+LF to the output device
     [UNDEFINED] CR
     [IF]
-    DEFER CR    \ DEFERed definition, by default executes that of :NONAME
+\ create a primary defered word, i.e. with its default runtime beginning at the >BODY of the definition
+    CODE CR     \ part I : DEFERed definition of CR
+    MOV #NEXT_ADR,PC                \ [PFA] = NEXT_ADR
+    ENDCODE
 
-    :NONAME
+    :NONAME     \ part II : :NONAME part as default runtime of CR
     'CR' EMIT 'LF' EMIT
-    ; IS CR
+    ; IS CR                         \ set [PFA] of CR = >BODY addr of CR = CFA of :NONAME part
+    [THEN]
+
+    [UNDEFINED] C,
+    [IF]
+\ https://forth-standard.org/standard/core/CComma
+\ C,   char --        append char
+    CODE C,
+    MOV &DP,W
+    MOV.B TOS,0(W)
+    ADD #1,&DP
+    MOV @PSP+,TOS
+    MOV @IP+,PC
+    ENDCODE
+    [THEN]
+
+    [UNDEFINED] C@
+    [IF]
+\ https://forth-standard.org/standard/core/CFetch
+\ C@     c-addr -- char   fetch char from memory
+    CODE C@
+    MOV.B @TOS,TOS
+    MOV @IP+,PC
+    ENDCODE
+    [THEN]
+
+; ------------------------------------------------------------------
+; then we download the set of definitions we need (from UTILITY.f)
+; ------------------------------------------------------------------
+
+    [UNDEFINED] U.R
+    [IF]            \ defined in {UTILITY}
+    : U.R                       \ u n --           display u unsigned in n width (n >= 2)
+    >R  <# 0 # #S #>
+    R> OVER - 0 MAX SPACES TYPE
+    ;
     [THEN]
 
     [UNDEFINED] DUMP
@@ -465,6 +489,11 @@ BW2 ADD #4,&DP          \ make room to compile two words
     ;
     [THEN]
 
+; --------------------------
+; end of definitions we need
+; --------------------------
+
+ECHO
 \ -----------------------------------------------------------------------
 \ test CPUx instructions PUSHM, POPM, RLAM, RRAM, RRCM, RRUM
 \ -----------------------------------------------------------------------
@@ -508,7 +537,6 @@ BW1
     ENDCODE
 
     TESTPOPM  ; you should see 11111 3 2 1 0 -->
-
 
 
 \ -----------------------------------------------------------------------
@@ -586,28 +614,6 @@ TEST5  ; you should see :  9 8 7 6 5 4 3 2 1 0 -->
 \ -----------------------------------------------------------------------
 \ tests indexing address
 \ -----------------------------------------------------------------------
-
-[UNDEFINED] C, [IF]
-\ https://forth-standard.org/standard/core/CComma
-\ C,   char --        append char
-CODE C,
-MOV &DP,W
-MOV.B TOS,0(W)
-ADD #1,&DP
-MOV @PSP+,TOS
-MOV @IP+,PC
-ENDCODE
-[THEN]
-
-[UNDEFINED] C@ [IF]
-\ https://forth-standard.org/standard/core/CFetch
-\ C@     c-addr -- char   fetch char from memory
-CODE C@
-MOV.B @TOS,TOS
-MOV @IP+,PC
-ENDCODE
-[THEN]
-
 : BYTES_TABLE_IDX
 CREATE
 0 DO I C,
@@ -742,33 +748,31 @@ TABLE20 PFA_TABLE ! TABLE 10 DUMP
 ; create a primary DEFERred assembly word
 ; -----------------------------------------------------------------------
 
+\ create a primary defered word, i.e. with its default runtime beginning at the >BODY of the definition
+    CODE TRUC           \ part I : DEFERed definition of TRUC
+    MOV #NEXT_ADR,PC    \ [PFA] = NEXT_ADR
+    ENDCODE
 
-DEFER TRUC              ; here, TRUC is a secondary DEFERred word (i.e. without BODY)
-
-
-CODENNM                 ; does DUP
+    CODENNM             \ part II : :NONAME part as default runtime of TRUC
     SUB #2,PSP
     MOV TOS,0(PSP)
     MOV @IP+,PC
-ENDCODE                 ; leaves its execution address (CFA) on stack
+    ENDCODE     ; leaves its execution address (CFA) on stack
 
-DUP .
+DUP .           ; see it --> 
 
-IS TRUC                 ; TRUC becomes a primary DEFERred word
-                        ; with its default action (DUP) located at its BODY addresse.
+IS TRUC         ; TRUC becomes a primary DEFERred word
+                ; with its default action (DUP) located at its BODY addresse.
 
-TRUC .                  ; display TOS value -->
+TRUC .          ; display TOS value -->
 
+' DROP IS TRUC  ; TRUC is redirected to DROP
 
-\ ' DROP IS TRUC          ; TRUC is redirected to DROP
-\
-\ TRUC                   ; The generated error displays stack empty! in reverse video, removes the TRUC definition and restarts the interpretation after the end of the file. And as you see, FastForth is able to display long lines, interesting, doesn't it? -->
-\
+; TRUC          ; The generated error displays stack empty! in reverse video, removes the TRUC definition and restarts the interpretation after the end of the file. And as you see, FastForth is able to display long lines, interesting, doesn't it? -->
 
 ' TRUC >BODY IS TRUC    ; TRUC is reinitialized with its default action
 
-
-TRUC .                  ; display TOS value -->
+TRUC .          ; display TOS value -->
 
 \ bla
 \ bla
@@ -782,7 +786,3 @@ TRUC .                  ; display TOS value -->
 \
 \ bla
 \ ...
-
-
-
-

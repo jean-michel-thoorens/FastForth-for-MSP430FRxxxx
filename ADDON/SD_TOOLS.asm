@@ -1,12 +1,7 @@
 ; -*- coding: utf-8 -*-
 
-    .IFNDEF ANDD
-;https://forth-standard.org/standard/core/AND
-;C AND    x1 x2 -- x3           logical AND
-            FORTHWORD "AND"
-ANDD        AND @PSP+,TOS
-            MOV @IP+,PC
-    .ENDIF
+    FORTHWORD "{SD_TOOLS}"
+    MOV @IP+,PC
 
     .IFNDEF MAX
 
@@ -27,7 +22,6 @@ SELn1:      MOV @PSP+,TOS
             MOV @IP+,PC
 
     .ENDIF
-
     .IFNDEF SPACE
 ;https://forth-standard.org/standard/core/SPACE
 ;C SPACE   --               output a space
@@ -54,7 +48,81 @@ SPACESNEXT2 MOV @PSP+,TOS           ; --         drop n
             MOV @IP+,PC             ;
 
     .ENDIF
+    .IFNDEF XDO
+; Primitive XDO; compiled by DO
+;Z (do)    n1|u1 n2|u2 --  R: -- sys1 sys2      run-time code for DO
+;                                               n1|u1=limit, n2|u2=index
+XDO         MOV #8000h,X    ;2 compute 8000h-limit = "fudge factor"
+            SUB @PSP+,X     ;2
+            MOV TOS,Y       ;1 loop ctr = index+fudge
+            ADD X,Y         ;1 Y = INDEX
+            PUSHM #2,X      ;4 PUSHM X,Y, i.e. PUSHM LIMIT, INDEX
+            MOV @PSP+,TOS   ;2
+            MOV @IP+,PC     ;4
 
+            FORTHWORDIMM "DO"       ; immediate
+; https://forth-standard.org/standard/core/DO
+; DO       -- DOadr   L: -- 0
+DO          SUB #2,PSP              ;
+            MOV TOS,0(PSP)          ;
+            ADD #2,&DP             ;   make room to compile xdo
+            MOV &DP,TOS            ; -- HERE+2
+            MOV #XDO,-2(TOS)        ;   compile xdo
+            ADD #2,&LEAVEPTR        ; -- HERE+2     LEAVEPTR+2
+            MOV &LEAVEPTR,W         ;
+            MOV #0,0(W)             ; -- HERE+2     L-- 0
+            MOV @IP+,PC
+
+; Primitive XLOOP; compiled by LOOP
+;Z (loop)   R: sys1 sys2 --  | sys1 sys2
+;                        run-time code for LOOP
+; Add 1 to the loop index.  If loop terminates, clean up the
+; return stack and skip the branch.  Else take the inline branch.
+; Note that LOOP terminates when index=8000h.
+XLOOP       ADD #1,0(RSP)   ;4 increment INDEX
+XLOOPNEXT   BIT #100h,SR    ;2 is overflow bit set?
+            JZ XLOOPDO      ;2 no overflow = loop
+            ADD #4,RSP      ;1 empties RSP
+            ADD #2,IP       ;1 overflow = loop done, skip branch ofs
+            MOV @IP+,PC     ;4 14~ taken or not taken xloop/loop
+XLOOPDO     MOV @IP,IP
+            MOV @IP+,PC     ;4 14~ taken or not taken xloop/loop
+
+            FORTHWORDIMM "LOOP"     ; immediate
+; https://forth-standard.org/standard/core/LOOP
+; LOOP    DOadr --         L-- an an-1 .. a1 0
+LOO         MOV #XLOOP,X
+LOOPNEXT    ADD #4,&DP             ; make room to compile two words
+            MOV &DP,W
+            MOV X,-4(W)             ; xloop --> HERE
+            MOV TOS,-2(W)           ; DOadr --> HERE+2
+; resolve all "leave" adr
+LEAVELOOP   MOV &LEAVEPTR,TOS       ; -- Adr of top LeaveStack cell
+            SUB #2,&LEAVEPTR        ; --
+            MOV @TOS,TOS            ; -- first LeaveStack value
+            CMP #0,TOS              ; -- = value left by DO ?
+            JZ LOOPEND
+            MOV W,0(TOS)            ; move adr after loop as UNLOOP adr
+            JMP LEAVELOOP
+LOOPEND     MOV @PSP+,TOS
+            MOV @IP+,PC
+
+; Primitive XPLOOP; compiled by +LOOP
+;Z (+loop)   n --   R: sys1 sys2 --  | sys1 sys2
+;                        run-time code for +LOOP
+; Add n to the loop index.  If loop terminates, clean up the
+; return stack and skip the branch. Else take the inline branch.
+XPLOO       ADD TOS,0(RSP)  ;4 increment INDEX by TOS value
+            MOV @PSP+,TOS   ;2 get new TOS, doesn't change flags
+            JMP XLOOPNEXT   ;2
+
+            FORTHWORDIMM "+LOOP"    ; immediate
+; https://forth-standard.org/standard/core/PlusLOOP
+; +LOOP   adrs --   L-- an an-1 .. a1 0
+PLUSLOOP    MOV #XPLOO,X
+            JMP LOOPNEXT
+
+    .ENDIF
     .IFNDEF II
 ; https://forth-standard.org/standard/core/I
 ; I        -- n   R: sys1 sys2 -- sys1 sys2
@@ -65,8 +133,20 @@ II          SUB #2,PSP              ;1 make room in TOS
             MOV @RSP,TOS            ;2 index = loopctr - fudge
             SUB 2(RSP),TOS          ;3
             MOV @IP+,PC             ;4 13~
-    .ENDIF
 
+    .ENDIF
+        .IFNDEF CR
+            FORTHWORD "CR"
+; https://forth-standard.org/standard/core/CR
+; CR      --               send CR to the output device
+CR          MOV @PC+,PC
+            .word BODYCR
+BODYCR      mDOCOL                  ;  send CR+LF to the default output device
+            .word   XSQUOTE
+            .byte   2,0Dh,0Ah
+            .word   TYPE,EXIT
+
+        .ENDIF
         .IFNDEF OVER
 ;https://forth-standard.org/standard/core/OVER
 ;C OVER    x1 x2 -- x1 x2 x1
@@ -75,8 +155,8 @@ OVER        MOV TOS,-2(PSP)         ; 3 -- x1 (x2) x2
             MOV @PSP,TOS            ; 2 -- x1 (x2) x1
             SUB #2,PSP              ; 1 -- x1 x2 x1
             MOV @IP+,PC             ; 4
-        .ENDIF
 
+        .ENDIF
     .IFNDEF TOR
 ; https://forth-standard.org/standard/core/toR
 ; >R    x --   R: -- x   push to return stack
@@ -84,8 +164,8 @@ OVER        MOV TOS,-2(PSP)         ; 3 -- x1 (x2) x2
 TOR         PUSH TOS
             MOV @PSP+,TOS
             MOV @IP+,PC
-    .ENDIF
 
+    .ENDIF
     .IFNDEF UDOTR
 ;https://forth-standard.org/standard/core/UDotR
 ;X U.R      u n --      display u unsigned in n width
@@ -94,58 +174,52 @@ UDOTR       mDOCOL
             .word   TOR,LESSNUM,lit,0,NUM,NUMS,NUMGREATER
             .word   RFROM,OVER,MINUS,lit,0,MAX,SPACES,TYPE
             .word   EXIT
-    .ENDIF
 
+    .ENDIF
         .IFNDEF CFETCH
 ;https://forth-standard.org/standard/core/CFetch
 ;C C@     c-addr -- char   fetch char from memory
             FORTHWORD "C@"
 CFETCH      MOV.B @TOS,TOS          ;2
             MOV @IP+,PC             ;4
-        .ENDIF
 
+        .ENDIF
     .IFNDEF PLUS
 ;https://forth-standard.org/standard/core/Plus
 ;C +       n1/u1 n2/u2 -- n3/u3     add n1+n2
             FORTHWORD "+"
 PLUS        ADD @PSP+,TOS
             MOV @IP+,PC
-    .ENDIF
 
+    .ENDIF
     .IFNDEF DUMP
 ;https://forth-standard.org/standard/tools/DUMP
             FORTHWORD "DUMP"
 DUMP        PUSH IP
-            PUSH &BASE                      ; save current base
-            MOV #10h,&BASE                  ; HEX base
+            PUSH &BASEADR                   ; save current base
+            MOV #10h,&BASEADR               ; HEX base
             ADD @PSP,TOS                    ; -- ORG END
-            ASMtoFORTH
+            mASM2FORTH
             .word   SWAP                    ; -- END ORG
-            .word   LIT,FFF0h,AND           ; -- END ORG_modulo_16
+            .word   CR,LIT,4,SPACES         ; display line of byte order
+            .word   LIT,10h,LIT,0,xdo
+DUMP1       .word   II,LIT,3,UDOTR
+            .word   xloop,DUMP1             ; -- END ORG
             .word   xdo                     ; --
-DUMP1       .word   CR
+DUMP2       .word   CR                      ; display a dump line
             .word   II,lit,4,UDOTR,SPACE    ; generate address
-
-            .word   II,lit,8,PLUS,II,xdo    ; display first 8 bytes
-DUMP2       .word   II,CFETCH,lit,3,UDOTR
-            .word   xloop,DUMP2             ; bytes display loop
-            .word   SPACE
-            .word   II,lit,10h,PLUS,II,lit,8,PLUS,xdo    ; display last 8 bytes
+            .word   II,lit,10h,PLUS,II,xdo  ; display 16 bytes
 DUMP3       .word   II,CFETCH,lit,3,UDOTR
             .word   xloop,DUMP3             ; bytes display loop
-            .word   SPACE,SPACE
+            .word   SPACE,SPACE             ; display 2 spaces
             .word   II,lit,10h,PLUS,II,xdo  ; display 16 chars
 DUMP4       .word   II,CFETCH
-            .word   lit,7Eh,MIN,FBLANK,MAX,EMIT
+            .word   lit,7Eh,MIN,BL,MAX,EMIT
             .word   xloop,DUMP4             ; chars display loop
-            .word   lit,10h,xploop,DUMP1    ; line loop
-            .word   RFROM,lit,BASE,STORE    ; restore current base
+            .word   lit,10h,xploo,DUMP2     ; line loop
+            .word   RFROM,lit,BASEADR,STORE ; restore current base
             .word   EXIT
-
     .ENDIF
-
-    FORTHWORD "{SD_TOOLS}"
-    MOV @IP+,PC
 
 ; read logical sector and dump it
 ; ----------------------------------;
@@ -196,7 +270,6 @@ CLUSTER1    RRA W                   ; shift one right multiplicator
             JMP SECTOR              ;
 ; ----------------------------------;
 
-
 ; dump current DIR first sector
 ; ----------------------------------;
             FORTHWORD "DIR"         ;
@@ -207,4 +280,3 @@ CLUSTER1    RRA W                   ; shift one right multiplicator
             MOV &DIRclusterH,TOS    ;
             JMP CLUSTER
 ; ----------------------------------;
-

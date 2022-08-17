@@ -5,16 +5,16 @@ IF  /I "%~x1" == ".f" goto sendF
 
 :send4th
 
-start  %~d1\config\SendSource.bat %1  NOECHO
+start  %~dp1..\config\SendSource.bat %1  NOECHO
 ::PAUSE > NUL
 exit
 
 
 :sendF
 
-call  %~d1\config\Select.bat SelectTemplate
+call  %~dp1..\config\Select.bat SelectTemplate
 
-@start  %~d1\config\CopyTo_SD_Card.bat %1 %~dp1inc\%template% %2
+@start  %~dp1..\config\CopyTo_SD_Card.bat %1 %~dp1..\inc\%template% %2
 
 ::PAUSE > NUL
 exit

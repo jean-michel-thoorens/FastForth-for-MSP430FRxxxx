@@ -7,16 +7,19 @@
     SUB #2,R15
     MOV R14,0(R15)
     MOV &$180A,R14
-    SUB #309,R14
+    SUB #400,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V3.9 please!"
-    RST_RET
+    ABORT" FastForth V4.0 please!"
     ;
 
     ABORT_TEST_ASM
 
-    MARKER {TEST_ASM}
+ECHO
+
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.4th for MSP_EXP430FR5994)
+; ------------------------------------------------------------------
 
     [UNDEFINED] >R
     [IF]
@@ -112,19 +115,6 @@ FW1 MOV @R15+,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DEFER
-    [IF]
-
-    : DEFER
-    CREATE
-    HI2LO
-    MOV #$4030,-4(R10)
-    MOV #$40B4,-2(R10)
-    MOV @R1+,R13
-    MOV @R13+,R0
-    ENDCODE
-    [THEN]
-
     [UNDEFINED] >BODY
     [IF]
     CODE >BODY
@@ -174,6 +164,14 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
+    [UNDEFINED] DROP
+    [IF]
+    CODE DROP
+    MOV @R15+,R14
+    MOV @R13+,R0
+    ENDCODE
+    [THEN]
+
     [UNDEFINED] OVER
     [IF]
     CODE OVER
@@ -184,29 +182,21 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] U.R
-    [IF]
-    : U.R
-    >R  <# 0 # #S #>
-    R> OVER - 0 MAX SPACES TYPE
-    ;
-    [THEN]
-
     [UNDEFINED] IF
     [IF]
 
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC8,R14
-    ADD #4,&$1DC8
-    MOV #$40AC,0(R14)
+    MOV &$1DC0,R14
+    ADD #4,&$1DC0
+    MOV #$4096,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC8,0(R14)
+    MOV &$1DC0,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -226,13 +216,13 @@ BW1 SUB #2,R15
     [IF]
 
     CODE BEGIN
-    MOV #$4032,R0
+    MOV #BEGIN,R0
     ENDCODE IMMEDIATE
 
     CODE UNTIL
-    MOV #$40AC,R9
-BW1 ADD #4,&$1DC8
-    MOV &$1DC8,R10
+    MOV #$4096,R9
+BW1 ADD #4,&$1DC0
+    MOV &$1DC0,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     MOV @R15+,R14
@@ -240,7 +230,7 @@ BW1 ADD #4,&$1DC8
     ENDCODE IMMEDIATE
 
     CODE AGAIN
-    MOV #$40B2,R9
+    MOV #$409C,R9
     GOTO BW1
     ENDCODE IMMEDIATE
 
@@ -269,8 +259,8 @@ BW1 ADD #4,&$1DC8
     CODE DO
     SUB #2,R15
     MOV R14,0(R15)
-    ADD #2,&$1DC8
-    MOV &$1DC8,R14
+    ADD #2,&$1DC0
+    MOV &$1DC0,R14
     MOV #XDO,-2(R14)
     ADD #2,&$1C00
     MOV &$1C00,R10
@@ -292,8 +282,8 @@ BW1 BIT #$100,R2
 
     CODE LOOP
     MOV #XLOOP,R9
-BW2 ADD #4,&$1DC8
-    MOV &$1DC8,R10
+BW2 ADD #4,&$1DC0
+    MOV &$1DC0,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     BEGIN
@@ -333,16 +323,49 @@ BW2 ADD #4,&$1DC8
 
     [UNDEFINED] BASE
     [IF]
-    $1DBE  CONSTANT BASE
+    $1DB6  CONSTANT BASE
     [THEN]
 
     [UNDEFINED] CR
     [IF]
-    DEFER CR
+    CODE CR
+    MOV #$409E,R0
+    ENDCODE
 
     :NONAME
     $0D EMIT $0A EMIT
     ; IS CR
+    [THEN]
+
+    [UNDEFINED] C,
+    [IF]
+    CODE C,
+    MOV &$1DC0,R10
+    MOV.B R14,0(R10)
+    ADD #1,&$1DC0
+    MOV @R15+,R14
+    MOV @R13+,R0
+    ENDCODE
+    [THEN]
+
+    [UNDEFINED] C@
+    [IF]
+    CODE C@
+    MOV.B @R14,R14
+    MOV @R13+,R0
+    ENDCODE
+    [THEN]
+
+; ------------------------------------------------------------------
+; then we download the set of definitions we need (from UTILITY.4th for MSP_EXP430FR5994)
+; ------------------------------------------------------------------
+
+    [UNDEFINED] U.R
+    [IF]
+    : U.R
+    >R  <# 0 # #S #>
+    R> OVER - 0 MAX SPACES TYPE
+    ;
     [THEN]
 
     [UNDEFINED] DUMP
@@ -350,7 +373,7 @@ BW2 ADD #4,&$1DC8
     CODE DUMP
     PUSH R13
     PUSH &BASE
-    MOV #$10,&$1DBE
+    MOV #$10,&$1DB6
     ADD @R15,R14
     LO2HI
     SWAP
@@ -369,6 +392,11 @@ BW2 ADD #4,&$1DC8
     ;
     [THEN]
 
+; --------------------------
+; end of definitions we need
+; --------------------------
+
+ECHO
     CODE TESTPUSHM
 BW1
     MOV     #22222,R8
@@ -401,7 +429,6 @@ BW1
     ENDCODE
 
     TESTPOPM  ; you should see 11111 3 2 1 0 -->
-
 
 
     CODE TEST1
@@ -457,24 +484,6 @@ ENDCODE
 
 TEST5  ; you should see :  9 8 7 6 5 4 3 2 1 0 -->
 
-
-
-[UNDEFINED] C, [IF]
-CODE C,
-MOV &$1DC8,R10
-MOV.B R14,0(R10)
-ADD #1,&$1DC8
-MOV @R15+,R14
-MOV @R13+,R0
-ENDCODE
-[THEN]
-
-[UNDEFINED] C@ [IF]
-CODE C@
-MOV.B @R14,R14
-MOV @R13+,R0
-ENDCODE
-[THEN]
 
 : BYTES_TABLE_IDX
 CREATE
@@ -600,31 +609,28 @@ TABLE20 PFA_TABLE ! TABLE 10 DUMP
 ; create a primary DEFERred assembly word
 ; -----------------------------------------------------------------------
 
+    CODE TRUC
+    MOV #$409E,R0
+    ENDCODE
 
-DEFER TRUC              ; here, TRUC is a secondary DEFERred word (i.e. without BODY)
-
-
-CODENNM                 ; does DUP
+    CODENNM
     SUB #2,R15
     MOV R14,0(R15)
     MOV @R13+,R0
-ENDCODE                 ; leaves its execution address (CFA) on stack
+    ENDCODE     ; leaves its execution address (CFA) on stack
 
-DUP .
+DUP .           ; see it --> 
 
-IS TRUC                 ; TRUC becomes a primary DEFERred word
-                        ; with its default action (DUP) located at its BODY addresse.
+IS TRUC         ; TRUC becomes a primary DEFERred word
+                ; with its default action (DUP) located at its BODY addresse.
 
-TRUC .                  ; display R14 value -->
+TRUC .          ; display R14 value -->
 
+' DROP IS TRUC  ; TRUC is redirected to DROP
 
+; TRUC          ; The generated error displays stack empty! in reverse video, removes the TRUC definition and restarts the interpretation after the end of the file. And as you see, FastForth is able to display long lines, interesting, doesn't it? -->
 
 ' TRUC >BODY IS TRUC    ; TRUC is reinitialized with its default action
 
-
-TRUC .                  ; display R14 value -->
-
-
-
-
+TRUC .          ; display R14 value -->
 

@@ -1,26 +1,31 @@
 
-; -----------
+; --------------------------------
 ; SD_TEST.4th for MSP_EXP430FR5994
-; -----------
+; --------------------------------
 
     CODE ABORT_SD_TEST
-    SUB #2,R15
-    MOV R14,0(R15)
+    SUB #4,R15
+    MOV R14,2(R15)
+    [UNDEFINED] WRITE  
+    [IF]
+        MOV #-1,0(R15)
+    [ELSE]
+        MOV #0,0(R15)
+    [THEN]
     MOV &$180A,R14
-    SUB #309,R14
+    SUB #400,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V3.9 please!"
-    [UNDEFINED] WRITE
-    [IF]
-        1 ABORT" no SD_CARD_READ_WRITE addon!"
-    [THEN]
+    ABORT" FastForth V4.0 please!"
+    ABORT" build FastForth with SD_CARD_READ_WRITE addon!"
     RST_RET
     ;
 
     ABORT_SD_TEST
 
-    MARKER {SD_TEST}
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.4th for MSP_EXP430FR5994)
+; ------------------------------------------------------------------
 
     [UNDEFINED] EXIT
     [IF]
@@ -62,15 +67,15 @@
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC8,R14
-    ADD #4,&$1DC8
-    MOV #$40AC,0(R14)
+    MOV &$1DC0,R14
+    ADD #4,&$1DC0
+    MOV #$4096,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC8,0(R14)
+    MOV &$1DC0,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -79,9 +84,9 @@
     [UNDEFINED] ELSE
     [IF]
     CODE ELSE
-    ADD #4,&$1DC8
-    MOV &$1DC8,R10
-    MOV #$40B2,-4(R10)
+    ADD #4,&$1DC0
+    MOV &$1DC0,R10
+    MOV #$409C,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -92,13 +97,13 @@
     [UNDEFINED] BEGIN
     [IF]
     CODE BEGIN
-    MOV #$4032,R0
+    MOV #BEGIN,R0
     ENDCODE IMMEDIATE
 
     CODE UNTIL
-    MOV #$40AC,R9
-BW1 ADD #4,&$1DC8
-    MOV &$1DC8,R10
+    MOV #$4096,R9
+BW1 ADD #4,&$1DC0
+    MOV &$1DC0,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     MOV @R15+,R14
@@ -106,7 +111,7 @@ BW1 ADD #4,&$1DC8
     ENDCODE IMMEDIATE
 
     CODE AGAIN
-    MOV #$40B2,R9
+    MOV #$409C,R9
     GOTO BW1
     ENDCODE IMMEDIATE
 
@@ -134,8 +139,8 @@ BW1 ADD #4,&$1DC8
     CODE DO
     SUB #2,R15
     MOV R14,0(R15)
-    ADD #2,&$1DC8
-    MOV &$1DC8,R14
+    ADD #2,&$1DC0
+    MOV &$1DC0,R14
     MOV #XDO,-2(R14)
     ADD #2,&$1C00
     MOV &$1C00,R10
@@ -157,8 +162,8 @@ BW1 BIT #$100,R2
 
     CODE LOOP
     MOV #XLOOP,R9
-BW2 ADD #4,&$1DC8
-    MOV &$1DC8,R10
+BW2 ADD #4,&$1DC0
+    MOV &$1DC0,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     BEGIN
@@ -323,14 +328,14 @@ BW1 SUB #2,R15
 
     [UNDEFINED] STATE
     [IF]
-    $1DBC CONSTANT STATE
+    $1DB4 CONSTANT STATE
     [THEN]
 
     [UNDEFINED] CR
     [IF]
 
     CODE CR
-    MOV #$40B4,R0
+    MOV #$409E,R0
     ENDCODE
 
     :NONAME
@@ -338,42 +343,9 @@ BW1 SUB #2,R15
     ; IS CR
     [THEN]
 
-    [UNDEFINED] U.R
-    [IF]
-    : U.R
-    >R  <# 0 # #S #>
-    R> OVER - 0 MAX SPACES TYPE
-    ;
-    [THEN]
-
     [UNDEFINED] BASE
     [IF]
-    $1DBE  CONSTANT BASE
-    [THEN]
-
-    [UNDEFINED] DUMP
-    [IF]
-    CODE DUMP
-    PUSH R13
-    PUSH &BASE
-    MOV #$10,&BASE
-    ADD @R15,R14
-    LO2HI
-    SWAP
-    DO
-        I 4 U.R SPACE
-        I 8 + I
-        DO I C@ 3 U.R LOOP
-        SPACE
-        I $10 + I 8 +
-        DO I C@ 3 U.R LOOP
-        SPACE SPACE
-        I $10 + I
-        DO I C@ $7E MIN $20 MAX EMIT LOOP
-        CR
-    $10 +LOOP
-    R> BASE !
-    ;
+    $1DB6  CONSTANT BASE
     [THEN]
 
     [UNDEFINED] HERE
@@ -382,7 +354,6 @@ BW1 SUB #2,R15
     MOV #BEGIN,R0
     ENDCODE
     [THEN]
-
 
     [UNDEFINED] DROP
     [IF]
@@ -443,19 +414,59 @@ BW1 SUB #2,R15
     ; IMMEDIATE
     [THEN]
 
+; ------------------------------------------------------------------
+; then we download the set of definitions we need (from UTILITY.4th for MSP_EXP430FR5994)
+; ------------------------------------------------------------------
+
+    [UNDEFINED] U.R
+    [IF]
+    : U.R
+    >R  <# 0 # #S #>
+    R> OVER - 0 MAX SPACES TYPE
+    ;
+    [THEN]
+
+; --------------------------
+; end of definitions we need
+; --------------------------
+
+    CODE DUMP
+    PUSH R13
+    PUSH &BASE
+    MOV #$10,&BASE
+    ADD @R15,R14
+    LO2HI
+    SWAP
+    DO
+        I 4 U.R SPACE
+        I 8 + I
+        DO I C@ 3 U.R LOOP
+        SPACE
+        I $10 + I 8 +
+        DO I C@ 3 U.R LOOP
+        SPACE SPACE
+        I $10 + I
+        DO I C@ $7E MIN $20 MAX EMIT LOOP
+        CR
+    $10 +LOOP
+    R> BASE !
+    ;
+
+
     CODE SD_EMIT
-    CMP #$200,&$201E
-    U>= IF
-        CALL &WRITE+2
-    THEN
     MOV &$201E,R8
     MOV.B R14,$1E00(R8)
-    ADD #1,&$201E
     MOV @R15+,R14
+    ADD #1,R8
+    MOV R8,&$201E
+    CMP #$200,R8
+    U>= IF
+        CALL #WRITE+4
+    THEN
     MOV @R13+,R0
     ENDCODE
 
-    : DOESWRITE
+    : WRITEDUMP        
     ['] SD_EMIT IS EMIT
     $4000 HERE OVER - DUMP
     ['] EMIT >BODY IS EMIT
@@ -473,7 +484,7 @@ BW1 SUB #2,R15
     ." 0 Set date and time" CR
     ." 1 Load {UTILITY} words" CR
     ." 2 Load {SD_TOOLS} words" CR
-    ." 3 Load {CORE_COMP} words" CR
+    ." 3 Load {CORE_ANS} words" CR
     ." 4 Load ANS core tests" CR
     ." 5 Load a source file to make 10k program" CR
     ." 6 Read it only (47k)" CR
@@ -481,9 +492,12 @@ BW1 SUB #2,R15
     ." 8 append FORTH dump to YOURFILE.TXT" CR
     ." 9 delete YOURFILE.TXT" CR
     ." your choice: "
-    KEY DUP EMIT CR
+    KEY DUP $0D = 
+                IF KEY DROP ." 'CR'"
+                ELSE DUP EMIT
+                THEN CR
     NOECHO
-    {SD_TEST}
+    RST_RET
     CASE
     '?' OF  LOAD" FF_SPECS.4TH" ENDOF
     '0' OF  LOAD" RTC.4TH"      ENDOF
@@ -493,15 +507,13 @@ BW1 SUB #2,R15
     '4' OF  LOAD" CORETEST.4TH" ENDOF
     '5' OF  LOAD" PROG10K.4TH"  ENDOF
     '6' OF  READ" PROG10K.4TH"
-            BEGIN READ
-            UNTIL               ENDOF
+            BEGIN READ UNTIL    ENDOF
     '7' OF  WRITE" YOURFILE.TXT"
-            DOESWRITE           ENDOF
+            WRITEDUMP           ENDOF
     '8' OF  APPEND" YOURFILE.TXT"
-            DOESWRITE           ENDOF
+            WRITEDUMP           ENDOF
     '9' OF  DEL" YOURFILE.TXT"  ENDOF
     ENDCASE
-    CR
     ;
 
 SD_TEST

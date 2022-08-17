@@ -16,7 +16,7 @@
     .PAGE  0            ; listing without pagination
 ;-------------------------------------------------------------------------------
 
-VER .equ "V309"     ; FORTH version
+VER .equ "V400"     ; FORTH version
 
 ;===============================================================================
 ; before assembling or programming you must set TARGET in scite param1 (SHIFT+F8)
@@ -33,33 +33,29 @@ MSP_EXP430FR5994  ;; compile for MSP-EXP430FR5994 launchpad
 ;LP_MSP430FR2476   ; compile for LP_MSP430FR2476  launchpad
 ;CHIPSTICK_FR2433  ; compile for "CHIPSTICK" of M. Ken BOAK
 
-; choose DTC model (Direct Threaded Code); if you don't know, choose 2, because DOCOL routine without using scratch register
+; choose DTC model (Direct Threaded Code); if you don't know, choose 2
 DTC .equ 2  ; DTC model 1 : DOCOL = CALL rDOCOL           14 cycles 1 word      shortest DTC model
             ; DTC model 2 : DOCOL = PUSH IP, CALL rEXIT   13 cycles 2 words     best compromize to mix FORTH/ASM code
-            ; DTC model 3 : inlined DOCOL                  9 cycles 4 words     fastest
+            ; DTC model 3 : inlined DOCOL (and LO2HI)      9 cycles 4 words     fastest
 
 THREADS     .equ 16 ;  1,  2 ,  4 ,  8 ,  16,  32  search entries in word-set.
                     ; +0, +28, +48, +56, +90, +154 bytes, usefull to speed up compilation;
                     ; the FORTH interpreter is speed up by about a square root factor of THREADS.
 
-FREQUENCY   .equ 16 ; fully tested at 1,2,4,8,16 MHz, plus 24 MHz for MSP430FR57xx,MSP430FR2355
+FREQUENCY   .equ 8 ; fully tested at 1,2,4,8,16 MHz, plus 24 MHz for MSP430FR57xx,MSP430FR2355
 
-;   ============================================================================
-TERMINAL_I2C ; - 12 bytes; uncomment to select I2C_Master TERMINAL instead of UART TERMINAL
-;   ============================================================================
-    .IFDEF TERMINAL_I2C
-MYSLAVEADR   .equ 18
-;   ============================================================================
-    .ELSE ; UART TERMINAL
-;   ============================================================================
-TERMINALBAUDRATE    .equ 4000000 ; choose value considering the frequency, see explanations below.
-;   ----------------------------------------------------------------------------
-TERMINAL3WIRES   ;   ; + 18 bytes  enable 3 wires XON/XOFF software flow control
-TERMINAL4WIRES   ;   ; + 12 bytes  enable 4 wires RTS hardware flow control
+
+; ==============================================================================
+;UART_TERMINAL ; COMMENT TO SWITCH FROM UART TO I2C TERMINAL
+; ==============================================================================
+    .IFDEF UART_TERMINAL
+TERMINALBAUDRATE    .equ 4000000
+TERMINAL3WIRES      ;; + 18 bytes  enable 3 wires XON/XOFF software flow control
+TERMINAL4WIRES      ;; + 12 bytes  enable 4 wires RTS hardware flow control
 ;TERMINAL5WIRES      ; + 10 bytes  enable 5 wires RTS/CTS hardware flow control
-;   ----------------------------------------------------------------------------
 ;HALFDUPLEX          ; switch to UART half duplex TERMINAL input
-;   ============================================================================
+    .ELSE
+I2C_TERM_ADR .equ 18 ; I2C_TERMINAL_Slave_Address << 1
     .ENDIF
 
 ;===============================================================================
@@ -67,14 +63,24 @@ TERMINAL4WIRES   ;   ; + 12 bytes  enable 4 wires RTS hardware flow control
 ;===============================================================================
 DOUBLE_INPUT        ;; +   60 bytes : adds the interpretation engine for double numbers (numbers with dot)
 FIXPOINT_INPUT      ;; +   68 bytes : adds the interpretation engine for Q15.16 numbers (numbers with comma)
+VOCABULARY_SET      ;; +  194 bytes : adds words: WORDSET FORTH hidden PREVIOUS ONLY DEFINITIONS
 SD_CARD_LOADER      ;; + 1582 bytes : to load source files from SD_card
 BOOTLOADER          ;; +   82 bytes : includes in WARM process the bootloader SD_CARD\BOOT.4TH.
 SD_CARD_READ_WRITE  ;; + 1168 bytes : to read, create, write and del files + copy text files from PC to target SD_Card
-;EXTENDED_MEM        ; +  506 bytes : allows assembler to execute code up to 1MB (LARGE_CODE).
-;EXTENDED_ASM        ; + 1212 bytes : extended assembler to 20 bits datas (LARGE_DATA + LARGE_CODE).
-;VOCABULARY_SET      ; +  162 bytes : adds words: WORDSET FORTH hidden PREVIOUS ONLY DEFINITIONS
-;PROMPT              ; +   18 bytes : to display prompt "ok ", for FORTH addicts.
+LARGE_CODE          ;; +  506 bytes : allows assembler to execute code up to 1MB.
+LARGE_DATA          ;; + 1212 bytes : extended assembler to 20 bits addresses and datas.
+;PROMPT              ; +   18 bytes : to display the prompt "ok ", (obsolete).
 ;===============================================================================
+
+;-------------------------------------------------------------------------------
+; OPTIONS that can be added later by downloading their source file >------------------------------------+
+; however, added here, they are protected against WIPE and Deep Reset.                                  |
+;-------------------------------------------------------------------------------                        v
+;CORE_COMPLEMENT     ; + 2304 bytes, if you want a conventional FORTH ANS94 compliant               CORE_ANS.f
+;FIXPOINT            ; +  422/528 bytes add HOLDS F+ F- F/ F* F#S F. S>F                            FIXPOINT.f
+;UTILITY             ; +  434/524 bytes (1/16threads) : add .S .RS WORDS U.R DUMP ?                 UTILITY.f
+;SD_TOOLS            ; +  142 bytes for trivial DIR, FAT, CLUSTR. and SECTOR. view, (adds UTILITY)  SD_TOOLS.f
+;DOUBLE              ;              DOUBLE word set                                                 DOUBLE.f
     .save
     .listing off
 ;===============================================================================
@@ -219,44 +225,19 @@ SD_CARD_READ_WRITE  ;; + 1168 bytes : to read, create, write and del files + cop
 ; DTCforthMSP430FR5xxx program (FRAM) memory
 ;-------------------------------------------------------------------------------
 ; here we place the FORTH primitives without name.
-; Users can access them via declarations made in \inc\MSP430FRxxxx.pat
-;
-;###############################################################################
-; here, FAST FORTH sleeps, waiting any interrupt. With LPM4, supply current is below 1uA.
-; IP,S,T,W,X,Y registers (R13 to R8) are free...
-; ...and so TOS, PSP and RSP stacks within their rules of use.
-;
-; ; remember: to force SLEEP execution, you must end any interrupt routine with :
-; ;               BIC #%0_1111_000,0(RSP) ; 4~
-; ;               RETI                    ; 5~    4 words
-; ;
-; remember: to force SLEEP execution, you must end any interrupt routine with :
-;               MOV @RSP+,SR        ; 2~
-;               BIC #%0_1111_000,SR ; 2~
-;               RET                 ; 3~    4 words
-;
-;           or faster (but SR flags will be lost):
-;               ADD #2 RSP          ; 1~
-;               RET                 ; 3~    2 words
-;
-SLEEP       CALL &SLEEP_APP     ;   BACKGND_DEF = UART_RXON/I2C_ACCEPT as default BACKGND_APP; value set by DEEP.
-            BIS &LPM_MODE,SR    ;2  enter in LPMx mode with GIE=1
-            JMP SLEEP           ;2  return off any interrupts else TERMINAL_INT
-;
-;###############################################################################
-
+; User can access them via declarations made in \inc\MSP430FRxxxx.pat
 ; ------------------------------------------------------------------------------
 ; COMPILING OPERATORS
 ; ------------------------------------------------------------------------------
-; Primitive lit; compiled by LITERAL
-; lit      -- x    fetch inline literal to stack
+; Primitive LIT; compiled by LITERAL
+; LIT      -- x    fetch inline literal to stack
 ; This is the run-time code of LITERAL.
-lit         SUB #2,PSP          ; 1  save old TOS..
+LIT         SUB #2,PSP          ; 1  save old TOS..
             MOV TOS,0(PSP)      ; 3  ..onto stack
             MOV @IP+,TOS        ; 2  fetch new TOS value
             MOV @IP+,PC         ; 4  NEXT
 
-TWODUP_XSQUOTE                  ; used by [ELSE]
+TWODUP_XSQUOTE                  ; see [ELSE]
             MOV TOS,-2(PSP)     ; 3
             MOV @PSP,-4(PSP)    ; 4
             SUB #4,PSP          ; 1
@@ -266,17 +247,10 @@ XSQUOTE     SUB #4,PSP          ; 1                 push old TOS on stack
             MOV TOS,2(PSP)      ; 3                 and reserve one cell on stack
             MOV.B @IP+,TOS      ; 2 -- ? u          u = lenght of string
             MOV IP,0(PSP)       ; 3 -- addr u       IP is odd...
-            ADD TOS,IP          ; 1 -- addr u       IP=addr+u=addr(end_of_string)
-            BIT #1,IP           ; 1 -- addr u       IP=addr+u   Carry set/clear if odd/even
-            ADDC #0,IP          ; 1 -- addr u       IP=addr+u aligned
+            ADD TOS,IP          ; 1                 IP=addr+u=addr(end_of_string)
+            BIT #1,IP           ; 1                 IP=addr+u   Carry set/clear if odd/even
+            ADDC #0,IP          ; 1                 IP=addr+u aligned
             MOV @IP+,PC         ; 4  16~
-
-; https://forth-standard.org/standard/core/HERE
-; HERE    -- addr      returns memory program ptr
-HEREXEC     SUB #2,PSP
-            MOV TOS,0(PSP)
-            MOV &DP,TOS
-            MOV @IP+,PC
 
 ; primitive MU/MOD; used by ?NUMBER UM/MOD, and M*/ in DOUBLE word set
 ; MU/MOD    UDVDlo UDVDhi UDIVlo -- UREMlo UQUOTlo UQUOThi
@@ -330,11 +304,11 @@ RET_ADR     MOV @RSP+,PC            ;4  35 words, about 466/246 cycles, not FORT
 
 ; : SETIB SOURCE 2! 0 >IN ! ;
 ; SETIB      org len --        set Input Buffer, shared by INTERPRET and [ELSE]
-SETIB       MOV TOS,&SOURCE_LEN     ; -- org len
-            MOV @PSP+,&SOURCE_ORG   ; -- len
-            MOV #0,&TOIN            ;
-DROP        MOV @PSP+,TOS           ; --
-            MOV @IP+,PC             ;
+SETIB       MOV #0,&TOIN            ;3
+            MOV @PSP+,&SOURCE_ORG   ;4 -- len
+            MOV TOS,&SOURCE_LEN     ;3 -- len
+DROP        MOV @PSP+,TOS           ;2 --
+            MOV @IP+,PC             ;4
 
 ; REFILL    accept one line to input buffer and leave org len' of the filled input buffer
 ; as it has no more host OS and as waiting command is done by ACCEPT, REFILL's flag is useless
@@ -373,34 +347,8 @@ XDOCON                              ; 4 for CALL rDOCON
             MOV @TOS,TOS            ;+2 TOS = CONSTANT value
             MOV @IP+,PC             ;+4 = 16~ = ITC+4
 
-;-----------------------------------;
-INIT_FORTH                          ; common part of QABORT|WARM|PUC
-;-----------------------------------;
-            CALL &SOFT_APP          ; init SOFT_APP
-            MOV @RSP+,IP            ; init IP with CALLER next address
-;                                   ;
-            MOV #PUC_ABORT_ORG,X    ; FRAM INFO         FRAM MAIN
-;                                   ; ---------         ---------
-            MOV @X+,&PFAACCEPT      ; BODYACCEPT    --> PFAACCEPT
-            MOV @X+,&PFAEMIT        ; BODYEMIT      --> PFAEMIT
-            MOV @X+,&PFAKEY         ; BODYKEY       --> PFAKEY
-            MOV @X+,&CIB_ORG        ; TIB_ORG       --> CIB_ORG
-;                                   ;
-;                                   ; FRAM INFO         REG|RAM
-;                                   ; ---------         -------
-            MOV @X+,RSP             ; INIT_RSTACK   --> R1=RSP
-            MOV @X+,rDOCOL          ; INIT_DTC      --> R4=rDOCOL
-            MOV @X+,rDODOES         ; INIT_DODOES   --> R5=rDODOES
-            MOV @X+,rDOCON          ; INIT_DOCON    --> R6=rDOCON
-            MOV @X+,rDOVAR          ; INIT_RFROM    --> R7=rDOVAR
-            MOV @X+,&CAPS           ; INIT_CAPS     --> RAM CAPS            init CAPS ON
-            MOV @X+,&BASEADR        ; INIT_BASE     --> RAM BASE            init decimal base
-            MOV @X+,&LEAVEPTR       ; INIT_LEAVE    --> RAM LEAVEPTR
-            MOV #0,&STATE           ; 0             --> RAM STATE
-            MOV #SEL_RST_DEP,PC     ; goto PUC 7 to select the user's choice from TOS value:    RST_RET|DEEP_RESET
-;-----------------------------------;
 
-    .IFDEF TERMINAL_I2C
+    .IFNDEF UART_TERMINAL
         .include "forthMSP430FR_TERM_I2C.asm"
     .ELSE
         .IFDEF HALFDUPLEX
@@ -424,31 +372,31 @@ XDOCOL      MOV @RSP+,W             ; 2
 ;https://forth-standard.org/standard/core/TYPE
 ;C TYPE    adr u --     type string to terminal
 TYPE        PUSH IP                 ;3
-            MOV #TYPE_NEXT,IP       ;2
-;            PUSHM #2,X              ;4                 push X Y
-            MOV @PSP,X              ;2 -- adr len       X = adr
-TYPELOOP    MOV TOS,0(PSP)          ;3 -- len len
-            MOV.B @X+,TOS           ;2 -- len char
-            JMP EMIT                ;2                  ~17, S T W regs are free
-TYPE_NEXT   mNEXTADR                ;  -- len
-            SUB #2,IP               ;1                  [IP] = TYPE_NEXT
+            MOV #TYPE_NEXT+2,IP     ;2                  because SUB #2,IP
+            MOV @PSP+,X             ;2 -- len           X = adr
+TYPELOOP    SUB #2,IP               ;1                  [IP] = TYPE_NEXT
             SUB #2,PSP              ;1 -- x len
-            SUB.B #1,TOS            ;1 -- x len-1       byte operation, according to the /COUNTED-STRING value
-            JNZ TYPELOOP            ;2                  29~ EMIT loop
-;            POPM #2,X               ;4                   pop Y X
-            MOV @RSP+,IP            ;2 -- x 0
-TWODROP     ADD #2,PSP              ;1 -- 0
-            MOV @PSP+,TOS           ;2 --
-            MOV @IP+,PC             ;4
-
-BL          CALL rDOCON
-            .word   20h
+            MOV TOS,0(PSP)          ;3 -- len len
+            MOV.B @X+,TOS           ;2 -- len char
+            JMP EMIT                ;22                 S T W regs are free
+TYPE_NEXT   mNEXTADR                ;  -- len
+            SUB.B #1,TOS            ;1 -- len-1         byte operation, according to the /COUNTED-STRING value
+            JNZ TYPELOOP            ;2                  32~/19~ EMIT loop 312/526 kBds/MHz --> 7.5MBds @ 24 MHz
+            JZ DROPEXIT             ;2
 
 ; ------------------------------------------------------------------------------
 ; forthMSP430FR :  CONDITIONNAL COMPILATION, 114/109 words
 ; ------------------------------------------------------------------------------
+; goal: speed up the false conditionnal to reach true|false equal time: reached!
+; ------------------------------------------------------------------------------
+
+            FORTHWORDIMM "[THEN]"   ; does nothing
+; https://forth-standard.org/standard/tools/BracketTHEN
+            MOV @IP+,PC
+
+; ------------------------------------------------------------------------------
 ; BRanch if BAD strings COMParaison, [COMPARE ZEROEQUAL QFBRAN] replacement
-BRBADCOMP                   ; -- addr1 u1 addr2 u2
+QBRBADCOMP                  ; addr1 u1 addr2 u2 --
             MOV TOS,S       ;1          S = u2
             MOV @PSP+,Y     ;2          Y = addr2
             CMP @PSP+,S     ;2          u1 = u2 ?
@@ -457,23 +405,24 @@ BRBADCOMP                   ; -- addr1 u1 addr2 u2
             JNZ BRAN        ;2 --       branch if u1<>u2, 11+6 cycles
 COMPLOOP    CMP.B @Y+,0(X)  ;4
             JNZ BRAN        ;2 --       if char1<>char2; branch on first char <> in 17+6 cycles
-            ADD #1,X        ;1          addr1+1
-            SUB #1,S        ;1          u2-1
+            ADD #1,X        ;1          addr+1
+            SUB #1,S        ;1          u-1
             JNZ COMPLOOP    ;2          10 cycles char comp loop
 SKIPBRANCH  ADD #2,IP       ;1
             MOV @IP+,PC     ;4
 
 ; [TWODROP ONEMINUS ?DUP ZEROEQUAL QFBRAN next_comp EXIT] replacement
-BRNEXTCMP                   ;    -- cnt addr u
-            ADD #2,PSP      ;1   -- cnt addr    TWODROP
-            MOV @PSP+,TOS   ;2   -- cnt
+QBRNEXTCMP                  ;    -- cnt addr u
+            ADD #2,PSP      ;1   -- cnt addr    NIP
+            MOV @PSP+,TOS   ;2   -- cnt         + DROP = TWODROP 
             SUB #1,TOS      ;3   -- cnt-1       ONEMINUS
             JNZ BRAN        ;2   -- cnt-1       branch to next comparaison if <> 0
-            JZ DROPEXIT     ;19w                else DROP EXIT
+DROPEXIT    MOV @PSP+,TOS   ;2   --
+            MOV @RSP+,IP    ;2
+            MOV @IP+,PC     ;4
 
             FORTHWORDIMM  "[ELSE]"
 ; https://forth-standard.org/standard/tools/BracketELSE
-; [ELSE]      a small and fast definition
 ;Compilation:
 ;Perform the execution semantics given below.
 ;Execution:
@@ -482,48 +431,33 @@ BRNEXTCMP                   ;    -- cnt addr u
 ;including nested occurrences of [IF] ... [THEN] and [IF] ... [ELSE] ... [THEN],
 ;until the word [THEN] has been parsed and discarded.
 ;If the parse area becomes exhausted, it is refilled as with REFILL.
-BRACKETELSE
-            mDOCOL
-            .word   lit,0                   ; -- 0
-BRACKETELSE0
-            .word   ONEPLUS                 ; -- cnt+1
-BRACKETELSE1                                ;
-            .word   BL,WORDD,COUNT          ; -- cnt addr u   Z=1 if U=0
-            .word   ZBRAN,BRACKETELSE5      ;       u = 0 if end of line --> refill buffer then loop back
-            .word   TWODUP_XSQUOTE          ;    oui je sais, c'est pas beau mais c'est efficace....
-            .byte   6,"[THEN]"              ; -- cnt addr u addr u addr2 u2
-            .word   BRBADCOMP,BRACKETELSE2  ; -- cnt addr u      if bad string comparaison, jump for next comparaison
-            .word   BRNEXTCMP,BRACKETELSE1  ; 2DROP,  count-1, loop back if count <> 0, else DROP EXIT
-BRACKETELSE2                                ;
-            .word   TWODUP_XSQUOTE          ;
-            .byte   6,"[ELSE]"              ;
-            .word   BRBADCOMP,BRACKETELSE3  ; if bad string comparaison, jump for next comparaison
-            .word   BRNEXTCMP,BRACKETELSE0  ; 2DROP, count-1, loop back with count+1 if count <> 0, else DROP EXIT
-BRACKETELSE3                                ;
-            .word   XSQUOTE                 ;
-            .byte   4,"[IF]"                ;
-            .word   BRBADCOMP,BRACKETELSE1  ; if bad string comparaison, loop back
-            .word   BRAN,BRACKETELSE0       ; else loop back with count+1
-BRACKETELSE5                                ;
-;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
-; OPTION                                    ; +5 words option
-;vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv;
-            .word   XSQUOTE                 ;
-            .byte   5,13,"ko ",10           ;
-            .word   TYPE                    ; CR ." ko " LF     to show false branch of conditionnal compilation
-;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^;
-            .word   TWODROP_REFILL          ; REFILL Input Buffer with next line
-            .word   SETIB                   ; SET Input Buffer pointers SOURCE_LEN, SOURCE_ORG and clear >IN
-            .word   BRAN,BRACKETELSE1       ; then loop back   45/40 words with/without option
-
-            FORTHWORDIMM "[THEN]"   ; do nothing
-; https://forth-standard.org/standard/tools/BracketTHEN
-; [THEN]
-BRACKETTHEN  MOV @IP+,PC
+;the loop back from BRACKTELSE1 to BRACKTELSE0 is shorten
+BRACKETELSE mDOCOL
+            .word   LIT,1                   ; -- cnt
+            .word   BRAN,BRACKTELSE1        ;                   6~ versus 5~ for ONEPLUS
+BRACKTELSE0 .word   XSQUOTE                 ;                   end of skiped line
+            .byte   5,13,"ko ",10           ;                   send CR + "ko " + LF
+            .word   TYPE                    ;                   CR ." ko " LF 
+            .word   TWODROP_REFILL          ;                   REFILL Input Buffer with next line
+            .word   SETIB                   ;                   SET Input Buffer pointers SOURCE_LEN, SOURCE_ORG and clear >IN
+BRACKTELSE1 .word   BL_WORD,COUNT           ; -- cnt addr u     Z = 1 if u = 0
+            .word   ZBRAN,BRACKTELSE0       ; -- cnt addr 0     Z = 1 --> end of line, -6~
+            .word   TWODUP_XSQUOTE          ;                   24 ~
+            .byte   6,"[THEN]"              ; -- cnt addr u addr1 u1 addr2 u2
+            .word   QBRBADCOMP,BRACKTELSE2  ; -- cnt addr u     if [THEN] not found, jump for next comparaison
+            .word   QBRNEXTCMP,BRACKTELSE1  ;                   if found, 2DROP,  count-1, loop back if count <> 0 | DROP EXIT if count = 0
+BRACKTELSE2 .word   TWODUP_XSQUOTE          ;
+            .byte   6,"[ELSE]"              ; -- cnt addr u addr1 u1 addr2 u2
+            .word   QBRBADCOMP,BRACKTELSE3  ; -- cnt addr u     if [ELSE] not found, jump for next comparaison
+            .word   QBRNEXTCMP,BRACKTELSE4  ;                   if found, 2DROP, count-1, loop back if count <> 0
+BRACKTELSE3 .word   XSQUOTE                 ;                   16 ~
+            .byte   4,"[IF]"                ; -- cnt addr1 u1 addr2 u2
+            .word   QBRBADCOMP,BRACKTELSE1  ; -- cnt            if [IF] not found, loop back for next word comparaison
+BRACKTELSE4 .word   ONEPLUS                 ; -- cnt+1          if found,  same loop back with count+1
+            .word   BRAN,BRACKTELSE1        ;         
 
             FORTHWORDIMM "[IF]" ; flag --
 ; https://forth-standard.org/standard/tools/BracketIF
-; [IF]
 ;Compilation:
 ;Perform the execution semantics given below.
 ;Execution: ;( flag | flag "<spaces>name ..." -- )
@@ -539,9 +473,25 @@ BRACKETIF   CMP #0,TOS      ; -- f
             JZ BRACKETELSE  ;       if false flag output
             MOV @IP+,PC     ;       if true flag output
 
+            FORTHWORDIMM  "[UNDEFINED]"
+; https://forth-standard.org/standard/tools/BracketUNDEFINED
+;Compilation:
+;Perform the execution semantics given below.
+;Execution: ( "<spaces>name ..." -- flag )
+;Skip leading space delimiters. Parse name delimited by a space.
+;Return a false flag if name is the name of a word that can be found,
+;otherwise return a true flag.
+            mDOCOL
+            .word   BL_WORD,FIND
+            mNEXTADR
+            SUB #1,TOS      ;1 borrow if TOS was 0
+            SUBC TOS,TOS    ;1 TOS=-1 if borrow was set
+NIP_EXIT    MOV @RSP+,IP
+NIP         ADD #2,PSP      ;1
+            MOV @IP+,PC     ;4
+
             FORTHWORDIMM  "[DEFINED]"
 ; https://forth-standard.org/standard/tools/BracketDEFINED
-; [DEFINED]
 ;Compilation:
 ;Perform the execution semantics given below.
 ;Execution:
@@ -550,29 +500,8 @@ BRACKETIF   CMP #0,TOS      ; -- f
 ;Return a true flag if name is the name of a word that can be found,
 ;otherwise return a false flag. [DEFINED] is an immediate word.
 DEFINED     mDOCOL
-            .word   BL,WORDD,FIND
-            .word   NIP,EXIT
-
-
-            FORTHWORDIMM  "[UNDEFINED]"
-; https://forth-standard.org/standard/tools/BracketUNDEFINED
-; [UNDEFINED]
-;Compilation:
-;Perform the execution semantics given below.
-;Execution: ( "<spaces>name ..." -- flag )
-;Skip leading space delimiters. Parse name delimited by a space.
-;Return a false flag if name is the name of a word that can be found,
-;otherwise return a true flag.
-            mDOCOL
-            .word   BL,WORDD,FIND
-            mNEXTADR
-            MOV @RSP+,IP
-            ADD #2,PSP      ; NIP
-; https://forth-standard.org/standard/core/ZeroEqual
-; 0=     n/u -- flag    return true if TOS=0
-ZEROEQUAL   SUB #1,TOS      ;1 borrow (clear cy) if TOS was 0
-            SUBC TOS,TOS    ;1 TOS=-1 if borrow was set
-            MOV @IP+,PC     ;4
+            .word   BL_WORD,FIND
+            .word   NIP_EXIT
 
 ;-------------------------------------------------------------------------------
 ; STACK OPERATIONS
@@ -590,17 +519,9 @@ RFROM       SUB #2,PSP      ; 1
 
 ; https://forth-standard.org/standard/core/DUP
 ; DUP      x -- x x      duplicate top of stack
-DUP         MOV TOS,-2(PSP) ; 3
-POSTDECR    SUB #2,PSP      ; 1 post decrement stack...
+DUP         SUB #2,PSP      ; 1
+            MOV TOS,0(PSP)  ; 3
             MOV @IP+,PC     ; 4
-
-; https://forth-standard.org/standard/core/DEPTH
-; DEPTH    -- +n        number of items on stack, must leave 0 if stack empty
-DEPTH       MOV TOS,-2(PSP)
-            MOV #PSTACK,TOS
-            SUB PSP,TOS     ; PSP-S0--> TOS
-            RRA TOS         ; TOS/2   --> TOS
-            JMP POSTDECR
 
 ;-------------------------------------------------------------------------------
 ; ARITHMETIC OPERATIONS
@@ -628,49 +549,35 @@ STORE       MOV @PSP+,0(TOS);4
             MOV @PSP+,TOS   ;2
             MOV @IP+,PC     ;4
 
-;-------------------------------------------------------------------------------
-; COMPARAISON OPERATIONS
-;-------------------------------------------------------------------------------
-; https://forth-standard.org/standard/core/Zeroless
-; 0<     n -- flag      true if TOS negative
-ZEROLESS    ADD TOS,TOS     ;1 set carry if TOS negative
-            SUBC TOS,TOS    ;1 TOS=-1 if carry was clear
-INVERT      XOR #-1,TOS     ;1 TOS=-1 if carry was set
-            MOV @IP+,PC     ;
-
-;            FORTHWORD "U>"
-; https://forth-standard.org/standard/core/Umore
-; U>     n1 n2 -- flag
-UMORE       SUB @PSP+,TOS   ;2
-            JNC UMOREEND    ; 2 flag = true, Z = 0
-            AND #0,TOS      ; 1 flag = false,Z = 1
-UMOREEND    MOV @IP+,PC     ; 4
-
 ; ------------------------------------------------------------------------------
 ; STRINGS PROCESSING
 ; ------------------------------------------------------------------------------
+
+; use SQUOTE+10 to enable separator select
+
             FORTHWORDIMM "S\34" ; immediate
 ; https://forth-standard.org/standard/core/Sq
 ; S"       --             compile in-line string
-SQUOTE      MOV #0,&CAPS            ; CAPS OFF
-            mDOCOL
-            .word   lit,XSQUOTE,COMMA
-            .word   lit,'"',WORDD   ; -- c-addr = HERE      W=Count_of_chars
+SQUOTE      SUB #2,PSP              ;               first choose separator
+            MOV TOS,0(PSP)
+            MOV #'"',TOS            ;               separator = '"'
+; SQUOTE+10 address                 ;
+            MOV #0,T                ;               volatile CAPS OFF, only for WORDD+4 below
+            mDOCOL              
+            .word LIT,XSQUOTE,COMMA ;               obviously use not T register...
+            .word WORDD+4           ; -- c-addr     = DP,  W=Count_of_chars
             mNEXTADR                ;
-            MOV #20h,&CAPS          ; restore CAPS ON
-            ADD #1,W                ;
-            BIT #1,W                ;1          C = /Z
-            ADDC W,&DP              ;           DP is aligned
-DROPEXIT    MOV @PSP+,TOS           ; --
-            MOV @RSP+,IP
-            MOV @IP+,PC
-
+            ADD #1,W                ;               to include count of chars
+            BIT #1,W                ;               C = /Z
+            ADDC W,&DP              ; -- addr       new DP is aligned
+            JMP DROPEXIT            ;
+            
             FORTHWORDIMM ".\34"     ; immediate
 ; https://forth-standard.org/standard/core/Dotq
 ; ."       --              compile string to print
 DOTQUOTE    mDOCOL
             .word   SQUOTE
-            .word   lit,TYPE,COMMA
+            .word   LIT,TYPE,COMMA
             .word   EXIT
 
 ;-------------------------------------------------------------------------------
@@ -739,16 +646,18 @@ SIGN        CMP #0,TOS
             JN HOLDW                ; jump if 0<
             MOV @IP+,PC
 
+BL          CALL rDOCON
+            .word   20h
+
             FORTHWORD "U."
 ; https://forth-standard.org/standard/core/Ud
 ; U.    u --           display u (unsigned)
-; note: DDOT = UDOT + 10
-; use enhanced MUSMOD with 16 bits dividend instead of 32.
+; note: DDOT = UDOT + 10 (see DOUBLE.f)
 UDOT        MOV #0,S                ; 1 -- hi=0
-DOTTODDOT   SUB #2,PSP              ; 1 convert n|u to d|ud with Y = -1|0
+            SUB #2,PSP              ; 1 convert n|u to d|ud with Y = -1|0
             MOV TOS,0(PSP)          ; 3 -- lo lo
             MOV S,TOS               ; 1 -- lo hi
-DDOT        PUSHM #2,IP             ; 4             R-- IP sign
+DDOT        PUSHM #2,IP             ; 4             R-- IP S=sign
             AND #-1,TOS             ; clear V, set N
             JGE DDOTNEXT            ; if hi positive (N=0)
             XOR #-1,0(PSP)          ;4
@@ -769,71 +678,80 @@ DDOTNEXT    mASM2FORTH              ;10
 DOT         CMP #0,TOS
             JGE UDOT
             MOV #-1,S
-            JMP DOTTODDOT
+            JMP UDOT+2
 
 ;-------------------------------------------------------------------------------
 ; INTERPRETER
 ;-------------------------------------------------------------------------------
-            FORTHWORD "WORD"
+
 ; https://forth-standard.org/standard/core/WORD
 ; WORD   char -- addr        Z=1 if len=0
-; parse a word delimited by char separator
-; if CAPS is ON, this word is CAPITALIZED unless 'char' input.
+; parse a word delimited by char separator.
+; the resulting c-string is left at HERE.
+; if CAPS is ON, this word is CAPITALIZED unless for a 'char' input.
 ; notice that the average lenght of all CORE definitions is about 4.
-WORDD       MOV #SOURCE_LEN,S   ;2 -- sep
+            FORTHWORD "WORD"
+            JMP WORDD           ;2
+;-------------------------------;
+BL_WORD     SUB #2,PSP          ;1              )
+            MOV TOS,0(PSP)      ;3              > 6~ instead of 16~ for CONSTANT BL runtime
+            MOV #' ',TOS        ;2 -- BL        ) 
+WORDD       MOV &CAPS,T         ;3              CAPS OFF = 0, CAPS ON = $20.
+            MOV #SOURCE_LEN,S   ;2 --           WORDD+4 address
             MOV @S+,X           ;2              X = src_len
             MOV @S+,Y           ;2              Y = src_org
             ADD Y,X             ;1              X = src_len + src_org = src_end
             ADD @S+,Y           ;2              Y = >IN + src_org = src_ptr
             MOV @S,W            ;2              W = HERE = dst_ptr
-SKIPCHARLOO CMP Y,X             ;1              src_ptr = src_end ?
-            JZ SKIPCHAREND      ;2              if yes : End Of Line !
+;-------------------------------;
+SKIPSEPLOOP CMP X,Y             ;1              src_ptr >= src_end ?
+            JC SKIPSEPEND       ;2              if yes : End Of Line !
             CMP.B @Y+,TOS       ;2              does char = separator ?
-            JZ SKIPCHARLOO      ;2              if yes; 7~ loop
+            JZ SKIPSEPLOOP      ;2              if yes; 7~ loop
+;-------------------------------;
             SUB #1,Y            ;1              decrement the post incremented src_ptr
-QSCANTICK   MOV &CAPS,T         ;3              CAPS OFF = 0, CAPS ON = $20.
-            CMP.B #"'",0(Y)     ;4              first char = TICK ?
-            JNZ SCANWORDLOO     ;2              no
-            CMP.B @Y,2(Y)       ;3              third char = TICK ?
-            JNZ SCANWORDLOO     ;2              no
-            MOV #0,T            ;1              don't change to upper case for 'char' input
-SCANWORDLOO MOV.B S,0(W)        ;3              first, S makes room in dst for word length; next, put char.
-            CMP Y,X             ;1              src_ptr = src_end ?
-            JZ SCANWORDEND      ;2              if yes
+SCANTICK    CMP.B #"'",2(Y)     ;4              third char = TICK ? (allow ' as first char for a defined word)
+            JNZ SCANWRDLOOP     ;2              no
+            MOV #0,T            ;1              don't change to upper case for a 'char' input
+;-------------------------------;
+SCANWRDLOOP MOV.B S,0(W)        ;3              first, S makes room in dst for word length; next, put char here.
+            CMP X,Y             ;1              src_ptr = src_end ?
+            JZ SCANWRDEND       ;2              if yes
             MOV.B @Y+,S         ;2              S=char
             CMP.B S,TOS         ;1 -- sep       does char = separator ?
-            JZ SCANWORDEND      ;2              if yes
-            ADD #1,W            ;1              increment dst just before test loop
+            JZ SCANWRDEND       ;2              if yes
+            ADD #1,W            ;1              increment dst
             CMP.B #'a',S        ;2              char U< 'a' ?  this condition is tested at each loop
-            JNC SCANWORDLOO     ;2              16~ upper case char loop
+            JNC SCANWRDLOOP     ;2              16~ upper case char loop
             CMP.B #'z'+1,S      ;2              char U>= 'z'+1 ?
-            JC SCANWORDLOO      ;2              U>= loopback if yes
+            JC SCANWRDLOOP      ;2              U>= loopback if yes
             SUB.B T,S           ;1              convert a...z to A...Z if CAPS ON (T=$20)
-            JMP SCANWORDLOO     ;2              23~ lower case char loop
-SCANWORDEND
-SKIPCHAREND SUB &SOURCE_ORG,Y   ;3 -- sep       Y=src_ptr - src_org = new >IN (first char separator next)
-            MOV Y,&TOIN         ;3              update >IN
-            MOV &DP,TOS         ;3 -- c-addr
-            SUB TOS,W           ;1              W=Word_Length
-            MOV.B W,0(TOS)      ;3
-            MOV @IP+,PC         ;4 -- c-addr    48 words      Z=1 <==> lenght=0 <==> EOL, Z is tested by INTERPRET
+            JMP SCANWRDLOOP     ;2              23~ lower case char loop
+SCANWRDEND  SUB &SOURCE_ORG,Y   ;3 -- sep       Y=src_ptr - src_org = new >IN (first char separator next)
+            MOV Y,&TOIN         ;3              update >IN for next word search in this input stream
+SKIPSEPEND  MOV &DP,TOS         ;3 -- addr      TOS = HERE
+            SUB TOS,W           ;1              W = Word_Length >= 0
+            MOV.B W,0(TOS)      ;3 -- c-addr
+            MOV @IP+,PC         ;4              Z=1 <==> Word_Length = 0 <==> EOL, tested by INTERPRET
 
             FORTHWORD "FIND"    ;
 ; https://forth-standard.org/standard/core/FIND
-; FIND   c-addr -- c-addr 0    if not found ; flag Z=1       c-addr at transient RAM area (HERE)
+; FIND     addr -- c-addr 0    if not found ; flag Z=1       c-addr at transient RAM area (HERE)
 ;                  CFA -1      if found     ; flag Z=0
 ;                  CFA  1      if immediate ; flag Z=0
 ; compare WORD at c-addr (HERE)  with each of words in each of listed vocabularies in CONTEXT
-; FIND to WORDLOOP  : 10/17 cycles,
-; mismatch word loop: 14 cycles on len, 21 cycles on first char,
+; start of FIND     : 5 cycles
+; VOCLOOP           : 5/12 cycles,
+; mismatch word loop: +14 cycles on len, 
+;                     +7  cycles on first char,
 ;                     +10 cycles char loop,
-; WORDFOUND to end  : 16 cycles.
+; WORDFOUND to end  : 15/16 cycles.
 ; note: with 16 threads vocabularies, FIND takes only! 75% of CORETEST.4th processing time
 FIND        SUB #2,PSP          ;1 -- ???? c-addr       reserve one cell, not at FINDEND which would kill the Z flag
             MOV TOS,S           ;1                      S=c-addr
             MOV #CONTEXT,T      ;2                      T = first cell addr of CONTEXT stack
 VOCLOOP     MOV @T+,TOS         ;2 -- ???? VOC_PFA      T=CTXT+2
-            CMP #0,TOS          ;1                      no more vocabulary in CONTEXT ?
+            CMP #0,TOS          ;1                      TOS = BODY = voclink; no more vocabulary in CONTEXT ?
             JZ FINDEND          ;2 -- ???? 0            yes ==> exit; Z=1
     .SWITCH THREADS
     .CASE   1                   ;                       nothing to do
@@ -845,28 +763,91 @@ VOCLOOP     MOV @T+,TOS         ;2 -- ???? VOC_PFA      T=CTXT+2
     .ENDCASE
             ADD #2,TOS          ;1 -- ???? VOC_PFAx+2
 WORDLOOP    MOV -2(TOS),TOS     ;3 -- ???? NFA          -2(TOS) = [VOC_PFAx] first, then [LFA]
-            CMP #0,TOS          ;1 -- ???? NFA          no more word in the thread ?
-            JZ VOCLOOP          ;2 -- ???? NFA          yes ==> search next voc in context
+            CMP #0,TOS          ;1                      no more word in the thread ?
+            JZ VOCLOOP          ;2                      yes ==> search next voc in context
             MOV TOS,X           ;1
             MOV.B @X+,Y         ;2                      TOS = NFA,  X= NFA+1, Y = NFA_first_byte = cnt<<2+i (i= immediate flag)
             RRA.B Y             ;1                      remove immediate flag, the remainder is the count of the definition name.
 LENCOMP     CMP.B @S,Y          ;2                      compare lenght
-            JNZ WORDLOOP        ;2 -- ???? NFA          14~ word loop on lenght mismatch
+            JNZ WORDLOOP        ;2                      14~ word loop on lenght mismatch
             MOV S,W             ;1                      S=W=c-addr
 CHARCOMP    CMP.B @X+,1(W)      ;4                      compare chars
-            JNZ WORDLOOP        ;2 -- ???? NFA          21~ word loop on first char mismatch
+            JNZ WORDLOOP        ;2                      21~ word loop on first char mismatch
             ADD #1,W            ;1
             SUB.B #1,Y          ;1                      decr count
-            JNZ CHARCOMP        ;2 -- ???? NFA          10~ char loop
+            JNZ CHARCOMP        ;2                      10~ char loop
 WORDFOUND   BIT #1,X            ;1
             ADDC #0,X           ;1
             MOV X,S             ;1                      S=aligned CFA
-            MOV.B @TOS,TOS      ;2 -- ???? NFA_1st_byte
+            MOV.B @TOS,TOS      ;2 -- ???? NFA_1st_byte 
             AND #1,TOS          ;1 -- ???? 0|1          test immediate flag
             JNZ FINDEND         ;2 -- ???? 1            jump if bit 1 is set, as immediate bit
             SUB #1,TOS          ;1 -- ???? -1
-FINDEND     MOV S,0(PSP)        ;3 not found: -- c-addr 0                           flag Z=1
-            MOV @IP+,PC         ;4 34/40 words
+FINDEND     MOV S,0(PSP)        ;3 -- xt -1/0/1         if not found: -- c-addr 0    flag Z=1
+            MOV @IP+,PC         ;4 34/40 words          return to interpreter
+
+;             FORTHWORD "FIND"    ;
+; ; https://forth-standard.org/standard/core/FIND
+; ; FIND     addr -- c-addr 0    if not found ; flag Z=1       c-addr at transient RAM area (HERE)
+; ;                  CFA -1      if found     ; flag Z=0
+; ;                  CFA  1      if immediate ; flag Z=0
+; ; compare WORD at c-addr (HERE)  with each of words in each of listed vocabularies in CONTEXT
+; ; start of FIND     : 4/11 cycles
+; ; VOCLOOP           : 6 cycles,
+; ; mismatch word loop: +14 cycles on len, 
+; ;                     +7  cycles on first char,
+; ;                     +10 cycles char loop,
+; ; WORDFOUND to end  : 15/17 cycles.
+; ; note: with 16 threads vocabularies, FIND takes only! 75% of CORETEST.4th processing time
+; FIND                            ;
+;     .SWITCH THREADS             ;
+;     .CASE   1                   ;                       nothing to do
+;     .ELSECASE                   ;                       searching thread adds 7 cycles & 6 words
+;             MOV.B 1(TOS),rDOCON ;3                      S=c-addr rDOCON=first char of c-addr string
+;             AND.B #(THREADS-1),rDOCON;2                 rDOCON=thread_x
+;             ADD rDOCON,rDOCON   ;1                      rDOCON=thread_offset_x
+;             ADD #2,rDOCON       ;1                      rDOCON=thread_offset_x+2
+;     .ENDCASE
+;             SUB #2,PSP          ;1 -- ???? c-addr       reserve one cell, not at FINDEND which would kill the Z flag
+;             MOV TOS,S           ;1                      S=c-addr
+;             MOV #CONTEXT,T      ;2                      T = first cell addr of CONTEXT stack
+; VOCLOOP     MOV @T+,TOS         ;2 -- ???? VOC_PFA      T=CTXT+2
+;             CMP #0,TOS          ;1                      no more vocabulary in CONTEXT ?
+;             JZ FINDEND          ;2 -- ???? 0            yes ==> exit; Z=1
+;     .SWITCH THREADS
+;     .CASE   1                   ;                       nothing to do
+;             ADD #2,TOS          ;1 -- ???? VOC_PFAx+2
+;     .ELSECASE                   ;                       searching thread adds 7 cycles & 6 words
+;             ADD rDOCON,TOS      ;1 -- ???? VOC_PFAx+2   TOS = words set entry
+;     .ENDCASE
+; WORDLOOP    MOV -2(TOS),TOS     ;3 -- ???? NFA          -2(TOS) = [VOC_PFAx] first, then [LFA]
+;             CMP #0,TOS          ;1                      no more word in the thread ?
+;             JZ VOCLOOP          ;2                      yes ==> search next voc in context
+;             MOV TOS,X           ;1
+;             MOV.B @X+,Y         ;2                      TOS = NFA,  X= NFA+1, Y = NFA_first_byte = cnt<<2+i (i= immediate flag)
+;             RRA.B Y             ;1                      remove immediate flag, the remainder is the count of the definition name.
+; LENCOMP     CMP.B @S,Y          ;2                      compare lenght
+;             JNZ WORDLOOP        ;2                      14~ word loop on lenght mismatch
+;             MOV S,W             ;1                      S=W=c-addr
+; CHARCOMP    CMP.B @X+,1(W)      ;4                      compare chars
+;             JNZ WORDLOOP        ;2                      21~ word loop on first char mismatch
+;             ADD #1,W            ;1
+;             SUB.B #1,Y          ;1                      decr count
+;             JNZ CHARCOMP        ;2                      10~ char loop
+; WORDFOUND   BIT #1,X            ;1
+;             ADDC #0,X           ;1
+;             MOV X,S             ;1                      S=aligned CFA
+;             MOV.B @TOS,TOS      ;2 -- ???? NFA_1st_byte 
+;             AND #1,TOS          ;1 -- ???? 0|1          test immediate flag
+;             JNZ FINDEND         ;2 -- ???? 1            jump if bit 1 is set, as immediate bit
+;             SUB #1,TOS          ;1 -- ???? -1
+; FINDEND
+;     .CASE   1                   ;                       nothing to do
+;     .ELSECASE                   ;                       searching thread adds 7 cycles & 6 words
+;             MOV #XDOCON,rDOCON  ;2
+;     .ENDCASE
+;             MOV S,0(PSP)        ;3 -- xt -1/0/1         if not found: -- c-addr 0    flag Z=1
+;             MOV @IP+,PC         ;4 34/40 words          return to interpreter
 
     .IFDEF MPY_32 ; if 32 bits hardware multiplier
 
@@ -885,25 +866,25 @@ TONUMBER    MOV &BASEADR,T      ;3                      T = base
             MOV @PSP+,Y         ;2 -- ud1lo cnt1        Y = ud1hi
             MOV @PSP,X          ;2 -- x cnt1            X = ud1lo
             SUB #4,PSP          ;1 -- x x x cnt1
-TONUMLD_OP1 MOV T,&MPY          ;3                      base = MPY OP1 loaded out of TONUMLOOP
+TONUMLD_OP1 MOV T,&MPY          ;3                      base = MPY = OP1 loaded out of TONUMLOOP
 TONUMLOOP   MOV.B @S,W          ;2 -- x x x cnt         S=adr, T=base, W=char, X=udlo, Y=udhi
-DDIGITQ     SUB.B #3Ah,W        ;2                      all Ctrl_Chars < '0'  and all chars '0' to '9' become negative
+DDIGITQ     SUB.B #':',W        ;2                      all Ctrl_Chars < '0'  and all chars '0' to '9' become negative
             JNC DDIGITQNEXT     ;2                      accept all chars U< ':'  (accept $0 up to $39)
-            SUB.B #7,W          ;2                      W = char - ($3A + $07 = 'A')
+            SUB.B #7,W          ;2                      W = char - (':' + $07 = 'A')
             JNC TONUMEND        ;2 -- x x x cnt         reject all Ctrl_Chars U< 'A', (with Z flag = 0)
 DDIGITQNEXT ADD.B #0Ah,W        ;2                      restore digit value: 0 to 15 (and beyond)
             CMP T,W             ;1                      digit-base (U>= comparaison rejects all Ctrl_Chars)
             BIC #Z,SR           ;1                      reset Z before return to QNUMBER because else
             JC TONUMEND         ;2                      to avoid QNUMBER conversion true with digit=base :-(
-UDSTAR      MOV X,&OP2L         ;3                      Load 2nd operand (ud1lo)
+            MOV X,&OP2L         ;3                      Load 2nd operand (ud1lo)
             MOV Y,&OP2H         ;3                      Load 2nd operand (ud1hi)
             MOV &RES0,X         ;3                      lo result in X (ud2lo)
             MOV &RES1,Y         ;3                      hi result in Y (ud2hi)
-MPLUS       ADD W,X             ;1                      ud2lo + digit
+            ADD W,X             ;1                      ud2lo + digit
             ADDC #0,Y           ;1                      ud2hi + carry
 TONUMPLUS   ADD #1,S            ;1                      adr+1
             SUB #1,TOS          ;1 -- x x x cnt         cnt-1
-            JNZ TONUMLOOP       ;2                      if count <>0 33~ loop
+            JNZ TONUMLOOP       ;2                      if count <>0    34~ digit loop
 TONUMEND    MOV S,0(PSP)        ;3 -- x x addr2 cnt2
             MOV Y,2(PSP)        ;3 -- x ud2hi addr2 cnt2
             MOV X,4(PSP)        ;3 -- ud2lo ud2hi addr2 cnt2
@@ -945,14 +926,14 @@ QDECIMAL    ADD #8,T            ;1                          preset base 10
 QHEXA       MOV #16,T           ;2                          preset base 16
             CMP.B #1,W          ;1                          hex '$' prefix ?        '#' + 1 = '$'
             JZ PREFIXNEXT       ;2                          yes
-QTICK       CMP.B #4,W          ;1                          prefix = ' ?            '#' + 4 = "'"
-            JNZ QNUMNEXT        ;2 -- addr x x x cnt        no, abort because prefix not recognized
+QTICK       CMP.B #4,W          ;1                          ' prefix ?              '#' + 4 = "'"
+            JNZ QNUMNEXT        ;2 -- addr x x x cnt        no, abort because other prefixes not recognized
             CMP #3,TOS          ;2                          count = 3 ?
             JNZ QNUMNEXT        ;2                          no, abort
-            CMP.B @S+,1(S)      ;4 -- addr x x x 3          3rd char = 1st char = "'"   ?
+            CMP.B @S+,1(S)      ;4 -- addr x x x 3          3rd char = 1st char ?
             MOV.B @S,S          ;2                          does byte to word conversion
-            MOV S,4(PSP)        ;3 -- addr ud2lo x x x      ud2lo = ASCII code of 'char'
-            JMP QNUMNEXT        ;2 -- addr ud2lo x x x      with happy end if 3rd char = 1st char
+            MOV S,4(PSP)        ;3 -- addr ud2lo x x 3      ud2lo = ASCII code of 'char'
+            JMP QNUMNEXT        ;2 -- addr ud2lo x x 3      with happy end only if 3rd char = 1st char = "'"
 QNUMMINUS   MOV #-1,2(RSP)      ;3 R-- sign IP              set sign flag
 PREFIXNEXT  SUB #1,TOS          ;1 -- addr x x x cnt-1      TOS=count-1
             CMP.B @S+,0(S)      ;4                          S=adr+1; same prefix ?
@@ -1008,11 +989,8 @@ S15Q16EOC   MOV 4(PSP),2(PSP)   ;5 -- addr ud2lo ud2hi uqlo x       ud2lo from >
 ; ------------------------------;
 QNUMNEXT    POPM #2,TOS         ;4 -- addr ud2lo-hi x sign  R: --   POPM IP,TOS  TOS = sign flag = {-1;0}
             JZ QNUMOK           ;2 -- addr ud2lo-hi x sign          conversion OK if Z=1
-QNUMKO
-        .IFDEF DOUBLE_NUMBERS   ;
-            BIC #UF9,SR         ;2                                  reset flag UF9, before next use as double number flag
-        .ENDIF
-            ADD #6,PSP          ;2 -- addr sign
+; ------------------------------;
+QNUMKO      ADD #6,PSP          ;2 -- addr sign
             AND #0,TOS          ;1 -- addr ff                       TOS=0 and Z=1 ==> conversion ko
             MOV @IP+,PC         ;4
 ; ------------------------------;
@@ -1028,8 +1006,7 @@ QDNEGATE    XOR #-1,2(PSP)      ;3 -- udlo udhi -1
             ADD #1,2(PSP)       ;3
             ADDC #0,0(PSP)      ;3
 QDOUBLE     BIT #UF9,SR         ;2 -- dlo dhi tf                    decimal point or comma fixpoint ?
-            JNZ QNUMEND         ;2                                  leave double
-NIP         ADD #2,PSP          ;1 -- n tf                          leave number
+            JZ NIP              ;2                                  no, goto leave number
 QNUMEND     MOV @IP+,PC         ;4                                  TOS<>0 and Z=0 ==> conversion ok
         .ELSE
 QNUMOK      ADD #4,PSP          ;1 -- addr ud2lo sign
@@ -1039,8 +1016,7 @@ QNUMOK      ADD #4,PSP          ;1 -- addr ud2lo sign
             XOR #-1,TOS         ;1 -- udlo udhi sign
 QNEGATE     XOR #-1,2(PSP)      ;3
             ADD #1,2(PSP)       ;3 -- n u tf
-QNUMEND
-NIP         ADD #2,PSP          ;1 -- n tf
+QNUMEND     ADD #2,PSP          ;1 -- n tf
             MOV @IP+,PC         ;4                                  TOS=-1 and Z=0 ==> conversion ok
         .ENDIF ; DOUBLE_NUMBERS ;
 
@@ -1100,7 +1076,7 @@ UMSTARNEXT1 mNEXTADR            ;  -- ud1lo ud1hi x ud3hi
             MOV #UMSTARNEXT2,IP ;2
 UMSTARTWO   JMP UMSTAR1         ;2 -- ud1lo ud1hi x ud4hi   X=ud4lo
 UMSTARNEXT2 mNEXTADR            ;  -- ud1lo ud1hi x ud4hi
-MPLUS       ADD @RSP+,X         ;2 -- ud1lo ud1hi x ud4hi   X=ud4lo+digit=ud2lo             r-- IP adr count base ud3lo
+            ADD @RSP+,X         ;2 -- ud1lo ud1hi x ud4hi   X=ud4lo+digit=ud2lo             r-- IP adr count base ud3lo
             ADDC @RSP+,TOS      ;2 -- ud1lo ud1hi x ud2hi   TOS=ud4hi+ud3lo+carry=ud2hi     r-- IP adr count base
             MOV X,4(PSP)        ;3 -- ud2lo ud1hi x ud2hi
             MOV TOS,2(PSP)      ;3 -- ud2lo ud2hi x x                                       r-- IP adr count base
@@ -1149,12 +1125,12 @@ QHEXA       MOV #16,W           ;2                      preset base 16
             CMP.B #1,Y          ;1                      hex prefix ?        '$' = '#' + 1
             JZ PREFIXNEXT       ;2                      yes
 QTICK       CMP.B #4,Y          ;1                      prefix = ' ?        "'" = '#' + 4
-            JNZ QNUMNEXT        ;2 -- addr x x x cnt    abort if not recognized prefix
+            JNZ QNUMNEXT        ;2 -- addr x x x cnt    no, abort because other prefixes not recognized
             CMP #3,TOS          ;
             JNZ QNUMNEXT        ;
             CMP.B @S+,1(S)      ;4                      compare 3rd with first char '
             MOV.B @S,S          ;2                      does char to word conversion
-            MOV S,4(PSP)        ;5 -- addr ud2lo 0 x x  ud2lo = ASCII code of 'char'
+            MOV S,4(PSP)        ;5 -- addr ud2lo x x 3  ud2lo = ASCII code of 'char'
             JMP QNUMNEXT        ;2                      with happy end if flag Z = 1
 QNUMMINUS   MOV #-1,2(RSP)      ;3 R-- sign IP          set sign flag
 PREFIXNEXT  SUB #1,T            ;1                      T=count-1
@@ -1210,11 +1186,8 @@ S15Q16EOC   MOV 4(PSP),2(PSP)   ;5 -- addr ud2lo ud2lo uqlo x       ud2lo from >
 ; ------------------------------;97
 QNUMNEXT    POPM #2,TOS         ;4 -- addr ud2lo-hi x sign  R: --   POPM IP,TOS  TOS = sign flag = {-1;0}
             JZ QNUMOK           ;2 -- addr ud2lo-hi x sign          conversion OK if Z=1
-QNUMKO                          ;                                   flag Z=0
-        .IFDEF DOUBLE_NUMBERS
-            BIC #UF9,SR
-        .ENDIF
-            ADD #6,PSP          ;1 -- addr sign
+; ------------------------------;
+QNUMKO      ADD #6,PSP          ;1 -- addr sign
             AND #0,TOS          ;1 -- addr ff                       TOS=0 and Z=1 ==> conversion ko
             MOV @IP+,PC         ;4
 ; ------------------------------;
@@ -1230,8 +1203,7 @@ Q2NEGATE    XOR #-1,2(PSP)      ;3
             ADD #1,2(PSP)       ;3
             ADDC #0,0(PSP)      ;3 -- dlo dhi tf
 QDOUBLE     BIT #UF9,SR         ;2 -- dlo dhi tf                decimal point added ?
-            JNZ QNUMEND         ;2 -- dlo dhi tf                leave double
-NIP         ADD #2,PSP          ;1 -- dlo tf                    leave number, Z=0
+            JZ NIP              ;                                   no, goto leave number, Z=0
 QNUMEND     MOV @IP+,PC         ;4                              TOS=-1 and Z=0 ==> conversion ok
         .ELSE
 QNUMOK      ADD #4,PSP          ;1 -- addr ud2lo sign
@@ -1241,8 +1213,7 @@ QNUMOK      ADD #4,PSP          ;1 -- addr ud2lo sign
             XOR #-1,TOS         ;1 -- udlo udlo tf                   TOS=-1 and Z=0
 QNEGATE     XOR #-1,2(PSP)      ;3
             ADD #1,2(PSP)       ;3 -- n udlo tf
-QNUMEND
-NIP         ADD #2,PSP          ;1
+QNUMEND     ADD #2,PSP          ;1
             MOV @IP+,PC         ;4                              TOS=-1 and Z=0 ==> conversion ok
         .ENDIF ; DOUBLE_NUMBERS
     .ENDIF ; of Hardware/Software MPY
@@ -1254,18 +1225,21 @@ NIP         ADD #2,PSP          ;1
 BACKSLASH   MOV &SOURCE_LEN,&TOIN   ;
             MOV @IP+,PC
 
+; ------------------------------;
+; INTERPRET = BACKSLASH + 8     ;
+; ------------------------------;
 ; INTERPRET    i*x addr u -- j*x      interpret given buffer
 ; This is the common factor of EVALUATE and QUIT.
 ; set addr u as input buffer then parse it word by word
 INTERPRET   mDOCOL              ;               INTERPRET = BACKSLASH + 8
             .word SETIB         ; --            set input buffer pointers
-INTLOOP     .word BL,WORDD      ; -- c-addr fl  flag Z = 1 <=> End Of Line
-            .word ZBRAN,FDROPEXIT;              BRANch to DROPEXIT if Z = 1
-            .word FIND
+INTLOOP     .word BL_WORD       ; -- c-addr     flag Z = 1 <=> End Of Line
+            .word ZBRAN,FDROPEXIT;              early return if End of Line
+            .word FIND          ;
             mNEXTADR            ; -- xt|c-addr|xt -1|0|+1   Z=1 --> not found
             MOV TOS,W           ;                           W = flag = (-1|0|+1) as (not_immediate|not_found|immediate)
             MOV @PSP+,TOS       ; -- xt|c-addr|xt
-            MOV #INTQNUMNEXT,IP ;2              INTQNUMNEXT is the continuation of QNUMBER
+            MOV #INTQNUMNEXT,IP ;2              INTQNUMNEXT is the next of QNUMBER
             JZ QNUMBER          ;2              if Z=1 --> not found, search a number
             MOV #INTLOOP,IP     ;2              INTLOOP is the continuation of EXECUTE|COMMA
             XOR &STATE,W        ;3
@@ -1278,15 +1252,179 @@ INTQNUMNEXT mNEXTADR            ;  -- n|c-addr fl   Z = 1 --> not a number, SR(U
             MOV @PSP+,TOS       ;2 -- n|c-addr
             MOV #INTLOOP,IP     ;2              INTLOOP is the continuation of LITERAL.
             JNZ LITERAL         ;2 n --         Z = 0 --> is a number, execute LITERAL then loop back to INTLOOP
-NotFoundexe ADD.B #1,0(TOS)     ;3 c-addr --    Z = 1 --> Not a Number : incr string count to add '?'
+NOTFOUND    MOV #FABORT_TERM,IP ;2              ABORT_TERM becomes the end of INTERPRET
+            ADD.B #1,0(TOS)     ;3 c-addr --    Z = 1 --> Not a Number : incr string count to add '?'
             MOV.B @TOS,Y        ;2              Y=count+1
             ADD TOS,Y           ;1              Y=end of string addr
             MOV.B #'?',0(Y)     ;5              add '?' to end of string
-            MOV #FABORT_TERM,IP ;2              ABORT_TERM is the continuation of COUNT
-            JMP COUNT           ;2 -- addr len  37 words
+            JMP COUNT           ;2 -- addr len  return to ABORT_TERM
+FDROPEXIT   .word   DROPEXIT
+
+            FORTHWORDIMM "LITERAL"  ; immediate
+    .IFDEF DOUBLE_NUMBERS       ; are recognized
+; https://forth-standard.org/standard/core/LITERAL
+; LITERAL  n --        append single numeric literal if compiling state
+;          d --        append two numeric literals if compiling state and UF9<>0 (not ANS)
+LITERAL     CMP #0,&STATE       ;3
+            JZ LITERALNEXT      ;2 if interpreting state, does nothing else to clear UF9 flag
+            MOV TOS,X           ;1          X = n|dhi
+LITERALLOOP MOV &DP,W           ;3
+            ADD #4,&DP          ;3
+            MOV #LIT,0(W)       ;4
+            MOV X,2(W)          ;3 pass 1: compile n, if pass 2: compile dhi
+            MOV @PSP+,TOS       ;2
+            BIT #UF9,SR         ;2 double number ?
+LITERALNEXT BIC #UF9,SR         ;2    in all case, clear UF9
+            JZ LITERALEND       ;2 no  goto end if n|interpret_state
+            MOV TOS,2(W)        ;3 yes compile dlo over dhi
+            JMP LITERALLOOP     ;2
+LITERALEND  MOV @IP+,PC         ;4
+    .ELSE
+; https://forth-standard.org/standard/core/LITERAL
+; LITERAL  n --        append single numeric literal if compiling state
+LITERAL     CMP #0,&STATE       ;3
+            JZ LITERALEND       ;2 if interpreting state, does nothing
+            MOV &DP,W           ;3
+            ADD #4,&DP          ;3
+            MOV #LIT,0(W)       ;4
+            MOV TOS,2(W)        ;3
+            MOV @PSP+,TOS       ;2
+LITERALEND  MOV @IP+,PC         ;4
+    .ENDIF
+
+; https://forth-standard.org/standard/core/DEPTH
+; DEPTH    -- +n        number of items on stack, must leave 0 if stack empty
+QDEPTH      MOV TOS,-2(PSP)     ; 3
+            MOV #PSTACK,TOS     ; 2
+            SUB PSP,TOS         ; 1 PSP-S0--> TOS
+            RRA TOS             ; 1 TOS/2   --> TOS
+            SUB #2,PSP          ; 1
+; https://forth-standard.org/standard/core/Zeroless
+; 0<     n -- flag      true if TOS negative
+ZEROLESS    ADD TOS,TOS         ;1 set carry if TOS negative
+            SUBC TOS,TOS        ;1 TOS=-1 if carry was clear
+INVERT      XOR #-1,TOS         ;1 TOS=-1 if carry was set
+            MOV @IP+,PC         ;4
+
+            FORTHWORD "COUNT"
+; https://forth-standard.org/standard/core/COUNT
+; COUNT   c-addr1 -- adr len   counted->adr/len
+COUNT       SUB #2,PSP          ;1
+            MOV.B @TOS+,W       ;2
+            MOV TOS,0(PSP)      ;3
+            MOV W,TOS           ;1
+            AND #-1,TOS         ;1       Z is set if u=0
+            MOV @IP+,PC         ;4 12~
+
+QFRAM_FULL  SUB #2,PSP          ; 2
+            MOV TOS,0(PSP)      ; 3
+            MOV #0,TOS          ; 1
+            CMP #FRAM_FULL,&DP  ; 4
+            JC INVERT           ; 2
+            MOV @IP+,PC         ; 4 16~
+
+            FORTHWORD "ALLOT"
+; https://forth-standard.org/standard/core/ALLOT
+; ALLOT   n --         allocate n bytes
+ALLOT       ADD TOS,&DP
+            MOV @PSP+,TOS
+            MOV @IP+,PC
+
+; ----------------------------------;
+; ABORT = ALLOT + $08               ;
+; QUIT  = ALLOT + $0E               ;
+; ----------------------------------;
+;            FORTHWORD "ABORT"
+; https://forth-standard.org/standard/core/ABORT
+; Empty the data stack and perform the function of QUIT,
+; which includes emptying the return stack, without displaying a message.
+; ABORT is the common next of WARM and ABORT"
+ABORT       MOV #PSTACK,PSP         ; clear Parameter stack
+            MOV #0,TOS              ; clear TOS for SYS use.
+; https://forth-standard.org/standard/core/QUIT
+; QUIT  --     interpret line by line the input stream
+QUIT        mASM2FORTH              ; QUIT is the level 0 of Return stack
+    .IFDEF PROMPT
+QUIT1       .word   XSQUOTE         ;
+            .byte   5,13,10,"ok "   ; CR+LF + Forth prompt
+QUIT2
+    .ELSE
+QUIT2       .word   XSQUOTE         ; 16~
+            .byte   2,13,10         ; CR+LF
+    .ENDIF
+            .word   TYPE            ; 79~
+            .word   REFILL          ;       -- org len      refill the input line buffer from ACCEPT
+QUIT4       .word   INTERPRET       ;                       interpret it
+QUIT5       .word   QDEPTH          ; 15~                   stack empty test
+            .word   XSQUOTE         ; 16~                   ABORT" stack empty"
+            .byte   11,"stack empty";
+            .word   QABORT          ; 14~                   see QABORT in forthMSP430FR_TERM_xxx.asm
+            .word   QFRAM_FULL      ; 16~                   FRAM full test
+            .word   XSQUOTE         ; 16~                   ABORT" MAIN full"
+            .byte   9,"MAIN full"   ;
+            .word   QABORT          ; 14~ 
+    .IFDEF PROMPT
+            .word   LIT,STATE,FETCH ; STATE @
+            .word   QFBRAN,QUIT1    ; 0= case of interpretion state
+            .word   XSQUOTE         ; 0<> case of compilation state
+            .byte   5,13,10,"   "   ; CR+LF + 3 spaces
+    .ENDIF
+            .word   BRAN,QUIT2      ; 6~
+
+            FORTHWORDIMM "ABORT\34"
+; ; ABORT" is enabled in interpretation mode (+ 11 words) :
+;             PUSH IP
+;             CMP #0,&STATE
+;             JNZ COMP_QABORT
+; EXEC_QABORT MOV #0,T              ; CAPS OFF
+;             mASM2FORTH
+;             .word   LIT,'"',WORDD+4,COUNT,QABORT
+;             .word   DROPEXIT
+;COMP_QABORT mASM2FORTH
+;            .word   SQUOTE
+;            .word   LIT,QABORT,COMMA    ; see QABORT in forthMSP430FR_TERM_xxx.asm
+;FEXIT       .word   EXIT
+
+; https://forth-standard.org/standard/core/ABORTq
+; ABORT" " (empty string) displays nothing
+; ABORT"  i*x flag -- i*x   R: j*x -- j*x  flag=0
+;         i*x flag --       R: j*x --      flag<>0
+            mDOCOL
+            .word   SQUOTE
+            .word   LIT,QABORT,COMMA    ; see QABORT in forthMSP430FR_TERM_xxx.asm
+FEXIT       .word   EXIT
+
+            FORTHWORD "'"
+; https://forth-standard.org/standard/core/Tick
+; '    -- xt           find word in dictionary and leave on stack its execution address if exist else error.
+TICK        mDOCOL
+            .word   BL_WORD,FIND
+            .word   QFBRAN,FNOTFOUND;
+            .word   EXIT
+FNOTFOUND   .word   NOTFOUND        ; see INTERPRET
+
+            FORTHWORDIMM "[']"      ; immediate word, i.e. word executed during compilation
+; https://forth-standard.org/standard/core/BracketTick
+; ['] <name>        --         find word & compile it as literal
+BRACTICK    mDOCOL
+            .word   TICK            ; get xt of <name>
+            .word   LIT,LIT,COMMA   ; append LIT action
+            .word   COMMA,EXIT      ; append xt literal
+
+            FORTHWORDIMM "["    ; immediate
+; https://forth-standard.org/standard/core/Bracket
+; [        --      enter interpretative state
+LEFTBRACKET MOV #0,&STATE
+            MOV @IP+,PC
+
+            FORTHWORD "]"
+; https://forth-standard.org/standard/core/right-bracket
+; ]        --      enter compiling state
+            MOV  #-1,&STATE
+            MOV @IP+,PC
 
 ;-------------------------------------------------------------------------------
-; DICTIONARY MANAGEMENT
+; COMPILER
 ;-------------------------------------------------------------------------------
             FORTHWORD ","
 ; https://forth-standard.org/standard/core/Comma
@@ -1297,156 +1435,16 @@ COMMA       ADD #2,&DP          ;3
             MOV @PSP+,TOS       ;2
             MOV @IP+,PC         ;4 15~      W = DP
 
-            FORTHWORDIMM "LITERAL"  ; immediate
-; https://forth-standard.org/standard/core/LITERAL
-; LITERAL  n --        append single numeric literal if compiling state
-;          d --        append two numeric literals if compiling state and UF9<>0 (not ANS)
-    .IFDEF DOUBLE_NUMBERS       ; are recognized
-LITERAL     CMP #0,&STATE       ;3
-            JZ LITERALNEXT      ;2 if interpreting state, does nothing else clear UF9 flag
-            MOV TOS,X           ;1          X = n|dhi
-LITERALLOOP MOV &DP,W           ;3
-            ADD #4,&DP          ;3
-            MOV #lit,0(W)       ;4
-            MOV X,2(W)          ;3 pass 1: compile n, if pass 2: compile dhi
-            MOV @PSP+,TOS       ;2
-            BIT #UF9,SR         ;2 double number ?
-LITERALNEXT BIC #UF9,SR         ;2    in all case, clear UF9
-            JZ LITERALEND       ;2 no  goto end if n|interpret_state
-            MOV TOS,2(W)        ;3 yes compile dlo over dhi
-            JMP LITERALLOOP     ;2
-LITERALEND  MOV @IP+,PC         ;4
-    .ELSE
-LITERAL     CMP #0,&STATE       ;3
-            JZ LITERALEND       ;2 if interpreting state, does nothing
-            MOV &DP,W           ;3
-            ADD #4,&DP          ;3
-            MOV #lit,0(W)       ;4
-            MOV TOS,2(W)        ;3
-            MOV @PSP+,TOS       ;2
-LITERALEND  MOV @IP+,PC         ;4
-    .ENDIF
-
-            FORTHWORD "COUNT"
-; https://forth-standard.org/standard/core/COUNT
-; COUNT   c-addr1 -- adr len   counted->adr/len
-COUNT       SUB #2,PSP          ;1
-            MOV.B @TOS+,W       ;2
-            MOV TOS,0(PSP)      ;3
-            MOV W,TOS           ;1
-            AND #-1,TOS         ;       Z is set if u=0
-            MOV @IP+,PC         ;4 14~
-
-            FORTHWORD "ALLOT"
-; https://forth-standard.org/standard/core/ALLOT
-; ALLOT   n --         allocate n bytes
-ALLOT       ADD TOS,&DP
-            MOV @PSP+,TOS
-            MOV @IP+,PC
-
-;            FORTHWORD "ABORT"
-; https://forth-standard.org/standard/core/ABORT
-; Empty the data stack and perform the function of QUIT,
-; which includes emptying the return stack, without displaying a message.
-; ABORT is the common next of WARM and ABORT"
-ABORT       MOV #PSTACK,PSP         ; ABORT = ALLOT + 8
-            MOV #0,TOS              ; and clear TOS for SYS use.
-; https://forth-standard.org/standard/core/QUIT
-; QUIT  --     interpret line by line the input stream
-QUIT        mASM2FORTH              ; QUIT = ALLOT + 14
-    .IFDEF PROMPT
-QUIT1       .word   XSQUOTE         ; lower interpret loop
-            .byte   5,13,10,"ok "   ; CR + LF + Forth prompt
-QUIT2
-    .ELSE
-QUIT2       .word   XSQUOTE
-            .byte   2,13,10         ; CR+LF
-    .ENDIF
-            .word   TYPE            ;
-            .word   REFILL          ; -- org len      refill input buffer from ACCEPT (one line)
-QUIT4       .word   INTERPRET       ; interpret  input buffer|string
-QUIT5       .word   DEPTH,ZEROLESS  ; stack empty test
-            .word   XSQUOTE         ; ABORT" stack empty! "
-            .byte   11,"stack empty";
-            .word   QABORT          ; see QABORT in forthMSP430FR_TERM_xxx.asm
-            .word   HEREXEC         ; )
-            .word   lit,FRAM_FULL   ; > FRAM full test
-            .word   UMORE           ; )
-            .word   XSQUOTE         ; ABORT" FRAM full! "
-            .byte   9,"FRAM full"   ;
-            .word   QABORT          ; see QABORT in forthMSP430FR_TERM_xxx.asm
-    .IFDEF PROMPT
-            .word   lit,STATE,FETCH ; STATE @
-            .word   QFBRAN,QUIT1    ; 0= case of interpretion state
-            .word   XSQUOTE         ; 0<> case of compilation state
-            .byte   5,13,10,"   "   ; CR+LF + 3 spaces
-    .ENDIF
-            .word   BRAN,QUIT2
-
-            FORTHWORDIMM "ABORT\34"
-; ; ABORT" is enabled in interpretation mode (+ 17 words) :
-;             CMP #0,&STATE
-;             JNZ CMPL_QABORT
-;             MOV #0,&CAPS            ; CAPS OFF
-; EXEC_QABORT mDOCOL
-;             .word   LIT,'"',WORDD,COUNT,QABORT
-;             .word   BL,LIT,CAPS,STORE
-;             .word   EXIT
-
-; https://forth-standard.org/standard/core/ABORTq
-; ABORT" " (empty string) displays nothing
-; ABORT"  i*x flag -- i*x   R: j*x -- j*x  flag=0
-;         i*x flag --       R: j*x --      flag<>0
-CMPL_QABORT mDOCOL
-            .word   SQUOTE
-            .word   lit,QABORT,COMMA    ; see QABORT in forthMSP430FR_TERM_xxx.asm
-            .word   EXIT
-
-;-------------------------------------------------------------------------------
-; COMPILER
-;-------------------------------------------------------------------------------
-            FORTHWORD "'"
-; https://forth-standard.org/standard/core/Tick
-; '    -- xt           find word in dictionary and leave on stack its execution address
-TICK        mDOCOL
-            .word   BL,WORDD,FIND
-            .word   ZBRAN,NotFound  ; BRANch to NotFound if Z = 1
-FDROPEXIT   .word   DROPEXIT
-NotFound    .word   NotFoundExe     ; see INTERPRET
-
-
-            FORTHWORDIMM "[']"      ; immediate word, i.e. word executed during compilation
-; https://forth-standard.org/standard/core/BracketTick
-; ['] <name>        --         find word & compile it as literal
-BRACTICK    mDOCOL
-            .word   TICK            ; get xt of <name>
-            .word   lit,lit,COMMA   ; append lit action
-            .word   COMMA,EXIT      ; append xt literal
-
-            FORTHWORDIMM "["    ; immediate
-; https://forth-standard.org/standard/core/Bracket
-; [        --      enter interpretative state
-LEFTBRACKET
-            MOV #0,&STATE
-            MOV @IP+,PC
-
-            FORTHWORD "]"
-; https://forth-standard.org/standard/core/right-bracket
-; ]        --      enter compiling state
-RIGHTBRACKET
-            MOV  #-1,&STATE
-            MOV @IP+,PC
-
             FORTHWORDIMM "POSTPONE"
 ; https://forth-standard.org/standard/core/POSTPONE
 POSTPONE    mDOCOL
-            .word   BL,WORDD,FIND
-            .word   ZBRAN,NotFound  ; BRANch to NotFound if Z = 1
+            .word   BL_WORD,FIND
+            .word   ZBRAN,FNOTFOUND ; BRANch to FNOTFOUND if Z = 1
             .word   ZEROLESS        ; immediate word ?
             .word   QFBRAN,POST1    ; if immediate
-            .word   lit,lit,COMMA   ; else  compile lit
+            .word   LIT,LIT,COMMA   ; else  compile LIT
             .word   COMMA           ;       compile xt
-            .word   lit,COMMA       ;       CFA of COMMA
+            .word   LIT,COMMA       ;       CFA of COMMA
 POST1       .word   COMMA,EXIT      ; then compile xt of word found if immediate else CFA of COMMA
 
             FORTHWORD ":"
@@ -1457,7 +1455,7 @@ COLON       PUSH #COLONNEXT         ;3              define COLONNEXT as HEADER r
 HEADER      BIT #1,&DP              ;3              carry set if odd
             ADDC #2,&DP             ;4              align and make room for LFA
             mDOCOL                  ;
-            .word BL,WORDD          ;               W=Count_of_chars
+            .word BL_WORD           ;               W = Count_of_chars, up to 127 for definitions
             mNEXTADR                ; -- HERE       HERE is the NFA of this new word
             MOV @RSP+,IP            ;
             BIS.B #1,W              ;               W=count is always odd
@@ -1465,50 +1463,56 @@ HEADER      BIT #1,&DP              ;3              carry set if odd
             ADD TOS,W               ;               W=Aligned_CFA
             MOV &CURRENT,X          ;               X=VOC_BODY of CURRENT
             MOV TOS,Y               ;               Y=NFA
+            ADD.B @TOS+,-1(TOS)     ;               shift left once NFA_1st_byte (make room for immediate flag, clear it)
     .SWITCH THREADS                 ;
     .CASE   1                       ;               nothing to do
     .ELSECASE                       ;               multithreading add 5~ 4words
-            MOV.B 1(TOS),TOS        ; -- char       TOS=first CHAR of new word
-            AND #(THREADS-1),TOS    ; -- offset     TOS= thread_offset
-            ADD TOS,TOS             ;               TOS= thread_offset * 2
+            MOV.B @TOS,TOS          ; -- char       TOS=first CHAR of new word
+            AND #(THREADS-1),TOS    ; -- offset     TOS= thread_offset in words
+            ADD TOS,TOS             ;               TOS= thread_offset in bytes
             ADD TOS,X               ;               X=VOC_PFAx = thread x of VOC_PFA of CURRENT
     .ENDCASE                        ;
             MOV @PSP+,TOS           ; --
-            ADD.B @Y,0(Y)           ;               shift left once NFA_1st_byte (make room for immediate flag)
 HEADEREND   MOV Y,&LAST_NFA         ;               NFA --> LAST_NFA            used by QREVEAL, IMMEDIATE
             MOV X,&LAST_THREAD      ;               VOC_PFAx --> LAST_THREAD    used by QREVEAL
             MOV W,&LAST_CFA         ;               HERE=CFA --> LAST_CFA       used by DOES>, RECURSE
             MOV PSP,&LAST_PSP       ;               save PSP for check compiling, used by QREVEAL
-            ADD #4,W                ;               by default make room for two words...
+            ADD #4,W                ;               W = BODY of created word...
             MOV W,&DP               ;
             MOV @RSP+,PC            ; RET           W is the new DP value )
-                                    ;               X is LAST_THREAD      > used by compiling words: CREATE, DEFER, :...
+;-----------------------------------;               X is LAST_THREAD      > used by compiling words: CREATE DEFER : CODE ...
 COLONNEXT                           ;               Y is NFA              )
-    .SWITCH DTC                     ; Direct Threaded Code select
-    .CASE 1                         ;
-            MOV #DOCOL,-4(W)        ; compile CALL R4 = rDOCOL ([rDOCOL] = XDOCOL)
-            SUB #2,&DP              ;
-    .CASE 2                         ;
-            MOV #120Dh,-4(W)        ; compile PUSH IP       3~
-            MOV #DOCOL,-2(W)        ; compile CALL R4 = rDOCOL ([rDOCOL] = EXIT)
-    .CASE 3                         ;
-            MOV #120Dh,-4(W)        ; compile PUSH IP       3~
-            MOV #400Dh,-2(W)        ; compile MOV PC,IP     1~
-            MOV #522Dh,0(W)         ; compile ADD #4,IP     1~
-            MOV #4D30h,+2(W)        ; compile MOV @IP+,PC   4~
-            ADD #4,&DP              ;
+    .SWITCH DTC                     ; Direct Threaded Code select:
+    .CASE 1                         ; [rDOCOL] = XDOCOL
+            MOV #DOCOL,-4(W)        ;   compile CALL R4 = rDOCOL
+            SUB #2,&DP              ;   adjust DP
+    .CASE 2                         ; [rDOCOL] = EXIT
+            MOV #120Dh,-4(W)        ;   compile PUSH IP       3~
+            MOV #DOCOL,-2(W)        ;   compile CALL R4 = rDOCOL
+    .CASE 3                         ; [rDOCOL] = ???
+            MOV #120Dh,-4(W)        ;   compile PUSH IP       3~
+            MOV #400Dh,-2(W)        ;   compile MOV PC,IP     1~
+            MOV #522Dh,0(W)         ;   compile ADD #4,IP     1~
+            MOV #4D30h,+2(W)        ;   compile MOV @IP+,PC   4~
+            ADD #4,&DP              ;   adjust DP
     .ENDCASE                        ;
             MOV #-1,&STATE          ; enter compiling state
             MOV @IP+,PC             ;
 ;-----------------------------------;
 
 ;;Z ?REVEAL   --      if no stack mismatch, link this new word in the CURRENT vocabulary
-QREVEAL     CMP PSP,&LAST_PSP       ; Check SP with its saved value by :, :NONAME, CODE...
-            JZ LINK_NFA             ; see MARKER
+QREVEAL     CMP PSP,&LAST_PSP       ; Check SP with its saved value by , :NONAME CODE...
+            JNZ BAD_CSP             ;
+            JZ LINK_NFA             ;
 BAD_CSP     mASM2FORTH              ; if stack mismatch.
             .word   XSQUOTE
             .byte   15,"stack mismatch!"
 FABORT_TERM .word   ABORT_TERM
+LINK_NFA    MOV &LAST_NFA,Y         ;                   if no error, link this definition in its thread
+            MOV &LAST_THREAD,X      ;
+REVEAL      MOV @X,-2(Y)            ; [LAST_THREAD] --> LFA         (for NONAME: LFA --> 210h unused PA reg)
+            MOV Y,0(X)              ; LAST_NFA --> [LAST_THREAD]    (for NONAME: [LAST_THREAD] --> 212h unused PA reg)
+            MOV @IP+,PC
 
             FORTHWORDIMM ";"
 ; https://forth-standard.org/standard/core/Semi
@@ -1516,14 +1520,14 @@ FABORT_TERM .word   ABORT_TERM
 SEMICOLON   CMP #0,&STATE           ; if interpret mode, semicolon becomes a comment identifier
             JZ BACKSLASH            ; tip: ";" is transparent to the preprocessor, so semicolon comments are kept in file.4th
             mDOCOL                  ; compile mode
-            .word   lit,EXIT,COMMA
+            .word   LIT,EXIT,COMMA
             .word   QREVEAL,LEFTBRACKET,EXIT
 
             FORTHWORD "IMMEDIATE"
 ; https://forth-standard.org/standard/core/IMMEDIATE
 ; IMMEDIATE        --   make last definition immediate
-IMMEDIATE   MOV &LAST_NFA,Y         ; Y = NFA|unused_PA_reg (as lure for :NONAME)
-            BIS.B #1,0(Y)           ;4 FIND process more easier with bit0 than bit7
+IMMEDIATE   MOV &LAST_NFA,Y         ;3
+            BIS.B #1,0(Y)           ;4 FIND process more easier with bit0 for IMMEDIATE flag than bit7
             MOV @IP+,PC
 
             FORTHWORD "CREATE"
@@ -1534,7 +1538,7 @@ IMMEDIATE   MOV &LAST_NFA,Y         ; Y = NFA|unused_PA_reg (as lure for :NONAME
 CREATE      CALL #HEADER            ; --        W = DP
             MOV #DOCON,-4(W)        ;4          -4(W) = CFA = CALL rDOCON
             MOV W,-2(W)             ;3          -2(W) = PFA = W = next address
-            JMP REVEAL              ;           to link the definition in vocabulary
+CREATENEXT  JMP REVEAL              ;           to link the definition in vocabulary
 
             FORTHWORD "DOES>"
 ; https://forth-standard.org/standard/core/DOES
@@ -1543,7 +1547,7 @@ DOES        MOV &LAST_CFA,W         ;           W = CFA of CREATEd word
             MOV #DODOES,0(W)        ;           replace CALL rDOCON of CREATE by new CFA: CALL rDODOES
             MOV IP,2(W)             ;           replace PFA by the address after DOES> as execution address
             MOV @RSP+,IP            ;           which ends the..
-            MOV @IP+,PC             ;           ..of a CREATE  definition.
+NEXT_ADR    MOV @IP+,PC             ;           ..of a CREATE  definition.
 
             FORTHWORD ":NONAME"
 ; https://forth-standard.org/standard/core/ColonNONAME
@@ -1553,14 +1557,14 @@ DOES        MOV &LAST_CFA,W         ;           W = CFA of CREATEd word
 ; Y is the LAST_NFA lure value for REVEAL and IMMEDIATE
 ; ...because we don't want to modify the word set !
             PUSH #COLONNEXT         ; define COLONNEXT as HEADEREND RET
-HEADERLESS  SUB #2,PSP              ; common part of :NONAME and CODENNM
+HEADERLESS  SUB #2,PSP              ; -- TOS    common part of :NONAME and CODENNM
             MOV TOS,0(PSP)          ;
             MOV &DP,W               ;
             BIT #1,W                ;
             ADDC #0,W               ;           W = aligned CFA
             MOV W,TOS               ; -- xt     aligned CFA of :NONAME | CODENNM
-            MOV #212h,X             ;           MOV @X,-2(Y) writes to 210h = unused PA register address (lure for REVEAL and IMMEDIATE)
-            MOV X,Y                 ;           MOV Y,0(X)   writes to 212h = unused PA register address (lure for REVEAL)
+            MOV #212h,X             ;           MOV Y,0(X)   writes to 212h = unused PA register address (lure for REVEAL)
+            MOV X,Y                 ;           MOV @X,-2(Y) writes to 210h = unused PA register address (lure for REVEAL and IMMEDIATE)
             JMP HEADEREND           ;
 
 ;; https://forth-standard.org/standard/core/DEFER
@@ -1576,8 +1580,6 @@ HEADERLESS  SUB #2,PSP              ; common part of :NONAME and CODENNM
 ;            MOV #NEXT_ADR,-2(W)     ;3 second CELL              =   ...mNEXT : do nothing by default
 ;            JMP REVEAL              ; to link created word in vocabulary
 
-; IS <name>        xt --
-
 ; used like this (high level defn.):
 ;   DEFER DISPLAY                       create a "do nothing" definition (2 CELLS)
 
@@ -1588,7 +1590,9 @@ HEADERLESS  SUB #2,PSP              ; common part of :NONAME and CODENNM
 
 ; inline command : ' U. IS DISPLAY      U. becomes the runtime of the word DISPLAY
 ; or in a definition : ... ['] U. IS DISPLAY ... ;
-; KEY, EMIT, ACCEPT are examples of DEFERred words
+; KEY, EMIT, CR, ACCEPT are examples of DEFERred words
+
+; IS <name>        xt --
             FORTHWORDIMM "IS"       ; immediate
 IS          PUSH IP
             CMP #0,&STATE
@@ -1600,43 +1604,59 @@ IS_EXEC     mASM2FORTH
 DEFERSTORE  MOV @PSP+,2(TOS)        ; -- CFA_DEFERed_WORD          xt --> [PFA_DEFERed_WORD]
             MOV @PSP+,TOS           ; --
             MOV @IP+,PC             ;
-
 IS_COMPILE  mASM2FORTH
-            .word   BRACTICK             ; find the word, compile its CFA as literal
-            .word   lit,DEFERSTORE,COMMA ; compile DEFERSTORE
-            .word   EXIT
+            .word   BRACTICK        ; find the word, compile its CFA as literal
+            .word   LIT,DEFERSTORE  ; compile DEFERSTORE
+            .word   COMMA,EXIT
 
+;-------------------------------------------------------------------------------
+; ASSEMBLER building definitions
+;-------------------------------------------------------------------------------
            FORTHWORD "CODE"         ; a CODE word must be finished with ENDCODE
 ASMCODE     CALL #HEADER            ; (that sets CFA and PFA)
-ASMCODE1    SUB #4,&DP              ; remove default CFA and PFA
-ASMCODE2
-        .IFDEF EXTENDED_ASM
-            MOV #0,&RPT_WORD        ; clear RPT instruction
-        .ENDIF
-            JMP ASSEMBLER           ; add ASSEMBLER in CONTEXT stack
+ASMCODE1    SUB #4,&DP              ; remove default room for CFA + PFA
+    .IFDEF VOCABULARY_SET           ; if VOCABULARY_SET
+            JMP hidden              ; add hidden word set in CONTEXT stack
+    .ELSE                           ;
+hidden      MOV &CONTEXT,&CONTEXT+2 ; add hidden word set in CONTEXT stack
+            MOV #BODYhidden,&CONTEXT;
+            MOV @IP+,PC             ;
+    .ENDIF
 
 ; HDNCODE (hidden CODE) is used to define a CODE word which must not to be executed by FORTH interpreter
-; i.e. typically an assembler word called by CALL and ended by RET, or an interrupt routine ended by RETI.
-; HDNCODE words are only usable in ASSEMBLER definitions.
+; i.e. typically the case of an assembler definition called by CALL and ended by RET, or an interrupt routine.
+; HDNCODE words are only usable in ASSEMBLER CONTEXT.
             FORTHWORD "HDNCODE"
-            MOV #BODYASSEMBLER,&CURRENT ; select ASSEMBLER word set to link this HDNCODE definition
-            JMP ASMCODE
-
-            asmword "ENDCODE"       ; test PSP balancing then restore previous CONTEXT
-ENDCODE     mDOCOL                  ; and set CURRENT = CONTEXT (to also terminate HDNCODE definitions)
-            .word   QREVEAL
+            PUSH &CURRENT           ; save CURRENT
+            MOV #BODYhidden,&CURRENT; select hidden word set as CURRENT to link HDNCODE definition
+            mDOCOL
+            .word   ASMCODE
             mNEXTADR
             MOV @RSP+,IP
-ENDCODEND   MOV &CONTEXT+2,&CURRENT ;5 to do DEFINITIONS (before previous)
-            JMP PREVIOUS            ;
+            MOV @RSP+,&CURRENT      ; restore CURRENT
+            MOV @IP+,PC             ;
 
             FORTHWORD "CODENNM"     ; CODENoNaMe is the assembly counterpart of :NONAME
 CODENNM     PUSH #ASMCODE1          ; define HEADERLESS return
             JMP HEADERLESS          ; that makes room for CFA and PFA
 
+            asmword "ENDCODE"       ;
+ENDCODE     MOV IP,T                ; T is unused by QREVEAL
+            mASM2FORTH              ;
+            .word   QREVEAL
+            mNEXTADR
+            MOV T,IP
+    .IFDEF VOCABULARY_SET
+            JMP PREVIOUS            ; remove hidden word set from CONTEXT stack
+    .ELSE                           ;
+PREVIOUS    MOV #BODYFORTH,&CONTEXT ; remove hidden word set from CONTEXT stack
+            MOV #0,&CONTEXT+2       ;
+            MOV @IP+,PC
+    .ENDIF
+
 ; here are 3 words used to switch FORTH <--> ASSEMBLER
 
-; COLON --      compile DOCOL, remove ASSEMBLER from CONTEXT and CURRENT, switch to compilation state
+; COLON --      compile DOCOL, remove ASSEMBLER from CONTEXT stack, switch to compilation state
             asmword "COLON"
             MOV &DP,W
         .SWITCH DTC
@@ -1644,18 +1664,18 @@ CODENNM     PUSH #ASMCODE1          ; define HEADERLESS return
             MOV #DOCOL,0(W)         ; compile CALL R4 = rDOCOL ([rDOCOL] = XDOCOL)
             ADD #2,&DP
         .CASE 2
-            MOV #120Dh,0(W)         ; compile PUSH IP
-COLON1      MOV #DOCOL,2(W)         ; compile CALL R4 = rDOCOL
+            MOV #120Dh,0(W)        ; compile PUSH IP
+COLON1      MOV #DOCOL,2(W)        ; compile CALL R4 = rDOCOL
             ADD #4,&DP
         .CASE 3 ; inlined DOCOL
-            MOV #120Dh,0(W)         ; compile PUSH IP
-COLON1      MOV #400Dh,2(W)         ; compile MOV PC,IP
+            MOV #120Dh,0(W)        ; compile PUSH IP
+COLON1      MOV #400Dh,2(W)        ; compile MOV PC,IP
             MOV #522Dh,4(W)         ; compile ADD #4,IP
             MOV #4D30h,6(W)         ; compile MOV @IP+,PC
             ADD #8,&DP              ;
         .ENDCASE ; DTC
-COLON2      MOV #-1,&STATE          ;3 enter in compile state
-            JMP ENDCODEND           ;2 to do PREVIOUS DEFINITIONS
+COLON2      MOV #-1,&STATE          ; enter in compile state
+            JMP PREVIOUS            ; to restore CONTEXT
 
 ; LO2HI --       same as COLON but without saving IP
             asmword "LO2HI"
@@ -1678,54 +1698,76 @@ COLON2      MOV #-1,&STATE          ;3 enter in compile state
             MOV &DP,W               ; W = HERE+2
             MOV W,-2(W)             ; compile HERE+2 to HERE
             MOV #0,&STATE           ; LEFTBRACKET
-            JMP ASMCODE2            ; add ASSEMBLER in context
+            JMP hidden              ; to save CURRENT and add ASSEMBLER in context
 
 ;-------------------------------------------------------------------------------
 ; WORDS SET for VOCABULARY, not ANS compliant,
 ;-------------------------------------------------------------------------------
     .IFDEF VOCABULARY_SET
+
             FORTHWORD "WORDSET"
 ;X VOCABULARY       -- create a new word_set
 VOCABULARY  mDOCOL
             .word   CREATE
+            mNEXTADR                ; W = BODY
         .SWITCH THREADS
         .CASE   1
-            .word   lit,0,COMMA     ; W = DP
-            mNEXTADR                ;
+            MOV #0,0(W)             ; W = BODY, init thread with 0
+            ADD #2,W                ;
         .ELSECASE
-            mNEXTADR                ; W = DP
             MOV #THREADS,X          ; count
-VOCABULOOP  MOV #0,0(W)             ; DP = BODY first
+VOCABULOOP  MOV #0,0(W)             ; init threads area with 0
             ADD #2,W
             SUB #1,X
             JNZ VOCABULOOP
-        .ENDCASE                    ; W = DP
-            MOV &LASTVOC,0(W)
+        .ENDCASE                    ; W = BODY + THREADS*2
+            MOV &LASTVOC,0(W)       ; link LASTVOC
             MOV W,&LASTVOC
-            ADD #2,W
-            MOV W,&DP               ; update DP
-            mASM2FORTH
-            .word   DOES
-    .ENDIF ; VOCABULARY_SET
+            ADD #2,W                ; update DP
+            MOV W,&DP               ;
+            mASM2FORTH              ;
+            .word   DOES            ;
+;-----------------------------------;
 VOCDOES     mNEXTADR                ; adds WORD-SET first in context stack
-    .IFDEF VOCABULARY_SET
-ALSO        MOV #14,X                ;2 -- move up 7 words, first word in last
+ALSO        MOV #14,X               ;2 -- move up 7 words, first word in last
 ALSOLOOP    SUB #2,X
             MOV CONTEXT(X),CONTEXT+2(X) ; X=src < Y=dst copy W bytes beginning with the end
             JNZ ALSOLOOP
-    .ELSE ; VOCABULARY_SET off      ; VOCDOES is used only by the assembler to switch from HIlevel to LOlevel environments
-           MOV #BODYFORTH,&CONTEXT+2;4  copy BODYFORTH      --> 2th cell of CONTEXT
-    .ENDIF ; VOCABULARY_SET
-            MOV TOS,&CONTEXT        ;3  copy word-set BODY  --> first cell of CONTEXT
+            MOV TOS,CONTEXT(X)      ;3  copy word-set BODY  --> first cell of CONTEXT
             MOV #DROPEXIT,PC
 
-    .IFDEF VOCABULARY_SET
-            FORTHWORD "FORTH"
-    .ENDIF
-;X  FORTH    --                     ; add FORTH as first context word-set
-FORTH                               ; leave BODYFORTH on the stack and run VOCDOES
-            CALL rDODOES            ; Code Field Address (CFA) of FORTH
-PFAFORTH    .word   VOCDOES         ; Parameter Field Address (PFA) of FORTH
+            FORTHWORD "DEFINITIONS"
+;X DEFINITIONS  --      set last context vocabulary as entry for further defining words
+DEFINITIONS MOV &CONTEXT,&CURRENT
+            MOV @IP+,PC
+
+            FORTHWORD "ONLY"
+;X ONLY     --      fill the context stack with 0 to access only the first word-set, ex.: FORTH ONLY
+            MOV #8,T
+            MOV #0,X
+ONLY_LOOP   ADD #2,X
+            MOV #0,CONTEXT(X)
+            SUB #1,T
+            JNZ ONLY_LOOP
+            MOV @IP+,PC
+
+            FORTHWORD "PREVIOUS"
+;X  PREVIOUS   --               pop first word-set out of context stack
+PREVIOUS    MOV #8,Y                ;1 move down 8 words, first with CONTEXT+2 addr, last with NULL_WORD one
+            MOV #CONTEXT+2,X        ;2 X = org = CONTEXT+2, X-2 = dst = CONTEXT
+            CMP #0,0(X)             ;3 [org] = 0 ?
+            JZ PREVIOUSEND          ;2 to avoid scratch of the first CONTEXT cell by human mistake
+PREVIOUSLOO MOV @X+,-4(X)           ;4
+            SUB #1,Y                ;1
+            JNZ PREVIOUSLOO         ;2 8~ loop * 8 = 64 ~
+PREVIOUSEND MOV @IP+,PC             ;4
+
+            FORTHWORD "FORTH"       ; add FORTH as first context word-set
+            CALL rDODOES
+            .word   VOCDOES
+
+    .ENDIF ; VOCABULARY_SET
+
 BODYFORTH   .word   lastforthword   ; BODY of FORTH
     .SWITCH THREADS
     .CASE   2
@@ -1796,13 +1838,11 @@ BODYFORTH   .word   lastforthword   ; BODY of FORTH
 voclink     .set    $-2
 
     .IFDEF VOCABULARY_SET
-;            FORTHWORD "ASSEMBLER"
             FORTHWORD "hidden"  ; cannot be found by FORTH interpreter because the string is not capitalized
-    .ENDIF
-;X  ASSEMBLER       --          ; add ASSEMBLER as first context word-set
-ASSEMBLER   CALL rDODOES        ; leave BODYASSEMBLER on the stack and run VOCDOES
+hidden      CALL rDODOES
             .word   VOCDOES
-BODYASSEMBLER   .word   lastasmword
+    .ENDIF
+BODYhidden  .word   lastasmword ; BODY of hidden words
     .SWITCH THREADS
     .CASE   2
             .word   lastasmword1
@@ -1871,48 +1911,19 @@ BODYASSEMBLER   .word   lastasmword
             .word   voclink
 voclink     .set    $-2
 
-    .IFDEF VOCABULARY_SET
-            FORTHWORD "PREVIOUS"
-;X  PREVIOUS   --               pop first word-set out of context stack
-PREVIOUS    MOV #8,Y                ;1 move down 8 words, first with CONTEXT+2 addr, end when NULL_WORD is moved
-            MOV #CONTEXT+2,X        ;2 X = CONTEXT+2 = org, X-2 = CONTEXT = dst
-PREVIOUSLOO CMP #0,0(X)             ;3 [org] = 0 ?
-            JZ PREVIOUSEND          ;2 to avoid scratch of the first CONTEXT cell by human mistake, then to skip useless loops
-            MOV @X+,-4(X)           ;4
-            SUB #1,Y                ;1
-            JNZ PREVIOUSLOO         ;2 7~ loop * 8 = 56 ~
-PREVIOUSEND MOV @IP+,PC             ;4
-    .ELSE                           ;
-PREVIOUS    MOV #BODYFORTH,&CONTEXT
-ONLY        MOV #0,&CONTEXT+2       ; then execute ONLY
-            MOV @IP+,PC
-    .ENDIF ; VOCABULARY_SET
-
-    .IFDEF VOCABULARY_SET
-            FORTHWORD "ONLY"
-;X ONLY     --      cut the context stack to access only the first word-set, ex.: FORTH ONLY
-ONLY        MOV #0,&CONTEXT+2
-            MOV @IP+,PC
-
-            FORTHWORD "DEFINITIONS"
-;X DEFINITIONS  --      set last context vocabulary as entry for further defining words
-DEFINITIONS MOV &CONTEXT,&CURRENT
-            MOV @IP+,PC
-    .ENDIF ; VOCABULARY_SET
-
 ;-------------------------------------------------------------------------------
-; FASTFORTH environment management: DP, LASTVOC, CURRENT, CONTEXT and THREADS
+; FASTFORTH environment management: RST_SET RST_RET MARKER
 ;-------------------------------------------------------------------------------
-ENV_COPY
+ENV_COPY                            ; mini MOVE T words from X to W
     .IFDEF VOCABULARY_SET
-            MOV #24,T               ; bytes count of extended RST environment: DP,LASTVOC,CURRENT,CONTEXT(8),null_word
+            MOV #12,T               ; words count for extended environment: DP,LASTVOC,CURRENT,CONTEXT(8),NULL_WORD
     .ELSE
-            MOV #10,T               ; bytes count of RST environment: DP,LASTVOC,CURRENT,CONTEXT(2)
+            MOV #4,T                ; words count for basic environment: DP,LASTVOC,CURRENT,CONTEXT
     .ENDIF
-ENV_LOOP    MOV @X+,0(W)
-            ADD #2,W
-            SUB #2,T                ; words-1
-            JNZ ENV_LOOP
+MOV_WORDS   MOV @X+,0(W)            ; 4 X = src, W = dst, T = words count
+            ADD #2,W                ; 1
+            SUB #1,T                ; 1 words count -1
+            JNZ MOV_WORDS           ; 2
             MOV @RSP+,PC
 
             FORTHWORD "RST_SET"     ; define actual environment as new RESET environment
@@ -1923,15 +1934,14 @@ RST_SET     MOV #DP,X               ; org = RAM value (DP first)
 
             FORTHWORD "RST_RET"     ; init / return_to_previous RESET or MARKER environment
 RST_RET     MOV #RST_DP,X           ; org = FRAM value (first RST_DP), see \inc\ThingsInFirst.inc
-            MOV @X,S                ; S = restored DP, used below for comparaison with NFAs
             MOV #DP,W               ; dst = RAM value (first DP)
+            MOV @X,S                ; S = restored DP, used below for comparaison with NFAs below
             CALL #ENV_COPY          ; copy environment FRAM RST --> RAM, use T,W,X
-;-----------------------------------;
-            MOV &LASTVOC,W          ; W = init/restored LASTVOC
-    .SWITCH THREADS                 ; init/restore THREAD(s) with NFAs value < init/restored DP, for all word set
+            MOV &LASTVOC,W          ; W = init/restored LASTVOC in RAM
+    .SWITCH THREADS                 ; init/restore THREAD(s) with NFAs value < DP value, for all word set
     .CASE   1 ; mono thread word-set
 MARKALLVOC  MOV W,Y                 ; W=VLK   Y = VLK
-MRKWORDLOOP MOV -2(Y),Y             ; W=VLK   Y = [THD_n] then [LFA] = NFA
+MRKWORDLOOP MOV -2(Y),Y             ; W=VLK   Y = [THD] then [LFA] = NFA
             CMP Y,S                 ; Y=NFA   S=DP        CMP = S-Y : OLD_DP-NFA
             JNC MRKWORDLOOP         ; loop back if S<Y : OLD_DP<NFA
             MOV Y,-2(W)             ; W=VLK   X=THD   Y=NFA   refresh thread with good NFA
@@ -1952,13 +1962,77 @@ MARKTHREAD  MOV Y,0(X)              ; Y=NFA     X=THD_n   refresh thread with go
             JNZ MARKALLVOC          ; W=VLK-1           no : loopback
             MOV @IP+,PC             ;
 
+; https://forth-standard.org/standard/core/MARKER
+; MARKER
+;name Execution: ( -- )
+;Restore all dictionary allocation and search order pointers to the state they had just prior to the
+;definition of name. Remove the definition of name and all subsequent definitions. Restoration
+;of any structures still existing that could refer to deleted definitions or deallocated data space is
+;not necessarily provided. No other contextual information such as numeric base is affected.
+; the FORTH environment is it automaticaly restored.
+; FastForth provides all that is necessary for a real time application,
+; by adding a call to a custom asm subroutine to restore all user environment.
+
+MARKER_DOES                         ; execution part of MARKER definition
+            mNEXTADR                ; -- BODY
+    .IFDEF VOCABULARY_SET
+            MOV TOS,X               ;                       X = org (first : BODY = MARKER_DP)
+            MOV #RST_DP,W           ;                       W = dst (first : RST_DP), see \inc\ThingsInFirst.inc
+            CALL #ENV_COPY          ;                       restore previous FORTH environment from FRAM MARKER to FRAM RST
+            MOV X,TOS               ; -- USER_DOES          RET_ADR by default
+    .ELSE
+            MOV @TOS+,&RST_DP       ; -- USER_DOES          only RST_DP is restored
+    .ENDIF
+            CALL @TOS+              ; -- USER_PARAM         executes defined USER_DOES subroutine (RET_ADR by default),
+                                    ;                       IP is free, TOS is the address of first USER parameter 
+            MOV @PSP+,TOS           ; --
+            MOV @RSP+,IP            ;
+            JMP RST_RET             ;                       which restores previous FORTH environment in RAM
+
+            FORTHWORD "MARKER"      ; definition part
+;( "<spaces>name" -- )
+;Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
+;with the execution semantics defined above.
+;-------------------------------------------------------------------------------
+; before that, if already defined, "name" executes its MARKER_DOES part.
+; i.e. does: [DEFINED] <name> [IF] <name> [THEN]
+;            MARKER <name>
+;-------------------------------------------------------------------------------
+            PUSH &TOIN              ; --                save >IN
+            mDOCOL
+            .word BL_WORD,FIND      ; -- addr flag
+            .word QFBRAN,MARKER_NEXT; -- addr           if not found
+            .word DUP,EXECUTE       ; -- MARKER_DOES    execute it
+MARKER_NEXT mNEXTADR                ; -- addr|MARKER_DOES
+            MOV @PSP+,TOS           ; --
+            MOV @RSP+,IP            ;
+            MOV @RSP+,&TOIN         ;                   restore >IN for HEADER
+;-------------------------------------------------------------------------------
+            CALL #HEADER            ;4                  W = BODY, Y = NFA,
+            MOV #1285h,-4(W)        ;4                  CFA = CALL rDODOES
+            MOV #MARKER_DOES,-2(W)  ;4                  PFA = MARKER_DOES
+            SUB #2,Y                ;1                  Y = NFA-2 = LFA = DP to be restored, W = FRAM MARKER_DDP
+    .IFDEF VOCABULARY_SET
+            MOV Y,&DP               ;                   Y = previous DP (just before MARKER definition)
+            MOV #DP,X               ;                   X = org = RAM DP, W = dst = MARKER_BODY
+            CALL #ENV_COPY          ;                   copy environment RAM --> FRAM MARKER
+            MOV #RET_ADR,0(W)       ;4                  USER_DOES default subroutine = RET_ADR
+            ADD #2,W                ;1
+            MOV W,&DP               ;4                  set new RAM DP (after the end of MARKER definition)
+    .ELSE
+            MOV Y,0(W)              ;                   DP to be restored
+            MOV #RET_ADR,2(W)       ;                   USER_DOES default subroutine = RET_ADR
+            ADD #4,&DP              ;
+    .ENDIF
+            JMP LINK_NFA            ;                   then NEXT
+
 ;-------------------------------------------------------------------------------
 ; PUC 7 : SELECT RST_RET|DEEP_RESET <== INIT_FORTH <== (PUC,SYS,QABORT)
 ;-------------------------------------------------------------------------------
-SEL_RST_DEP CMP #0,TOS              ;
-            JGE RST_RET             ; if TOS >= 0
+SEL_RST     CMP #0,TOS              ;
+            JGE RST_RET             ; RST_RET if TOS >= 0
 ;-----------------------------------;
-; DEEP RESET                        ; if TOS < 0
+; DEEP RESET                        ; DEEP_RESET if TOS < 0
 ;-----------------------------------;
 ; DEEP INIT SIGNATURES AREA         ;
 ;-----------------------------------;
@@ -1980,120 +2054,92 @@ INIVECLOOP  SUB #2,X                ;
             MOV #DEEP_ORG,X         ; DEEP_ORG values are in FRAM INFO, see \inc\ThingsInFirst.inc
             MOV @X+,&TERM_VEC       ; TERMINAL_INT           as default vector       --> FRAM TERM_VEC
 ;-----------------------------------;
-; DEEP INIT FRAM RST values         ; 8 word values
+; DEEP INIT FRAM RST values         ; [COLD,SOFT,HARD,BACKGRND]_APP + RST_[DP,LASTVOC,CURRENT,CONTEXT]
 ;-----------------------------------;
-            MOV #RST_LEN,T          ; bytes count
+            MOV #RST_LEN/2,T        ; T = words count
             MOV #RST_ORG,W          ; W = dst, X = org
-            CALL #ENV_LOOP          ;
+            CALL #MOV_WORDS         ;
             MOV #0,&RST_CONTEXT+2   ; to do FORTH ONLY
+;-----------------------------------;
+    .IFDEF BOOTLOADER               ; does NOBOOT:
+            MOV #WARM,&PUCNEXT      ; removes XBOOT from PUC chain.
+    .ENDIF
 ;-----------------------------------;
 ; WARM INIT threads of all word set ;
 ;-----------------------------------;
             JMP RST_RET             ; then go to DUP|PUCNEXT,  resp. in QABORT|RESET
 ;-----------------------------------;
 
-; https://forth-standard.org/standard/core/MARKER
-; MARKER
-;name Execution: ( -- )
-;Restore all dictionary allocation and search order pointers to the state they had just prior to the
-;definition of name. Remove the definition of name and all subsequent definitions. Restoration
-;of any structures still existing that could refer to deleted definitions or deallocated data space is
-;not necessarily provided. No other contextual information such as numeric base is affected.
-
-; FastForth provides all that is necessary for a real time application with MARKER definition,
-; by adding a call to a custom subroutine to restore all user environment.
-; the FORTH environment is it automaticaly restored.
-MARKER_DOES                         ; restores RST environment saved by MARKER defn.,
-                                    ; executes user defined subroutine (RET_ADR by default),
-                                    ; then executes RST_RET.
-            mNEXTADR                ; -- BODY
-    .IFDEF VOCABULARY_SET
-            MOV TOS,X               ;                       X = org (first : BODY=MARKER_DP)
-            MOV #RST_DP,W           ;                       W = dst (first : RST_DP), see \inc\ThingsInFirst.inc
-            CALL #ENV_COPY          ;                       copy FORTH environment FRAM MARKER --> FRAM RST
-            MOV X,TOS               ; -- RET_ADR            by default
-    .ELSE
-            MOV @TOS+,&RST_DP       ;
-    .ENDIF
-            CALL @TOS+              ; -- USER_BODY          executes user defined asm subroutine (RET_ADR by default), IP and TOS are free
-            MOV @PSP+,TOS           ; --
-            MOV @RSP+,IP            ;
-            JMP RST_RET             ;                       then performs RST_RET
-
-            FORTHWORD "MARKER"      ; definition part
-;( "<spaces>name" -- )
-;Skip leading space delimiters. Parse name delimited by a space. Create a definition for name
-;with the execution semantics defined above.
-;-------------------------------------------------------------------------------
-;before that, it execute DOES part of previous definition if already exists.
-            PUSH &TOIN
-            mDOCOL
-            .word BL,WORDD,FIND
-            .word QFBRAN,MARKER_NEXT
-            .word DUP,EXECUTE
-MARKER_NEXT mNEXTADR
-            MOV @PSP+,TOS           ;
-            MOV @RSP+,IP
-            MOV @RSP+,&TOIN
-;-------------------------------------------------------------------------------
-            CALL #HEADER            ;4                  W = DP, Y = NFA,
-            MOV #1285h,-4(W)        ;4                  CFA = CALL rDODOES
-            MOV #MARKER_DOES,-2(W)  ;4                  PFA = MARKER_DOES
-            SUB #2,Y                ;1                  Y = NFA-2 = LFA = DP to be restored, W = FRAM MARKER_DDP
-    .IFDEF VOCABULARY_SET
-            MOV Y,&DP               ;                   Y = previous DP (just before MARKER definition)
-            MOV #DP,X               ;                   X = org = RAM DP, W = dst = MARKER_BODY
-            CALL #ENV_COPY          ;                   copy environment RAM --> FRAM MARKER
-            MOV #RET_ADR,0(W)       ;4                  user defined subroutine by default = RET_ADR
-            ADD #2,W                ;1
-            MOV W,&DP               ;4                  set new RAM DP (after the end of MARKER definition)
-    .ELSE
-            MOV Y,0(W)              ;                   DP to be restored
-            MOV #RET_ADR,2(W)       ;                   MARKER subroutine
-            ADD #4,&DP              ;
-    .ENDIF
-LINK_NFA    MOV &LAST_NFA,Y         ;                   if no error, link this definition in its thread
-            MOV &LAST_THREAD,X      ;
-REVEAL      MOV @X,-2(Y)            ; [LAST_THREAD] --> LFA         (for NONAME: LFA --> 210h unused PA reg)
-            MOV Y,0(X)              ; LAST_NFA --> [LAST_THREAD]    (for NONAME: [LAST_THREAD] --> 212h unused PA reg)
-REVEAL_END  MOV @IP+,PC
-
 ;===============================================================================
-; ASSEMBLER OPTION
+; ASSEMBLER KERNEL OPTION
 ;===============================================================================
-    .IFDEF EXTENDED_ASM
+    .IFDEF LARGE_DATA
         .include "forthMSP430FR_EXTD_ASM.asm"
     .ELSE
         .include "forthMSP430FR_ASM.asm"
     .ENDIF
 
     .IFDEF SD_CARD_LOADER
-;-------------------------------------------------------------------------------
-; SD CARD OPTIONS
-;-------------------------------------------------------------------------------
+;===============================================================================
+; SD CARD KERNEL OPTIONS
+;===============================================================================
         .include "forthMSP430FR_SD_LowLvl.asm"  ; SD primitives
         .include "forthMSP430FR_SD_INIT.asm"    ; return to INIT_TERM; without use of IP,TOS
         .include "forthMSP430FR_SD_LOAD.asm"    ; SD LOAD driver
-;        .include "forthMSP430FR_SD_LOAD_next.asm"    ; SD LOAD driver
         .IFDEF SD_CARD_READ_WRITE
             .include "forthMSP430FR_SD_RW.asm"  ; SD Read/Write driver
-;            .include "forthMSP430FR_SD_RW_next.asm"  ; SD Read/Write driver
         .ENDIF
     .ENDIF
+
+;===============================================================================
+; ADDONS OPTIONS; if included here they will be protected against Deep_RST
+;===============================================================================
+    .IFDEF CORE_COMPLEMENT
 ;-------------------------------------------------------------------------------
-; ADD HERE YOUR CODE TO BE INTEGRATED IN KERNEL (protected against Deep_RST)
+; COMPLEMENT of definitions to pass ANS94 CORETEST
+;-------------------------------------------------------------------------------
+        .include "ADDON/CORE_ANS.asm"
+    .ENDIF
+
+    .IFDEF UTILITY
+;-------------------------------------------------------------------------------
+; UTILITY WORDS
+;-------------------------------------------------------------------------------
+        .include "ADDON/UTILITY.asm"
+    .ENDIF
+
+    .IFDEF FIXPOINT
+;-------------------------------------------------------------------------------
+; FIXED POINT OPERATORS
+;-------------------------------------------------------------------------------
+        .include "ADDON/FIXPOINT.asm"
+    .ENDIF
+
+    .IFDEF DOUBLE
+;-------------------------------------------------------------------------------
+; DOUBLE word set
+;-------------------------------------------------------------------------------
+        .include "ADDON/DOUBLE.asm"
+    .ENDIF
+
+    .IFDEF SD_CARD_LOADER
+        .IFDEF SD_TOOLS
+;-------------------------------------------------------------------------------
+; BASIC SD TOOLS
+;-------------------------------------------------------------------------------
+            .include "ADDON/SD_TOOLS.asm"
+        .ENDIF
+    .ENDIF
+
+;-------------------------------------------------------------------------------
+; ADD HERE YOUR CODE TO BE INTEGRATED IN KERNEL and protected against Deep_RST
 ;vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-;
-;           .include "\ADDON\CORE_ANS.asm"
-;           .include "\ADDON\UTILITY.asm"
-;           .include "\ADDON\FIXPOINT.asm"
 ;           .include "YOUR_CODE.asm"
-;
 ;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ; ADD HERE YOUR CODE TO BE INTEGRATED IN KERNEL (protected against Deep_RST)
 ;-------------------------------------------------------------------------------
 
 ;-------------------------------------------------------------------------------
-; RESOLVE ASSEMBLY PTR, init interrupt Vectors
+; RESOLVE ASSEMBLY pointers, init interrupt Vectors
 ;-------------------------------------------------------------------------------
     .include "ThingsInLast.inc"

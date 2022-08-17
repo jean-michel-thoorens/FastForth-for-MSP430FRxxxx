@@ -10,24 +10,24 @@
 TOR         PUSH TOS
             MOV @PSP+,TOS
             MOV @IP+,PC
-    .ENDIF
 
+    .ENDIF
         .IFNDEF ANDD
 ;https://forth-standard.org/standard/core/AND
 ;C AND    x1 x2 -- x3           logical AND
             FORTHWORD "AND"
 ANDD        AND     @PSP+,TOS
             MOV @IP+,PC
-        .ENDIF
 
+        .ENDIF
         .IFNDEF CFETCH
 ;https://forth-standard.org/standard/core/CFetch
 ;C C@     c-addr -- char   fetch char from memory
             FORTHWORD "C@"
 CFETCH      MOV.B @TOS,TOS      ;2
             MOV @IP+,PC         ;4
-        .ENDIF
 
+        .ENDIF
         .IFNDEF ULESS
 ; https://forth-standard.org/standard/core/Uless
 ; U<    u1 u2 -- flag       test u1<u2, unsigned
@@ -45,8 +45,8 @@ ULESSEND    MOV @IP+,PC     ;4
             JNC UTOSTRUE    ; 2 flag = true, Z = 0
 UTOSFALSE   AND #0,TOS      ;1 flag Z = 1
             MOV @IP+,PC     ;4
+ 
         .ENDIF
-
         .IFNDEF SPACE
 ;https://forth-standard.org/standard/core/SPACE
 ;C SPACE   --               output a space
@@ -73,7 +73,6 @@ SPACESNEXT2 MOV @PSP+,TOS           ; --         drop n
             MOV @IP+,PC                   ;
 
         .ENDIF
-
     .IFNDEF TWODUP
 ; https://forth-standard.org/standard/core/TwoDUP
 ; 2DUP   x1 x2 -- x1 x2 x1 x2   dup top 2 cells
@@ -82,8 +81,8 @@ TWODUP      MOV TOS,-2(PSP)     ; 3
             MOV @PSP,-4(PSP)    ; 4
             SUB #4,PSP          ; 1
             MOV @IP+,PC         ; 4
-    .ENDIF
 
+    .ENDIF
     .IFNDEF XDO
 ; Primitive XDO; compiled by DO
 ;Z (do)    n1|u1 n2|u2 --  R: -- sys1 sys2      run-time code for DO
@@ -157,8 +156,8 @@ XPLOO       ADD TOS,0(RSP)  ;4 increment INDEX by TOS value
 ; +LOOP   adrs --   L-- an an-1 .. a1 0
 PLUSLOOP    MOV #XPLOO,X
             JMP LOOPNEXT
-    .ENDIF
 
+    .ENDIF
     .IFNDEF II
 ; https://forth-standard.org/standard/core/I
 ; I        -- n   R: sys1 sys2 -- sys1 sys2
@@ -169,8 +168,8 @@ II          SUB #2,PSP              ;1 make room in TOS
             MOV @RSP,TOS            ;2 index = loopctr - fudge
             SUB 2(RSP),TOS          ;3
             MOV @IP+,PC             ;4 13~
-    .ENDIF
 
+    .ENDIF
 ;https://forth-standard.org/standard/tools/DotS
             FORTHWORD ".S"      ; --            print <depth> of Param Stack and stack contents if not empty
 DOTS        MOV TOS,-2(PSP)     ; -- TOS ( tos x x )
@@ -195,7 +194,6 @@ STKDISPL1   .word   xdo
 STKDISPL2   .word   II,FETCH,UDOT
             .word   lit,2,xploo,STKDISPL2
             .word   EXIT
-
 
             FORTHWORD ".RS"     ; --           print <depth> of Return Stack and stack contents if not empty
 DOTRS       MOV TOS,-2(PSP)     ; -- TOS ( tos x x )
@@ -223,8 +221,8 @@ QDUPEND     MOV @IP+,PC     ; 4
 QDUP        CMP #0,TOS
             JZ QDUPEND
             JNZ QDUPNEXT
-        .ENDIF
 
+        .ENDIF
         .IFNDEF CR
             FORTHWORD "CR"
 ; https://forth-standard.org/standard/core/CR
@@ -235,16 +233,16 @@ BODYCR      mDOCOL                  ;  send CR+LF to the default output device
             .word   XSQUOTE
             .byte   2,0Dh,0Ah
             .word   TYPE,EXIT
-        .ENDIF
 
+        .ENDIF
     .IFNDEF TWODIV
 ;https://forth-standard.org/standard/core/TwoDiv
 ;C 2/      x1 -- x2        arithmetic right shift
             FORTHWORD "2/"
 TWODIV      RRA TOS
             MOV @IP+,PC
-    .ENDIF
 
+    .ENDIF
     .SWITCH THREADS
     .CASE   1
 
@@ -268,15 +266,14 @@ WORDS1      .word   FETCH               ; -- NFA
 WORDS2      .word   EXIT                ; --
 
     .ELSECASE
-
         .IFNDEF PAD
 ;https://forth-standard.org/standard/core/PAD
 ; PAD           --  pad address
             FORTHWORD "PAD"
 PAD         CALL rDOCON
             .WORD PAD_ORG
-        .ENDIF
 
+        .ENDIF
         .IFNDEF ROT
 ;https://forth-standard.org/standard/core/ROT
 ;C ROT    x1 x2 x3 -- x2 x3 x1
@@ -286,8 +283,8 @@ ROT         MOV @PSP,W          ; 2 fetch x2
             MOV 2(PSP),TOS      ; 3 fetch x1
             MOV W,2(PSP)        ; 3 store x2
             MOV @IP+,PC               ; 4
-        .ENDIF
 
+        .ENDIF
             .IFNDEF MOVE
 ; https://forth-standard.org/standard/core/MOVE
 ; MOVE    addr1 addr2 u --     smart move
@@ -349,8 +346,6 @@ WORDS5      .word   DROP
             .word   EXIT
 
     .ENDCASE
-
-
     .IFNDEF MAX
 
 ;https://forth-standard.org/standard/core/MAX
@@ -370,15 +365,14 @@ SELn1       MOV @PSP+,TOS
             MOV @IP+,PC
 
     .ENDIF
-
     .IFNDEF PLUS
 ;https://forth-standard.org/standard/core/Plus
 ;C +       n1/u1 n2/u2 -- n3/u3     add n1+n2
             FORTHWORD "+"
 PLUS        ADD @PSP+,TOS
             MOV @IP+,PC
-    .ENDIF
 
+    .ENDIF
         .IFNDEF OVER
 ;https://forth-standard.org/standard/core/OVER
 ;C OVER    x1 x2 -- x1 x2 x1
@@ -387,8 +381,8 @@ OVER        MOV TOS,-2(PSP)     ; 3 -- x1 (x2) x2
             MOV @PSP,TOS        ; 2 -- x1 (x2) x1
             SUB #2,PSP          ; 1 -- x1 x2 x1
             MOV @IP+,PC               ; 4
-        .ENDIF
 
+        .ENDIF
     .IFNDEF UDOTR
 ;https://forth-standard.org/standard/core/UDotR
 ;X U.R      u n --      display u unsigned in n width
@@ -397,15 +391,16 @@ UDOTR       mDOCOL
             .word   TOR,LESSNUM,lit,0,NUM,NUMS,NUMGREATER
             .word   RFROM,OVER,MINUS,lit,0,MAX,SPACES,TYPE
             .word   EXIT
-    .ENDIF
 
+    .ENDIF
     .IFNDEF HERE
 ; https://forth-standard.org/standard/core/HERE
 ; HERE    -- addr      returns memory ptr
 HERE       FORTHWORD "HERE"
             MOV #HEREXEC,PC
-    .ENDIF
 
+    .ENDIF
+    .IFNDEF DUMP
 ;https://forth-standard.org/standard/tools/DUMP
             FORTHWORD "DUMP"
 DUMP        PUSH IP
@@ -433,4 +428,4 @@ DUMP4       .word   II,CFETCH
             .word   lit,10h,xploo,DUMP1     ; line loop
             .word   RFROM,lit,BASEADR,STORE ; restore current base
             .word   EXIT
-
+    .ENDIF

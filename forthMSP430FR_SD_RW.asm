@@ -3,22 +3,6 @@
 
 ; and only for FR5xxx and FR6xxx with RTC_B or RTC_C hardware if you want write file with date and time.
 
-; Tested with MSP-EXP430FR5969 launchpad
-; Copyright (C) <2015>  <J.M. THOORENS>
-;
-; This program is free software: you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation, either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License
-; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 ; ======================================================================
 ; READ" primitive as part of OpenPathName
 ; input from open:  S = OpenError, W = open_type, SectorHL = DIRsectorHL,
@@ -43,16 +27,16 @@ OPEN_READ                           ;
 ; sequentially read a file opened by READ".
 ; sectors are loaded in SD_BUF and BufferLen leave the count of loaded bytes.
 ; when the last sector of file is loaded in buffer, the handle is automatically closed and flag is true (<>0).
+; to call Read_File in assembly : CALL &READ+$0C
 
 ; ==================================;
     FORTHWORD "READ"                ; -- fl     closed flag
 ; ==================================;
-READ
     SUB     #2,PSP                  ;
     MOV     TOS,0(PSP)              ;
     MOV     &CurrentHdl,TOS         ;
     CALL    #Read_File              ;SWX
-    SUB     &CurrentHdl,TOS         ; -- fl     if fl<>0 (if Z=0) handle is closed
+    SUB     &CurrentHdl,TOS         ; -- fl     if true (if Z=0) handle is closed
     MOV     @IP+,PC                 ;
 ; ----------------------------------;
 
@@ -124,7 +108,7 @@ WriteFATsectorW                     ;
 ; ==================================;
 SearchMarkNewClusterHL              ;SWXY <== WRITE_FILE, OPEN_WRITE_CREATE, OPEN_OVERWRITE
 ; ==================================;
-    MOV     #8,S                    ; preset disk full return error
+    MOV     #20h,S                  ; preset disk full return error
     PUSH    W                       ;3  R-- FATsector
 ; ----------------------------------;
 LoadFATsectorLoop                   ;
@@ -175,13 +159,9 @@ FAT32ClustAdrToClustNum             ; convert FAT32 cluster address to cluster n
     MOV     @RSP+,PC                ; RET
 ; ----------------------------------;
 
-
-; ----------------------------------;
-
-
 ; ======================================================================
 ; DEL" primitive as part of OpenPathName
-; All "DEL"eted clusters are freed
+;;;; All "DEL"eted clusters are freed
 ; input from open:  S = OpenError, W = open_type, SectorHL = DIRsectorHL,
 ;                   Buffer = [DIRsector], ClusterHL = FirstClusterHL
 ;       from open(GetFreeHandle): Y = DIRentry, T = CurrentHdl
@@ -198,12 +178,12 @@ OPEN_2W                             ;
 ; ----------------------------------;
 ; 2- Delete DIR entry               ;
 ; ----------------------------------;
-    MOV.B   #0E5h,SD_BUF(Y)         ;
-    CALL    #WriteSectorHL          ;SWX  write SectorHL=DIRsector
-; ----------------------------------;
-; 3- free all file clusters         ;
-; ----------------------------------;
-    CALL    #FreeAllClusters        ;SWXY input: HDLL_FirstClus(T), output: FATS are updated
+    MOV.B   #0E5h,SD_BUF(Y)         ;       mark DIRentry as deleted
+    CALL    #WriteSectorHL          ;SWX    update SectorHL=DIRsector
+;; ----------------------------------;
+;; 3- free all file clusters         ;
+;; ----------------------------------;
+;    CALL    #FreeAllClusters        ;SWXY input: HDLL_FirstClus(T), output: FATS are updated
 ; ----------------------------------;
 ; 4- Close Handle                   ;
 ; ----------------------------------;
@@ -218,7 +198,6 @@ DEL_END                             ;
 ;-----------------------------------------------------------------------
 
 
-
 ; FAT16/32 format for date and time in a DIR entry
 ; create time :     offset 0Dh = 0 to 200 centiseconds, not used.
 ;                   offset 0Eh = 0bhhhhhmmmmmmsssss, with : s=seconds*2, m=minutes, h=hours
@@ -230,7 +209,7 @@ DEL_END                             ;
 GetYMDHMSforDIR                     ; output: X=date, W=TIME
 ; ==================================;
     .IFDEF    LF_XTAL               ;
-    .IFNDEF   RTC                   ; RTC_B or RTC_C select
+    .IFNDEF   RTC                   ; select RTC_B or RTC_C, not RTC
 ; ----------------------------------;
     BIT.B   #RTCHOLD,&RTCCTL1       ; rtc is running ?
     JNZ     SD_RW_RET               ; no
@@ -319,17 +298,27 @@ OPWC_CWS_End                        ;
 ; ----------------------------------;
 
 ;-----------------------------------------------------------------------
-; WRITE" subroutines
+; WRITE subroutines
 ;-----------------------------------------------------------------------
 
 
-; write sequentially the buffer in the post incremented SectorHL.
-; The first time, SectorHL is initialized by WRITE".
+;Z WRITE            --
+; write sequentially the SD_buffer in the post incremented SectorHL.
+; The first SectorHL is initialized by WRITE".
+; the last sector will be processed by CLOSE
 ; All used registers must be initialized.
+; to call Write_File in assembly : CALL #WRITE+4
+
 ; ==================================;
-Write_File                          ;STWXY <== WRITE, SD_EMIT, TERM2SD"
+    FORTHWORD "WRITE"               ; encapsulate Write_File
 ; ==================================;
-    MOV     #BytsPerSec,&BufferPtr  ; write always all the buffer
+    PUSH #WRITE_END                 ;
+; ----------------------------------;
+
+; ==================================;
+Write_File                          ;STWXY <== WRITE, SD_EMIT, TERM2SD", BUT NOT CLOSE !
+; ==================================;
+    MOV     #BytsPerSec,&BufferPtr  ; write always all the buffer, the last written buffer will be processed directly by CloseHandle
     MOV     &CurrentHdl,T           ;
     CALL    #WriteSD_Buf            ;SWX write SD_BUF and update Handle informations only for DIRentry update
     MOV     #0,&BufferPtr           ; reset buffer pointer
@@ -341,46 +330,24 @@ PostIncrementSector                 ;
     JNC     Write_File_End          ; no,
 ; ----------------------------------;
     CALL    #HDLcurClus2FATsecWofstY;WXY  Output: FATsector W=FATsector, Y=FAToffset
-    PUSH    Y                       ; push previous FAToffset
-    PUSH    W                       ; push previous FATsector
-; ----------------------------------;
-GetNewCluster                       ; input : T=CurrentHdl
-; ----------------------------------;
-    CALL    #SearchMarkNewClusterHL ;SWXY input: W = FATsector Y = FAToffset, output: ClusterHL, W = FATsector of New cluster
-    CMP     @RSP,W                  ; previous and new clusters are in same FATsector?
-    JZ      LinkClusters            ;     yes
-; ----------------------------------;
-UpdateNewClusterFATs                ;
-; ----------------------------------;
-    MOV     @RSP,W                  ; W = previous FATsector
-    CALL    #ReadFAT1SectorW        ;SWX  reload previous FATsector in buffer to link clusters
-; ----------------------------------;
-LinkClusters                        ;
-; ----------------------------------;
-    MOV     @RSP+,W                 ; W = previous FATsector
-    MOV     @RSP+,Y                 ; Y = previous FAToffset
-    MOV     &ClusterL,SD_BUF(Y)     ; store new cluster to current cluster address in previous FATsector buffer
-    MOV     &ClusterH,SD_BUF+2(Y)   ;
-    CALL    #SaveSectorWtoFATs      ;SWXY update FATs from SD_BUF to W = previous FATsector
+    CALL    #GetNewCluster          ;
 ; ==================================;
 HDLSetCurClustSetFrstSect           ;
 ; ==================================;
+    MOV.B   #0,HDLB_ClustOfst(T)    ; clear current Cluster offset
     MOV     #4,HDLB_Token(T)        ; and clear ClustOfst
 ; ==================================;
 HDLSetCurClustSetCurSect            ;
 ; ==================================;
     MOV &ClusterL,HDLL_CurClust(T)  ; update handle with new cluster
     MOV &ClusterH,HDLH_CurClust(T)  ;
-Write_File_End
-    MOV     #ClusterHL2sectorHL,PC  ;W set current SectorHL to be written
+; ----------------------------------;
+Write_File_End                      ;
+    MOV #ClusterHL2sectorHL,PC      ;W set current SectorHL to be written, then RET
 ; ----------------------------------;
 
-;Z WRITE            --
-; sequentially write the entire SD_BUF in a file opened by WRITE"
-; ==================================;
-    FORTHWORD "WRITE"               ; in assembly : CALL #WRITE,X   CALL 2(X)
-; ==================================;
-    CALL #Write_File                ;STWXY
+; ----------------------------------;
+WRITE_END
     MOV @IP+,PC                     ;
 ; ----------------------------------;
 
@@ -403,19 +370,15 @@ OPEN_4W                             ;
 ; ----------------------------------;
     CMP     #2,S                    ; "no such file" error ?
     JZ      OPEN_WRITE_CREATE       ; yes, Handle is to be created !
-    CMP     #0,S                    ; well opened file ?
+    CMP     #0,S                    ; already opened file ?
     JZ      OPEN_OVERWRITE          ; yes, handle is created
 ; ----------------------------------;
 OPWC_Write_Errors                   ;
-; ----------------------------------;
-OPWC_InvalidPathname                ; S = 4
-OPWC_DiskFull                       ; S = 8
+OPWC_InvalidPathname                ; S = $10
+OPWC_DiskFull                       ; S = $20
 ; ----------------------------------;
 OPW_Error                           ; set ECHO, type Pathname, type #error, type "< WriteError"; no return
-    mDOCOL                          ;
-    .word   XSQUOTE                 ;
-    .byte   12,"< WriteError",0     ;
-    .word   BRAN,ABORT_SD           ; to insert S error as flag, no return
+    MOV #SD_CARD_FILE_ERROR,PC      ;
 ; ----------------------------------;
 
 ; ======================================================================
@@ -425,7 +388,6 @@ OPW_Error                           ; set ECHO, type Pathname, type #error, type
 ;       from open(GetFreeHandle): Y = DIRentry, T = CurrentHdl,
 ; output: nothing (no message if open error)
 ; ======================================================================
-
 
 ; ==================================;
 OPEN_WRITE_CREATE                   ; a new Handle is to be created
@@ -442,25 +404,23 @@ OPEN_WRITE_CREATE                   ; a new Handle is to be created
 ; ----------------------------------;
     CALL    #ReadSectorHL           ; reload DIRsector
     MOV     &DIREntryOfst,Y         ; Y = entry offset (first free entry in DIR)
-    MOV.B   #20h,SD_BUF+11(Y)       ; file attribute = file
+    MOV.B   #20h,SD_BUF+0Bh(Y)      ; file attribute = file
     CALL    #GetYMDHMSforDIR        ;WX  X=DATE,  W=TIME
-    MOV     #0,SD_BUF+12(Y)         ; nt reserved = 0 and centiseconds are 0
-    MOV     W,SD_BUF+14(Y)          ; time of creation
-    MOV     X,SD_BUF+16(Y)          ; date of creation      20/08/2001
-;    MOV     X,SD_BUF+18(Y)          ; date of access        20/08/2001
-    MOV     &ClusterH,SD_BUF+20(Y)  ; as first Cluster Hi
-    MOV     &ClusterL,SD_BUF+26(Y)  ; as first cluster LO
-    MOV     #0,SD_BUF+28(Y)         ; set file_sizeLO  = 0
-    MOV     #0,SD_BUF+30(Y)         ; set file_sizeHI  = 0
+    MOV     W,SD_BUF+0Eh(Y)         ; time of creation
+    MOV     X,SD_BUF+10h(Y)         ; date of creation      20/08/2001
+    MOV     &ClusterH,SD_BUF+14h(Y) ; as first Cluster Hi
+    MOV     &ClusterL,SD_BUF+1Ah(Y) ; as first cluster LO
+    MOV     #0,SD_BUF+1Ch(Y)        ; set file_sizeLO  = 0
+    MOV     #0,SD_BUF+1Eh(Y)        ; set file_sizeHI  = 0
 ; ----------------------------------;
 ; 4 create DIRentryName             ; file name format "xxxxxxxx.yyy"
 ; ----------------------------------;
-    MOV     #4,S                    ; preset pathname error
+    MOV     #10h,S                  ; preset pathname error
     MOV     &PathName_PTR,T         ; here, PathName_PTR is set to file name
     CMP     T,&PathName_END         ; end of string reached ?
-    JZ      OPWC_InvalidPathname    ; yes write error 1
+    JZ      OPWC_InvalidPathname    ; yes write error $10
     CMP.B   #'.',0(T)               ; forbidden "." in first
-    JZ      OPWC_InvalidPathname    ; write error 1
+    JZ      OPWC_InvalidPathname    ; write error $10
     MOV     #11,X                   ; X=countdown of chars entry
     CALL    #FillDIRentryName       ;STWXY
 ; ----------------------------------;
@@ -489,7 +449,6 @@ OPEN_OVERWRITE                      ; handle exists
     MOV     @IP+,PC                 ; --
 ; ----------------------------------;
 
-
 ; ======================================================================
 ; APPEND" primitive as part of OpenPathName
 ; input from open:  SectorHL = DIRsectorHL,
@@ -501,7 +460,7 @@ OPEN_OVERWRITE                      ; handle exists
 OPEN_8W                             ;
     CMP     #2,S                    ; "no such file" error ?
     JZ      OPEN_WRITE_CREATE       ; if yes, handle is to be created
-    CMP     #0,S                    ; well opened file ?
+    CMP     #0,S                    ; already opened file ?
     JNZ     OPWC_Write_Errors       ; no
 ; ==================================;
 OPEN_WRITE_APPEND                   ; yes, handle is already created
@@ -560,7 +519,7 @@ LastClusterFound                    ; in ClusterHL
 ; ----------------------------------;
 
 
-    .IFNDEF TERMINAL_I2C ; if UART_TERMINAL
+    .IFDEF TERMINALBAUDRATE ; if UART_TERMINAL
 
 ; first TERATERM sends the command TERM2SD" file.ext" to FastForth which returns XOFF at the end of the line.
 ; then when XON is sent below, TERATERM sends "file.ext" up to XOFF sent by TERM2SD" (slices of 512 bytes),
@@ -570,13 +529,13 @@ LastClusterFound                    ; in ClusterHL
     FORTHWORD "TERM2SD\34"          ;
 ; ==================================;
     mDOCOL                          ;
-    .word   WRITEDQ                 ;  if already exist FreeAllClusters else create it as WRITE file
+    .word   WRITEDQ                 ;  if already exist Free All Clusters else create it as WRITE file
     mNEXTADR                        ;
 ; ----------------------------------;
 T2S_GetSliceLoop                    ;   tranfert by slices of 512 bytes from terminal input to file on SD_CARD via SD_BUF
 ; ----------------------------------;
-    MOV     #0,W                    ;1  reset W = BufferPtr
-    CALL    #RXON                   ;   use no registers
+    MOV     #0,W                    ;1  clear W = BufferPtr
+    CALL    #UART_RXON              ;   use no registers
 ; ----------------------------------;
 T2S_Get_a_Char_Loop                 ;
 ; ----------------------------------;
@@ -601,7 +560,7 @@ T2S_WriteFile                       ;2 W = BytsPerSec
 ; ----------------------------------;
 T2S_XOFF                            ;  27 cycles between XON and XOFF
 ; ----------------------------------;
-    CALL    #RXOFF                  ;4  use no registers
+    CALL    #UART_RXOFF             ;4  use no registers
     JMP     T2S_Get_a_Char_Loop     ;2  loop back once to get char sent by TERMINAL during XOFF time
 ; ----------------------------------;
 T2S_End_Of_File                     ;  wait CR before sending XOFF
@@ -611,7 +570,7 @@ T2S_Wait_CR                         ; warning! EOT must be followed by CR+LF (TE
     CMP.B   #0Dh,&TERM_RXBUF        ; also clears RX_IFG !
     JZ      T2S_Wait_CR             ; wait CR
 ; ----------------------------------;
-    CALL    #RXOFF                  ;4  use no registers
+    CALL    #UART_RXOFF             ;4  use no registers
 ; ----------------------------------;
 T2S_Wait_LF                         ; warning! EOT must be followed by CR+LF (TERM2SD" used with I2C_FastForth)
 ; ----------------------------------;
@@ -635,18 +594,18 @@ T2S_Wait_LF                         ; warning! EOT must be followed by CR+LF (TE
     FORTHWORD "TERM2SD\34"          ; here, I2C_Master is reSTARTed in RX mode
 ; ==================================;
     mDOCOL                          ;
+    .word   WRITEDQ                 ; if already exist FreeAllClusters else create it as WRITE file
 ; ----------------------------------;
     .word   NOECHO                  ;       comment this line to echo chars
 ; ----------------------------------;
-    .word   WRITEDQ                 ; if already exist FreeAllClusters else create it as WRITE file
     mNEXTADR                        ;
 ; ----------------------------------;
-    MOV     #0,W                    ; reset W = SD_Buf_Ptr
+    MOV     #0,W                    ; clear W = SD_Buf_Ptr
     MOV.B   #0Ah,IP                 ; IP = char 'LF'
 ; ----------------------------------;
 T2S_GetLineLoop                     ; tranfert line by line from terminal input to SD_BUF
 ; ----------------------------------;
-    CALL    #RXON                   ; use Y reg; send I2C Ctrl_Char $00 to request I2C_Master to switch from RX to TX
+    CALL    #I2C_ACCEPT             ; use Y reg; send I2C Ctrl_Char $00 to request I2C_Master to switch from RX to TX
 ; ----------------------------------;
 T2S_Get_a_Char_Loop                 ;
 ; ----------------------------------;
@@ -668,7 +627,7 @@ T2S_Get_a_Char                      ;
 ; ----------------------------------;
 T2S_Q_EOF                           ;
 ; ----------------------------------;
-    CMP.B   #4,X                    ;1 EOF sent by TERMINAL (teraterm.exe) ?
+    CMP.B   #4,X                    ;1 EOT sent by TERMINAL (teraterm.exe) ?
     JZ      T2S_End_Of_File         ;2 yes
     MOV.B   X,SD_BUF(W)             ;3
     ADD     #1,W                    ;1
@@ -700,7 +659,7 @@ T2S_Wait_LF                         ; warning! EOT is followed by CR+LF, because
     JNZ     T2S_Wait_LF             ;
 ; ----------------------------------; here I2C_Master switches from TX to RX
     MOV     W,&BufferPtr            ; to add it to HDLL_CurSize
-    CALL    #CloseHandle            ;   tranfert SD_BUF to last sector of opened file in SD_CARD then close it
+    CALL    #CloseHandle            ; tranfert SD_BUF to last sector of opened file in SD_CARD then close it
 ; ----------------------------------;
     MOV     @RSP+,IP                ;
     MOV     #ECHO,PC                ;

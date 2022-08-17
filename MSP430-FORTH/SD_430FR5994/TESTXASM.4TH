@@ -7,10 +7,10 @@
     SUB #2,R15
     MOV R14,0(R15)
     MOV &$180A,R14
-    SUB #309,R14
+    SUB #400,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V3.9 please!"
+    ABORT" FastForth V4.0 please!"
     RST_RET
     ;
 
@@ -162,8 +162,8 @@ FW1 MOV @R15+,R14
     CODE DO
     SUB #2,R15
     MOV R14,0(R15)
-    ADD #2,&$1DC8
-    MOV &$1DC8,R14
+    ADD #2,&$1DC0
+    MOV &$1DC0,R14
     MOV #XDO,-2(R14)
     ADD #2,&$1C00
     MOV &$1C00,R10
@@ -185,8 +185,8 @@ BW1 BIT #$100,R2
 
     CODE LOOP
     MOV #XLOOP,R9
-BW2 ADD #4,&$1DC8
-    MOV &$1DC8,R10
+BW2 ADD #4,&$1DC0
+    MOV &$1DC0,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     BEGIN
@@ -226,7 +226,9 @@ BW2 ADD #4,&$1DC8
 
     [UNDEFINED] CR
     [IF]
-    DEFER CR
+    CODE CR
+    MOV #$409E,R0
+    ENDCODE
 
     :NONAME
     $0D EMIT $0A EMIT
@@ -235,7 +237,7 @@ BW2 ADD #4,&$1DC8
 
     [UNDEFINED] BASE
     [IF]
-    $1DBE  CONSTANT BASE
+    $1DB6  CONSTANT BASE
     [THEN]
 
     [UNDEFINED] DUMP
@@ -265,7 +267,7 @@ BW2 ADD #4,&$1DC8
     [UNDEFINED] HERE
     [IF]
     CODE HERE
-    MOV #$4032,R0
+    MOV #BEGIN,R0
     ENDCODE
     [THEN]
 
@@ -418,7 +420,7 @@ RST_RET
 
 HERE
 CODE TT
-MOVA #$0.1,R12
+MOVA #$.1,R12
 ENDCODE
 HERE OVER - DUMP
 ; you should see:       8C 00  01 00

@@ -1,6 +1,5 @@
 ; ThingsInFirst.inc
-
-    .cpu MSP430X    ; define CPU
+    RELAXED ON
 
 BIT0        .equ 1
 BIT1        .equ 2
@@ -54,92 +53,6 @@ LPM2        .equ SCG1 + CPUOFF
 LPM3        .equ SCG1 + SCG0 + CPUOFF
 LPM4        .equ SCG1 + SCG0 + OSCOFF + CPUOFF
 
-;-------------------------------------------------------------------------------
-; DEFINING FORTH REGISTERS - DTC model
-;-------------------------------------------------------------------------------
-RSP         .reg    R1      ; RSP = Return Stack Pointer (return stack)
-;                   R2      ; not to be used
-;                   R3      ; not to be used
-; DOxxx registers           ; must be saved before use and restored after use
-rDOCOL      .reg    R4
-rDODOES     .reg    r5      ; to restore: MOV #XDODOES,rDODOES
-rDOCON      .reg    r6      ; to restore: MOV #XDOCON,rDOCON
-rDOVAR      .reg    r7      ; to restore: MOV #R>,rDOVAR
-; rDOxxx alias
-R           .reg    r4      ; rDOCOL alias
-Q           .reg    r5      ; rDODOES alias
-P           .reg    r6      ; rDOCON alias
-M           .reg    R7      ; rDOVAR alias
-; Scratch registers
-Y           .reg    R8
-X           .reg    R9
-W           .reg    R10
-T           .reg    R11
-S           .reg    R12
-; Forth virtual machine
-IP          .reg    R13     ; interpretative pointer
-TOS         .reg    R14     ; first PSP cell
-PSP         .reg    R15     ; PSP = Parameters Stack Pointer (stack data)
-
-; ----------------------------------------------
-; EXECUTIVE WORDS FOR Direct-Threaded Code (DTC)
-; ----------------------------------------------
-;-------------------------------------------------------------------------------
-; very nice FAST FORTH feature:
-; as IP is always computed from the PC value, we can place low to high level
-; "ASMtoFORTH" or "mDOCOL" switches anywhere in a word, i.e. not only at its
-; beginning as ITC competitors.
-;-------------------------------------------------------------------------------
-DOCOL       .equ 1284h              ; 1284h = CALL rDOCOL instruction
-DODOES      .equ 1285h              ; 1285h = CALL rDODOES instruction
-DOCON       .equ 1286h              ; 1286h = CALL rDOCON instruction
-DOVAR       .equ 1287h              ; 1287h = CALL rDOVAR instruction
-
-
-
-    .SWITCH DTC
-
-    .CASE 1 ; DOCOL = CALL rDOCOL, [rDOCOL] = XDOCOL
-mASM2FORTH  .MACRO                  ; compiled by LO2HI
-            CALL #EXIT              ; 10 cycles
-            .ENDM                   ; 2 words, 10 cycles
-                                    ; LO2HI + HI2LO = 3 words, 10 cycles.
-
-mDOCOL      .MACRO                  ; compiled by : and by colon
-            CALL rDOCOL             ; 10 [rDOCOL] = XDOCOL
-            .ENDM                   ; 1 word, 14 cycles (CALL included) (ITC+4)
-                                    ; COLON + SEMI = 2 words, 20 cycles (ITC+2)
-    .CASE 2 ; DOCOL = PUSH IP + CALL rDOCOL, [rDOCOL] = EXIT
-mASM2FORTH  .MACRO                  ; compiled by LO2HI
-            CALL rDOCOL             ; 10 [rDOCOL] = EXIT
-            .ENDM                   ; 1 word, 10 cycles.
-                                    ; LO2HI + HI2LO = 2 words, 10 cycles.
-
-mDOCOL      .MACRO                  ; compiled by : and by COLON
-            PUSH IP                 ; 3
-            CALL rDOCOL             ; 10 [rDOCOL] = EXIT
-            .ENDM                   ; 2 words, 13 cycles (ITC+3)
-                                    ; COLON + SEMI = 3 words, 19 cycles (ITC+1)
-    .CASE 3 ; inlined DOCOL
-mASM2FORTH  .MACRO                  ; compiled by LO2HI
-            MOV PC,IP               ; 1
-            ADD #4,IP               ; 1
-            MOV @IP+,PC             ; 4 NEXT
-            .ENDM                   ; 6 cycles, 3 words
-                                    ; LO2HI + HI2LO = 4 words, 6 cycles.
-
-mDOCOL      .MACRO                  ; compiled by : and by COLON
-            PUSH IP                 ; 3
-            MOV PC,IP               ; 1
-            ADD #4,IP               ; 1
-            MOV @IP+,PC             ; 4 NEXT
-            .ENDM                   ; 4 words, 9 cycles (ITC-1)
-                                    ; COLON + SEMI = 5 words, 15 cycles (ITC-3)
-    .ENDCASE ; DTC
-
-mNEXTADR    .MACRO
-            .word   $+2
-            .ENDM
 
     .save
     .listing off
@@ -621,7 +534,7 @@ DOUBLE_NUMBERS              ; to process double numbers
 ; --------------------------
 ; COMPUTE BAUDRATE registers = fn(FREQUENCY,BAUDS)
 ; --------------------------
-    .IFNDEF TERMINAL_I2C
+    .IFDEF UART_TERMINAL
         .include "TERMINALBAUDRATE.inc"
     .ENDIF
 ;-----------------------------------------------------------------------
@@ -630,21 +543,18 @@ DOUBLE_NUMBERS              ; to process double numbers
 FADDON .set 0
 
     .IFDEF MSP_EXP430FR5739
-FADDON .SET FADDON | BIT0   ; hardware MPY
 LF_XTAL
-        .IFDEF TERMINAL_I2C
+        .IFNDEF UART_TERMINAL
 UCB0_TERM
         .ELSE
 UCA0_TERM
         .ENDIF
-UCA1_SD
         .include "MSP430FR5739.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR5969
-FADDON .SET FADDON | BIT0   ; hardware MPY
 ;EXTENDED_MEM
 LF_XTAL
-        .IFDEF TERMINAL_I2C
+        .IFNDEF UART_TERMINAL
 UCB0_TERM
         .ELSE
 UCA0_TERM
@@ -653,10 +563,9 @@ UCA1_SD
         .include "MSP430FR5969.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR5994
-FADDON .SET FADDON | BIT0   ; hardware MPY
 ;EXTENDED_MEM
 LF_XTAL
-        .IFDEF TERMINAL_I2C
+        .IFNDEF UART_TERMINAL
 UCB2_TERM
         .ELSE
 UCA0_TERM
@@ -665,10 +574,9 @@ UCB0_SD
         .include "MSP430FR5994.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR6989
-FADDON .SET FADDON | BIT0   ; hardware MPY
 ;EXTENDED_MEM
 LF_XTAL
-        .IFDEF TERMINAL_I2C
+        .IFNDEF UART_TERMINAL
 UCB0_TERM
         .ELSE
 UCA1_TERM
@@ -677,10 +585,9 @@ UCA0_SD
         .INCLUDE "MSP430FR6989.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR5972
-FADDON .SET FADDON | BIT0   ; hardware MPY
 ;EXTENDED_MEM
 LF_XTAL
-        .IFDEF TERMINAL_I2C
+        .IFNDEF UART_TERMINAL
 UCB0_TERM
         .ELSE
 UCA1_TERM
@@ -689,10 +596,10 @@ UCA0_SD
         .INCLUDE "MSP430FR5972.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR4133
-FLL
 LF_XTAL
-        .IFDEF TERMINAL_I2C
+        .IFNDEF UART_TERMINAL
 UCB0_TERM
+UCA0_SD
         .ELSE
 UCA0_TERM
 UCB0_SD
@@ -700,9 +607,8 @@ UCB0_SD
         .INCLUDE "MSP430FR4133.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR2433
-FLL
 LF_XTAL
-        .IFDEF TERMINAL_I2C
+        .IFNDEF UART_TERMINAL
 UCB0_TERM
         .ELSE
 UCA0_TERM
@@ -711,9 +617,8 @@ UCA1_SD
         .include "MSP430FR2433.inc"
     .ENDIF
     .IFDEF CHIPSTICK_FR2433
-FLL
 ; no LF_XTAL to select ACLK = REFOCLK
-        .IFDEF TERMINAL_I2C
+        .IFNDEF UART_TERMINAL
 UCB0_TERM
 UCA0_SD
         .ELSE
@@ -723,10 +628,8 @@ UCB0_SD
         .include "MSP430FR2433.inc"
     .ENDIF
     .IFDEF MSP_EXP430FR2355
-FADDON .SET FADDON | BIT0   ; hardware MPY
-FLL
 LF_XTAL
-        .IFDEF TERMINAL_I2C
+        .IFNDEF UART_TERMINAL
 UCB0_TERM
         .ELSE
 UCA1_TERM
@@ -735,11 +638,9 @@ UCB1_SD
         .include "MSP430FR2355.inc"
     .ENDIF
     .IFDEF LP_MSP430FR2476
-FADDON .SET FADDON | BIT0   ; hardware MPY
-FLL
 ;EXTENDED_MEM
 ; LF_XTAL       ; connect resistors R2=0k, R3=0k before uncomment this line
-        .IFDEF TERMINAL_I2C
+        .IFNDEF UART_TERMINAL
 UCB1_TERM
         .ELSE
 UCA0_TERM
@@ -756,13 +657,13 @@ UCA1_SD
 ; ---------------------------
 ; compute value of FORTHADDON
 ; ---------------------------
-    .IFDEF FLOORED_DIVISION
-FADDON .SET FADDON | BIT15  ; FLOORED_DIVISION
-    .ENDIF
+;    .IFDEF FLOORED_DIVISION
+;FADDON .SET FADDON | BIT15  ; FLOORED_DIVISION
+;    .ENDIF
     .IFDEF LF_XTAL
 FADDON .SET FADDON | BIT14  ; LFXTAL = 32768 Hz
     .ENDIF
-    .IFNDEF TERMINAL_I2C ; if TERMINAL UART...
+    .IFDEF UART_TERMINAL    ; if TERMINAL UART...
         .IFDEF TERMINAL5WIRES
 FADDON .SET FADDON | BIT13  ; UART CTS
         .ENDIF
@@ -777,8 +678,8 @@ FADDON .SET FADDON | BIT10  ; UART Half Duplex
         .ENDIF
     .ENDIF ; TERMINAL UART
 ; ---------------------------
-        .IFDEF TERMINAL_I2C
-FADDON .SET FADDON | BIT9   ;I2C TERMINAL
+        .IFNDEF UART_TERMINAL
+FADDON .SET FADDON | BIT9   ; I2C TERMINAL
         .ENDIF
     .IFDEF FIXPOINT_INPUT
 FADDON .SET FADDON | BIT8   ; Q15.16 INPUT
@@ -798,11 +699,12 @@ FADDON .SET FADDON | BIT5   ; Assembler 16 bits
 FADDON .SET FADDON | BIT4   ; Assembler 16 bits with Address access beyond $FFFF
         .ENDIF
     .ENDIF
+    .IFDEF HMPY             ; see device.inc
+FADDON .SET FADDON | BIT3   ; hardware MPY
+    .ENDIF
 ; ---------------------------
-;    .IFDEF VOCABULARY_SET   ;
-;FADDON .SET FADDON | BIT3   ; vocabulary set
-;    .ENDIF                  ; BIT2 to BIT0 are free
-
+; BIT2 to BIT0 are free
+; ---------------------------
 
 
 ;-------------------------------------------------------------------------------
@@ -811,7 +713,7 @@ FADDON .SET FADDON | BIT4   ; Assembler 16 bits with Address access beyond $FFFF
 
 ;---------------------------;---------
 ; name             words    ; comment
-;---------------------------;---------
+;------------------=====----;---------
 ;LSTACK = L0 = LEAVEPTR     ; ----- RAM_ORG
                             ; |
 LSTACK_LEN .equ     16      ; | grows up
@@ -827,7 +729,7 @@ RSTACK_LEN .equ     48      ; | grows down
 
 ;---------------------------;---------
 ; names            bytes    ; comments
-;---------------------------;---------
+;------------------=====----;---------
 ; PAD_I2CADR                ; ----- RAM_ORG + $E0
 ; PAD_I2CCNT                ;
 ; PAD                       < ----- RAM_ORG + $E4
@@ -848,9 +750,9 @@ HOLD_LEN   .equ     34      ; | grows down  (ans spec. : HOLD_LEN >= (2*n) + 2 c
                             ;
                             ;       system variables
                             ;
-                            ; ----- RAM_ORG + $1E0
+; LAST_NFA                  ; ----- RAM_ORG + $1D8 : Forth compiler variables
                             ;
-                            ;       28 bytes free
+                            ;       36 free bytes
                             ;
 ; SD_BUF_I2CADR             < ----- RAM_ORG + $1FC
 ; SD_BUF_I2CCNT             ;
@@ -877,34 +779,42 @@ HOLD_BASE       .equ HOLDS_ORG+HOLD_LEN
 ; ----------------------------------------------------
 ; RAM_ORG + $1B2 : RAM VARIABLES
 ; ----------------------------------------------------
+; FORTH interpreter
+; ----------------------------------------------------
 HP              .equ HOLD_BASE      ; HOLD ptr
-; ----------------------------------------------------
-; new definition pointers, generated by HEADER
-; ----------------------------------------------------
-LAST_NFA        .equ HOLD_BASE+2    ; used by REVEAL, IMMEDIATE
-LAST_THREAD     .equ HOLD_BASE+4    ;    "    REVEAL
-LAST_CFA        .equ HOLD_BASE+6    ;    "    DOES>, RECURSE
-LAST_PSP        .equ HOLD_BASE+8    ;    "    REVEAL
-; ----------------------------------------------------
-; FORTH interpreter variables
-; ----------------------------------------------------
-STATE           .equ HOLD_BASE+10   ; Interpreter state
-BASEADR         .equ HOLD_BASE+12   ; BASE
-CAPS            .equ HOLD_BASE+14   ; CAPS
-; ----------------------------------------------------
-SOURCE          .equ HOLD_BASE+16   ; len, org of input stream
-SOURCE_LEN      .equ HOLD_BASE+16   ;
-SOURCE_ORG      .equ HOLD_BASE+18   ;
-TOIN            .equ HOLD_BASE+20   ; CurrentInputBuffer pointer
+STATE           .equ HOLD_BASE+2    ; Interpreter state
+BASEADR         .equ HOLD_BASE+4    ; BASE
+CAPS            .equ HOLD_BASE+6    ; CAPS
+SOURCE          .equ HOLD_BASE+8    ; len, org of input stream
+SOURCE_LEN      .equ HOLD_BASE+8    ;
+SOURCE_ORG      .equ HOLD_BASE+10   ;
+TOIN            .equ HOLD_BASE+12   ; CurrentInputBuffer pointer
 ; ----------------------------------------------------
 ; FORTH environment
 ; ----------------------------------------------------
-DP              .equ HOLD_BASE+22   ; dictionnary pointer
-LASTVOC         .equ HOLD_BASE+24   ;
-CURRENT         .equ HOLD_BASE+26   ;
-CONTEXT         .equ HOLD_BASE+28   ; 8 words of depth ending
-NULL_WORD       .equ HOLD_BASE+44   ; with a null word in addition
-; ----------------------------------;
+DP              .equ HOLD_BASE+14   ; dictionnary pointer
+LASTVOC         .equ HOLD_BASE+16   ;
+CURRENT         .equ HOLD_BASE+18   ;
+CONTEXT         .equ HOLD_BASE+20   ; 8 words of depth ending
+NULL_WORD       .equ HOLD_BASE+36   ; with a null word in addition
+; ----------------------------------------------------
+; FORTH compiler 
+; ----------------------------------------------------
+; RAM_ORG + $1D8 : can be shared with APPLICATION needs
+; ----------------------------------------------------
+LAST_NFA        .equ HOLD_BASE+38   ; used by REVEAL, IMMEDIATE
+LAST_THREAD     .equ HOLD_BASE+40   ;    "    REVEAL
+LAST_CFA        .equ HOLD_BASE+42   ;    "    DOES>, RECURSE
+LAST_PSP        .equ HOLD_BASE+44   ;    "    REVEAL
+ASMBW1          .equ HOLD_BASE+46   ;
+ASMBW2          .equ HOLD_BASE+48   ;
+ASMBW3          .equ HOLD_BASE+50   ;
+ASMFW1          .equ HOLD_BASE+52   ;
+ASMFW2          .equ HOLD_BASE+54   ;
+ASMFW3          .equ HOLD_BASE+56   ;
+; ----------------------------------------------------
+; RAM_ORG + $1EC : free RAM area
+; ----------------------------------------------------
 
     .IFDEF SD_CARD_LOADER
 ; --------------------------------------------------
@@ -933,14 +843,14 @@ SD_ORG     .equ SD_BUF_END+2            ; 1 word guard
 ; ---------------------------------------
 ; FAT FileSystemInfos
 ; ---------------------------------------
-;FATtype         .equ SD_ORG+0
+FATtype         .equ SD_ORG+0
 BS_FirstSectorL .equ SD_ORG+2           ; init by SD_Init, used by RW_Sector_CMD
 BS_FirstSectorH .equ SD_ORG+4           ; init by SD_Init, used by RW_Sector_CMD
 OrgFAT1         .equ SD_ORG+6           ; init by SD_Init,
 FATSize         .equ SD_ORG+8           ; init by SD_Init,
 OrgFAT2         .equ SD_ORG+10          ; init by SD_Init,
-;OrgRootDIR      .equ SD_ORG+12          ; init by SD_Init,
-OrgClusters     .equ SD_ORG+14          ; init by SD_Init, Sector of Cluster 0
+OrgRootDIR      .equ SD_ORG+12          ; init by SD_Init, Org Sector of RootDIR
+OrgClusters     .equ SD_ORG+14          ; init by SD_Init, Org Sector of Cluster 0
 SecPerClus      .equ SD_ORG+16          ; init by SD_Init, byte size
 ; ---------------------------------------
 ; SD command
@@ -964,10 +874,10 @@ LastFATsector   .equ SD_FAT_LEVEL+4     ;
 LastFAToffset   .equ SD_FAT_LEVEL+6     ;
 FATsector       .equ SD_FAT_LEVEL+8     ; not used
 ; ---------------------------------------
-; DIR entry
+; DIR entry (RootDIR excluded)
 ; ---------------------------------------
-DIRClusterL     .equ SD_FAT_LEVEL+10    ; contains the Cluster of current directory ; = 1 as FAT16 root directory
-DIRClusterH     .equ SD_FAT_LEVEL+12    ; contains the Cluster of current directory ; = 1 as FAT16 root directory
+DIRClusterL     .equ SD_FAT_LEVEL+10    ; contains the Cluster of current directory ; = 0 for root directory
+DIRClusterH     .equ SD_FAT_LEVEL+12    ; contains the Cluster of current directory ; = 0 for root directory
 DIREntryOfst    .equ SD_FAT_LEVEL+14
 ; ---------------------------------------
 ; Handle Pointer
@@ -1027,6 +937,91 @@ SD_END          .equ SDIB_ORG+CIB_LEN
 SD_LEN          .equ SD_END-SD_ORG
     .ENDIF ; SD_CARD_LOADER
 
+    .cpu MSP430X    ; define CPU
+
+
+;-------------------------------------------------------------------------------
+; DEFINING FORTH REGISTERS - DTC model
+;-------------------------------------------------------------------------------
+RSP         .reg    R1      ; RSP = Return Stack Pointer (return stack)
+;                   R2      ; not to be used
+;                   R3      ; not to be used
+; DOxxx registers           ; must be saved before use and restored after use
+rDOCOL      .reg    R4
+rDODOES     .reg    r5      ; to restore: MOV #XDODOES,rDODOES
+rDOCON      .reg    r6      ; to restore: MOV #XDOCON,rDOCON
+rDOVAR      .reg    r7      ; to restore: MOV #R>,rDOVAR
+; rDOxxx alias
+R           .reg    r4      ; rDOCOL alias
+Q           .reg    r5      ; rDODOES alias
+P           .reg    r6      ; rDOCON alias
+M           .reg    R7      ; rDOVAR alias
+; Scratch registers
+Y           .reg    R8
+X           .reg    R9
+W           .reg    R10
+T           .reg    R11
+S           .reg    R12
+; Forth virtual machine
+IP          .reg    R13     ; interpretative pointer
+TOS         .reg    R14     ; first PSP cell
+PSP         .reg    R15     ; PSP = Parameters Stack Pointer (stack data)
+
+; ----------------------------------------------
+; EXECUTIVE WORDS FOR Direct-Threaded Code (DTC)
+; ----------------------------------------------
+;-------------------------------------------------------------------------------
+; very nice FAST FORTH feature:
+; as IP is always computed from the PC value, we can place low to high level
+; "ASMtoFORTH" or "mDOCOL" switches anywhere in a word, i.e. not only at its
+; beginning as ITC competitors.
+;-------------------------------------------------------------------------------
+DOCOL       .equ 1284h              ; 1284h = CALL rDOCOL instruction
+DODOES      .equ 1285h              ; 1285h = CALL rDODOES instruction
+DOCON       .equ 1286h              ; 1286h = CALL rDOCON instruction
+DOVAR       .equ 1287h              ; 1287h = CALL rDOVAR instruction
+
+    .SWITCH DTC
+
+    .CASE 1 ; DOCOL = CALL rDOCOL, [rDOCOL] = XDOCOL
+mASM2FORTH  .MACRO                  ; compiled by LO2HI
+            CALL #EXIT              ; 10 cycles
+            .ENDM                   ; 2 words, 10 cycles. LO2HI + HI2LO = 3 words, 10 cycles.
+
+mDOCOL      .MACRO                  ; compiled by : and by colon
+            CALL rDOCOL             ; 10 [rDOCOL] = XDOCOL
+            .ENDM                   ; 1 word, 14 cycles (CALL included) (ITC+4). COLON + SEMI = 2 words, 20 cycles (ITC+2)
+
+    .CASE 2 ; DOCOL = PUSH IP + CALL rDOCOL, [rDOCOL] = EXIT
+mASM2FORTH  .MACRO                  ; compiled by LO2HI
+            CALL rDOCOL             ; 10 [rDOCOL] = EXIT
+            .ENDM                   ; 1 word, 10 cycles. LO2HI + HI2LO = 2 words, 10 cycles.
+
+mDOCOL      .MACRO                  ; compiled by : and by COLON
+            PUSH IP                 ; 3
+            CALL rDOCOL             ; 10 [rDOCOL] = EXIT
+            .ENDM                   ; 2 words, 13 cycles (ITC+3). COLON + SEMI = 3 words, 19 cycles (ITC+1)
+
+    .CASE 3 ; inlined DOCOL
+mASM2FORTH  .MACRO                  ; compiled by LO2HI
+            MOV PC,IP               ; 1
+            ADD #4,IP               ; 1
+            MOV @IP+,PC             ; 4 NEXT
+            .ENDM                   ; 3 words, 6 cycles. LO2HI + HI2LO = 4 words, 6 cycles.
+
+mDOCOL      .MACRO                  ; compiled by : and by COLON
+            PUSH IP                 ; 3
+            MOV PC,IP               ; 1
+            ADD #4,IP               ; 1
+            MOV @IP+,PC             ; 4 NEXT
+            .ENDM                   ; 4 words, 9 cycles (ITC-1). COLON + SEMI = 5 words, 15 cycles (ITC-3)
+
+    .ENDCASE ; DTC
+
+mNEXTADR    .MACRO
+            .word   $+2
+            .ENDM
+
     .org    INFO_ORG
 ;-------------------------------------------------------------------------------
 ; INFO(DCBA) >= 256 bytes memory map (FRAM) :
@@ -1034,13 +1029,13 @@ SD_LEN          .equ SD_END-SD_ORG
 ; FRAM INFO: KERNEL INIT CONSTANTS and VARIABLES
 ; ----------------------------------------------
 FREQ_KHZ        .word FREQUENCY*1000    ; used to stabilize MCLK before start, see MSP430FRxxxx.asm
-    .IFDEF TERMINAL_I2C
-I2CSLAVEADR     .word MYSLAVEADR        ; on MSP430FR2xxx devices with BSL I2C, Slave address is FFA0h
+    .IFNDEF UART_TERMINAL
+I2CSLAVEADR     .word I2C_TERM_ADR      ; on MSP430FR2xxx devices with BSL I2C, Slave address is FFA0h
 I2CSLAVEADR1    .word 0
 LPM_MODE        .word GIE+LPM4          ; LPM4 is the default mode for I2C TERMINAL
     .ELSE ; TERMINAL_UART
-TERMBRW_RST     .word TERMBRW_INI       ; set by TERMINALBAUDRATE.inc
-TERMMCTLW_RST   .word TERMMCTLW_INI     ; set by TERMINALBAUDRATE.inc
+TERMBRW_RST     .word TERMBRW_INI       ; set by UART_TERMINAL.inc
+TERMMCTLW_RST   .word TERMMCTLW_INI     ; set by UART_TERMINAL.inc
 LPM_MODE        .word GIE+LPM0          ; LPM0 is the default mode for UART TERMINAL
     .ENDIF
 USERSYS         .word -3                ; RESET use, value = -3 when compiling new kernel
@@ -1052,15 +1047,15 @@ DEEP_ORG                                ; MOV #DEEP_ORG,X     see "PUC 7" in for
 ; --------------------------------------;
 DEEP_TERM_VEC   .word TERMINAL_INT      ; MOV @X+,&TERM_VEC     ; TERMINAL_INT      --> FRAM TERM_VEC
     .IFNDEF SD_CARD_LOADER
-DEEP_COLD       .word COLD_TERM         ; MOV @X+,&COLD_APP     ; COLD_TERM         --> FRAM COLD_APP
-DEEP_SOFT       .word INIT_SOFT_TERM    ; MOV @X+,&SOFT_APP     ; INIT_SOFT_TERM    --> FRAM SOFT_APP
+DEEP_STOP       .word INIT_STOP         ; MOV @X+,&STOP_APP     ; INIT_STOP         --> FRAM STOP_APP
+DEEP_SOFT       .word INIT_SOFT         ; MOV @X+,&SOFT_APP     ; INIT_SOFT_TERM    --> FRAM SOFT_APP
 DEEP_HARD       .word INIT_TERM         ; MOV @X+,&HARD_APP     ; INIT_TERM         --> FRAM HARD_APP
-DEEP_SLEEP      .word RXON              ; MOV @X+,&SLEEP_APP    ; RXON              --> FRAM SLEEP_APP
+DEEP_SLEEP      .word INIT_BACKGRND     ; MOV @X+,&BACKGRND_APP ; INIT_BACKGRND     --> FRAM BACKGRND_APP
     .ELSE
-DEEP_COLD       .word COLD_TERM         ; MOV @X+,&COLD_APP     ; COLD_TERM         --> FRAM COLD_APP
+DEEP_STOP       .word INIT_STOP         ; MOV @X+,&STOP_APP     ; INIT_STOP         --> FRAM STOP_APP
 DEEP_SOFT       .word INIT_SOFT_SD      ; MOV @X+,&SOFT_APP     ; INIT_SOFT_SD      --> FRAM SOFT_APP
 DEEP_HARD       .word INIT_HARD_SD      ; MOV @X+,&HARD_APP     ; INIT_HARD_SD      --> FRAM HARD_APP
-DEEP_SLEEP      .word RXON              ; MOV @X+,&SLEEP_APP    ; RXON              --> FRAM SLEEP_APP
+DEEP_SLEEP      .word INIT_BACKGRND     ; MOV @X+,&BACKGRND_APP ; INIT_BACKGRND     --> FRAM BACKGRND_APP
     .ENDIF
 DEEP_DP         .word ROMDICT           ; MOV @X+,&RST_DP       ; DEEP_DP           --> FRAM RST_DP
 DEEP_LASTVOC    .word lastvoclink       ; MOV @X+,&RST_LASTVOC  ; DEEP_LASTVOC      --> FRAM RST_LASTVOC
@@ -1092,29 +1087,25 @@ INIT_CAPS       .word 32                ; MOV @X+,&CAPS         ; INIT_CAPS     
 INIT_BASE       .word 10                ; MOV @X+,&BASE         ; INIT_BASE         --> RAM BASE
 INIT_LEAVE      .word LSTACK            ; MOV @X+,&LEAVEPTR     ; INIT_LEAVE        --> RAM LEAVEPTR
 ; --------------------------------------;
-; FRAM RST values initialised by -1 SYS ;
+; FRAM RST values initialised by -1 SYS ; from DEEP_ORG+2
 ; --------------------------------------;
 RST_ORG                                 ; make room for RST values of:
 RST_LEN        .equ 16                  ; 16 bytes
 ; --------------------------------------;
     .IFNDEF SD_CARD_LOADER
-COLD_APP        .word COLD_TERM         ; COLD_APP
-SOFT_APP        .word INIT_SOFT_TERM    ; SOFT_APP
+STOP_APP        .word INIT_STOP         ; STOP_APP
+SOFT_APP        .word INIT_SOFT         ; SOFT_APP
 HARD_APP        .word INIT_TERM         ; HARD_APP
-SLEEP_APP       .word RXON              ; SLEEP_APP
+BACKGRND_APP    .word INIT_BACKGRND     ; BACKGRND_APP
     .ELSE
-COLD_APP        .word COLD_TERM         ; COLD_APP
+STOP_APP        .word INIT_STOP         ; STOP_APP
 SOFT_APP        .word INIT_SOFT_SD      ; SOFT_APP
 HARD_APP        .word INIT_HARD_SD      ; HARD_APP
-SLEEP_APP       .word RXON              ; SLEEP_APP
+BACKGRND_APP    .word INIT_BACKGRND     ; BACKGRND_APP
     .ENDIF
-; --------------------------------------;
 RST_DP          .word ROMDICT           ; program memory pointer
-; --------------------------------------;
 RST_LASTVOC     .word lastvoclink       ; last vocabulary link
-; --------------------------------------;
 RST_CURRENT     .word BODYFORTH         ; CURRENT word-set ptr
-; --------------------------------------;
 RST_CONTEXT     .word BODYFORTH         ; CONTEXT space (8 CELLS)
                 .word 0
                 .word 0

@@ -35,11 +35,11 @@ sendln 'RST_RET ;'                              ; RST_RET ;
 sendln param4 ' ?ID ECHO'    ; send: %deviceID% ?ID
 
 sendln 'NOBOOT'              ; 
-sendln 'TERM2SD" ' inputstr '"'    ; send to FastForth the command TERM2SD" \file.4TH" ...with optionnal path added in inputbox
+sendln 'TERM2SD" ' inputstr '"'    ; send to FastForth the command 'TERM2SD" \file.4TH"' ...with optionnal path added in inputbox
 
 uptime timestart ; starts chrono...
 
-sendfile param2 0       ; binary flag = 0 to send text file
+sendfile param2 0       ; binary flag = 0 to send text file (enabling software XON/XOFF)
 
 sendln #4               ; send ETX to ask TERM2SD" to close file
 

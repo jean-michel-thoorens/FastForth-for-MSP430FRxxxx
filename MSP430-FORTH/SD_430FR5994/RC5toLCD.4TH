@@ -8,10 +8,10 @@
     SUB #2,R15
     MOV R14,0(R15)
     MOV &$180A,R14
-    SUB #309,R14
+    SUB #400,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V3.9 please!"
+    ABORT" FastForth V4.0 please!"
     RST_RET
     ;
 
@@ -23,14 +23,9 @@
 
 
 
-    [UNDEFINED] TSTBIT
-    [IF]
-    CODE TSTBIT
-    MOV @R15+,R9
-    AND @R9,R14
-    MOV @R13+,R0
-    ENDCODE
-    [THEN]
+; ------------------------------------------------------------------
+; first we download the set of definitions we need (from CORE_ANS.4th for MSP_EXP430FR5994)
+; ------------------------------------------------------------------
 
     [UNDEFINED] =
     [IF]
@@ -50,15 +45,15 @@
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC8,R14
-    ADD #4,&$1DC8
-    MOV #$40AC,0(R14)
+    MOV &$1DC0,R14
+    ADD #4,&$1DC0
+    MOV #$4096,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC8,0(R14)
+    MOV &$1DC0,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -67,9 +62,9 @@
     [UNDEFINED] ELSE
     [IF]
     CODE ELSE
-    ADD #4,&$1DC8
-    MOV &$1DC8,R10
-    MOV #$40B2,-4(R10)
+    ADD #4,&$1DC0
+    MOV &$1DC0,R10
+    MOV #$409C,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -81,7 +76,7 @@
     [UNDEFINED] CR
     [IF]
     CODE CR
-    MOV #$40B4,R0
+    MOV #$409E,R0
     ENDCODE
 
     :NONAME
@@ -96,6 +91,10 @@
     MOV @R13+,R0
     ENDCODE
     [THEN]
+
+; --------------------------
+; end of definitions we need
+; --------------------------
 
     CODE 20_US
     BEGIN
@@ -209,8 +208,8 @@ BW1 SUB #2,R15
     XOR #$400,0(R1)
     SUB #6,R15
     MOV R14,4(R15)
-    MOV &$1DBE,2(R15)
-    MOV #$10,&$1DBE
+    MOV &$1DB6,2(R15)
+    MOV #$10,&$1DB6
     MOV R9,0(R15)
     MOV #0,R14
     LO2HI
@@ -220,7 +219,7 @@ BW1 SUB #2,R15
     TYPE
     ['] EMIT >BODY IS EMIT
     HI2LO
-    MOV @R15+,&$1DBE
+    MOV @R15+,&$1DB6
     MOV @R15+,R14
 FW1 BIC #$30,&$380
 FW2 BIC #%1111_1000,0(R1)
@@ -236,13 +235,8 @@ FW2 BIC #%1111_1000,0(R1)
         MOV #0,&$340
         MOV #0,&$342
         MOV #{RC5TOLCD},R10
-        MOV #$4082,-2(R10)
-        $180E $3C00 TSTBIT
-        [IF]
-        MOV @R10+,&UART_WARM+2
-        [ELSE]
-        MOV @R10+,&$4180+2
-        [THEN]
+        MOV #$406C,-2(R10)
+        MOV @R10+,&$183E
         MOV @R10+,&$FFEA
         MOV @R10+,&$FFDE
     THEN
@@ -316,14 +310,8 @@ BW1 CALL #STOP_R2L
         MOV @R13+,R0
     THEN
     MOV #STOP_R2L,&{RC5TOLCD}-2
-    $180E $3C00 TSTBIT
-    [IF]
-       MOV &UART_WARM+2,&{RC5TOLCD}
-       MOV #INIT_R2L,&UART_WARM+2
-    [ELSE]
-       MOV &$4180+2,&{RC5TOLCD}
-       MOV #INIT_R2L,&$4180+2
-    [THEN]
+       MOV &$183E,&{RC5TOLCD}
+       MOV #INIT_R2L,&$183E
     MOV &$FFEA,&{RC5TOLCD}+2
     MOV #WDT_INT,&$FFEA
     MOV &$FFDE,&{RC5TOLCD}+4
@@ -333,7 +321,7 @@ BW1 CALL #STOP_R2L
     MOV &$1800,2(R15)
     MOV #0,0(R15)
     MOV #200,R14
-    CALL #$403E
+    CALL #$4028
     MOV @R15,&{RC5TOLCD}+6
     ADD #4,R15
     MOV @R15+,R14
@@ -342,9 +330,10 @@ BW1 CALL #STOP_R2L
     ." RC5toLCD is running,"
     ."  Type STOP to quit."
     HI2LO
-    MOV #ALLOT+$8,R0
+    MOV #ALLOT+$08,R0
     ENDCODE
 
-RST_SET
+RST_SET 
+
 ECHO
 

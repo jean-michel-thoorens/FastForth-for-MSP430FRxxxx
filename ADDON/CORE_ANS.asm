@@ -3,13 +3,19 @@
     FORTHWORD "{CORE_ANS}"
     MOV @IP+,PC
 
+            FORTHWORD "ABORT"
+            MOV #ABORT,PC
+
+            FORTHWORD "QUIT"
+            MOV #QUIT,PC
+
 ;-------------------------------------------------------------------------------
 ; COMPARAISON OPERATIONS
 ;-------------------------------------------------------------------------------
             FORTHWORD "0<"
 ; https://forth-standard.org/standard/core/Zeroless
 ; 0<     n -- flag      true if TOS negative
-            ADD TOS,TOS     ;1 set carry if TOS negative
+ZLESS       ADD TOS,TOS     ;1 set carry if TOS negative
             SUBC TOS,TOS    ;1 TOS=-1 if carry was clear
 EQUALTRUE   XOR #-1,TOS     ;1 TOS=-1 if carry was set
             MOV @IP+,PC     ;
@@ -46,7 +52,6 @@ LESS        SUB @PSP+,TOS   ;1 TOS=n2-n1
             JL TOSFALSE     ;2 signed jump
 TOSTRUE     MOV #-1,TOS     ;1 flag Z = 0
 LESSEND     MOV @IP+,PC     ;4
-        .ENDIF
 
             FORTHWORD ">"
 ;https://forth-standard.org/standard/core/more
@@ -56,6 +61,7 @@ MORE        SUB @PSP+,TOS   ;2 TOS=n2-n1
 TOSFALSE    AND #0,TOS      ;1 flag Z = 1
             MOV @IP+,PC     ;4
 
+        .ENDIF
         .IFNDEF ULESS
 ; https://forth-standard.org/standard/core/Uless
 ; U<    u1 u2 -- flag       test u1<u2, unsigned
@@ -73,8 +79,8 @@ UTOSEND     MOV @IP+,PC     ;4
             JNC UTOSTRUE    ; 2 flag = true, Z = 0
 UTOSFALSE   AND #0,TOS      ;1 flag Z = 1
             MOV @IP+,PC     ;4
-        .ENDIF
 
+        .ENDIF
 ;-------------------------------------------------------------------------------
 ; STACK OPERATIONS
 ;-------------------------------------------------------------------------------
@@ -90,10 +96,10 @@ QDUPEND     MOV @IP+,PC     ; 4
 ; ?DUP     x -- 0 | x x    DUP if nonzero
             FORTHWORD "?DUP"
 QDUP        CMP #0,TOS
-            JZ QDUPEND
             JNZ QDUPNEXT
-        .ENDIF
+            JZ QDUPEND
 
+        .ENDIF
 ; https://forth-standard.org/standard/core/SWAP
 ; SWAP     x1 x2 -- x2 x1    swap top two items
             FORTHWORD "SWAP"
@@ -105,7 +111,7 @@ QDUP        CMP #0,TOS
             FORTHWORD "DROP"
 ; https://forth-standard.org/standard/core/DROP
 ; DROP     x --          drop top of stack
-            MOV @PSP+,TOS   ; 2
+DROP1       MOV @PSP+,TOS   ; 2
             MOV @IP+,PC     ; 4
 
         .IFNDEF OVER
@@ -116,18 +122,18 @@ OVER        MOV TOS,-2(PSP)     ; 3 -- x1 (x2) x2
             MOV @PSP,TOS        ; 2 -- x1 (x2) x1
             SUB #2,PSP          ; 1 -- x1 x2 x1
             MOV @IP+,PC               ; 4
-        .ENDIF
 
+        .ENDIF
             FORTHWORD "NIP"
 ; https://forth-standard.org/standard/core/NIP
 ; NIP      x1 x2 -- x2         Drop the first item below the top of stack
-            ADD #2,PSP      ; 1
+NIP1        ADD #2,PSP      ; 1
             MOV @IP+,PC     ; 4
 
             FORTHWORD "ROT"
 ;https://forth-standard.org/standard/core/ROT
 ;C ROT    x1 x2 x3 -- x2 x3 x1
-            MOV @PSP,W      ; 2 fetch x2
+ROT         MOV @PSP,W      ; 2 fetch x2
             MOV TOS,0(PSP)  ; 3 store x3
             MOV 2(PSP),TOS  ; 3 fetch x1
             MOV W,2(PSP)    ; 3 store x2
@@ -136,7 +142,7 @@ OVER        MOV TOS,-2(PSP)     ; 3 -- x1 (x2) x2
 ; https://forth-standard.org/standard/core/Rfrom
 ; R>    -- x    R: x --   pop from return stack
             FORTHWORD "R>"
-            SUB #2,PSP      ; 1
+RFROM1      SUB #2,PSP      ; 1
             MOV TOS,0(PSP)  ; 3
             MOV @RSP+,TOS   ; 2
             MOV @IP+,PC     ; 4
@@ -156,8 +162,8 @@ OVER        MOV TOS,-2(PSP)     ; 3 -- x1 (x2) x2
 TOR         PUSH TOS
             MOV @PSP+,TOS
             MOV @IP+,PC
-    .ENDIF
 
+    .ENDIF
 ; https://forth-standard.org/standard/core/TUCK
 ; TUCK  ( x1 x2 -- x2 x1 x2 )
             FORTHWORD "TUCK"
@@ -167,7 +173,12 @@ TOR         PUSH TOS
 ; https://forth-standard.org/standard/core/DEPTH
 ; DEPTH    -- +n        number of items on stack, must leave 0 if stack empty
             FORTHWORD "DEPTH"
-            MOV #DEPTH,PC
+            MOV TOS,-2(PSP)
+            MOV #PSTACK,TOS
+            SUB PSP,TOS     ; PSP-S0--> TOS
+            RRA TOS         ; TOS/2   --> TOS
+            SUB #2,PSP      ; post decrement stack...
+            MOV @IP+,PC
 
 ;-------------------------------------------------------------------------------
 ; RETURN from high level word
@@ -204,8 +215,8 @@ SPACESNEXT  mNEXTADR
             MOV @RSP+,IP            ;
 SPACESNEXT2 MOV @PSP+,TOS           ; --         drop n
             MOV @IP+,PC             ;
-        .ENDIF
 
+        .ENDIF
         .IFNDEF CR
             FORTHWORD "CR"
 ; https://forth-standard.org/standard/core/CR
@@ -216,19 +227,20 @@ BODYCR      mDOCOL                  ;  send CR+LF to the default output device
             .word   LIT,0Dh,EMIT
             .word   LIT,0Ah,EMIT
             .word   EXIT
-        .ENDIF
 
+        .ENDIF
 ;-------------------------------------------------------------------------------
 ; ARITHMETIC OPERATIONS
 ;-------------------------------------------------------------------------------
+
         .IFNDEF ANDD
 ;https://forth-standard.org/standard/core/AND
 ;C AND    x1 x2 -- x3           logical AND
             FORTHWORD "AND"
 ANDD        AND @PSP+,TOS
             MOV @IP+,PC
-        .ENDIF
 
+        .ENDIF
 ;https://forth-standard.org/standard/core/OR
 ;C OR     x1 x2 -- x3           logical OR
             FORTHWORD "OR"
@@ -300,8 +312,8 @@ MIN         CMP @PSP,TOS    ; n2-n1
             JL SELn2        ; n2<n1
 SELn1       MOV @PSP+,TOS
             MOV @IP+,PC
-        .ENDIF
 
+        .ENDIF
             FORTHWORD "1+"
 ; https://forth-standard.org/standard/core/OnePlus
 ; 1+      n1/u1 -- n2/u2       add 1 to TOS
@@ -311,7 +323,7 @@ SELn1       MOV @PSP+,TOS
             FORTHWORD "1-"
 ; https://forth-standard.org/standard/core/OneMinus
 ; 1-      n1/u1 -- n2/u2     subtract 1 from TOS
-            SUB #1,TOS
+ONEMINUS1   SUB #1,TOS
             MOV @IP+,PC
 
             FORTHWORD "+"
@@ -329,7 +341,6 @@ SELn1       MOV @PSP+,TOS
             MOV @IP+,PC
 
     .IFDEF MPY
-
 ;https://forth-standard.org/standard/core/UMTimes
 ;C UM*     u1 u2 -- ud   unsigned 16x16->32 mult.
             FORTHWORD "UM*"
@@ -349,7 +360,6 @@ MSTAR       MOV @PSP,&MPYS
             MOV @IP+,PC
 
     .ELSE
-
 ;https://forth-standard.org/standard/core/MTimes
 ;C M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
             FORTHWORD "M*"
@@ -609,31 +619,14 @@ TWODUP      MOV TOS,-2(PSP)     ; 3
 ;-------------------------------------------------------------------------------
 ; MEMORY OPERATIONS
 ;-------------------------------------------------------------------------------
-        .IFNDEF FETCH
-;https://forth-standard.org/standard/core/Fetch
-; C@     c-addr -- word   fetch word from memory
-            FORTHWORD "@"
-FETCH       MOV @TOS,TOS        ;2
-            MOV @IP+,PC         ;4
-        .ENDIF
-
-        .IFNDEF STORE
-;https://forth-standard.org/standard/core/Store
-; C!      word c-addr --    store word in memory
-            FORTHWORD "!"
-STORE       MOV @PSP+,0(TOS)    ;4
-            MOV @PSP+,TOS       ;2
-            MOV @IP+,PC
-        .ENDIF
-
         .IFNDEF CFETCH
 ;https://forth-standard.org/standard/core/CFetch
 ; C@     c-addr -- char   fetch char from memory
             FORTHWORD "C@"
 CFETCH      MOV.B @TOS,TOS      ;2
             MOV @IP+,PC         ;4
-        .ENDIF
 
+        .ENDIF
         .IFNDEF CSTORE
 ;https://forth-standard.org/standard/core/CStore
 ; C!      char c-addr --    store char in memory
@@ -642,8 +635,8 @@ CSTORE      MOV.B @PSP+,0(TOS)  ;4
             ADD #1,PSP          ;1
             MOV @PSP+,TOS       ;2
             MOV @IP+,PC
-        .ENDIF
 
+        .ENDIF
         .IFNDEF CCOMMA
 ;https://forth-standard.org/standard/core/CComma
 ; C,   char --        append char
@@ -653,8 +646,8 @@ CCOMMA      MOV &DP,W
             ADD #1,&DP
             MOV @PSP+,TOS
             MOV @IP+,PC
-        .ENDIF
 
+        .ENDIF
 ;https://forth-standard.org/standard/core/PlusStore
 ;C +!     n/u a-addr --       add to memory
             FORTHWORD "+!"
@@ -739,7 +732,7 @@ THEN        MOV &DP,0(TOS)         ; -- IFadr
             FORTHWORDIMM "BEGIN"    ; immediate
 ; https://forth-standard.org/standard/core/BEGIN
 ; BEGIN    -- BEGINadr             initialize backward branch
-            MOV #HEREXEC,PC         ; -- HERE
+            MOV #HERE,PC            ; -- HERE
 
             FORTHWORDIMM "UNTIL"    ; immediate
 ; https://forth-standard.org/standard/core/UNTIL
@@ -770,7 +763,6 @@ WHILE       mDOCOL
 REPEAT      mDOCOL
             .word   AGAIN,THEN,EXIT
 
-            FORTHWORDIMM "DO"       ; immediate
 ; Primitive XDO; compiled by DO
 ;Z (do)    n1|u1 n2|u2 --  R: -- sys1 sys2      run-time code for DO
 ;                                               n1|u1=limit, n2|u2=index
@@ -782,6 +774,7 @@ XDO         MOV #8000h,X    ;2 compute 8000h-limit = "fudge factor"
             MOV @PSP+,TOS   ;2
             MOV @IP+,PC     ;4
 
+            FORTHWORDIMM "DO"       ; immediate
 ; https://forth-standard.org/standard/core/DO
 ; DO       -- DOadr   L: -- 0
 DO          SUB #2,PSP              ;
@@ -804,8 +797,8 @@ II          SUB #2,PSP              ;1 make room in TOS
             MOV @RSP,TOS            ;2 index = loopctr - fudge
             SUB 2(RSP),TOS          ;3
             MOV @IP+,PC             ;4 13~
-    .ENDIF
 
+    .ENDIF
 ; Primitive XLOOP; compiled by LOOP
 ;Z (loop)   R: sys1 sys2 --  | sys1 sys2
 ;                        run-time code for LOOP
@@ -964,8 +957,8 @@ DECIMAL     MOV #10,&BASEADR
 
 ; https://forth-standard.org/standard/core/HERE
 ; HERE    -- addr      returns memory ptr
-HERE       FORTHWORD "HERE"
-            MOV #HEREXEC,PC
+            FORTHWORD "HERE"
+            MOV #HERE,PC
 
 ;https://forth-standard.org/standard/core/p
 ;C (                \  --     paren ; skip input until )
@@ -1026,8 +1019,8 @@ RECURSE     MOV &DP,X              ;
             FORTHWORD ">BODY"
 TOBODY      ADD #4,TOS
             MOV @IP+,PC
-            .ENDIF
 
+            .ENDIF
 ; https://forth-standard.org/standard/core/EXECUTE
 ; EXECUTE   i*x xt -- j*x   execute Forth word at 'xt'
             FORTHWORD "EXECUTE"
@@ -1091,8 +1084,8 @@ FTOIN       CALL rDOCON
             FORTHWORD "PAD"
 PAD         CALL rDOCON
             .WORD    PAD_ORG
-    .ENDIF
 
+    .ENDIF
 ; https://forth-standard.org/standard/core/VARIABLE
 ; VARIABLE <name>       --                      define a Forth VARIABLE
             FORTHWORD "VARIABLE"
@@ -1126,7 +1119,7 @@ PAD         CALL rDOCON
             .word   CREATE
             mNEXTADR
             MOV #4030h,-4(W)        ;4 first CELL = MOV @PC+,PC = BR #addr
-            MOV #NEXTADR,-2(W)      ;3 second CELL              =   ...mNEXT : do nothing by default
+            MOV #NEXT_ADR,-2(W)     ;3 second CELL              =   ...mNEXT : do nothing by default
             MOV @RSP+,IP
             MOV @IP+,PC
 
@@ -1160,4 +1153,3 @@ STOREVALUE  BIC #UF9,SR         ; clear 'TO' flag
             MOV @PSP+,0(TOS)    ; 4 execute Store
             MOV @PSP+,TOS       ; 2
             MOV @IP+,PC         ; 4
-
