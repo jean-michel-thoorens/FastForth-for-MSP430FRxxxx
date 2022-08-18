@@ -66,7 +66,7 @@
 \ =============================================================================================
 \ don't forget to set the jumper Txy.z <--> Px.y
 \ =============================================================================================
-\ don't forget to remove the jumpers SBWTCK & SBWTDIO from the USB unpowered launchpad if any
+\ don't forget to remove the jumpers SBWTCK & SBWTDIO from the unpowered launchpad if any
 \ =============================================================================================
 \
 \ empiric value of I2C pullup resistors: R (k) = 8 Vcc / MCLK (MHz). ex. VCC = 3.3, MCLK = 24 MHz ==> R = 1k1
@@ -745,7 +745,7 @@ FW2 \ single use forward label              \ <──────── if Nack 
     ." Connect to I2C_SLAVE at @"       \
     . 'BS' EMIT                         \               display number without space after
      ." , TERATERM(Alt-B) "             \
-    ." or I2C_MASTER(S2) to quit..."    \
+    ." or I2C_MASTER(RST) to quit..."   \
     HI2LO                               \               FORTH switch to ASSEMBLER
     MOV @RSP+,IP                        \               restore IP
     BEGIN                               \

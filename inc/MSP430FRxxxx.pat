@@ -121,6 +121,7 @@ I2C_CTRL=KEY\+\$0A;         used as is: MOV.B #<CTRL_CHAR>,Y
 \#BACKGRND=\#ACCEPT\+\$1C;      MOV #BACKGRND,PC
 \#STOP_APP=\&SYS\+2;            CALL #STOP_APP     
 \#TOS2WARM=\#SYS\+\$0E;         CALL #TOS2WARM      WARM with TOS value
+\#WARM_IP_ADR=\#SYS\+\$12;      MOV #WARM_IP_ADR,IP
 \#TOS2COLD=\#SYS\+\$14;         CALL #TOS2COLD      COLD with TOS value
 INTERPRET=\\+\$08;              address used in CORE_ANS.f
 \#ABORT=\#ALLOT\+\$08;          MOV #ABORT,PC   used in CORE_ANS.f
