@@ -28,57 +28,9 @@
     .IFDEF CHIPSTICK_FR2433
     .include "CHIPSTICK_FR2433.asm"
     .ENDIF
-    .save
-    .listing off
-; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 ; add here your target.asm item:
+; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+;    .IFDEF YOUR_TARGET1
+;    .include "YOUR_TARGET1.asm"
+;    .ENDIF
 ;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    .restore
-    .IFDEF MY_MSP430FR5734
-    .include "MY_MSP430FR5734.asm"
-    .ENDIF
-    .IFDEF MY_MSP430FR5738
-    .include "MY_MSP430FR5738.asm"
-    .ENDIF
-    .IFDEF MY_MSP430FR5738_1
-    .include "MY_MSP430FR5738.asm"
-    .ENDIF
-    .IFDEF MY_MSP430FR5738_2
-    .include "MY_MSP430FR5738.asm"
-    .ENDIF
-    .IFDEF MY_MSP430FR5948
-    .include "MY_MSP430FR5948.asm"
-    .ENDIF
-    .IFDEF MY_MSP430FR5948_1
-    .include "MY_MSP430FR5948_1.asm"
-    .ENDIF
-    .IFDEF JMJ_BOX_2021_03_02
-    .include "JMJ_BOX_2021_03_02.asm"
-    .ENDIF
-    .IFDEF JMJ_BOX_2021_05_04
-    .include "JMJ_BOX_2021_05_04.asm"
-    .ENDIF
-    .IFDEF JMJ_BOX
-    .include "MY_MSP430FR5738.asm"
-    .ENDIF
-    .IFDEF JMJ_BOX_2018_10_29
-    .include "MY_MSP430FR5738.asm" 
-    .ENDIF
-    .IFDEF JMJ_BOX_2018_08
-    .include "MY_MSP430FR5738.asm"
-    .ENDIF
-    .IFDEF JMJ_BOX_GUILLAUME
-    .include "MY_MSP430FR5738.asm"
-    .ENDIF
-    .IFDEF JMJ_BOX_FAVRE
-    .include "MY_MSP430FR5738.asm"
-    .ENDIF
-    .IFDEF PA8_PA_MSP430
-    .include "MY_MSP430FR5738.asm"
-    .ENDIF
-    .IFDEF PA_PA_MSP430
-    .include "MY_MSP430FR5738.asm"
-    .ENDIF
-    .IFDEF PA_Core_MSP430
-    .include "MY_MSP430FR5948_1.asm"
-    .ENDIF

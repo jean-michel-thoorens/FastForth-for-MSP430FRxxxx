@@ -1,8 +1,19 @@
 
 @set-syntax{C;\;}!  tell GEMA to replace default Comment separator '!' by ';'
+
 ; ========================
 ;MSP430FR2355.pat
 ; ========================
+
+@reset-syntax{}; enable good interpreting of next line
+@define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
+
+@reset-syntax{}; enable good interpreting of next line
+@define{@read{@mergepath{@inpath{};MSP430FRxxxx.pat;}}}
+
+@reset-syntax{}; enable good interpreting of next line
+@define{@read{@mergepath{@inpath{};MSP430FR2xxx.pat;}}}
+
 ; ----------------------------------------------
 ; MSP430FR2355 MEMORY MAP
 ; ----------------------------------------------
@@ -12,9 +23,7 @@
 ; 1000-17FF = ROM bootstrap loader BSL1 (2k)
 ; 1800-19FF = information memory (FRAM 512 B)
 ; 1A00-1A31 = TLV device descriptor info (FRAM 128 B)
-; 1A80-1FFF = unused
 ; 2000-2FFF = RAM (4 KB)
-; 2800-7FFF = unused
 ; 8000-FF7F = code memory (FRAM 15232 B)
 ; FF80-FFFF = interrupt vectors (FRAM 128 B)
 ; FFC00-FFFFF = BSL2 (2k)
@@ -40,56 +49,30 @@ BSL2=\$FFC00;
 ; ============================================
 ; FRAM INFO
 ; ============================================
-INFO_ORG=\$1800;
-INFO_LEN=\$0200;
 
-; See MSP430FRxxxx.pat
+; See MSP430FRxxxx.pat for defined addresses in FRAM INFO
 
 ; ============================================
 ; FRAM TLV
 ; ============================================
 
-; See MSP430FRxxxx.pat
+; See MSP430FRxxxx.pat for defined addresses in FRAM TLV
 
 ; ============================================
-; RAM area cleared by any PUC event
+; RAM
 ; ============================================
 RAM_ORG=\$2000;
 RAM_LEN=\$1000;
 ;
-; ---------------------------------------
-; FORTH RAM areas :
-; ---------------------------------------
-
-; See MSP430FR2xxx.pat
+; See MSP430FR2xxx.pat for defined addresses in RAM
 
 ; ============================================
 ; FRAM MAIN
 ; ============================================
 MAIN_ORG=\$8000;            Code space start
 ; ----------------------------------------------
-\#LIT=\#\$8000;             asm CODE run time of LITERAL
-\#XSQUOTE=\#\$8014;         asm CODE run time of QUOTE
-\#MUSMOD=\#\$8028;          asm CODE 32/16 unsigned division, used by ?NUMBER, UM/MOD
-\#MDIV1DIV2=\#\$803A;       asm CODE input for 48/16 unsigned division with DVDhi=0, see DOUBLE M*/
-\#MDIV1=\#\$8042;           asm CODE input for 48/16 unsigned division, see DOUBLE M*/
-\#RET_ADR=\#\$806C;         asm CODE of INIT_SOFT_PFA and MARKER+8 definitions,
-\#SETIB=\#\$806E;           CODE Set Input Buffer with org & len values, reset >IN pointer
-\#REFILL=\#\$807E;          CODE accept one line from input and leave org len of input buffer
-\#CIB_ORG=\#\$808A;         [CIB_ORG] = TIB_ORG by default; may be redirected to SDIB_ORG
-\#QFBRAN=\#\$8096;          CODE compiled by IF UNTIL
-\#BRAN=\#\$809C;            CODE compiled by ELSE REPEAT AGAIN
-\#NEXT_ADR=\#\$809E;        CODE NEXT instruction (MOV @IP+,PC)
-\#XDODOES=\#\$80A0;         to restore rDODOES: MOV #XDODOES,rDODOES
-\#XDOCON=\#\$80AE;          to restore rDOCON: MOV #XDOCON,rDOCON
-;                           to restore rDOVAR: MOV &INIT_DOVAR,rDOVAR
-;                           to restore rDOCOL: MOV &INIT_DOCOL,rDOCOL
-\#INIT_FORTH=\#\$80BA;      
-\#ABORT_TERM=\#\$8100;      CALL to discard pending download
-\#UART_WARM=\#\$8172;       WARM address for UART TERMINAL
-\#I2C_WARM=\#\$815C;        WARM address for I2C TERMINAL
 
-; See MSP430FRxxxx.pat for defined addresses from FORTH definitions
+; See MSP430FRxxxx.pat for defined addresses in MAIN
 
 ; ----------------------------------------------
 ; Interrupt Vectors and signatures - MSP430FR2355

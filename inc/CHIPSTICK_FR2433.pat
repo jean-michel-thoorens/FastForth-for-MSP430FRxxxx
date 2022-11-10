@@ -1,24 +1,20 @@
 
 @set-syntax{C;\;}!  tell GEMA to replace default Comment separator '!' by ';'
-; ChipStick_FR2433.pat
 ;
 \.f=\.4th for ChipStick_FR2433;      to change file type
+
 ; ========================
 ; remove comments
 ; ========================
 \\*\n=
 \s\\*\n=\n
+
 ; ======================================================================
 ; MSP430FR2433 Config
 ; ======================================================================
+
 @reset-syntax{}; to enable good interpreting of next line
 @define{@read{@mergepath{@inpath{};MSP430FR2433.pat;}}}
-@reset-syntax{}; to enable good interpreting of next line
-@define{@read{@mergepath{@inpath{};MSP430FRxxxx.pat;}}}
-@reset-syntax{}; enable good interpreting of next line
-@define{@read{@mergepath{@inpath{};MSP430FR2xxx.pat;}}}
-@reset-syntax{}; to enable good interpreting of next line
-@define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
 
 ; ---------------------------------------------------
 ; CHIPSTICK_FR2433 <--> OUTPUT WORLD

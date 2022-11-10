@@ -16,7 +16,7 @@ OPEN_1W                             ;
     CMP     #1,W                    ; open_type = READ" ?
     JNZ     OPEN_2W                 ; no : goto next step
 ; ----------------------------------;
-OPEN_READ                           ;
+;OPEN_READ                          ;
 ; ----------------------------------;
     CMP     #0,S                    ; open file happy end ?
     JNZ     OPEN_Error              ; no
@@ -55,14 +55,11 @@ GetAndFreeCluster                   ;
 ; ----------------------------------;
     MOV     SD_BUF(Y),W             ; get [clusterLO]
     MOV     #0,SD_BUF(Y)            ; free CLusterLO
-GetAndFreeClusterHi                 ;
     MOV     SD_BUF+2(Y),X           ; get [clusterHI]
     MOV     #0,SD_BUF+2(Y)          ; free CLusterHI
-ClusterHiTest
     AND     #00FFFh,X               ; select 12 bits significant
     CMP     #00FFFh,X               ; [ClusterHI] was = 0FFFh?
     JNE     SearchNextCluster2free  ; no
-ClusterLoTest                       ;
     CMP     #-1,W                   ; [ClusterLO] was = FFFFh? last cluster used for this file
     JZ      EndOfFileCluster        ; yes
 ; ----------------------------------;
@@ -120,17 +117,15 @@ LoadFATsectorLoop                   ;
 ; ----------------------------------;
 SearchFreeClusterLoop               ;
 ; ----------------------------------;
-ClusterHighWordTest                 ;
     CMP     #0,SD_BUF+2(Y)          ;3 cluster address hi word = 0 ?
     JNZ     SearchNextNewCluster    ;2
-ClusterLowWordTest                  ;
     CMP     #0,SD_BUF(Y)            ;3 Cluster address lo word = 0 ?
     JZ      FreeClusterFound        ;2
 SearchNextNewCluster                ;
     ADD     #4,Y                    ;1 increment SD_BUF offset by size of Cluster address
     CMP     #BytsPerSec,Y           ;2
     JNC     SearchFreeClusterLoop   ;2  18/15~   loopback while X U< BytsPerSec
-IncrementFATsector                  ;1
+;IncrementFATsector                 ;1
     ADD     #1,0(RSP)               ;3 increment FATsector
     MOV     #0,Y                    ;  clear FAToffset
     JMP     LoadFATsectorLoop       ;5  34/23~    loopback
@@ -142,7 +137,7 @@ FreeClusterFound                    ; X =  cluster number low word in SD_BUF = F
     MOV.B   @RSP,W                  ; W = 0:FATsectorLo
     MOV     #0FFFh,SD_BUF+2(Y)      ; mark New Cluster high word as end cluster (0x0FFF) in SD_BUF
 ; ----------------------------------;
-FAT32ClustAdrToClustNum             ; convert FAT32 cluster address to cluster number (CluNum = CluAddr / 4)
+;FAT32ClustAdrToClustNum             ; convert FAT32 cluster address to cluster number (CluNum = CluAddr / 4)
 ; ----------------------------------;
     RRA     Y                       ; Y = FATOffset>>1, (bytes to words conversion)
     SWPB    W                       ; W = FATsectorLo:0
@@ -261,7 +256,7 @@ FillDIRentryName                    ;SWXY use
     CMP     T,&PathName_END         ; EOS < PTR ?
     JNC     OPWC_CompleteWithSpaces ; yes
 ; ----------------------------------;
-SkipForbiddenChars                  ;
+;SkipForbiddenChars                  ;
 ; ----------------------------------;
     PUSH    IP                      ;3
     MOV     #15,IP                  ;2 forbidden chars count
@@ -323,7 +318,7 @@ Write_File                          ;STWXY <== WRITE, SD_EMIT, TERM2SD", BUT NOT
     CALL    #WriteSD_Buf            ;SWX write SD_BUF and update Handle informations only for DIRentry update
     MOV     #0,&BufferPtr           ; reset buffer pointer
 ; ----------------------------------;
-PostIncrementSector                 ;
+;PostIncrementSector                 ;
 ; ----------------------------------;
     ADD.B   #1,HDLB_ClustOfst(T)    ; increment current Cluster offset
     CMP.B &SecPerClus,HDLB_ClustOfst(T) ; out of bound ?
@@ -463,13 +458,13 @@ OPEN_8W                             ;
     CMP     #0,S                    ; already opened file ?
     JNZ     OPWC_Write_Errors       ; no
 ; ==================================;
-OPEN_WRITE_APPEND                   ; yes, handle is already created
+;OPEN_WRITE_APPEND                  ; yes, handle is already created
 ; ==================================;
-SearchLastClust                     ;SWXY input: HDLL_FirstClus(T)
+;SearchLastClust                    ;SWXY input: HDLL_FirstClus(T)
 ; ----------------------------------;
     CALL #HDLFrstClus2FATsecWofstY  ;WXY    output: W = FATsector, Y=FAToffset
 ; ----------------------------------;
-SrchFAT1sectorWloop                 ;
+;SrchFAT1sectorWloop                 ;
 ; ----------------------------------;
     MOV     W,&FATsector            ;       FATsector memory
     CALL    #ReadFAT1SectorW        ;SWX
@@ -529,8 +524,11 @@ LastClusterFound                    ; in ClusterHL
     FORTHWORD "TERM2SD\34"          ;
 ; ==================================;
     mDOCOL                          ;
+    .word   NOBOOT                  ; on ne tente pas le diable...
     .word   WRITEDQ                 ;  if already exist Free All Clusters else create it as WRITE file
+; ----------------------------------;
     mNEXTADR                        ;
+    MOV     @RSP+,IP                ;
 ; ----------------------------------;
 T2S_GetSliceLoop                    ;   tranfert by slices of 512 bytes from terminal input to file on SD_CARD via SD_BUF
 ; ----------------------------------;
@@ -545,15 +543,13 @@ T2S_Get_a_Char_Loop                 ;
     CMP.B   #4,X                    ;1 EOT sent by TERATERM ?
     JZ      T2S_End_Of_File         ;2 yes
 ; ----------------------------------;
-;    MOV.B   X,&TERM_TXBUF          ;       uncomment this line to echo chars
-; ----------------------------------;
     MOV.B   X,SD_BUF(W)             ;3
     ADD     #1,W                    ;1
     CMP     #BytsPerSec-1,W         ;2
     JZ      T2S_XOFF                ;2 W = BytsPerSec-1    send XOFF after RX 511th char
     JNC     T2S_Get_a_Char_Loop     ;2 W < BytsPerSec-1    21 cycles char loop (476 kBds/MHz)
 ; ----------------------------------;
-T2S_WriteFile                       ;2 W = BytsPerSec
+;T2S_WriteFile                      ;2 W = BytsPerSec
 ; ----------------------------------;
     CALL    #Write_File             ;STWXY write all the buffer
     JMP     T2S_GetSliceLoop        ;2
@@ -579,9 +575,7 @@ T2S_Wait_LF                         ; warning! EOT must be followed by CR+LF (TE
 ; ----------------------------------;
     MOV     W,&BufferPtr            ;3
     CALL    #CloseHandle            ;4
-; ----------------------------------;
-    MOV     @RSP+,IP                ;
-    MOV     @IP+,PC                 ;
+    MOV     #ECHO,PC                ; then NEXT_ADR
 ; ----------------------------------;
 
     .ELSE ; if I2C_TERMINAL
@@ -594,14 +588,14 @@ T2S_Wait_LF                         ; warning! EOT must be followed by CR+LF (TE
     FORTHWORD "TERM2SD\34"          ; here, I2C_Master is reSTARTed in RX mode
 ; ==================================;
     mDOCOL                          ;
+    .word   NOBOOT                  ; on ne tente pas le diable...
+    .word   NOECHO                  ;
     .word   WRITEDQ                 ; if already exist FreeAllClusters else create it as WRITE file
 ; ----------------------------------;
-    .word   NOECHO                  ;       comment this line to echo chars
-; ----------------------------------;
     mNEXTADR                        ;
+    MOV     @RSP+,IP                ;
 ; ----------------------------------;
     MOV     #0,W                    ; clear W = SD_Buf_Ptr
-    MOV.B   #0Ah,IP                 ; IP = char 'LF'
 ; ----------------------------------;
 T2S_GetLineLoop                     ; tranfert line by line from terminal input to SD_BUF
 ; ----------------------------------;
@@ -609,12 +603,12 @@ T2S_GetLineLoop                     ; tranfert line by line from terminal input 
 ; ----------------------------------;
 T2S_Get_a_Char_Loop                 ;
 ; ----------------------------------;
-T2S_Q_BufferFull                    ; test it before to take data in RX buffer and so to do SCL strech low during Write_File !!!!
+;T2S_Q_BufferFull                    ; test it before to take data in RX buffer and so to do SCL strech low during Write_File !!!!
 ; ----------------------------------;
     CMP     #BytsPerSec,W           ;2 buffer full ?
     JNC     T2S_Get_a_Char          ;2 no
 ; ----------------------------------;
-T2S_WriteFile                       ;  tranfert all 512 bytes of SD_BUF to the opened file in SD_CARD
+;T2S_WriteFile                       ;  tranfert all 512 bytes of SD_BUF to the opened file in SD_CARD
 ; ----------------------------------;  SCL is stretched low by Slave (it's my)
     CALL    #Write_File             ;STWXY Write_File write always all the buffer
     MOV     #0,W                    ;  reset SD_Buf_Ptr
@@ -625,16 +619,14 @@ T2S_Get_a_Char                      ;
     JZ      T2S_Get_a_Char          ;2 no
     MOV.B   &TERM_RXBUF,X           ;3 SCL is released here
 ; ----------------------------------;
-T2S_Q_EOF                           ;
-; ----------------------------------;
     CMP.B   #4,X                    ;1 EOT sent by TERMINAL (teraterm.exe) ?
     JZ      T2S_End_Of_File         ;2 yes
     MOV.B   X,SD_BUF(W)             ;3
     ADD     #1,W                    ;1
 ; ----------------------------------;
-T2S_Q_Char_LF                       ; when Master send the Ack on char 'LF', it reStarts automatically in RX mode
+;T2S_Q_Char_LF                      ; when Master send the Ack on char 'LF', it reStarts automatically in RX mode
 ; ----------------------------------;
-    CMP.B   IP,X                    ;1 Char LF received ?
+    CMP.B   #0Ah,X                  ;1 Char LF received ?
     JNZ     T2S_Get_a_Char_Loop     ;2 no, 22 cycles loop back (< 1us @ 24 MHz)
 ; ----------------------------------;
 T2S_Send_CR                         ; because I2C_Master doesn't echo it on TERMINAL
@@ -647,7 +639,7 @@ T2S_Send_LF                         ; because I2C_Master doesn't echo it on TERM
 ; ----------------------------------;
     BIT     #TX_TERM,&TERM_IFG      ;
     JZ      T2S_Send_LF             ; wait TX buffer empty
-    MOV.B   IP,&TERM_TXBUF          ; send LF to beautify TERMINAL display (if ECHO is ON, obviously)
+    MOV.B   #0Ah,&TERM_TXBUF        ; send LF to beautify TERMINAL display (if ECHO is ON, obviously)
 ; ----------------------------------;
     JMP     T2S_GetLineLoop         ;
 ; ----------------------------------;
@@ -655,14 +647,12 @@ T2S_End_Of_File                     ;
 ; ----------------------------------;
 T2S_Wait_LF                         ; warning! EOT is followed by CR+LF, because I2C_Master uses LF to switch from TX to RX
 ; ----------------------------------;
-    CMP.B   IP,&TERM_RXBUF          ; and also clears RX_IFG !
+    CMP.B   #0Ah,&TERM_RXBUF        ; and also clears RX_IFG for CR char!
     JNZ     T2S_Wait_LF             ;
 ; ----------------------------------; here I2C_Master switches from TX to RX
     MOV     W,&BufferPtr            ; to add it to HDLL_CurSize
     CALL    #CloseHandle            ; tranfert SD_BUF to last sector of opened file in SD_CARD then close it
-; ----------------------------------;
-    MOV     @RSP+,IP                ;
-    MOV     #ECHO,PC                ;
+    MOV     #ECHO,PC                ; then NEXT_ADR
 ; ----------------------------------;
 
     .ENDIF

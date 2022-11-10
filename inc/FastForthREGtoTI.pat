@@ -48,6 +48,7 @@ R\@=R\@
 \>R=\>R
 
 S\>=S\>
+S\"=S\"
 \>S=\>S
 S\<=S\<
 S\>\==S\>\=
@@ -61,8 +62,9 @@ S\?=S\?
 \#\!=\#\!
 \#\@=\#\@
 
-T\{=T\{;                    CORETEST filter
-\}T=\}T;                    CORETEST filter
+T\{=T\{;                CORETEST filter
+\}T=\}T;                CORETEST filter
+\?FLOORED=\?FLOORED;    CORETEST filter
 
 U\.R=U\.R
 

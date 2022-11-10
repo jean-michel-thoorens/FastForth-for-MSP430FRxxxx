@@ -11,10 +11,10 @@
     SUB #2,R15
     MOV R14,0(R15)
     MOV &$180A,R14
-    SUB #400,R14
+    SUB #401,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     RST_RET
     ;
 
@@ -48,15 +48,15 @@
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -65,9 +65,9 @@
     [UNDEFINED] ELSE
     [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10)
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -79,7 +79,7 @@
     [UNDEFINED] CR
     [IF]
     CODE CR
-    MOV #$409E,R0
+    MOV #[THEN],R0
     ENDCODE
 
     :NONAME
@@ -238,8 +238,8 @@ FW2 BIC #%1111_1000,0(R1)
         MOV #0,&$340
         MOV #0,&$342
         MOV #{RC5TOLCD},R10
-        MOV #$406C,-2(R10)
-        MOV @R10+,&$183E
+        MOV #<#+$4C,-2(R10)
+        MOV @R10+,&$1842
         MOV @R10+,&$FFEA
         MOV @R10+,&$FFDE
     THEN
@@ -313,8 +313,8 @@ BW1 CALL #STOP_R2L
         MOV @R13+,R0
     THEN
     MOV #STOP_R2L,&{RC5TOLCD}-2
-       MOV &$183E,&{RC5TOLCD}
-       MOV #INIT_R2L,&$183E
+       MOV &$1842,&{RC5TOLCD}
+       MOV #INIT_R2L,&$1842
     MOV &$FFEA,&{RC5TOLCD}+2
     MOV #WDT_INT,&$FFEA
     MOV &$FFDE,&{RC5TOLCD}+4
@@ -324,7 +324,7 @@ BW1 CALL #STOP_R2L
     MOV &$1800,2(R15)
     MOV #0,0(R15)
     MOV #200,R14
-    CALL #$4028
+    CALL #<#+8
     MOV @R15,&{RC5TOLCD}+6
     ADD #4,R15
     MOV @R15+,R14
@@ -333,7 +333,7 @@ BW1 CALL #STOP_R2L
     ." RC5toLCD is running,"
     ."  Type STOP to quit."
     HI2LO
-    MOV #ALLOT+$08,R0
+    MOV #ALLOT+8,R0
     ENDCODE
 
 RST_SET 
@@ -366,15 +366,15 @@ RST_SET
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -383,9 +383,9 @@ RST_SET
     [UNDEFINED] ELSE
     [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10)
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -397,7 +397,7 @@ RST_SET
     [UNDEFINED] CR
     [IF]
     CODE CR
-    MOV #$409E,R0
+    MOV #[THEN],R0
     ENDCODE
 
     :NONAME
@@ -556,8 +556,8 @@ FW2 BIC #%1111_1000,0(R1)
         MOV #0,&$340
         MOV #0,&$342
         MOV #{RC5TOLCD},R10
-        MOV #$406C,-2(R10)
-        MOV @R10+,&$183E
+        MOV #<#+$4C,-2(R10)
+        MOV @R10+,&$1842
         MOV @R10+,&$FFEA
         MOV @R10+,&$FFDE
     THEN
@@ -631,8 +631,8 @@ BW1 CALL #STOP_R2L
         MOV @R13+,R0
     THEN
     MOV #STOP_R2L,&{RC5TOLCD}-2
-       MOV &$183E,&{RC5TOLCD}
-       MOV #INIT_R2L,&$183E
+       MOV &$1842,&{RC5TOLCD}
+       MOV #INIT_R2L,&$1842
     MOV &$FFEA,&{RC5TOLCD}+2
     MOV #WDT_INT,&$FFEA
     MOV &$FFDE,&{RC5TOLCD}+4
@@ -642,7 +642,7 @@ BW1 CALL #STOP_R2L
     MOV &$1800,2(R15)
     MOV #0,0(R15)
     MOV #200,R14
-    CALL #$4028
+    CALL #<#+8
     MOV @R15,&{RC5TOLCD}+6
     ADD #4,R15
     MOV @R15+,R14
@@ -651,7 +651,7 @@ BW1 CALL #STOP_R2L
     ." RC5toLCD is running,"
     ."  Type STOP to quit."
     HI2LO
-    MOV #ALLOT+$08,R0
+    MOV #ALLOT+8,R0
     ENDCODE
 
 RST_SET 
@@ -684,15 +684,15 @@ RST_SET
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -701,9 +701,9 @@ RST_SET
     [UNDEFINED] ELSE
     [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10)
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -715,7 +715,7 @@ RST_SET
     [UNDEFINED] CR
     [IF]
     CODE CR
-    MOV #$409E,R0
+    MOV #[THEN],R0
     ENDCODE
 
     :NONAME
@@ -874,8 +874,8 @@ FW2 BIC #%1111_1000,0(R1)
         MOV #0,&$340
         MOV #0,&$342
         MOV #{RC5TOLCD},R10
-        MOV #$406C,-2(R10)
-        MOV @R10+,&$183E
+        MOV #<#+$4C,-2(R10)
+        MOV @R10+,&$1842
         MOV @R10+,&$FFEA
         MOV @R10+,&$FFDE
     THEN
@@ -949,8 +949,8 @@ BW1 CALL #STOP_R2L
         MOV @R13+,R0
     THEN
     MOV #STOP_R2L,&{RC5TOLCD}-2
-       MOV &$183E,&{RC5TOLCD}
-       MOV #INIT_R2L,&$183E
+       MOV &$1842,&{RC5TOLCD}
+       MOV #INIT_R2L,&$1842
     MOV &$FFEA,&{RC5TOLCD}+2
     MOV #WDT_INT,&$FFEA
     MOV &$FFDE,&{RC5TOLCD}+4
@@ -960,7 +960,7 @@ BW1 CALL #STOP_R2L
     MOV &$1800,2(R15)
     MOV #0,0(R15)
     MOV #200,R14
-    CALL #$4028
+    CALL #<#+8
     MOV @R15,&{RC5TOLCD}+6
     ADD #4,R15
     MOV @R15+,R14
@@ -969,7 +969,7 @@ BW1 CALL #STOP_R2L
     ." RC5toLCD is running,"
     ."  Type STOP to quit."
     HI2LO
-    MOV #ALLOT+$08,R0
+    MOV #ALLOT+8,R0
     ENDCODE
 
 RST_SET 
@@ -1002,15 +1002,15 @@ RST_SET
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -1019,9 +1019,9 @@ RST_SET
     [UNDEFINED] ELSE
     [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10)
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -1033,7 +1033,7 @@ RST_SET
     [UNDEFINED] CR
     [IF]
     CODE CR
-    MOV #$409E,R0
+    MOV #[THEN],R0
     ENDCODE
 
     :NONAME
@@ -1192,8 +1192,8 @@ FW2 BIC #%1111_1000,0(R1)
         MOV #0,&$340
         MOV #0,&$342
         MOV #{RC5TOLCD},R10
-        MOV #$406C,-2(R10)
-        MOV @R10+,&$183E
+        MOV #<#+$4C,-2(R10)
+        MOV @R10+,&$1842
         MOV @R10+,&$FFEA
         MOV @R10+,&$FFDE
     THEN
@@ -1267,8 +1267,8 @@ BW1 CALL #STOP_R2L
         MOV @R13+,R0
     THEN
     MOV #STOP_R2L,&{RC5TOLCD}-2
-       MOV &$183E,&{RC5TOLCD}
-       MOV #INIT_R2L,&$183E
+       MOV &$1842,&{RC5TOLCD}
+       MOV #INIT_R2L,&$1842
     MOV &$FFEA,&{RC5TOLCD}+2
     MOV #WDT_INT,&$FFEA
     MOV &$FFDE,&{RC5TOLCD}+4
@@ -1278,7 +1278,7 @@ BW1 CALL #STOP_R2L
     MOV &$1800,2(R15)
     MOV #0,0(R15)
     MOV #200,R14
-    CALL #$4028
+    CALL #<#+8
     MOV @R15,&{RC5TOLCD}+6
     ADD #4,R15
     MOV @R15+,R14
@@ -1287,7 +1287,7 @@ BW1 CALL #STOP_R2L
     ." RC5toLCD is running,"
     ."  Type STOP to quit."
     HI2LO
-    MOV #ALLOT+$08,R0
+    MOV #ALLOT+8,R0
     ENDCODE
 
 RST_SET 
@@ -1320,15 +1320,15 @@ RST_SET
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -1337,9 +1337,9 @@ RST_SET
     [UNDEFINED] ELSE
     [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10)
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -1351,7 +1351,7 @@ RST_SET
     [UNDEFINED] CR
     [IF]
     CODE CR
-    MOV #$409E,R0
+    MOV #[THEN],R0
     ENDCODE
 
     :NONAME
@@ -1510,8 +1510,8 @@ FW2 BIC #%1111_1000,0(R1)
         MOV #0,&$340
         MOV #0,&$342
         MOV #{RC5TOLCD},R10
-        MOV #$406C,-2(R10)
-        MOV @R10+,&$183E
+        MOV #<#+$4C,-2(R10)
+        MOV @R10+,&$1842
         MOV @R10+,&$FFEA
         MOV @R10+,&$FFDE
     THEN
@@ -1585,8 +1585,8 @@ BW1 CALL #STOP_R2L
         MOV @R13+,R0
     THEN
     MOV #STOP_R2L,&{RC5TOLCD}-2
-       MOV &$183E,&{RC5TOLCD}
-       MOV #INIT_R2L,&$183E
+       MOV &$1842,&{RC5TOLCD}
+       MOV #INIT_R2L,&$1842
     MOV &$FFEA,&{RC5TOLCD}+2
     MOV #WDT_INT,&$FFEA
     MOV &$FFDE,&{RC5TOLCD}+4
@@ -1596,7 +1596,7 @@ BW1 CALL #STOP_R2L
     MOV &$1800,2(R15)
     MOV #0,0(R15)
     MOV #200,R14
-    CALL #$4028
+    CALL #<#+8
     MOV @R15,&{RC5TOLCD}+6
     ADD #4,R15
     MOV @R15+,R14
@@ -1605,7 +1605,7 @@ BW1 CALL #STOP_R2L
     ." RC5toLCD is running,"
     ."  Type STOP to quit."
     HI2LO
-    MOV #ALLOT+$08,R0
+    MOV #ALLOT+8,R0
     ENDCODE
 
 RST_SET 
@@ -1638,15 +1638,15 @@ RST_SET
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -1655,9 +1655,9 @@ RST_SET
     [UNDEFINED] ELSE
     [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10)
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -1669,7 +1669,7 @@ RST_SET
     [UNDEFINED] CR
     [IF]
     CODE CR
-    MOV #$409E,R0
+    MOV #[THEN],R0
     ENDCODE
 
     :NONAME
@@ -1828,8 +1828,8 @@ FW2 BIC #%1111_1000,0(R1)
         MOV #0,&$340
         MOV #0,&$342
         MOV #{RC5TOLCD},R10
-        MOV #$406C,-2(R10)
-        MOV @R10+,&$183E
+        MOV #<#+$4C,-2(R10)
+        MOV @R10+,&$1842
         MOV @R10+,&$FFEA
         MOV @R10+,&$FFDE
     THEN
@@ -1903,8 +1903,8 @@ BW1 CALL #STOP_R2L
         MOV @R13+,R0
     THEN
     MOV #STOP_R2L,&{RC5TOLCD}-2
-       MOV &$183E,&{RC5TOLCD}
-       MOV #INIT_R2L,&$183E
+       MOV &$1842,&{RC5TOLCD}
+       MOV #INIT_R2L,&$1842
     MOV &$FFEA,&{RC5TOLCD}+2
     MOV #WDT_INT,&$FFEA
     MOV &$FFDE,&{RC5TOLCD}+4
@@ -1914,7 +1914,7 @@ BW1 CALL #STOP_R2L
     MOV &$1800,2(R15)
     MOV #0,0(R15)
     MOV #200,R14
-    CALL #$4028
+    CALL #<#+8
     MOV @R15,&{RC5TOLCD}+6
     ADD #4,R15
     MOV @R15+,R14
@@ -1923,7 +1923,7 @@ BW1 CALL #STOP_R2L
     ." RC5toLCD is running,"
     ."  Type STOP to quit."
     HI2LO
-    MOV #ALLOT+$08,R0
+    MOV #ALLOT+8,R0
     ENDCODE
 
 RST_SET 
@@ -1956,15 +1956,15 @@ RST_SET
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -1973,9 +1973,9 @@ RST_SET
     [UNDEFINED] ELSE
     [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10)
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -1987,7 +1987,7 @@ RST_SET
     [UNDEFINED] CR
     [IF]
     CODE CR
-    MOV #$409E,R0
+    MOV #[THEN],R0
     ENDCODE
 
     :NONAME
@@ -2146,8 +2146,8 @@ FW2 BIC #%1111_1000,0(R1)
         MOV #0,&$340
         MOV #0,&$342
         MOV #{RC5TOLCD},R10
-        MOV #$406C,-2(R10)
-        MOV @R10+,&$183E
+        MOV #<#+$4C,-2(R10)
+        MOV @R10+,&$1842
         MOV @R10+,&$FFEA
         MOV @R10+,&$FFDE
     THEN
@@ -2221,8 +2221,8 @@ BW1 CALL #STOP_R2L
         MOV @R13+,R0
     THEN
     MOV #STOP_R2L,&{RC5TOLCD}-2
-       MOV &$183E,&{RC5TOLCD}
-       MOV #INIT_R2L,&$183E
+       MOV &$1842,&{RC5TOLCD}
+       MOV #INIT_R2L,&$1842
     MOV &$FFEA,&{RC5TOLCD}+2
     MOV #WDT_INT,&$FFEA
     MOV &$FFDE,&{RC5TOLCD}+4
@@ -2232,7 +2232,7 @@ BW1 CALL #STOP_R2L
     MOV &$1800,2(R15)
     MOV #0,0(R15)
     MOV #200,R14
-    CALL #$4028
+    CALL #<#+8
     MOV @R15,&{RC5TOLCD}+6
     ADD #4,R15
     MOV @R15+,R14
@@ -2241,7 +2241,7 @@ BW1 CALL #STOP_R2L
     ." RC5toLCD is running,"
     ."  Type STOP to quit."
     HI2LO
-    MOV #ALLOT+$08,R0
+    MOV #ALLOT+8,R0
     ENDCODE
 
 RST_SET 
@@ -2274,15 +2274,15 @@ RST_SET
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -2291,9 +2291,9 @@ RST_SET
     [UNDEFINED] ELSE
     [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10)
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -2305,7 +2305,7 @@ RST_SET
     [UNDEFINED] CR
     [IF]
     CODE CR
-    MOV #$409E,R0
+    MOV #[THEN],R0
     ENDCODE
 
     :NONAME
@@ -2464,8 +2464,8 @@ FW2 BIC #%1111_1000,0(R1)
         MOV #0,&$340
         MOV #0,&$342
         MOV #{RC5TOLCD},R10
-        MOV #$406C,-2(R10)
-        MOV @R10+,&$183E
+        MOV #<#+$4C,-2(R10)
+        MOV @R10+,&$1842
         MOV @R10+,&$FFEA
         MOV @R10+,&$FFDE
     THEN
@@ -2539,8 +2539,8 @@ BW1 CALL #STOP_R2L
         MOV @R13+,R0
     THEN
     MOV #STOP_R2L,&{RC5TOLCD}-2
-       MOV &$183E,&{RC5TOLCD}
-       MOV #INIT_R2L,&$183E
+       MOV &$1842,&{RC5TOLCD}
+       MOV #INIT_R2L,&$1842
     MOV &$FFEA,&{RC5TOLCD}+2
     MOV #WDT_INT,&$FFEA
     MOV &$FFDE,&{RC5TOLCD}+4
@@ -2550,7 +2550,7 @@ BW1 CALL #STOP_R2L
     MOV &$1800,2(R15)
     MOV #0,0(R15)
     MOV #200,R14
-    CALL #$4028
+    CALL #<#+8
     MOV @R15,&{RC5TOLCD}+6
     ADD #4,R15
     MOV @R15+,R14
@@ -2559,7 +2559,7 @@ BW1 CALL #STOP_R2L
     ." RC5toLCD is running,"
     ."  Type STOP to quit."
     HI2LO
-    MOV #ALLOT+$08,R0
+    MOV #ALLOT+8,R0
     ENDCODE
 
 RST_SET 
@@ -2592,15 +2592,15 @@ RST_SET
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -2609,9 +2609,9 @@ RST_SET
     [UNDEFINED] ELSE
     [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10)
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -2623,7 +2623,7 @@ RST_SET
     [UNDEFINED] CR
     [IF]
     CODE CR
-    MOV #$409E,R0
+    MOV #[THEN],R0
     ENDCODE
 
     :NONAME
@@ -2782,8 +2782,8 @@ FW2 BIC #%1111_1000,0(R1)
         MOV #0,&$340
         MOV #0,&$342
         MOV #{RC5TOLCD},R10
-        MOV #$406C,-2(R10)
-        MOV @R10+,&$183E
+        MOV #<#+$4C,-2(R10)
+        MOV @R10+,&$1842
         MOV @R10+,&$FFEA
         MOV @R10+,&$FFDE
     THEN
@@ -2857,8 +2857,8 @@ BW1 CALL #STOP_R2L
         MOV @R13+,R0
     THEN
     MOV #STOP_R2L,&{RC5TOLCD}-2
-       MOV &$183E,&{RC5TOLCD}
-       MOV #INIT_R2L,&$183E
+       MOV &$1842,&{RC5TOLCD}
+       MOV #INIT_R2L,&$1842
     MOV &$FFEA,&{RC5TOLCD}+2
     MOV #WDT_INT,&$FFEA
     MOV &$FFDE,&{RC5TOLCD}+4
@@ -2868,7 +2868,7 @@ BW1 CALL #STOP_R2L
     MOV &$1800,2(R15)
     MOV #0,0(R15)
     MOV #200,R14
-    CALL #$4028
+    CALL #<#+8
     MOV @R15,&{RC5TOLCD}+6
     ADD #4,R15
     MOV @R15+,R14
@@ -2877,7 +2877,7 @@ BW1 CALL #STOP_R2L
     ." RC5toLCD is running,"
     ."  Type STOP to quit."
     HI2LO
-    MOV #ALLOT+$08,R0
+    MOV #ALLOT+8,R0
     ENDCODE
 
 RST_RET 

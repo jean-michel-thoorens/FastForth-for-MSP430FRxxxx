@@ -1,27 +1,26 @@
 
-\ ; -------------------------------------
-\ ; CORETEST.4TH for any FastForth target
-\ ; -------------------------------------
+; -------------------------------------
+; CORETEST.4TH for any FastForth target
+; -------------------------------------
 
     MARKER {CORETEST}
 
     : ABORT_TEST        \ flag --
-    $0D EMIT            \ return to column 1
-    POSTPONE {CORETEST} \ remove all test words
+    $0D EMIT            \ return to column 1, no 'LF'
     ABORT" {CORE_ANS} word set not found !"
+    POSTPONE {CORETEST} \ remove all test words
     ;
 
     [UNDEFINED] {CORE_ANS} ABORT_TEST
 
     : CORETESTSUCCESS
-    $0D EMIT        \ -- $0D    return to column 1
-    $0A BASE !      \           set decimal
-    {CORETEST}      \           remove all test words
-    ." CORETEST + COREPLUSTEST success!" \ true --
+    $0D DUP EMIT        \ return to column 1, set true flag for ABORT"
+    $0A BASE !          \ set decimal
+    {CORETEST}          \ remove all coretest definitionss
+    ABORT" CORETEST + COREPLUSTEST success!" \ true_flag --
     ;
 
-    [UNDEFINED] SM/REM
-    [IF]
+    [UNDEFINED] SM/REM [IF]
 \ https://forth-standard.org/standard/core/SMDivREM
 \ SM/REM   d1 n1 -- r q   symmetric signed div'n
     CODE SM/REM
@@ -59,8 +58,7 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] FM/MOD
-    [IF]
+    [UNDEFINED] FM/MOD [IF]
 \ https://forth-standard.org/standard/core/FMDivMOD
 \ FM/MOD   d1 n1 -- r q   floored signed div'n
     : FM/MOD
@@ -173,7 +171,7 @@ T{ -> }T                    \ START WITH CLEAN SLATE
 ( TEST IF ANY BITS ARE SET; ANSWER IN BASE 1 )
 T{ : BITSSET? IF 0 0 ELSE 0 THEN ; -> }T
 T{  0 BITSSET? -> 0 }T      ( ZERO IS ALL BITS CLEAR )
-T{  1 BITSSET? -> 0 0 }T        ( OTHER NUMBER HAVE AT LEAST ONE BIT )
+T{  1 BITSSET? -> 0 0 }T    ( OTHER NUMBER HAVE AT LEAST ONE BIT )
 T{ -1 BITSSET? -> 0 0 }T
 
 \ ------------------------------------------------------------------------
@@ -224,7 +222,7 @@ T{ MSB 2* -> 0S }T
 T{ 0S 2/ -> 0S }T
 T{ 1 2/ -> 0 }T
 T{ 4000 2/ -> 2000 }T
-T{ 1S 2/ -> 1S }T               \ MSB PROPOGATED
+T{ 1S 2/ -> 1S }T                   \ MSB PROPOGATED
 T{ 1S 1 XOR 2/ -> 1S }T
 T{ MSB 2/ MSB AND -> MSB }T
 
@@ -1138,28 +1136,12 @@ TESTING INPUT: ACCEPT
 
 CREATE ABUF 80 CHARS ALLOT
 
-\    ' ACCEPT DUP >BODY SWAP 2 + @ =     \ JMT:
-\    [IF]                                \ JMT: ACCEPT is not redirected
-    : ACCEPT-TEST
-        CR ." PLEASE TYPE UP TO 80 CHARACTERS: "
-        ABUF 80 ACCEPT
-        CR ." RECEIVED: " [CHAR] " EMIT
-        ABUF SWAP TYPE [CHAR] " EMIT CR
-    ;
-\    [ELSE]                              \ JMT: ACCEPT is redirected
-\    : ACCEPT-TEST
-\        ['] NOECHO >BODY DUP @ @        \ JMT: -- NOECHO_BODY YEMIT_exec
-\        SWAP 2 - @                      \ JMT: -- YEMIT_exec NOECHO_exec
-\        = DUP                           \ JMT: -- NOECHO_flag NOECHO_flag
-\        IF ECHO THEN                    \ JMT: -- NOECHO_flag
-\            CR ." PLEASE TYPE UP TO 80 CHARACTERS: "
-\            ['] ACCEPT >BODY            \ JMT: find default exec part of ACCEPT
-\            EXECUTE                     \ JMT: execute it
-\            CR ." RECEIVED: " [CHAR] " EMIT
-\            ABUF SWAP TYPE [CHAR] " EMIT CR
-\        IF NOECHO THEN                  \ JMT: --
-\    ;
-\    [THEN]
+: ACCEPT-TEST
+    CR ." PLEASE TYPE UP TO 80 CHARACTERS: "
+    ABUF 80 ACCEPT
+    CR ." RECEIVED: " [CHAR] " EMIT
+    ABUF SWAP TYPE [CHAR] " EMIT CR
+;
 
 T{ ACCEPT-TEST -> }T
 \ ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba

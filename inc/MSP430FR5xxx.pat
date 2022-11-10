@@ -5,8 +5,17 @@
 ; ============================================
 ; RAM
 ; ============================================
-;RAM_ORG=\$1C00;
 
+; ----------------------------------------------
+; FORTH RAM areas :
+; ----------------------------------------------
+LSTACK_SIZE=\#16; words
+PSTACK_SIZE=\#48; words
+RSTACK_SIZE=\#48; words
+PAD_LEN=\#84; bytes
+CIB_LEN=\#84; bytes
+HOLD_SIZE=\#34; bytes
+;
 ; ----------------------------------------------
 ; FastForth RAM memory map (>= 1k):
 ; ----------------------------------------------
@@ -29,42 +38,45 @@ HOLD_BASE=\$1DB2;       BASE HOLD area, grow down
 HP=\$1DB2;              HOLD ptr
 STATEADR=\$1DB4;        Interpreter state
 BASEADR=\$1DB6;         base
-CAPS=\$1DB8;            CAPS ON/OFF
-SOURCE_LEN=\$1DBA;      len of input stream
-SOURCE_ORG=\$1DBC;      adr of input stream
-TOIN=\$1DBE;            >IN
+SOURCE_LEN=\$1DB8;      len of input stream
+SOURCE_ORG=\$1DBA;      adr of input stream
+TOIN=\$1DBC;            >IN
 ;
-DP=\$1DC0;              dictionary ptr
-LASTVOC=\$1DC2;         keep VOC-LINK
-CURRENT=\$1DC4;         CURRENT dictionnary ptr
-CONTEXT=\$1DC6;         CONTEXT dictionnary space (8 + Null CELLS)
+DP=\$1DBE;              dictionary ptr
+LASTVOC=\$1DC0;         keep VOC-LINK
+CURRENT=\$1DC2;         CURRENT dictionnary ptr
+CONTEXT=\$1DC4;         CONTEXT dictionnary space (8 + Null CELLS)
 ;
 ; ---------------------------------------
 ; RAM_ORG + $1D8 : may be shared between FORTH compiler and user application
 ; ---------------------------------------
-LAST_NFA=\$1DD8;
-LAST_THREAD=\$1DDA;
-LAST_CFA=\$1DDC;
-LAST_PSP=\$1DDE;
-ASMBW1=\$1DE0;          3 backward labels
-ASMBW2=\$1DE2;
-ASMBW3=\$1DE4;
-ASMFW1=\$1DE6;          3 forward labels
-ASMFW2=\$1DE8;
-ASMFW3=\$1DEA;
+LAST_NFA=\$1DD6;
+LAST_THREAD=\$1DD8;
+LAST_CFA=\$1DDA;
+LAST_PSP=\$1DDC;
+ASMBW1=\$1DDE;          3 backward labels
+ASMBW2=\$1DE0;
+ASMBW3=\$1DE2;
+ASMFW1=\$1DE4;          3 forward labels
+ASMFW2=\$1DE6;
+ASMFW3=\$1DE8;
+; ---------------------------------------
+; RAM_ORG + $1EA RAM free 
+; ---------------------------------------
 ;
 ; ---------------------------------------
-; RAM_ORG + $1EC RAM free 
+; RAM_ORG + $1FC: SD RAM
 ; ---------------------------------------
-;
+SD_ORG=\$21FC;
+SD_LEN=\$374;
+
 ; ---------------------------------------
 ; RAM_ORG + $1FC: SD buffer
 ; ---------------------------------------
 SD_BUF_I2ADR=\$1DFC;
 SD_BUF_I2CNT=\$1DFE;
 SD_BUF=\$1E00;      \ SD_Card buffer
-BUFEND=\$2000;
-
+SD_BUF_END=\$2000;
 ; ---------------------------------------
 ; FAT16 FileSystemInfos 
 ; ---------------------------------------
@@ -77,7 +89,6 @@ OrgFAT2=\$200C;
 OrgRootDir=\$200E;
 OrgClusters=\$2010;         Sector of Cluster 0
 SecPerClus=\$2012;
-
 ; ---------------------------------------
 ; SD command
 ; ---------------------------------------
@@ -90,13 +101,11 @@ SD_CMD_FRM4=\$2018; HH:CMD  word access
 SD_CMD_FRM5=\$2019; CMD     byte access
 SectorL=\$201A;     2 words
 SectorH=\$201C;
-
 ; ---------------------------------------
 ; BUFFER management
 ; ---------------------------------------
 BufferPtr=\$201E; 
 BufferLen=\$2020;
-
 ; ---------------------------------------
 ; FAT entry
 ; ---------------------------------------
@@ -105,25 +114,21 @@ ClusterH=\$2024;     16 bits wide (FAT16)
 LastFATsector=\$2026;   Set by FreeAllClusters, used by OPEN_OVERWRITE
 LastFAToffset=\$2028;   Set by FreeAllClusters, used by OPEN_OVERWRITE
 FATsector=\$202A;       used by APPEND"
-
 ; ---------------------------------------
 ; DIR entry
 ; ---------------------------------------
 DIRclusterL=\$202C;  contains the Cluster of current directory ; 1 if FAT16 root directory
 DIRclusterH=\$202E;  contains the Cluster of current directory ; 1 if FAT16 root directory
 EntryOfst=\$2030;  
-
 ; ---------------------------------------
 ; Handle Pointer
 ; ---------------------------------------
 CurrentHdl=\$2032;  contains the address of the last opened file structure, or 0
-
 ; ---------------------------------------
 ; Load file operation
 ; ---------------------------------------
 pathname=\$2034;
 EndOfPath=\$2036;
-
 ; ---------------------------------------
 ; Handle structure
 ; ---------------------------------------
@@ -146,23 +151,21 @@ HDLL_CurClust=14;   Current ClusterLo
 HDLH_CurClust=16;   Current ClusterHi (T as 3Th byte)
 HDLL_CurSize=18;    written size / not yet read size (Long)
 HDLH_CurSize=20;    written size / not yet read size (Long)
-HDLW_BUFofst=22;    BUFFER offset ; used by LOAD" and by WRITE"
-HDLW_PrevLEN=24;    previous LEN
-HDLW_PrevORG=26;    previous ORG
+HDLW_BUFofst=22;    SD BUFFER offset ; used by LOAD" and by WRITE"
+HDLW_PrevLEN=24;    interpret_buffer_LEN of previous handle
+HDLW_PrevORG=26;    interpret_buffer_ORG of previous handle
+HDLW_PrevTOIN=28;   interpret_buffer_PTR of previous handle
+HDLW_PrevQYEMIT=30; echo state of previous handle
 
 
 ;OpenedFirstFile     ; "openedFile" structure 
 HandleMax=8;
-HandleLenght=28;
+HandleLenght=32;
 FirstHandle=\$2038;
-HandleEnd=\$2118;
+HandleEnd=\$2138;
 
 ;SD_card Input Buffer
-SDIB_I2CADR=\$2118;
-SDIB_I2CCNT=\$211A;
-SDIB_ORG=\$211C;
+SDIB_I2CADR=\$2138;
+SDIB_I2CCNT=\$213A;
+SDIB_ORG=\$213C;
 SDIB_LEN=\$54;
-
-SD_END=\$2170;
-SD_LEN=\$16E;
-

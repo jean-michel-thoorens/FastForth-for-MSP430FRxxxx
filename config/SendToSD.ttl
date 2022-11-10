@@ -18,7 +18,7 @@ connect  param3
 inputbox 'here you can change path of the file: ' 'Send this file to SD_CARD target' fname
 
 setecho 0           ; no echo from Teraterm
-showtt 0            ; close teraterm windows
+showtt 0            ; collapse teraterm window
 
 ; DEVICE ID TEST
 ; ==============
@@ -31,29 +31,24 @@ sendln '$1B EMIT $63 EMIT'                      ; $1B EMIT $63 EMIT   \ send 'ES
 sendln ' ABORT" Device'39's ID mismatch!" '     ; ABORT" Device's ID mismatch!"
 sendln 'RST_RET ;'                              ; RST_RET ; 
 
-;sendln param4 ' ?ID NOECHO'    ; send: %deviceID% ?ID
-sendln param4 ' ?ID ECHO'    ; send: %deviceID% ?ID
+sendln param4 ' ?ID ECHO'  ; send: %deviceID% ?ID
+;sendln param4 ' ?ID'        ; send: %deviceID% ?ID
 
-sendln 'NOBOOT'              ; 
 sendln 'TERM2SD" ' inputstr '"'    ; send to FastForth the command 'TERM2SD" \file.4TH"' ...with optionnal path added in inputbox
-
 uptime timestart ; starts chrono...
-
 sendfile param2 0       ; binary flag = 0 to send text file (enabling software XON/XOFF)
-
 sendln #4               ; send ETX to ask TERM2SD" to close file
 
 uptime timeend  ; stops chrono...
 diff = timeend - timestart
-
-;sendln 'ECHO'
+filestat param2 size
+KBds = 10 * size / diff
+sprintf2 resultat " download %s and write it to SD_Card in %d ms (%d kBds eff.)" param2 diff KBds
 
 showtt 1    ; display teraterm window
 
-sprintf2 resultat " %s download to SD Card: %d msec" param2 diff
 messagebox resultat "teraterm.exe"
-
 
 ;logclose
 
-unlink
+;unlink

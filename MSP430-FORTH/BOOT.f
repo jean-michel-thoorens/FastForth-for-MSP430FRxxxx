@@ -116,9 +116,7 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
 \ https://forth-standard.org/standard/core/EXECUTE
 \ EXECUTE   i*x xt -- j*x   execute Forth word at 'xt'
     CODE EXECUTE
-    PUSH TOS                \ 3 push xt
-    MOV @PSP+,TOS           \ 2
-    MOV @RSP+,PC            \ 4 xt --> PC
+    MOV #EXECUTE,PC
     ENDCODE
     [THEN]
 
@@ -140,5 +138,5 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
         RST_RET             \ remove definitions above
         LOAD" SD_TEST.4TH"  \ load a file to test the SD_Card driver
     [ELSE]                  \ else
-        ' SYS $0E + EXECUTE \ TOS2WARM address, does same as n SYS (n odd)
+        TOS2WARM EXECUTE    \ TOS2WARM address, does same as n SYS (n odd)
     [THEN]                  \ then

@@ -296,15 +296,7 @@ LED1        .equ    40h     ;  P4.6 LED1 red
 ; DCOCLK: Internal digitally controlled oscillator (DCO).
 
             MOV.B   #CSKEY,&CSCTL0_H    ;  Unlock CS registers
-    .IF FREQUENCY = 0.25
-;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1         ; Set 8MHZ DCO setting (default value)
-            MOV     #DIVA_0 + DIVS_32 + DIVM_32,&CSCTL3
-
-    .ELSEIF FREQUENCY = 0.5
-            MOV     #0,&CSCTL1                          ; Set 1MHZ DCO setting
-            MOV     #DIVA_2 + DIVS_2 + DIVM_2,&CSCTL3   ; set all dividers as 2
-
-    .ELSEIF FREQUENCY = 1
+    .IF FREQUENCY = 1
             MOV     #0,&CSCTL1                          ; Set 1MHZ DCO setting
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
 
@@ -329,7 +321,7 @@ LED1        .equ    40h     ;  P4.6 LED1 red
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
 
     .ELSEIF
-    .error "bad frequency setting, only 0.5,1,2,4,8,12,16 MHz"
+    .error "bad frequency setting, only 1,2,4,8,12,16 MHz"
     .ENDIF
 
     .IFDEF LF_XTAL

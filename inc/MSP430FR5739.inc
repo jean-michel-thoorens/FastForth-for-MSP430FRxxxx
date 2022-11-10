@@ -204,7 +204,8 @@ DIVM_32         .equ 0005h           ; MCLK Source Divider 0
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : SYS REGISTERS
 ; ----------------------------------------------------------------------
-
+SYSUNIV    .equ SYS_SFR + 001Ah
+SYSSNIV    .equ SYS_SFR + 001Ch
 SYSRSTIV    .equ SYS_SFR + 001Eh
 
 

@@ -129,12 +129,19 @@ SD_LOAD.f
 \ BODY+2 = VOClink value before MARKER definition
 \ BODY+4 = RET_ADR: by default MARKER_DOES does a call to RET_ADR (does nothing)
     10 ALLOT \ make room for:
-\ {SD_APP}+10 = content of previous ....
-\ {SD_APP}+12 = content of previous ....
-\ {SD_APP}+14 = content of previous ....
-\ {SD_APP}+16 = content of previous ....
-\ {SD_APP}+18 = content of previous ....
+\ {SD_APP}   = content of previous SOFT_APP
+\ {SD_APP}+2 = content of previous HARD_APP
+\ {SD_APP}+4 = content of previous ....
+\ {SD_APP}+6 = content of previous ....
+\ {SD_APP}+8 = content of previous ....
 
+    [UNDEFINED] TSTBIT [IF]
+        CODE TSTBIT     \ addr bit_mask -- true/flase flag
+        MOV @PSP+,X
+        AND @X,TOS
+        MOV @IP+,PC
+        ENDCODE
+    [THEN]
 
 
 \   ====================================\
@@ -142,11 +149,11 @@ SD_LOAD.f
 \   ====================================\
     MOV #1,X                            \
 \   ====================================\
-\   SPI_X_GET                           \ PUT(FFh) X times, output : W = last received byte, X = 0
+\   SPI_X_GET = SPI_GET+2               \ PUT(FFh) X times, output : W = last received byte, X = 0
 \   ====================================\
     MOV #-1,W                           \
 \   ====================================\
-\   SPI_PUT                             \ PUT(W) X times, output : W = last received byte, X = 0
+\   SPI_PUT = SPI_GET+4                 \ PUT(W) X times, output : W = last received byte, X = 0
 \   ====================================\
     BEGIN
         SWPB W                          \ 1 
@@ -168,43 +175,37 @@ SD_LOAD.f
 
 \ in SPI mode CRC is not required, but CMD frame must be ended with a stop bit
 \   ====================================\
-    HDNCODE REWR_CMD                    \ WX <=== CMD17 or CMD24 (read or write Sector CMD)
+    HDNCODE SEND17_24                   \ WX <=== CMD17 or CMD24 (read or write Sector CMD)
 \   ====================================\
     BIC.B #CS_SD,&SD_CSOUT              \ set Chip Select low
-    BIT.B #CD_SD,&SD_CDIN               \ test Card Detect: memory card present ?
-    0<> IF                              \
-        MOV #COLD,PC                    \ no: force COLD
-    THEN                                \ yes
-\   ------------------------------------\ input = logical sector...
+\   ------------------------------------\
+\   ComputePhysicalSector               \ input = logical sector...
+\   ------------------------------------\
     ADD &BS_FirstSectorL,W              \ 3
     ADDC &BS_FirstSectorH,X             \ 3
 \   ------------------------------------\ ...output = physical sector
 \   Compute CMD                         \
 \   ------------------------------------\
     MOV #1,&SD_CMD_FRM                  \ 3 $(01 00 xx xx xx CMD) set stop bit in CMD frame
-    CMP #1,&FATtype                     \ 3 FAT16 ? 
-    0= IF                               \ 2 yes : CMD17/24 byte address = Sector * BPB_BytsPerSec
-        ADD     W,W                     \ 1 shift left one Sector
-        ADDC.B  X,X                     \ 1
-        MOV     W,&SD_CMD_FRM+2         \ 3 $(01 00 ll LL xx CMD)
-        MOV.B   X,&SD_CMD_FRM+4         \ 3 $(01 00 ll LL hh CMD) 
-    ELSE                                \  FAT32 : CMD17/24 sector address
-        MOV.B   W,&SD_CMD_FRM+1         \ 3 $(01 ll xx xx xx CMD)
-        SWPB    W                       \ 1
-        MOV.B   W,&SD_CMD_FRM+2         \ 3 $(01 ll LL xx xx CMD)
-        MOV.B   X,&SD_CMD_FRM+3         \ 3 $(01 ll LL hh xx CMD)
-        SWPB    X                       \ 1
-        MOV.B   X,&SD_CMD_FRM+4         \ 3 $(01 ll LL hh HH CMD)
-    THEN    
+    MOV.B W,&SD_CMD_FRM+1               \ 3 $(01 ll xx xx xx CMD)
+    SWPB W                              \ 1
+    MOV.B W,&SD_CMD_FRM+2               \ 3 $(01 ll LL xx xx CMD)
+    MOV.B X,&SD_CMD_FRM+3               \ 3 $(01 ll LL hh xx CMD)
+    SWPB X                              \ 1
+    MOV.B X,&SD_CMD_FRM+4               \ 3 $(01 ll LL hh HH CMD)
+    GOTO FW1
+    ENDCODE
+
+    HDNCODE WIBS_CMD                    \ WaitIdleBeforeSendCMD
 \   ====================================\
-BW1 \   WaitIdleBeforeSendCMD           \ <=== CMD41, CMD1, CMD16 (forthMSP430FR_SD_INIT.asm)
+FW1 \   WaitIdleBeforeSendCMD           \ <=== CMD41, CMD1, CMD16 (forthMSP430FR_SD_INIT.asm)
 \   ====================================\
     BEGIN                               \
         CALL #SPI_GET                   \
-        ADD.B   #1,W                    \ expected value = FFh <==> MISO = 1 = SPI idle state
+        ADD.B #1,W                      \ expected value = FFh <==> MISO = 1 = SPI idle state
     0= UNTIL                            \ loop back if <> FFh
 \   ====================================\ W = 0 = expected R1 response = ready, for CMD41,CMD16, CMD17, CMD24
-BW2 \   sendCommand                     \ sendCommand = WaitIdleBeforeSendCMD+8
+BW1 \   sendCommand = WIBS_CMD+8
 \   ====================================\
                                         \ input : SD_CMD_FRM : {CRC,byte_l,byte_L,byte_h,byte_H,CMD} 
                                         \         W = expected return value
@@ -215,25 +216,22 @@ BW2 \   sendCommand                     \ sendCommand = WaitIdleBeforeSendCMD+8
 \   Send_CMD_PUT                        \ performs little endian --> big endian conversion
 \   ------------------------------------\
     BEGIN
-        MOV.B   SD_CMD_FRM(X),&SD_TXBUF \ 5 
-        CMP     #0,&SD_BRW              \ 3 full speed ?
+        MOV.B SD_CMD_FRM(X),&SD_TXBUF   \ 5 
+        CMP #0,&SD_BRW                  \ 3 full speed ?
         0<> IF                          \ no
             BEGIN                       \  case of low speed during memCardInit
                 BIT #RX_SD,&SD_IFG      \ 3
-                JZ  Send_CMD_Loop       \ 2
             0<> UNTIL
             CMP.B #0,&SD_RXBUF          \ 3 to clear UCRXIFG
         THEN    
 \        NOP                             \ 0 NOPx adjusted to avoid SD error
         SUB.B   #1,X                    \ 1
-    U< UNTIL                            \ 2 don't skip SD_CMD_FRM(0) !
+    S< UNTIL                            \ 2 don't skip SD_CMD_FRM(0) !
                                         \ host must provide height clock cycles to complete operation
                                         \ here X=255, so wait for CMD return expected value with PUT FFh 256 times
-\    MOV #4,X                           \ to pass made in PRC SD_Card init 
-\    MOV #16,X                          \ to pass Transcend SD_Card init
-\    MOV #32,X                          \ to pass Panasonic SD_Card init
-\    MOV #64,X                          \ to pass SanDisk SD_Card init
-\   ------------------------------------\ expect W = return value during X = 255 times
+\   ------------------------------------\
+\   Wait_Command_Response               \ expect W = return value during X = 255 times
+\   ------------------------------------\
     BEGIN
         SUB #1,X                        \ 1
     0>= WHILE                           \ 2 if out of loop, error on time out with flag Z = 0
@@ -249,13 +247,14 @@ BW2 \   sendCommand                     \ sendCommand = WaitIdleBeforeSendCMD+8
     0= UNTIL                            \ 2 16~ full speed loop
     THEN                                \ WHILE resolution
     MOV @RSP+,PC                        \ W = expected value, unchanged
+    ENDCODE
 \   ------------------------------------\ flag Z = 1 <==> Returned value = expected value
 
 \   ------------------------------------\
     HDNCODE CMD_IDLE                    \ <=== CMD0, CMD8, CMD55: W = 1 = R1 expected response = idle (forthMSP430FR_SD_INIT.asm)
 \   ------------------------------------\
     MOV     #1,W                        \ expected R1 response (first byte of SPI R7) = 01h : idle state
-    GOTO BW2                            \
+    GOTO BW1                            \
 \   ------------------------------------\
 
 
@@ -286,32 +285,27 @@ BW2 \   sendCommand                     \ sendCommand = WaitIdleBeforeSendCMD+8
 \'101' - Data rejected due to a CRC error.
 \'110' - Data Rejected due to a Write Error
 
-\ ----------------------------------\
-CODE ABORT_SD                       \ <=== OPEN file errors from forthMSP430FR_SD_LOAD.asm
-\ ----------------------------------\
-    SUB #2,PSP                      \
-    MOV TOS,0(PSP)                  \
-    MOV #10h,&BASE                  \ select hex
-    MOV S,TOS                       \
-\    MOV #TIB_ORG,&CIB_ADR           \               restore TIB as Current Input Buffer
-\    MOV #BODYACCEPT,&PFAACCEPT      \               restore default ACCEPT
-    LO2HI                           \
-    U. 
-    HI2LO
-    MOV #ABORT_TERM,PC              \ no return...
-ENDCODE
-\ ----------------------------------\
-
-\ ----------------------------------\
-CODE SD_ERROR                       \ <=== SD_INIT errors 4,8,$10
-\ ----------------------------------\
-    SWPB S                          \ High Level error in High byte
-    ADD &SD_RXBUF,S                 \ add SPI(GET) return value as low byte error
-BW3 \ SD_CARD_ID_ERROR                  \ <=== SD_INIT error $20 from forthMSP430FR_SD_LowLvl.asm
-    BIS.B #CS_SD,&SD_CSOUT          \ Chip Select high
-    COLON                           \
-    S" < SD Error!"                 \ don't use S register
-    ABORT_SD
+\ ------------------------------\
+CODE SD_ERROR                   \ <=== SD_INIT errors 4,8,$10
+\ ------------------------------\
+\ SD_CARD_INIT_ERROR            \ <=== from forthMSP430FR_SD_INIT.asm
+\ SD_CARD_FILE_ERROR            \ <=== from forthMSP430FR_SD_LOAD.asm, forthMSP430FR_SD_RW.asm 
+\ NO_SD_CARD                    \ from forthMSP430FR_SD_LOAD(Open_File)
+BW1 MOV S,TOS                   \
+    CALL #ABORT_TERM            \
+    CALL #INIT_FORTH            \
+    LO2HI
+    [DEFINED] BOOTSTRAP [IF]
+    NOBOOT                      \
+    [THEN]
+    ECHO                        \
+    ESC [7m
+    ."SD_ERROR $"               \
+    $10 LIT BASEADR !           \
+    U.                          \
+    #10 LIT BASEADR !           \
+    ESC [0m
+    ABORT                       \
     ;
 
 \ ==================================\
@@ -319,263 +313,244 @@ BW3 \ SD_CARD_ID_ERROR                  \ <=== SD_INIT error $20 from forthMSP43
 \ ==================================\
     BIS #1,S                        \ preset sd_read error
     MOV.B #51h,&SD_CMD_FRM+5        \ CMD17 = READ_SINGLE_BLOCK
-    CALL #REWR_CMD                  \ which performs logical sector to physical sector then little endian to big endian conversion
-    0<> ?GOTO BW3                   \ SD_ERROR        \ time out error if R1 <> 0 
-\   ------------------------------------\
-    BEGIN                               \ wait SD_Card response FEh
-\   ------------------------------------\
-        CALL #SPI_GET                   \
-        ADD.B #2,W                      \ 1 FEh expected value
+    CALL #SEND17_24                 \ which performs logical sector to physical sector then little endian to big endian conversion
+    0<> ?GOTO FW2                   \ SD_ERROR        \ time out error if R1 <> 0 
+\   --------------------------------\
+    BEGIN                           \ wait SD_Card response FEh
+\   --------------------------------\
+        CALL #SPI_GET               \
+        ADD.B #2,W                  \ 1 FEh expected value
     0= UNTIL
-\   ------------------------------------\
-    BEGIN                               \ get 512+1 bytes, write 512 bytes in SD_BUF
-\   ------------------------------------\
-        MOV.B   #-1,&SD_TXBUF           \ 3 put FF
-        NOP                             \ 1 NOPx adjusted to avoid read SD_error
-        ADD     #1,X                    \ 1
-        CMP     #BytsPerSec+1,X         \ 2
+\   --------------------------------\
+    BEGIN                           \ get 512+1 bytes, write 512 bytes in SD_BUF
+\   --------------------------------\
+        MOV.B #-1,&SD_TXBUF         \ 3 put FF
+        NOP                         \ 1 NOPx adjusted to avoid read SD_error
+        ADD #1,X                    \ 1
+        CMP #BytsPerSec+1,X         \ 2
     0<> WHILE
-        MOV.B   &SD_RXBUF,SD_BUF-1(X)   \ 5
+        MOV.B &SD_RXBUF,SD_BUF-1(X) \ 5
     REPEAT
-\   ------------------------------------\
-    MOV.B #-1,&SD_TXBUF                 \ 3 put only one FF because first CRC byte is already received...
-\   ------------------------------------\
-\   ReadWriteHappyEnd                   \ <==== WriteSector
-\   ------------------------------------\
-BW2 BIC #3,S                            \ reset read and write errors
-    BIS.B #CS_SD,&SD_CSOUT              \ Chip Select high
-    MOV @RSP+,PC                        \
+\   --------------------------------\
+    MOV.B #-1,&SD_TXBUF             \ 3 put only one FF because first CRC byte is already received...
+\   --------------------------------\
+\   ReadWriteHappyEnd               \ <==== WriteSector
+\   --------------------------------\
+BW2 BIC #3,S                        \ reset read and write errors
+    BIS.B #CS_SD,&SD_CSOUT          \ Chip Select high
+    MOV @RSP+,PC                    \
     ENDCODE
-\   ------------------------------------\
+\   --------------------------------\
 
 \    .IFDEF SD_CARD_READ_WRITE
 
-\   ====================================\
-    CODE WRITE_SWX                      \ Write Sector
-\   ====================================\
-    BIS     #2,S                        \ preset sd_write error
-    MOV.B   #058h,SD_CMD_FRM+5          \ CMD24 = WRITE_SINGLE_BLOCK
-    CALL    #CMD_RW                     \ which performs logical sector to physical sector then little endian to big endian conversions
-    0<> ?GOTO BW3                       \ ReturnError = 2
-    MOV     #2,X                        \ to put 16 bits value
-    CALL    #SPI_PUT                    \ which performs little endian to big endian conversion
-    BEGIN                               \ 11 cycles loop write, starts with X = 0
-        MOV.B   SD_BUF(X),&SD_TXBUF     \ 5
-        NOP                             \ 1 NOPx adjusted to avoid write SD_error
-        ADD     #1,X                    \ 1
-        CMP     #BytsPerSec,X           \ 2
-    0= UNTIL
-\   ------------------------------------\ CRC16 not used in SPI mode
-    MOV     #3,X                        \ PUT 2 bytes to skip CRC16
-    CALL    #SPI_X_GET                  \ + 1 byte to get data token in W
-\   ------------------------------------\ CheckWriteState 
-    BIC.B   #0E1h,W                     \ apply mask for Data response
-    CMP.B   #4,W                        \ data accepted
-    0= ?GOTO BW2                        \ goto ReadWriteHappyEnd
-    GOTO BW3                            \ goto SD_ERROR
-    ENDCODE
+\   ================================\
+    CODE WRITE_SWX                  \ Write Sector
+\   ================================\
+    BIS     #2,S                    \ preset sd_write error
+    MOV.B   #058h,SD_CMD_FRM+5      \ CMD24 = WRITE_SINGLE_BLOCK
+    CALL    #SEND17_24              \ which performs logical sector to physical sector then little endian to big endian conversions
+    0= IF                           \
+        MOV #2,X                    \ to put 16 bits value
+        CALL #SPI_PUT               \ which performs little endian to big endian conversion
+        BEGIN                       \ 11 cycles loop write, starts with X = 0
+            MOV.B SD_BUF(X),&SD_TXBUF \ 5
+            NOP                     \ 1 NOPx adjusted to avoid write SD_error
+            ADD #1,X                \ 1
+            CMP #BytsPerSec,X       \ 2
+        0= UNTIL
+\       ----------------------------\ CRC16 not used in SPI mode
+        MOV     #3,X                \ PUT 2 bytes to skip CRC16
+        CALL    #SPI_X_GET          \ + 1 byte to get data token in W
+\       ----------------------------\ CheckWriteState 
+        BIC.B   #0E1h,W             \ apply mask for Data response
+        CMP.B   #4,W                \ data accepted
+        0= ?GOTO BW2                \ goto ReadWriteHappyEnd
+    THEN
+FW2 SWPB S                          \ High Level error in High byte
+    BIS &SD_RXBUF,S                 \ add SPI(GET) return value as low byte error
+    GOTO BW1                        \ goto SD_ERROR
+    ENDCODE                         \
 \ ----------------------------------\
+
+\ this subroutine is called by Write_File (bufferPtr=512) and CloseHandle (0 =< BufferPtr =< 512)
+\ ==================================\
+    HDNCODE WR_SDBUF                \SWX input: T = CurrentHDL
+\ ==================================\
+    ADD &BufferPtr,HDLL_CurSize(T)  \ update handle CurrentSizeL
+    ADDC    #0,HDLH_CurSize(T)      \
+\ ==================================\
+\ WriteSectorHL                     \ = WR_SDBUF+10
+\ ==================================\
+    MOV &SectorL,W                  \ Low
+    MOV &SectorH,X                  \ High
+    MOV #WRITE_SWX,PC               \ write  SectorWX, W = 0
+    ENDCODE                         \
+\ ----------------------------------\
+
 
 \    .ENDIF \ SD_CARD_READ_WRITE
 
-\ ===========================================================
+\ ==================================
 \ Init SD_Card
-\ ===========================================================
+\ ==================================
+
+\-----------------------------------\
+    CODE INIT_SOFT_SD               \ called by INI_FORTH common part of ?ABORT|RST
+\-----------------------------------\
+    MOV #0,&CurrentHdl              \
+    MOV &{SD_APP},PC                \ link to previous INI_SOFT_APP then RET
+\-----------------------------------\
+
 \ ----------------------------------\
-    CODE INIT_SD
+    CODE INIT_HARD_SD
 \ ----------------------------------\
-    CALL #INIT_TERM                     \ which activates all previous I/O settings and set TOS = RSTIV_MEM.
+    CALL &{SD_APP}+2                \ which activates all previous I/O settings and set TOS = RSTIV_MEM.
 \ ----------------------------------\
-    CMP #0,TOS                          \ RSTIV_MEM = WARM ?
-    0<> IF                              \ init if RSTIV_MEM <> WARM
+    BIT.B #CD_SD,&SD_CDIN           \ SD_memory in SD_Card module ?
+    0= IF                           \ yes
 \ ----------------------------------\
-        BIT.B #CD_SD,&SD_CDIN           \ SD_memory in SD_Card module ?
-\        JNZ INI_SD_END                  \ no
-        0= IF                           \ yes
+        MOV #$0A981,&SD_CTLW0       \ UCxxCTL1  = CKPH, MSB, MST, SPI_3, SMCLK  + UCSWRST
+        MOV #FREQUENCY,X
+        MOV X,&SD_BRW    
+        RLA X
+        ADD X ,SD_BRW               \ UCxxBRW init SPI CLK = 333 kHz ( < 400 kHz) for SD_Card initialisation
+        BIS.B #CS_SD,&SD_CSDIR      \ SD Chip Select as output high
+        BIS #BUS_SD,&SD_SEL         \ Configure pins as SIMO, SOMI & SCK (PxDIR.y are controlled by eUSCI module)
+        BIC #1,&SD_CTLW0            \ release eUSCI from reset
 \ ----------------------------------\
-            MOV #$0A981,&SD_CTLW0       \ UCxxCTL1  = CKPH, MSB, MST, SPI_3, SMCLK  + UCSWRST
-            MOV #FREQUENCY*3,&SD_BRW    \ UCxxBRW init SPI CLK = 333 kHz ( < 400 kHz) for SD_Card initialisation
-            BIS.B #CS_SD,&SD_CSDIR      \ SD Chip Select as output high
-            BIS #BUS_SD,&SD_SEL         \ Configure pins as SIMO, SOMI & SCK (PxDIR.y are controlled by eUSCI module)
-            BIC #1,&SD_CTLW0            \ release eUSCI from reset
-\ ----------------------------------\
-            MOV #SD_LEN,X               \                      
-            BEGIN                       \ case of MSP430FR57xx : SD datas are in FRAM not initialized by RESET. 
-                SUB #2,X                \ 1
-                MOV #0,SD_ORG(X)        \ 3 
-            0= UNTIL                    \ 2
+        MOV #SD_LEN,X               \                      
+        BEGIN                       \ case of MSP430FR57xx : SD datas are in FRAM not initialized by RESET. 
+            SUB #2,X                \ 1
+            MOV #0,SD_ORG(X)        \ 3 
+        0= UNTIL                    \ 2
 \ ----------------------------------\
 \ SD_POWER_ON
 \ ----------------------------------\
-            MOV #8,X                    \ send 64 clk on SD_clk
-            CALL #SPI_X_GET             \
-            BIC.B #CS_SD,&SD_CSOUT      \ preset Chip Select output low to switch in SPI mode
+        BIC.B #CS_SD,&SD_CSOUT      \ preset Chip Select output low to switch in SPI mode
 \ ----------------------------------\
 \ INIT_CMD0                         \ all SD area is 0 filled
 \ ----------------------------------\
-            MOV #4,S                    \ preset error 4R1 for CMD0
-            MOV #$95,&SD_CMD_FRM        \ $(95 00 00 00 00 00)
-            MOV #$4000,&SD_CMD_FRM+4    \ $(95 00 00 00 00 40)\ send CMD0 
+        MOV #4,S                    \ preset error 4R1 for CMD0
+        MOV #$95,&SD_CMD_FRM        \ $(95 00 00 00 00 00)
+        MOV #0,&SD_CMD_FRM+2        \
+        MOV #$4000,&SD_CMD_FRM+4    \ $(95 00 00 00 00 40)\ send CMD0 
+        MOV #8,Y                    \ CMD0 necessary loop, not documented in "SDA simplified specifications"
 \ ----------------------------------\
 \ SEND_CMD0                           \ CMD0 : GO_IDLE_STATE expected SPI_R1 response = 1 = idle state
 \ ----------------------------------\
-            CALL #sendCommandIdleRet     \ X
-            0<> IF \      INIT_CMD8           \ if no idle state
-                MOV #SD_ERROR,PC        \ ReturnError = $04R1, case of defectuous card (or insufficient SD_POWER_ON clk)
+        BEGIN
+            CALL #CMD_IDLE          \ X
+        0<> WHILE                   \ if no idle state
+            SUB #1,Y                \
+            0= IF
+                MOV #SD_ERROR,PC    \ ReturnError = $04R1, case of defectuous card (or insufficient SD_POWER_ON clk)
             THEN
+        REPEAT
 \ ----------------------------------\ see forthMSP430FR_SD_lowLvl.asm
-\ INIT_CMD8                           \ mandatory if SD_Card >= V2.x     [11:8]supply voltage(VHS)
+\ INIT_CMD8                         \ mandatory if SD_Card >= V2.x     [11:8]supply voltage(VHS)
 \ ----------------------------------\
-            BEGIN
-                CALL #SPI_GET           \ (needed to pass SanDisk ultra 8GB "HC I")
-                CMP.B #-1,W             \ FFh expected value <==> MISO = high level
-\                JNE     INIT_CMD8           \ loop back while yet busy
-            0= UNTIL
-            MOV #$0AA87,&SD_CMD_FRM     \ $(87 AA ...)  (CRC:CHECK PATTERN)
-            MOV #1,&SD_CMD_FRM+2        \ $(87 AA 01 00 ...)  (CRC:CHECK PATTERN:VHS set as 2.7to3.6V:0)
-            MOV #$4800,&SD_CMD_FRM+4    \ $(87 AA 01 00 00 48)
+        MOV #$0AA87,&SD_CMD_FRM     \ $(87 AA ...)  (CRC:CHECK PATTERN)
+        MOV #1,&SD_CMD_FRM+2        \ $(87 AA 01 00 ...)  (CRC:CHECK PATTERN:VHS set as 2.7to3.6V:0)
+        MOV #$4800,&SD_CMD_FRM+4    \ $(87 AA 01 00 00 48)
 \ ----------------------------------\
-\ SEND_CMD8                           \ CMD8 = SEND_IF_COND\ expected R1 response (first byte of SPI R7) = 01h : idle state
+\ SEND_CMD8                         \ CMD8 = SEND_IF_COND\ expected R1 response (first byte of SPI R7) = 01h : idle state
 \ ----------------------------------\
-            CALL #sendCommandIdleRet     \X time out occurs with SD_Card V1.x (and all MMC_card) 
+        CALL #CMD_IDLE              \   X time out occurs with SD_Card V1.x (and all MMC_card) 
 \ ----------------------------------\
-            MOV #4,X                    \ skip end of SD_Card V2.x type R7 response (4 bytes), because useless
-            CALL #SPI_X_GET             \WX
+        MOV #4,X                    \ skip end of SD_Card V2.x type R7 response (4 bytes), because useless
+        CALL #SPI_GET+2             \ CALL SPI_X_GET
 \ ----------------------------------\
-INIT_ACMD41                         \ no more CRC needed from here
+\ INIT_ACMD41                       \ no more CRC needed from here
 \ ----------------------------------\
-            MOV #1,&SD_CMD_FRM          \ $(01 00 ...   set stop bit
-            MOV #0,&SD_CMD_FRM+2        \ $(01 00 00 00 ...
-\            MOV.B   #16,Y                   \ init 16 * ACMD41 repeats (power on fails with SanDisk ultra 8GB "HC I" and Transcend 2GB)
-\            MOV.B   #32,Y                   \ init 32 * ACMD41 repeats ==> ~400ms time out
-            MOV.B #-1,Y                 \ init 255 * ACMD41 repeats ==> ~3 s time out
-            MOV #8,S                    \ preset error 8R1 for ACMD41
+        MOV #1,&SD_CMD_FRM          \ $(01 00 ...   set stop bit
+        MOV #0,&SD_CMD_FRM+2        \ $(01 00 00 00 ...
+        MOV.B #-1,Y                 \ init 255 * ACMD41 repeats ==> ~3 s time out
+        MOV #8,S                    \ preset error 8R1 for ACMD41
 \ ----------------------------------\
-\ SEND_ACMD41                         \ send CMD55+CMD41
+\ SEND_ACMD41                       \ send CMD55+CMD41
 \ ----------------------------------\
-            BEGIN
-\ INIT_CMD55                          \
-                MOV #$7700,&SD_CMD_FRM+4    \ $(01 00 00 00 00 77)
-\ SEND_CMD55                          \ CMD55 = APP_CMD\ expected SPI_R1 response = 1 : idle
-                CALL #sendCommandIdleRet     \X
-\ SEND_CMD41                          \ CMD41 = APP OPERATING CONDITION
-                MOV #$6940,&SD_CMD_FRM+4    \ $(01 00 00 00 40 69) (30th bit = HCS = High Capacity Support request)
-                CALL #WaitIdleBeforeSendCMD  \ wait until idle (needed to pass SanDisk ultra 8GB "HC I") then send Command CMD41
-\    JZ      SetBLockLength          \ if SD_Card ready (R1=0)
-            0<> WHILE                       \ if SD_Card not ready (R1<>0) 
-                SUB.B #1,Y                    \ else decr time out delay
-\    JNZ     INIT_CMD55              \ then loop back while count of repeat not reached
-                0= IF
-                    MOV #SD_ERROR,PC    \ ReturnError on time out : unusable card  (or insufficient Vdd SD)
-                THEN
-            REPEAT                          \
-\ ----------------------------------\
-\ setBLockLength                      \ set block = 512 bytes (buffer size), usefull only for FAT16 SD Cards
-\ ----------------------------------\
-            ADD S,S                     \ preset error $10 for CMD16
-\ SEND_CMD16                          \ CMD16 = SET_BLOCKLEN
-            MOV #$02,&SD_CMD_FRM+2      \ $(01 00 02 00 ...)
-            MOV #$5000,&SD_CMD_FRM+4    \ $(01 00 02 00 00 50) 
-            CALL #WaitIdleBeforeSendCMD  \ wait until idle then send CMD16
-            0<> IF
-                MOV #SD_ERROR,PC        \ if W = R1 <> 0, ReturnError = $20R1 \ send command ko
-            THEN                        \
+        BEGIN
+            MOV #$7700,&SD_CMD_FRM+4    \ $(01 00 00 00 00 77)
+\ SEND_CMD55                        \ CMD55 = APP_CMD\ expected SPI_R1 response = 1 : idle
+            CALL #CMD_IDLE          \X
+\ SEND_CMD41                        \ CMD41 = APP OPERATING CONDITION
+            MOV #$6940,&SD_CMD_FRM+4    \ $(01 00 00 00 40 69) (30th bit = HCS = High Capacity Support request)
+            CALL #WIBS_CMD          \ wait until idle (needed to pass SanDisk ultra 8GB "HC I") then send Command CMD41
+        0<> WHILE                   \ if SD_Card not ready (R1<>0) 
+            SUB.B #1,Y              \ else decr time out delay
+            0= IF
+                MOV #SD_ERROR,PC    \ #8 Error on time out : unusable card  (or insufficient Vdd SD)
+            THEN
+        REPEAT                      \
 \ ----------------------------------\ W = R1 = 0
-\ SwitchSPIhighSpeed                  \ end of SD init ==> SD_CLK = SMCLK
+\ SwitchSPIhighSpeed                \ end of SD init ==> SD_CLK = SMCLK
 \ ----------------------------------\
-            BIS #1,&SD_CTLW0            \ Software reset
-            MOV #0,&SD_BRW              \ UCxxBRW = 0 ==> SPI_CLK = MCLK
-            BIC #1,&SD_CTLW0            \ release from reset
+        BIS #1,&SD_CTLW0            \ Software reset
+        MOV #0,&SD_BRW              \ UCxxBRW = 0 ==> SPI_CLK = MCLK
+        BIC #1,&SD_CTLW0            \ release from reset
 \ ----------------------------------\
-\ Read_EBP_FirstSector                \ W=0, BS_FirstSectorHL=0
+\ Read_EBP_FirstSector              \ BS_FirstSectorHL=0
 \ ----------------------------------\
-            MOV #0,X
-            CALL #readSectorWX           \ read physical first sector
-            MOV #SD_BUF,Y               \
-            MOV 454(Y),&BS_FirstSectorL \ so, sectors become logical
-            MOV 456(Y),&BS_FirstSectorH \ 
-            MOV.B 450(Y),W              \ W = partition ID 
+        MOV #0,W                    \
+        MOV #0,X
+        CALL #READ_SWX              \ read physical first sector
+        MOV #SD_BUF,Y               \
+\ ----------------------------------\
+        CMP #$AA55,1FEh(Y)          \ valid boot sector ?
+        0<> IF
+            MOV #$1000,S            \ error Boot Sector
+            MOV #SD_ERROR,PC        \
+        THEN
+\ ----------------------------------\
+\ SetMBR                            \
+\ ----------------------------------\
+        MOV $1C6(Y),&BS_FirstSectorL \ logical sector = physical sector + BS_FirstSector
+        MOV $1C8(Y),&BS_FirstSectorH \
 \ ----------------------------------\
 \ TestPartitionID                   \
 \ ----------------------------------\
-            MOV #1,&FATtype         \ preset FAT16
-\ FAT16_CHS_LBA_Test                \
-            SUB.B #6,W              \ ID=06h Partition FAT16 > 32MB using CHS & LBA ?
-            0<> IF                  \ no
-\ FAT16_LBA_Test                    \
-                SUB.B #8,W              \ ID=0Eh Partition FAT16 using LBA ?
-                0<> IF                  \ no
-\ ----------------------------------\
-                    MOV #2,&FATtype         \ set FAT32
-\ FAT32_LBA_Test                            \
-                    ADD.B #2,W              \ ID=0Ch Partition FAT32 using LBA ?
-                    0<> IF                  \ no
-\ FAT32_CHS_LBA_Test                            \
-                        ADD.B #1,W              \ ID=0Bh Partition FAT32 using CHS & LBA ?
-                        0<> IF                  \ no
-                            ADD.B #4,W              \ ID=07h assigned to FAT 32 by MiniTools Partition Wizard....
-                            0<> IF                  \ no
-                                ADD #0$200B,W           \
-                                MOV W,S                 \
-                                MOV #SD_CARD_ID_ERROR,PC    \ S = ReturnError = $20xx with xx = partition ID 
-                            THEN
-                        THEN
-                    THEN
+        MOV.B $1C2(Y),S             \ S = partition ID
+        SUB.B #$0C,S                \ ID=0Ch Partition FAT32 using LBA ?
+        0<> IF
+            ADD.B #1,S              \ ID=0Bh Partition FAT32 using CHS & LBA ?
+            0<> IF
+                ADD.B #4,S          \ ID=07h assigned to FAT32 by MiniTools Partition Wizard....
+                0<> IF
+                    ADD #$1007,S    \ set ReturnError = $10 & restore ID value
+                    MOV #SD_ERROR,PC \ see: https://en.wikipedia.org/wiki/Partition_type
                 THEN
             THEN
+        THEN
 \ ----------------------------------\ see: https://en.wikipedia.org/wiki/Partition_type
 \ Read_MBR_FirstSector              \ read first logical sector
 \ ----------------------------------\ W = 0
-            MOV #0,X
-            CALL #READ_SWX          \ ...with the good CMD17 bytes/sectors frame ! (good switch FAT16/FAT32)
+        MOV #0,X
+        CALL #READ_SWX              \ ...with the good CMD17 bytes/sectors frame ! (good switch FAT16/FAT32)
 \ ----------------------------------\
-\ FATxx_SetFileSystem               \
+\ FAT32_SetFileSystem               \
 \ ----------------------------------\
-            MOV.B 13(Y),&SecPerClus     \
-            MOV 14(Y),X                 \ 3 X = BPB_RsvdSecCnt
-            MOV X,&OrgFAT1              \ 3 set OrgFAT1
-            MOV 22(Y),W                 \ W = BPB_FATsize
-            CMP #0,W                    \ BPB_FATsize = 0 ?
-            0= IF                       
-                MOV 36(Y),W             \ W = BPB_FATSz32
-            THEN
-\ Set_FATsize                           \
-            MOV W,&FATSize              \ limited to 16384 sectors....
-            ADD W,X                     \
-            MOV X,&OrgFAT2              \ X = OrgFAT1 + FATsize = OrgFAT2
-            ADD W,X                     \ X = OrgFAT2 + FATsize = FAT16 OrgRootDir | FAT32 OrgDatas
-            CMP #2,&FATtype             \ FAT32?
-            0<> IF
-\ FAT16_SetRootCluster                  \
-                MOV X,&OrgRootDIR       \ only FAT16 use, is a sector used by CLS_SCT
-                ADD #32,X               \ OrgRootDir + RootDirSize = OrgDatas
-            THEN
-            SUB &SecPerClus,X           \ OrgDatas - SecPerClus*2 = OrgClusters
-            SUB &SecPerClus,X           \ no borrow expected
-            MOV X,&OrgClusters          \ X = virtual cluster 0 address (clusters 0 and 1 don't exist)
-            MOV &FATtype,&DIRClusterL   \ init DIRcluster as RootDIR
-        THEN                            \
-    THEN                                \
-    MOV @RSP+,PC                        \ RET
-    ENDCODE
+        MOV $0E(Y),X                \3 X = BPB_RsvdSecCnt (05FEh=1534)
+        MOV X,&OrgFAT1              \3 set OrgFAT1
 \ ----------------------------------\
-
-\ ----------------------------------\ 
-    HDNCODE RST_ABORT_SD            \ common part of ?ABORT|RST
+        MOV $24(Y),W                \ no set W = BPB_FATSz32 (1D01h=7425)
+        MOV W,&FATSize              \ limited to 32767 sectors....
 \ ----------------------------------\
-    CALL #RET_ADR                   \ which does nothing
+        ADD W,X                     \
+        MOV X,&OrgFAT2              \ X = OrgFAT1 + FATsize = OrgFAT32 (8959)
 \ ----------------------------------\
-    MOV &CurrentHdl,T               \
-    GOTO FW1
-    BEGIN
-        MOV.B #0,HDLB_Token(T)      \
-        MOV @T,T                    \
-FW1     CMP #0,T                    \
-    0= UNTIL
-    MOV #TIB_ORG,&CIB_ADR           \ restore TIB as Current Input Buffer for next line (next QUIT)
-    MOV #ACCEPT+4,&ACCEPT+2         \ restore default ACCEPT for next line (next QUIT)
+        ADD W,X                     \ X = OrgFAT2 + FATsize = FAT32 OrgDatas (16384)
+FATxx_SetFileSystemNext             \
+        MOV.B $0D(Y),Y                \ Logical sectors per cluster (8)
+        MOV Y,&SecPerClus           \
+        SUB Y,X                     \ OrgDatas - SecPerClus*2 = OrgClusters
+        SUB Y,X                     \ no borrow expected
+        MOV X,&OrgClusters          \ X = virtual cluster 0 address (clusters 0 and 1 don't exist)
+        MOV #2,&DIRClusterL         \ init DIRcluster as FAT32 RootDIR
+        MOV #0,&DIRClusterH         \
+    THEN                            \
     MOV @RSP+,PC                    \ RET
-    ENDCODE
+    ENDCODE                         \
 \ ----------------------------------\
 
 \-----------------------------------------------------------------------
@@ -592,35 +567,38 @@ FW1     CMP #0,T                    \
 \ Y = BufferPtr, (DIR) EntryOfst, FAToffset
 
 
+\ ==================================\
+    HDNCODE RD_FATW                 \ (< 65536)
+\ ==================================\
+    ADD &OrgFAT1,W                  \
+    MOV #0,X                        \ FAT1_SectorHI = 0
+    MOV #READ_SWX,PC                \ read FAT1SectorW, W = 0
+    ENDCODE                         \
+\ ----------------------------------\
+
     HDNCODE CLS_FAT
-\ ----------------------------------\
-\ HDLCurClusToFAT1sectWofstY          \WXY Input: T=currentHandle, Output: W=FATsector, Y=FAToffset, Cluster=HDL_CurCluster
-\ ----------------------------------\
+\ ==================================\
+\ HDLCurClusToFAT1sectWofstY        \ WXY Input: T=currentHandle, Output: W=FATsector, Y=FAToffset, Cluster=HDL_CurCluster
+\ ==================================\
     MOV HDLL_CurClust(T),&ClusterL  \
     MOV HDLH_CurClust(T),&ClusterH  \
-\ ----------------------------------\
+\ ==================================\
 \   ClusterToFAT1sectWofstY             \WXY Input : Cluster \ Output: W = FATsector, Y = FAToffset
-\ ----------------------------------\
+\ ==================================\
     MOV.B &ClusterL+1,W             \ 3 W = ClusterLoHI
     MOV.B &ClusterL,Y               \ 3 Y = ClusterLoLo
-    CMP #2,&FATtype                 \ 3 FAT32?
-    0= IF                               \ yes
-\    JZ CTF1S_end                    \ 2 yes
-
 \ input : Cluster n, max = 7FFFFF (SDcard up to 256 GB)
 \ ClusterLoLo*4 = displacement in 512 bytes sector   ==> FAToffset
 \ ClusterHiLo&ClusterLoHi +C  << 1 = relative FATsector + orgFAT1       ==> FATsector
 \ ----------------------------------\
-        MOV.B &ClusterH,X           \  X = 0:ClusterHiLo
-        SWPB X                      \  X = ClusterHiLo:0
-        ADD X,W                     \  W = ClusterHiLo:ClusterLoHi  
+    MOV.B &ClusterH,X               \  X = 0:ClusterHiLo
+    SWPB X                          \  X = ClusterHiLo:0
+    ADD X,W                         \  W = ClusterHiLo:ClusterLoHi  
 \ ----------------------------------\
-        SWPB Y                      \  Y = ClusterLoLo:0
-        ADD Y,Y                     \ 1 Y = ClusterLoLo:0 << 1 + carry for FATsector
-        ADDC W,W                    \  W = ClusterHiLo:ClusterLoHi << 1 = ClusterHiLo:ClusterL / 128
-        SWPB Y   
-\ CTF1S_end
-    THEN
+    SWPB Y                          \  Y = ClusterLoLo:0
+    ADD Y,Y                         \ 1 Y = ClusterLoLo:0 << 1 + carry for FATsector
+    ADDC W,W                        \  W = ClusterHiLo:ClusterLoHi << 1 = ClusterHiLo:ClusterL / 128
+    SWPB Y          
     ADD Y,Y                         \  Y = 0:ClusterLoLo << 1
     MOV @RSP+,PC                    \ 4
     ENDCODE
@@ -629,61 +607,48 @@ FW1     CMP #0,T                    \
 
 \ use no registers
     HDNCODE CLS_SCT
-\ ----------------------------------\ Input : Cluster, output: Sector = Cluster_first_sector
-\   ComputeClusFrstSect                 \ If Cluster = 1 ==> RootDirectory ==> SectorL = OrgRootDir
-\ ----------------------------------\ Output: SectorL of Cluster
-    MOV     #0,&SectorH             \
-    MOV     &OrgRootDir,&SectorL    \
-    CMP.B   #0,&ClusterH            \ clusterH <> 0 ?
-    0= IF    
-        CMP     #1,&ClusterL            \ clusterHL = 1 ? (FAT16 specificity)
-        0= IF                           \ yes, sectorL for FAT16 OrgRootDIR is done
-            MOV @RSP+,PC
-        THEN
-    THEN
-
-    TLV_ORG 4 + @ $81F3 U<
-    $81EF TLV_ORG 4 + @ U< =        \ MSP430FR413x subfamily without hardware_MPY
-    [IF]                            \ Cluster24<<SecPerClus --> ClusFrstSect\ SecPerClus = {1,2,4,8,16,32,64}                   
-    PUSHM  #3,W                     \ 5 PUSHM W,X,Y
-    MOV.B &SecPerClus,W             \ 3 SecPerClus(5-1) = multiplicator
-    MOV &ClusterL,X                 \ 3 Cluster(16-1) --> MULTIPLICANDlo
-    MOV.B &ClusterH,Y               \ 3 Cluster(24-17) -->  MULTIPLICANDhi
-    GOTO FW1                        \
-    BEGIN                           \
-        ADD X,X                     \ 1 (RLA) shift one left MULTIPLICANDlo16
-        ADDC Y,Y                    \ 1 (RLC) shift one left MULTIPLICANDhi8
-FW1     RRA W                       \ 1 shift one right multiplicator
-    U>= UNTIL                       \ 2 C = 0 loop back
-    ADD &OrgClusters,X              \ 3 OrgClusters = sector of virtual_cluster_0, word size
-    ADDC #0,Y                       \ 1
-    MOV X,&SectorL                  \ 3 low result
-    MOV Y,&SectorH                  \ 3 high result
-    POPM  #3,W                      \ 5 POPM Y,X,W
-\ ----------------------------------\
-    [ELSE]                          ; hardware MPY, the general case
-\ ----------------------------------\
-    MOV     &ClusterL,&MPY32L       \ 3
-    MOV     &ClusterH,&MPY32H       \ 3
-    MOV     &SecPerClus,&OP2        \ 5+3
-    MOV     &RES0,&SectorL          \ 5
-    MOV     &RES1,&SectorH          \ 5
-    ADD     &OrgClusters,&SectorL   \ 5 OrgClusters = sector of virtual cluster 0, word size
-    ADDC    #0,&SectorH             \ 3 32~
-\ ----------------------------------\
+\ ==================================\
+\   ClusterHLtoFrstSectorHL         \ Input : Cluster, output: Sector = Cluster_first_sector
+\ ==================================\ Output: SectorL of Cluster
+    KERNEL_ADDON HMPY TSTBIT  [IF]  \   KERNEL_ADDON(BIT0) = hardware MPY flag
+        MOV  &ClusterL,&MPY32L      \ 3
+        MOV  &ClusterH,&MPY32H      \ 3
+        MOV  &SecPerClus,&OP2       \ 5+3
+        MOV  &RES0,&SectorL         \ 5
+        MOV  &RES1,&SectorH         \ 5
+        ADD  &OrgClusters,&SectorL  \ 5 OrgClusters = sector of virtual cluster 0, word size
+        ADDC #0,&SectorH            \ 3 32~
+        MOV #0,&SectorH             \
+    [ELSE]                          \ no hardware MPY
+        PUSHM #3,W                  \ 5 PUSHM W,X,Y
+        MOV.B &SecPerClus,W         \ 3 SecPerClus(5-1) = multiplicator
+        MOV &ClusterL,X             \ 3 Cluster(16-1) --> MULTIPLICANDlo
+        MOV.B &ClusterH,Y           \ 3 Cluster(24-17) -->  MULTIPLICANDhi
+        GOTO FW1                    \ 
+        BEGIN                       \ 
+            ADD X,X                 \ 1 (RLA) shift one left MULTIPLICANDlo16
+            ADDC Y,Y                \ 1 (RLC) shift one left MULTIPLICANDhi8
+FW1         RRA W                   \ 1 shift one right multiplicator
+        U>= UNTIL                   \ 2 C = 0 loop back
+        ADD &OrgClusters,X          \ 3 OrgClusters = sector of virtual_cluster_0, word size
+        ADDC #0,Y                   \ 1
+        MOV X,&SectorL              \ 3 low result
+        MOV Y,&SectorH              \ 3 high result
+        POPM #3,W                   \ 5 POPM Y,X,W
     [THEN]
-\ ----------------------------------\32~ + 5~ by 2* shift
     MOV @RSP+,PC                    \
-\ ----------------------------------\
     ENDCODE
 
 
     HDNCODE CUR_SCT
-\ ----------------------------------\
-\ ComputeHDLcurrentSector             \ input: currentHandle, output: Cluster, Sector
-\ ----------------------------------\
+\ ==================================\
+\ HDLCurClusPlsOfst2sectorHL        \  input: HDL (CurClust, ClustOfst) output: SectorHL
+\ ==================================\
     MOV HDLL_CurClust(T),&ClusterL  \
     MOV HDLH_CurClust(T),&ClusterH  \
+\ ==================================\
+\ ClusterHL2sectorHL                \ W input: ClusterHL, ClustOfst output: SectorHL
+\ ==================================\
     CALL #CLS_SCT                   \ Cluster --> its first sector
     MOV.B HDLB_ClustOfst(T),W       \
     ADD W,&SectorL                  \

@@ -11,7 +11,7 @@ RW_Sector_CMD                       ;WX <=== CMD17 or CMD24 (read or write Secto
 ; ==================================;
     BIC.B   #CS_SD,&SD_CSOUT        ; set Chip Select low
 ; ----------------------------------;
-ComputePhysicalSector               ; input = logical sector...
+;ComputePhysicalSector              ; input = logical sector...
 ; ----------------------------------;
     ADD     &BS_FirstSectorL,W      ;3
     ADDC    &BS_FirstSectorH,X      ;3
@@ -148,7 +148,7 @@ ReadWriteHappyEnd                   ; <==== WriteSector
 ; ----------------------------------;
     BIC #3,S                        ; Clear read and write errors
     BIS.B #CS_SD,&SD_CSOUT          ; Chip Select high
-    MOV @RSP+,PC                    ; W = 0
+    MOV @RSP+,PC                    ; W = 0 SR(Z) = 1
 ; ----------------------------------;
 
     .IFDEF SD_CARD_READ_WRITE
@@ -173,12 +173,12 @@ WriteSectorLoop                     ; 11 cycles loop write, starts with X = 0
     CMP     #BytsPerSec,X           ; 2
     JNZ     WriteSectorLoop         ; 2
 ; ----------------------------------;
-WriteSkipCRC16                      ; CRC16 not used in SPI mode
+;WriteSkipCRC16                     ; CRC16 not used in SPI mode
 ; ----------------------------------;
     MOV     #3,X                    ; PUT 3 times to skip CRC16
     CALL    #SPI_X_GET              ; and to get data token in W
 ; ----------------------------------;
-CheckWriteState                     ;
+;CheckWriteState                    ;
 ; ----------------------------------;
     BIC.B   #0E1h,W                 ; apply mask for Data response
     SUB.B   #4,W                    ; data accepted

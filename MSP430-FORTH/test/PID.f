@@ -786,13 +786,13 @@ MOV @PSP+,S         \ S=d1L
 GOTO BW1
 ENDCODE
 
-CODE S2F \ ( s -- f )  Signed number to fixed point
+CODE S>F \ ( s -- f )  Signed number to fixed point
     SUB #2,PSP
     MOV #0,0(PSP)
     MOV @IP+,PC
 ENDCODE
 
-: F2S \ ( f -- s )  Fixed point to signed number (rounded)
+: F>S \ ( f -- s )  Fixed point to signed number (rounded)
   SWAP $8000 AND IF 1 + THEN ;
 
 : DMIN \ ( d1 d2 -- d_min )  Minimum of double number (also for fixed-point)
@@ -815,21 +815,22 @@ ENDCODE
 
 : F.000 3 F.N ;  \ Output fixed point value
 
-\ Setup variables for pid control
+\ Set Q15.16 variables for pid control
 2VARIABLE KP            \ Proportionnal coeff, scaled to input range.
 2VARIABLE KI            \ integral coeff, in second
 2VARIABLE KD            \ derivative coeff, in second
-VARIABLE SETPOINT       \ setpoint, same scale as input
+2VARIABLE I_SUM         \ cummulative i error
+
+\ Set input/output variable 
+VARIABLE SETPOINT       \ setpoint, same scale as measurement
 
 VARIABLE SAMPLE_TIME    \ sampling interval in ms
-VARIABLE OUT_MAX        \ output max limit (--> 20 mA)
-VARIABLE OUT_MIN        \ output min limit (--> 4 mA)
+VARIABLE OUT_MAX        \ output max limit (--> 21 mA)
+VARIABLE OUT_MIN        \ output min limit (--> 3 mA)
 VARIABLE OUT-OVERRIDE   \ output override (auto mode if -1)
 
 \ Working variables while pid is running
-VARIABLE SET-VAL        \ current setpoint
-VARIABLE INPUT_PREV     \ last seen input
-2VARIABLE I_SUM         \ cummulative i error
+VARIABLE INPUT_PREV     \ previous measurement
 
 VARIABLE DEBUG          \ PID compute state
 0 DEBUG !
@@ -840,43 +841,43 @@ VARIABLE DEBUG          \ PID compute state
 \ =============================================================================
 \ Main PID - internal definitions (do not call manually)
 \ inputs and outputs are 16 bits numbers
-\ PID parameters and PID compute are Q15.16 numbers.
+\ PID parameters and PID computed values are Q15.16 numbers.
 
 : CALC-P \ ( f_error -- f_correction )  Calculate proportionnal output
 KP 2@ F*                 \ fetch k-value and scale error
-?DEBUG IF ." Pval:" 2DUP F2S . 
+?DEBUG IF ." Pval:" 2DUP F>S . 
 THEN    
 ;
-
 
 : CALC-I \ ( f_error -- f_correction )  Calculate integral output
 KI 2@ F*                \ apply ki factor
 I_SUM 2@ F+             \ sum up with running integral error
-OUT_MIN @ S2F 
-OUT_MAX @ S2F
+OUT_MIN @ S>F 
+OUT_MAX @ S>F
 DRANGE \ cap inside output range
 2DUP I_SUM 2!           \ update running integral error
-?DEBUG IF  ." Ival:" 2DUP F2S . 
+?DEBUG IF  ." Ival:" 2DUP F>S . 
 THEN
 ;
 
 : CALC-D \ ( s_is -- f_correction )  Calculate differential output
   \ actually use "derivative on input", not on error
-  INPUT_PREV @ -           \ substract last input from current input
-  S2F KD 2@ F*             \ make fixed point, fetch kd factor and multiply
-?DEBUG IF  ." Dval:" 2DUP F2S . 
+  INPUT_PREV @ -           \ substract previous from current measures
+  S>F KD 2@ F*             \ make fixed point, fetch kd factor and multiply
+?DEBUG IF  ." Dval:" 2DUP F>S . 
 THEN
 ;
 
-: PID_COMPUTE \ ( s_is -- s_corr )  Do a PID calculation, return duty-cycle
-\  CR ." SET:" SET-VAL @ .  ." IS:"  DUP . \ DEBUG
+: PID_COMPUTE \ ( s_is -- s_corr )  Do a PID calculation, return output duty-cycle
+\  CR ." SET:" SETPOINT @ .  ." IS:"  DUP . \ DEBUG
 \ feed error in p and i, current setpoint in d, sum up results
-DUP DUP SET-VAL @ SWAP - S2F  \ ( s_is s_is f_error )
-2DUP  CALC-P                  \ ( s_is s_is f_error f_p )
-2SWAP CALC-I F+               \ ( s_is s_is f_p+i )
-ROT   CALC-D F-               \ ( s_is f_p+i+d ) \ substract! derivate on input - not error
+DUP 
+    DUP SETPOINT @ SWAP - S>F \ ( s_is s_is f_error )
+    2DUP  CALC-P              \ ( s_is s_is f_error f_p )
+    2SWAP CALC-I F+           \ ( s_is f_p+i )
+ROT   CALC-D     F-           \ ( s_is f_p+i+d ) \ substract! derivate on input - not error
 
-F2S                           \ ( s_is s_corr )
+F>S                           \ ( s_is s_corr )
 ?DEBUG IF  ." OUT:" DUP .
 THEN
 SWAP INPUT_PREV !             \ Update INPUT_PREV for next run
@@ -889,12 +890,12 @@ THEN
 \ Main PID - external interface
 
 : SET \ ( s -- )  Change setpoint on a running pid
-  SET-VAL ! ;
+  SETPOINT ! ;
 
 : TUNING \  ( f_kp f_ki f_kd -- )  Change tuning-parameters on a running pid
   \ depends on sampletime, so fetch it, move to fixed-point and change unit to seconds
   \ store on return stack for now
-  SAMPLE_TIME @ S2F 1000,0 F/ 2>R  \ 
+  SAMPLE_TIME @ S>F 1000,0 F/ 2>R  \ 
 
   2R@ F/ KD 2!                  \ translate from 1/s to the sampletime
   2R> F* KI 2!                  \ translate from 1/s to the sampletime
@@ -919,7 +920,7 @@ THEN
   OUT-OVERRIDE @ -1 = IF   \ we're in auto-mode - do PID calculation
     PID_COMPUTE
   ELSE                     \ manual-mode! store input, return override value
-    CR ." SET:" SET-VAL @ .  ." IS:"  DUP .
+    CR ." SET:" SETPOINT @ .  ." IS:"  DUP .
     INPUT_PREV !
     OUT-OVERRIDE @
     ." PWM:" DUP .
@@ -934,12 +935,12 @@ THEN
     \ store current output value as i to let it run smoothly
     OUT-OVERRIDE @
     OUT_MIN @ OUT_MAX @ RANGE   \ Make sure we return something inside PWM range
-    S2F I_SUM 2!                \ init I_SUM
+    S>F I_SUM 2!                \ init I_SUM
     -1 OUT-OVERRIDE !
   THEN ;
 
 : AUTOHOLD \ ( -- )  Bring PID back to auto-mode after a manual override
-  INPUT_PREV @ SET-VAL !   \ Use last input as setpoint (no bumps!)
+  INPUT_PREV @ SETPOINT !   \ Use last input as setpoint (no bumps!)
   AUTO ;
 
 

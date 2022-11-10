@@ -251,7 +251,7 @@ LED2        .equ    40h         ;  P6.6 LED2 green
 ;            MOV     #0100h,&CSCTL4  ; ACLOCK select REFOCLK, MCLK & SMCLK select DCOCLKDIV (default value)
     .ENDIF
             BIC.B   #-1,&CSCTL1     ; clear DCORSEL (Set 1MHZ DCORSEL), DCOFTRIM=0, ENable MODulation to reduce EMI
-    .IF FREQUENCY = 1               ; nothing else to do
+    .IF     FREQUENCY = 1           ; nothing else to do
     .ELSEIF FREQUENCY = 2
             BIS.B   #2,&CSCTL1      ; Set 2MHZ DCORSEL
     .ELSEIF FREQUENCY = 4

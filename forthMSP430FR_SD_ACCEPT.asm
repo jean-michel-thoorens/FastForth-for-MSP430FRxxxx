@@ -12,66 +12,68 @@
 ; see CloseHandle.
 
 ; used variables : BufferPtr, BufferLen
-; EMIT uses only IP TOS and Y registers
+; QYEMIT uses only IP and Y registers
 ; ==================================;
-;    FORTHWORD "SD_ACCEPT"          ; SDIB_org SDIB_org SDIB_len -- SDIB len        94 bytes
+;    FORTHWORD "SD_ACCEPT"          ; SDIB_org SDIB_org SDIB_len -- SDIB_org len    IP = QUIT4
 ; ==================================;
-SD_ACCEPT                           ; sequentially move from SD_BUF to SDIB (PAD if RAM=1k) a line of chars delimited by CRLF
+SD_ACCEPT                           ; sequentially move from SD_BUF to SDIB a line of chars delimited by CRLF
+        PUSH    IP                  ;                           R-- IP
+        MOV     #SDA_YEMIT_RET,IP   ; set QYEMIT return
 ; ----------------------------------; up to CPL = 80 chars
-        PUSH    IP                  ;
-        MOV     #SDA_YEMIT_RET,IP   ; set YEMIT return
-; ----------------------------------;
         MOV &CurrentHdl,T           ; prepare a link for a next LOADed file, if any...
         MOV &BufferPtr,HDLW_BUFofst(T)  ; ...see usage : GetFreeHandle(CheckCaseOfLoadFileToken)
 ; ----------------------------------;
 ; SDA_InitDstAddr                   ;
 ; ----------------------------------;
-        MOV     @PSP+,W             ; -- SDIB_org SDIB_len  W=SDIB_ptr
-        MOV     TOS,X               ;                       X=SDIB_len
-        MOV     #0,TOS              ; -- SDIB_org len   of moved bytes from SD_buf to SDIB
-; ----------------------------------;
-SDA_InitSrcAddr                     ; <== SDA_GetFileNextSect
-; ----------------------------------;
-        MOV     &BufferPtr,S        ;                   S=SD_buf_ptr
-        MOV     &BufferLen,T        ;                   T=SD_buf_len
-        JMP     SDA_ComputeChar     ;
+        ADD     TOS,0(PSP)          ; -- SDIB_org SDIB_end SDIB_len
+        MOV     2(PSP),TOS          ; -- SDIB_org SDIB_end SDIB_ptr
+; ==================================;
+SDA_InitSrcAddr                     ; -- SDIB_org SDIB_end SDIB_ptr     <== Read_File return
+; ==================================;
+        MOV     &BufferPtr,S        ;
+        MOV     &BufferLen,T        ;
+        MOV     @PSP,W              ; W = SDIB_end
+        MOV.B   #32,X               ; X = BL
+        JMP     SDA_ComputeCharLoop ;
 ; ----------------------------------;
 SDA_YEMIT_RET                       ;
 ; ----------------------------------;
         mNEXTADR                    ;
-        SUB     #2,IP               ; 1                 restore YEMIT return
+        SUB     #2,IP               ; 1 restore YEMIT return
 ; ----------------------------------;
-SDA_ComputeChar                     ; -- SDIB_org len
+SDA_ComputeCharLoop                 ; -- SDIB_org SDIB_end SDIB_ptr
 ; ----------------------------------;
         CMP     T,S                 ; 1 SD_buf_ptr >= SD_buf_len ?
         JC      SDA_GetFileNextSect ; 2 if yes
         MOV.B   SD_BUF(S),Y         ; 3 Y = char
         ADD     #1,S                ; 1 increment SD_buf_ptr
-        CMP.B   #32,Y               ; 2 ascii printable char ?
+        CMP.B   X,Y                 ; 1 ascii printable char ?
         JC      SDA_MoveChar        ; 2 yes
         CMP.B   #10,Y               ; 2 control char = 'LF' ?
-        JNZ     SDA_ComputeChar     ; 2 no, loop back
+        JNZ     SDA_ComputeCharLoop ; 2 no, loop back
 ; ----------------------------------;
-SDA_EndOfLine                       ; -- SDIB_org len
+;SDA_EndOfLine                      ;
 ; ----------------------------------;
-        MOV S,&BufferPtr            ; yes  save SD_buf_ptr for next line
-        MOV @RSP+,IP                ;
-        MOV #32,S                   ; S = BL
-        JMP ACCEPT_EOL              ; -- SDIB_org len       ==> output
+        MOV S,&BufferPtr            ; save SD_buf_ptr for next line loop
+; ==================================;
+SDA_EndOfFile                       ; -- SDIB_org SDIB_end SDIB_ptr     <== CloseHandle return
+; ==================================;
+        MOV     @RSP+,IP            ;                           R--
+        ADD     #2,PSP              ; -- SDIB_ORG SDIB_PTR
+        SUB     @PSP,TOS            ; -- SDIB_ORG LEN
+        MOV.B   X,Y                 ; Y = BL
+        JMP     QYEMIT              ; -- org len                        ==> output of SD_ACCEPT ==> INTERPRET
 ; ----------------------------------;
-SDA_MoveChar                        ;
+SDA_MoveChar                        ; -- SDIB_ORG SDIB_END SDIB_PTR
 ; ----------------------------------;
-        CMP     TOS,X               ; 1 len = SDIB_len ?
+        CMP     W,TOS               ; 1 SDIB_ptr = SDIB_end ?
         JZ      QYEMIT              ; 2 yes, don't move char to dst
-        MOV.B   Y,0(W)              ; 3 move char to dst
-        ADD     #1,W                ; 1 increment SDIB_ptr
-        ADD     #1,TOS              ; 1 increment len of moved chars
+        MOV.B   Y,0(TOS)            ; 3 move char to dst
+        ADD     #1,TOS              ; 1 increment SDIB_ptr
         JMP     QYEMIT              ; 9/6~ send echo to terminal if ECHO, do nothing if NOECHO
-; ----------------------------------; 29/26~ char loop, add 14~ for readsectorW one char ==> 43/40~ ==> 186/200 kbytes/s @ 8MHz
-SDA_GetFileNextSect                 ; -- SDIB_org len
+; ----------------------------------; 27/24~ char loop, add 14~ for readsectorW one char ==> 41/38~ ==> 195/210 kbytes/s @ 8MHz
+SDA_GetFileNextSect                 ; -- SDIB_org SDIB_end SDIB_ptr
 ; ----------------------------------;
-        PUSHM   #2,W                ; save SDIB_ptr, SDIB_len
-        CALL    #Read_File          ; which clears SD_buf_ptr and set SD_buf_len
-        POPM    #2,W                ; restore SDIB_ptr, SDIB_len
-        JMP     SDA_InitSrcAddr     ; loopback to end the line
+        PUSH    #SDA_InitSrcAddr    ; set the default return of Read_File, modified by CloseHandle when the end of file is reached 
+        MOV     #Read_File,PC       ;
 ; ----------------------------------;

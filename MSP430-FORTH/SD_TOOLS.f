@@ -53,10 +53,10 @@
         MOV #0,0(PSP)
     [THEN]
     MOV &VERSION,TOS
-    SUB #400,TOS        \ FastForth V4.0
+    SUB #401,TOS        \ FastForth V4.1
     COLON
     'CR' EMIT           \ return to column 1 without 'LF'
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     ABORT" Build FastForth with SD_CARD_LOADER addon!"
     RST_RET             \ remove ABORT_UARTI2CS definition before resuming
     ;
@@ -365,7 +365,7 @@ BW1 MOV     TOS,X                   \ X = SectorH
 \   --------------------------------\
 BW2 BIT.B   #CD_SD,&SD_CDIN         \ test Card Detect: memory card present ?
     0<> IF                          \ no: force COLD
-        MOV #COLD,PC                \ no
+        MOV #TOS2COLD,PC            \ no
     THEN
     MOV.B &SecPerClus,W             \ SecPerClus(54321) = multiplicator
     MOV @PSP,X                      \ X = ClusterL

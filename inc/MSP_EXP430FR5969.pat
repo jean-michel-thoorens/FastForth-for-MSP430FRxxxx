@@ -1,24 +1,22 @@
 
 @set-syntax{C;\;}!  replace ! by semicolon
+
 ; MSP_EXP430FR5969.pat
 ;
 \.f=\.4th for MSP_EXP430FR5969;      to change file type
+
 ; ========================
 ; remove comments
 ; ========================
 \\*\n=
 \s\\*\n=\n
+
 ; ======================================================================
 ; MSP430FR5969 Config
 ; ======================================================================
+
 @reset-syntax{}; to enable good interpreting of next line
 @define{@read{@mergepath{@inpath{};MSP430FR5969.pat;}}}
-@reset-syntax{}; to enable good interpreting of next line
-@define{@read{@mergepath{@inpath{};MSP430FRxxxx.pat;}}}
-@reset-syntax{}; enable good interpreting of next line
-@define{@read{@mergepath{@inpath{};MSP430FR5xxx.pat;}}}
-@reset-syntax{}; to enable good interpreting of next line
-@define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
 
 ; ======================================================================
 ; MSP_EXP430FR5969 board
@@ -337,10 +335,16 @@ INT_IN_IFG=\$23C;       P3IFG
 INT_IN_VEC=\$FFD2;      P3VEC
 
 ;local variables
+OLD_STOP_APP=\{UARTI2CS\};
+OLD_HARD_APP=\{UARTI2CS\}\+2;
+OLD_BACKGRND_APP=\{UARTI2CS\}\+4;
+OLD_TERM_VEC=\{UARTI2CS\}+6;     <-- TERM_VEC
+OLD_INT_IN_VEC=\{UARTI2CS\}+8;   <-- INT_IN_VEC
 UARTI2CS_ADR=\{UARTI2CS\}\+10;  <-- I2C_Slave_Addr<<1
 TIMER_CONF=\{UARTI2CS\}\+12;    <-- TIM_CTL configuration
 COLLISION_DLY=\{UARTI2CS\}\+14; <-- 20 us resolution delay after I2C collision
 DUPLEX_MODE=\{UARTI2CS\}\+15;   <-- flag = 4 --> NOECHO, <> 4 --> ECHO, -1 = I2C link lost
+
 ; ============================================
 ; RC5toLCD APPLICATION
 ; ============================================

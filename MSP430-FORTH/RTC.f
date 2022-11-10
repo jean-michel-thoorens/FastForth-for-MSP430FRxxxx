@@ -59,10 +59,10 @@
     0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (FIXPOINT input), set TOS = 0
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #400,TOS        \   FastForth V4.0
+    SUB #401,TOS        \   FastForth V4.1
     COLON
     $0D EMIT            \ return to column 1 without CR
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     ABORT" target without LF_XTAL !"
     RST_RET             \ if no abort remove this word
     ;
@@ -711,7 +711,7 @@ BW1 MOV TOS,&OP2        \ Load 2nd operand
 
     : SET_TIME
     ESC [8;42;80t       \ set terminal display 42L * 80C
-    39 0 DO CR LOOP     \ to avoid erasing any line of source, create 42 empty lines
+    42 0 DO CR LOOP     \ to avoid erasing any line of source, create 42 empty lines
     ESC [H              \ then set cursor home
     CR ." DATE (DMY): "
     PAD_ORG DUP PAD_LEN
@@ -729,5 +729,4 @@ BW1 MOV TOS,&OP2        \ Load 2nd operand
 
     RST_SET
 
-    ECHO
-    SET_TIME
+    ECHO  SET_TIME

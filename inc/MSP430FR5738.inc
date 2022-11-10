@@ -195,6 +195,8 @@ DIVM_32         .equ 0005h           ; MCLK Source Divider 0
 ; ----------------------------------------------------------------------
 ; POWER ON RESET AND INITIALIZATION : SYS REGISTERS
 ; ----------------------------------------------------------------------
+SYSUNIV    .equ SYS_SFR + 001Ah
+SYSSNIV    .equ SYS_SFR + 001Ch
 SYSRSTIV    .equ SYS_SFR + 001Eh
 
 ; ----------------------------------------------------------------------
@@ -266,22 +268,6 @@ TERM_REN    .equ P2REN
 TXD         .equ 1          ; P2.0 = TX + FORTH Deep_RST pin
 RXD         .equ 2          ; P2.1 = RX
 BUS_TERM    .equ 3
-    .ENDIF
-
-WIPE_IN     .equ    P2IN
-IO_WIPE     .equ 1          ; P2.0 = TX + FORTH Deep_RST pin
-
-    .IFDEF TERMINAL4WIRES
-; RTS output is wired to the CTS input of UART2USB bridge
-; configure RTS as output high to disable RX TERM during start FORTH
-HANDSHAKOUT .equ    P2OUT
-HANDSHAKIN  .equ    P2IN
-RTS         .equ    4       ; P2.2
-        .IFDEF TERMINAL5WIRES
-; CTS input must be wired to the RTS output of UART2USB bridge
-; configure CTS as input low (true) to avoid lock when CTS is not wired
-CTS         .equ    8       ; P2.3
-        .ENDIF
     .ENDIF
 
 SD_CDIN     .equ P2IN

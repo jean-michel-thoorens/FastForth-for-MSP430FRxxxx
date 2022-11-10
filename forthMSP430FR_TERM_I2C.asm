@@ -1,77 +1,55 @@
 ; -*- coding: utf-8 -*-
 ;
-; ---------------------------------------------------      ---------------------------
-; TERMINAL driver for I2CFastForth target (I2C Slave)      see MSP430-FORTH/UARTI2CS.f
-; ---------------------------------------------------      ---------------------------
-;          |                                                           |
-;          |           GND------------------------------GND            |
-;          |           Vcc-------------o---o------------Vcc            |
-;          |                           |   |                           |
-;          |                           3   3                           |
-;          |                           k   k                           |
-;          v                           3   3                           v
-;   I2C_FastForth                      |   |                        UARTI2C        +---------------------------------------+
-;      hardware         +--------------|---o-------------+          Software       |    +-----------------------------+    |
-;      I2C Slave        |      +-------o----------+      |          I2C Master     |    |    +------(option)-----+    |    |
-;                       |      |                  |      |                         |    |    |                   |    |    |
-; I2CFastForth target  SCL    SDA  connected to: SDA    SCL of UART to I2C bridge TXD  RXD  RTS  connected to : CTS  TXD  RXD  UARTtoUSB <--> COMx <--> TERMINAL
-; ------------------   ----   ----               ----   ----   ------------------ ---  ---  ---                 ---  ---  ---  -------------------------------------
-; MSP_EXP430FR5739     P1.7   P1.6               P4.0   P4.1   MSP_EXP430FR5739   P2.0 P2.1 P2.2                               PL2303TA                 TERATERM.EXE
-; MSP_EXP430FR5969     P1.7   P1.6               P1.2   P1.3   MSP_EXP430FR5969   P2.0 P2.1 P4.1                               PL2303HXD
-; MSP_EXP430FR5994     P7.1   P7.0               P8.2   P8.1   MSP_EXP430FR5994   P2.0 P2.1 P4.2                               CP2102
-; MSP_EXP430FR6989     P1.7   P1.6               P1.3   P1.5   MSP_EXP430FR6989   P3.4 P3.5 P3.0
-; MSP_EXP430FR4133     P5.3   P5.2               P8.2   P8.3   MSP_EXP430FR4133   P1.0 P1.1 P2.3
-; CHIPSTICK_FR2433     P1.3   P1.2               P2.0   P2.2   CHIPSTICK_FR2433   P1.4 P1.5 P3.2
-; MSP_EXP430FR2433     P1.3   P1.2               P3.2   P3.1   MSP_EXP430FR2433   P1.4 P1.5 P1.0
-; MSP_EXP430FR2355     P1.3   P1.2               P3.2   P3.3   MSP_EXP430FR2355   P4.3 P4.2 P2.0
-; LP_MSP430FR2476      P4.3   P4.4               P3.2   P3.3   LP_MSP430FR2476    P1.4 P1.5 P6.1
+; ---------------------------------------------------              ---------------------------
+; TERMINAL driver for I2CFastForth target (I2C Slave)              see MSP430-FORTH/UARTI2CS.f
+; ---------------------------------------------------              ---------------------------
+;        |                                                                      |
+;        |                                                                      |
+;        |             GND------------------------------GND                     |
+;        |             3V3-------------o---o------------3V3                     |
+;        |                             |   |                                    | 
+;        |                             1   1                                    | 
+;        |                             k   k                Txy.z output        | 
+;        v                             0   0                     to             v                 GND-------------------------------------GND 
+;   I2C_FastForth                      |   |                  Px.y int       UARTI2CS              +-------------------------------------->+
+;     (hardware         +<-------------|---o------------>+     jumper       (Software              |    +<----------------------------+    |
+;     I2C Slave)        ^      +<------o----------+      ^     +--->+       I2C Master)            |    |    +------(option)---->+    |    |
+;                       v      v                  ^      v     ^    |                              ^    v    ^                   v    ^    v
+; I2C_FastForth(s)     SDA    SCL  connected to: SCL    SDA    |    v   I2C_to_UART_bridge        TXD  RXD  RTS  connected to : CTS  TXD  RXD  UARTtoUSB <--> COMx <--> TERMINAL
+; ------------------   ----   ----               ----   ----             ----------------         ---  ---  ---                 ---  ---  ---  ---------      ----      --------
+; MSP_EXP430FR2355     P1.2   P1.3               P3.3   P3.2  P1.7 P1.6  MSP_EXP430FR2355 (24MHz) P4.3 P4.2 P2.0                               PL2303GC                    |      
+; MSP_EXP430FR5739     P1.6   P1.7               P4.1   P4.0  P1.1 P1.0  MSP_EXP430FR5739 (24MHz) P2.0 P2.1 P2.2                               PL2303HXD                   v
+; MSP_EXP430FR5969     P1.6   P1.7               P1.3   P1.2  P2.2 P3.4  MSP_EXP430FR5969 (16MHz) P2.0 P2.1 P4.1                               PL2303TA               TERATERM.EXE     
+; MSP_EXP430FR5994     P7.0   P7.1               P8.1   P8.2  P1.5 P1.4  MSP_EXP430FR5994 (16MHz) P2.0 P2.1 P4.2                               CP2102                       
+; MSP_EXP430FR6989     P1.6   P1.7               P1.5   P1.3  P3.6 P3.7  MSP_EXP430FR6989 (16MHz) P3.4 P3.5 P3.0                                                                  
+; MSP_EXP430FR4133     P5.2   P5.3               P8.3   P8.2  P1.6 P1.7  MSP_EXP430FR4133 (16MHz) P1.0 P1.1 P2.3                                                                  
+; MSP_EXP430FR2433     P1.2   P1.3               P3.1   P3.2  P1.2 P1.3  MSP_EXP430FR2433 (16MHz) P1.4 P1.5 P1.0                                                                      
+; LP_MSP430FR2476      P4.4   P4.3               P3.3   P3.2  P1.2 P1.1  LP_MSP430FR2476  (16MHz) P1.4 P1.5 P6.1                                                                                                                                
 ;
 ; don't forget to link 3V3 and GND on each side and to add 3k3 pullup resistors on SDA and SCL.
 ;
-;-------------------------------------------------------------------------------
-; I2C TERMINAL: QABORT ABORT_TERM INIT_FORTH INIT_TERM COLD_TERM RXON I2C_CTRL_CH
-;-------------------------------------------------------------------------------
+;-----------------------------------------------------------------------------------------------------------
+; I2C TERMINAL: ?ABORT, INIT values of ABORT_APP, BACKGRND_APP, HARD_APP, COLD_APP and SOFT_APP
+;-----------------------------------------------------------------------------------------------------------
 
-;-----------------------------------;
-INIT_FORTH                          ; common ABORT_TERM|WARM subroutine, to init DEFERed definitions + INIT_FORTH
-;-----------------------------------;
-            MOV @RSP+,IP            ; init IP with CALLER next address
-;                                   ;
-            MOV #PUC_ABORT_ORG,X    ; FRAM INFO         FRAM MAIN
-;                                   ; ---------         ---------
-            MOV @X+,&PFAACCEPT      ; BODYACCEPT    --> PFAACCEPT
-            MOV @X+,&PFAEMIT        ; BODYEMIT      --> PFAEMIT
-            MOV @X+,&PFAKEY         ; BODYKEY       --> PFAKEY
-            MOV @X+,&CIB_ORG        ; TIB_ORG       --> CIB_ORG
-;                                   ;
-;                                   ; FRAM INFO         REG|RAM
-;                                   ; ---------         -------
-            MOV @X+,RSP             ; INIT_RSTACK   --> R1=RSP
-            MOV @X+,rDOCOL          ; EXIT          --> R4=rDOCOL   (if DTC=2)
-            MOV @X+,rDODOES         ; XDODOES       --> R5=rDODOES
-            MOV @X+,rDOCON          ; XDOCON        --> R6=rDOCON
-            MOV @X+,rDOVAR          ; RFROM         --> R7=rDOVAR
-            MOV @X+,&CAPS           ; INIT_CAPS     --> RAM CAPS            init CAPS ON
-            MOV @X+,&BASEADR        ; INIT_BASE     --> RAM BASE            init decimal base
-            MOV @X+,&LEAVEPTR       ; INIT_LEAVE    --> RAM LEAVEPTR
-            MOV #0,&STATE           ; 0             --> RAM STATE
-            CALL &SOFT_APP          ; default SOFT_APP = INIT_SOFT = RET_ADR, value set by DEEP_RESET.
-            MOV #SEL_RST,PC         ; goto PUC 7 to select the user's choice from TOS value: RST_RET|DEEP_RESET
+; ==================================;
+ABORT_TERM                          ; INIT value of ABORT_APP,  used by SD_CARD_ERROR
+; ==================================;
+            MOV.B #-1,Y             ; send $FF (QABORT_YES Ctrl_Char) to UARTtoI2C bridge (I2C Master), used by SD_CARD_ERROR
+            JMP I2C_CTRL_CH         ; then RET
 ;-----------------------------------;
 
 ; ?ABORT defines the run-time part of ABORT"
 ;-----------------------------------;
 QABORT      CMP #0,2(PSP)           ; -- f addr cnt     if f is true abort current process then display ABORT" msg.
-            JNZ ABORT_TERM          ;
-THREEDROP   ADD #4,PSP              ; -- cnt
+            JNZ QABORT_YES          ;
+            ADD #4,PSP              ; -- cnt
             JMP DROP                ;
 ; ----------------------------------;
-ABORT_TERM  PUSH #ABORT_INIT        ; called by INTERPRET, QREVEAL, TYPE2DOES
+QABORT_YES  CALL &ABORT_APP         ;                   QABORT_YES called by INTERPRET, QREVEAL, TYPE2DOES
 ; ----------------------------------;
-I2C_ABORT   MOV.B #-1,Y             ; send $FF (ABORT_TERM Ctrl_Char) to UARTtoI2C bridge (I2C Master)
-            JMP I2C_CTRL_CH         ;
-ABORT_INIT  CALL #INIT_FORTH        ;                   common ?ABORT|PUC subroutine
-A_TERM_END  .word   DUP             ; -- f addr cnt cnt
+            CALL #INIT_FORTH        ;                   common ?ABORT|PUC subroutine
+            .word   DUP             ; -- f addr cnt cnt
             .word   QFBRAN,ABORT_END; -- f addr 0       if cnt = 0 display nothing
             .word   ECHO            ; -- f addr cnt     force ECHO
             .word   XSQUOTE         ;
@@ -89,20 +67,20 @@ SDABORT_END .word   XSQUOTE         ;                   set normal video Display
 ABORT_END   .word   ABORT           ; -- f|f addr 0     no return
 ; ----------------------------------;
 
-; ----------------------------------;
-INIT_BACKGRND                       ; default content of BACKGRND_APP called by BACKGRND
-; ----------------------------------;
-I2C_INIT_BACKGRND                   ;
-; ----------------------------------;
+; ==================================;
+INIT_BACKGRND                       ; INIT value of BACKGRND_APP
+; ==================================;
 I2C_ACCEPT  MOV.B #0,Y              ; ACCEPT request Ctrl_Char = $00
-            JMP I2C_CTRL_CH         ;
+            JMP I2C_CTRL_CH         ; then RET
 ; ----------------------------------;
 
 ;-------------------------------------------------------------------------------
 ; INIT TERMinal then enable I/O
 ;-------------------------------------------------------------------------------
-INIT_TERM                           ; default content of HARD_APP called by WARM
-; ----------------------------------; TOS = USERSYS, don't change
+
+; ==================================;
+INIT_TERM                           ; INIT value of HARD_APP called by WARM
+; ==================================;
         BIS #07C0h,&TERM_CTLW0      ; set I2C_Slave in RX mode to receive I2C_address
         MOV &I2CSLAVEADR,Y          ; I2C_Slave_address<<1 value found in FRAM INFO
         RRA Y                       ; shift it right one 
@@ -112,10 +90,12 @@ INIT_TERM                           ; default content of HARD_APP called by WARM
         BIC #1,&TERM_CTLW0          ; release UC_TERM from reset...
         BIS #WAKE_UP,&TERM_IE       ; ...enable interrupt for wake up on START
         BIC #LOCKLPM5,&PM5CTL0      ; then activate all previous I/O settings.
-; ----------------------------------;
-INIT_STOP                           ; default content of STOP_APP called by SYS, does nothing
-; ----------------------------------;
-INIT_SOFT   MOV @RSP+,PC            ; default content of SOFT_APP called by INIT_FORTH, does nothing
+; ==================================;
+INIT_STOP                           ; INIT value of STOP_APP called by SYS, does nothing
+; ==================================;
+INIT_SOFT                           ; INIT value of SOFT_APP
+; ==================================;
+   MOV @RSP+,PC                     ;
 ; ----------------------------------;
 
 ;-------------------------------------------------------------------------------
@@ -146,7 +126,6 @@ WARM                                ; (n) --
         .word   BRAN,ABORT_TYPE     ; no return
 ;-----------------------------------;
 
-;-----------------------------------;
             FORTHWORD "SYS"         ; n --      select COLD, DEEP_COLD, WARM (as software RST,DEEP_RST,WARM)
 ;-----------------------------------;
 SYS         CALL &STOP_APP          ; default STOP_APP = INIT_STOP, set by DEEP_RESET.
@@ -192,10 +171,21 @@ RESET                               ; <-- RST vect. <-- SYS_failures PUC POR BOR
 INITRAMLOOP SUB #2,X                ; 1
             MOV #0,RAM_ORG(X)       ; 3
             JNZ INITRAMLOOP         ; 2     6 cycles loop !
+; ;-------------------------------------------------------------------------------
+; ; PUC 5: GET SYSRSTIV and USERSYS
+; ;-------------------------------------------------------------------------------
+;             MOV &SYSRSTIV,X        ; X <-- SYSRSTIV <-- 0
 ;-------------------------------------------------------------------------------
-; PUC 5: GET SYSRSTIV and USERSYS
+; PUC 5: GET SYSUNIV_SYSSNIV_SYSRSTIV ( %0_UUU0_SSSS0_RRRRR0) and USERSYS
 ;-------------------------------------------------------------------------------
-            MOV &SYSRSTIV,X         ; X <-- SYSRSTIV <-- 0
+            MOV &SYSUNIV,X          ; 0 --> SYSUNIV --> X   (%0000_0000_0000_UUU0) (7 values)
+            RLAM #4,X               ; make room for SYSSNIV (%0000_0000_UUU0_0000)
+            ADD X,X                 ;                       (%0000_000U_UU00_0000)
+            BIS &SYSSNIV,X          ; 0 --> SYSSNIV --> X   (%0000_000U_UU0S_SSS0) (15 values)
+            RLAM #4,X               ; make room for SYSRSTIV(%000U_UU0S_SSS0_0000)
+            RLAM #2,X               ;                       (%0UUU_0SSS_S000_0000)
+            BIS.B &SYSRSTIV,X       ; 0 --> SYSRSTIV --> X  (%0UUU_0SSS_S0RR_RRR0) (31 values)
+;-------------------------------------------------------------------------------
             MOV &USERSYS,TOS        ; TOS = USERSYS (FRAM)
             MOV #0,&USERSYS         ; and clear USERSYS
             BIT.B #-1,TOS           ; high byte reserved use
@@ -211,6 +201,7 @@ PUCNEXT     .word WARM              ; no return. May be replaced by XBOOT by BOO
 ;-------------------------------------------------------------------------------
 ; INTERPRETER INPUT: ACCEPT KEY EMIT ECHO NOECHO
 ;-------------------------------------------------------------------------------
+
             FORTHWORD "ACCEPT"      ;
 ; ----------------------------------;
 ;https://forth-standard.org/standard/core/ACCEPT
@@ -278,11 +269,10 @@ LF_NEXT     BIT #10h,&TERM_CTLW0    ;4      test UCTR, instead of BUS idle becau
             JZ LF_NEXT              ;       wait until Master switched from TX to RX
 ; ----------------------------------;
             SUB @PSP+,TOS           ; -- len'
-ACCEPT_EOL  MOV S,Y                 ;       output a BL on TERMINAL (for the case of error occuring)
+            MOV S,Y                 ;       output a BL on TERMINAL (for the case of error occuring)
             JMP QYEMIT              ;       before going to INTERPRET
 ; **********************************;
 
-; ----------------------------------;
             FORTHWORD "KEY"         ;
 ; ----------------------------------;
 ; https://forth-standard.org/standard/core/KEY
@@ -306,7 +296,6 @@ BKEYLOOP    BIT #RX_TERM,&TERM_IFG  ;           received char ?
 BKEYEND     MOV @IP+,PC             ; -- char
 ; ----------------------------------;
 
-; ----------------------------------;
             FORTHWORD "EMIT"        ;
 ; ----------------------------------;
 ; https://forth-standard.org/standard/core/EMIT
@@ -321,7 +310,6 @@ QYEMIT      BIT #TX_TERM,&TERM_IFG  ;3 NOECHO stores here : MOV @IP+,PC, ECHO st
             MOV @IP+,PC             ;4 11 words
 ; ----------------------------------;
 
-;-----------------------------------;
             FORTHWORD "ECHO"        ; --    connect EMIT to TERMINAL (default)
 ;-----------------------------------;
 ECHO        MOV #0B3A2h,&QYEMIT     ;       MOV #'BIT #TX_TERM,0(PC)',&QYEMIT
@@ -330,7 +318,6 @@ ECHOEND     CALL #I2C_CTRL_CH       ;
             MOV @IP+,PC             ;
 ; ----------------------------------;
 
-;-----------------------------------;
             FORTHWORD "NOECHO"      ; --    disconnect TERMINAL from EMIT
 ;-----------------------------------;
 NOECHO      MOV #4D30h,&QYEMIT      ;       MOV #'MOV @IP+,PC',&QYEMIT

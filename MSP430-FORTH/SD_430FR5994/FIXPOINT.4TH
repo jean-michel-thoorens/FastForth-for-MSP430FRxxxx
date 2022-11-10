@@ -11,10 +11,10 @@
     0<> IF MOV #0,R14 THEN
     MOV R14,0(R15)
     MOV &$180A,R14
-    SUB #400,R14
+    SUB #401,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     ABORT" build FastForth with Q15.16_INPUT addon !"
     RST_RET
     $1B EMIT $63 EMIT

@@ -49,10 +49,10 @@
     0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (FIXPOINT input), set TOS = 0
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #400,TOS            \ FastForth V4.0
+    SUB #401,TOS            \ FastForth V4.1
     COLON
     $0D EMIT                \ return to column 1 without CR
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     ABORT" build FastForth with Q15.16_INPUT addon !"
     RST_RET                 \ if no abort remove this word
     $1B EMIT $63 EMIT       \ send 'ESC c' (clear screen)

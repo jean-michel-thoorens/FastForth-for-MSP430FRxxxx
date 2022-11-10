@@ -1,5 +1,6 @@
 
 @set-syntax{C;\;}!  replace ! by semicolon
+
 ; virtual MSP_EXP430FR5972.pat from MSP_EXP430FR6989.pat
 ;
 \.f=\.4th for MSP_EXP430FR5972;      to change file type
@@ -9,17 +10,13 @@
 ;========================
 \\*\n=
 \s\\*\n=\n
+
 ; ======================================================================
 ; MSP430FR6989 Config
 ; ======================================================================
+
 @reset-syntax{}; to enable good interpreting of next line
 @define{@read{@mergepath{@inpath{};MSP430FR5972.pat;}}}
-@reset-syntax{}; to enable good interpreting of next line
-@define{@read{@mergepath{@inpath{};MSP430FRxxxx.pat;}}}
-@reset-syntax{}; enable good interpreting of next line
-@define{@read{@mergepath{@inpath{};MSP430FR5xxx.pat;}}}
-@reset-syntax{}; to enable good interpreting of next line
-@define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
 
 ; ======================================================================
 ; MSP_EXP430FR5972 board

@@ -1,13 +1,24 @@
 
 @set-syntax{C;\;}!  tell GEMA to replace default Comment separator '!' by ';'
+
 ;MSP430fr2xxx.pat
+;
 ; ============================================
-; RAM area cleared by any PUC event
+; RAM
 ; ============================================
-; RAM_ORG=\$2000;
 ;
 ; ----------------------------------------------
-; FastForth RAM memory map:
+; FORTH RAM areas :
+; ----------------------------------------------
+LSTACK_SIZE=\#16; words
+PSTACK_SIZE=\#48; words
+RSTACK_SIZE=\#48; words
+PAD_LEN=\#84; bytes
+CIB_LEN=\#84; bytes
+HOLD_SIZE=\#34; bytes
+;
+; ----------------------------------------------
+; FastForth RAM memory map (>= 1k):
 ; ----------------------------------------------
 LEAVEPTR=\$2000;        Leave-stack pointer, init by QUIT
 LSATCK=\$2000;          leave stack,      grow up
@@ -18,7 +29,7 @@ PAD_I2CADR=\$20E0;      RX I2C address
 PAD_I2CCNT=\$20E2;      count max
 PAD_ORG=\$20E4;         user scratch pad buffer, 84 bytes, grow up
 ;
-TIB_I2CADR=\$2138;      TX I2C address
+TIB_I2CADR=\$2138;      TX I2C address 
 TIB_I2CCNT=\$213A;      count of bytes
 TIB_ORG=\$213C;         Terminal input buffer, 84 bytes, grow up
 ;
@@ -28,34 +39,43 @@ HOLD_BASE=\$21B2;       BASE HOLD area, grow down
 HP=\$21B2;              HOLD ptr
 STATEADR=\$21B4;        Interpreter state
 BASEADR=\$21B6;         base
-CAPS=\$21B8;            CAPS ON/OFF
-SOURCE_LEN=\$21BA;      len of input stream
-SOURCE_ORG=\$21BC;      adr of input stream
-TOIN=\$21BE;            >IN
+SOURCE_LEN=\$21B8;      len of input stream
+SOURCE_ORG=\$21BA;      adr of input stream
+TOIN=\$21BC;            >IN
 ;
-DP=\$21C0;              dictionary ptr
-LASTVOC=\$21C2;         keep VOC-LINK
-CURRENT=\$21C4;         CURRENT dictionnary ptr
-CONTEXT=\$21C6;         CONTEXT dictionnary space (8 + Null CELLS)
+DP=\$21BE;              dictionary ptr
+LASTVOC=\$21C0;         keep VOC-LINK
+CURRENT=\$21C2;         CURRENT dictionnary ptr
+CONTEXT=\$21C4;         CONTEXT dictionnary space (8 + Null CELLS)
 ;
 ; ---------------------------------------
-; RAM_ORG + $1D8 : may be shared between FORTH compiler and user application
+; RAM_ORG + $218 : may be shared between FORTH compiler and user application
 ; ---------------------------------------
-LAST_NFA=\$21D8;
-LAST_THREAD=\$21DA;
-LAST_CFA=\$21DC;
-LAST_PSP=\$21DE;
-ASMBW1=\$21E0;          3 backward labels
-ASMBW2=\$21E2;
-ASMBW3=\$21E4;
-ASMFW1=\$21E6;          3 forward labels
-ASMFW2=\$21E8;
-ASMFW3=\$21EA;
+LAST_NFA=\$21D6;
+LAST_THREAD=\$21D8;
+LAST_CFA=\$21DA;
+LAST_PSP=\$21DC;
+ASMBW1=\$21DE;          3 backward labels
+ASMBW2=\$21E0;
+ASMBW3=\$21E2;
+ASMFW1=\$21E4;          3 forward labels
+ASMFW2=\$21E6;
+ASMFW3=\$21E8;
+PREV_TOIN=\$21EA;
+; ---------------------------------------
+; RAM_ORG + $1EC RAM free 
+; ---------------------------------------
 ;
 ; ---------------------------------------
 ; RAM_ORG + $1EC RAM free 
 ; ---------------------------------------
 ;
+; ---------------------------------------
+; RAM_ORG + $1FC: SD  RAM
+; ---------------------------------------
+SD_ORG=\$21FC
+SD_LEN=\$374;
+
 ; ---------------------------------------
 ; RAM_ORG + $1FC: SD buffer
 ; ---------------------------------------
@@ -65,7 +85,7 @@ SD_BUF=\$2200;      \ SD_Card buffer
 SD_BUF_END=\$2400;
 ;
 ; ---------------------------------------
-; FAT16 FileSystemInfos
+; FAT32 FileSystemInfos
 ; ---------------------------------------
 FATtype=\$2402;
 BS_FirstSectorL=\$2404;
@@ -146,21 +166,20 @@ HDLH_CurClust=16;   Current ClusterHi (T as 3Th byte)
 HDLL_CurSize=18;    written size / not yet read size (Long)
 HDLH_CurSize=20;    written size / not yet read size (Long)
 HDLW_BUFofst=22;    SD BUFFER offset ; used by LOAD" and by WRITE"
-HDLW_PrevLEN=24;    CIB LEN of previous handle
-HDLW_PrevORG=26;    CIB ORG of previous handle
+HDLW_PrevLEN=24;    interpret_buffer_LEN of previous handle
+HDLW_PrevORG=26;    interpret_buffer_ORG of previous handle
+HDLW_PrevTOIN=28;   interpret_buffer_PTR of previous handle
+HDLW_PrevQYEMIT=30; echo state of previous handle
 
 
 ;OpenedFirstFile     ; "openedFile" structure
 HandleMax=8;
-HandleLenght=28;
+HandleLenght=32;
 FirstHandle=\$2438;
-HandleEnd=\$2518;
+HandleEnd=\$2538;
 
 ;SD_card Input Buffer
-SDIB_I2CADR=\$2518;
-SDIB_I2CCNT=\$251A;
-SDIB_ORG=\$251C;
-
-SD_END=\$2570;
-SD_LEN=\$16E;
-
+SDIB_I2CADR=\$2538;
+SDIB_I2CCNT=\$253A;
+SDIB_ORG=\$253C;
+SDIB_LEN=\$54;

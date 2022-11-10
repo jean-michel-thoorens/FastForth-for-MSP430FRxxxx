@@ -3,10 +3,10 @@
     SUB #2,R15
     MOV R14,0(R15)
     MOV &$180A,R14
-    SUB #400,R14
+    SUB #401,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     RST_RET
     ;
 
@@ -46,15 +46,15 @@ BW1 SUB #2,R15
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -63,9 +63,9 @@ BW1 SUB #2,R15
     [UNDEFINED] ELSE
     [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10)
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -91,9 +91,9 @@ BW1 SUB #2,R15
     ENDCODE IMMEDIATE
 
     CODE UNTIL
-    MOV #$4096,R9
-BW1 ADD #4,&$1DC0
-    MOV &$1DC0,R10
+    MOV #[THEN]+$52,R9
+BW1 ADD #4,&$1DBE
+    MOV &$1DBE,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     MOV @R15+,R14
@@ -101,7 +101,7 @@ BW1 ADD #4,&$1DC0
     ENDCODE IMMEDIATE
 
     CODE AGAIN
-    MOV #$409C,R9
+    MOV #[THEN]+$58,R9
     GOTO BW1
     ENDCODE IMMEDIATE
 
@@ -130,8 +130,8 @@ BW1 ADD #4,&$1DC0
     CODE DO
     SUB #2,R15
     MOV R14,0(R15)
-    ADD #2,&$1DC0
-    MOV &$1DC0,R14
+    ADD #2,&$1DBE
+    MOV &$1DBE,R14
     MOV #XDO,-2(R14)
     ADD #2,&$1C00
     MOV &$1C00,R10
@@ -153,8 +153,8 @@ BW1 BIT #$100,R2
 
     CODE LOOP
     MOV #XLOOP,R9
-BW2 ADD #4,&$1DC0
-    MOV &$1DC0,R10
+BW2 ADD #4,&$1DBE
+    MOV &$1DBE,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     BEGIN

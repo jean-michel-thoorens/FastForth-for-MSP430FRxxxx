@@ -12,7 +12,7 @@
 \ MSP_EXP430FR4133  CHIPSTICK_FR2433    MSP_EXP430FR2433    MSP_EXP430FR2355
 \ LP_MSP430FR2476
 \ MY_MSP430FR5738_2
-\ JMJ_BOX_2018_10_29
+\ JMJ_BOX_2018_10_29    JMJ_BOX_2022_07_28
 \
 \ from scite editor : copy your TARGET selection in (shift+F8) parameter 1:
 \                     copy COMPLEMENT if used in (shift+F8) parameter 2:
@@ -31,10 +31,10 @@
     SUB #2,PSP
     MOV TOS,0(PSP)
     MOV &VERSION,TOS        \ ARG
-    SUB #400,TOS            \ FastForth V4.0
+    SUB #401,TOS            \ FastForth V4.1
     COLON
     'CR' EMIT               \ return to column 1, no 'LF'
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     RST_RET                 \ remove ABORT_FF_SPECS definition before resuming
     ;
 
@@ -513,14 +513,21 @@ BW2 ADD #4,&DP              \ make room to compile two words
 ; end of definitions we need
 ; --------------------------
 
+    CODE 2*DUP
+    SUB #2,PSP
+    ADD TOS,TOS
+    MOV TOS,0(PSP)
+    MOV @IP+,PC
+    ENDCODE
+
     [UNDEFINED] S? [IF] \
-    CODE S?             \           to compile: sep S? <string>sep
-    MOV #S"+10,PC       \           (S" + 10) --> PC
+    CODE S?             \  sep ---          to compile: sep S? <string>sep
+    MOV #S"+$0A,PC      \                   (S" + 10) --> PC
     ENDCODE IMMEDIATE
     [THEN]
 
     [UNDEFINED] ESC [IF]
-    CODE ESC
+    CODE ESC            \ we can't use  which is trapped by TERMINAL !
     CMP #0,&STATEADR
     0= IF MOV @IP+,PC   \ interpret time usage disallowed
     THEN
@@ -528,35 +535,39 @@ BW2 ADD #4,&DP              \ make room to compile two words
     'ESC'               \ -- char escape
     POSTPONE LITERAL    \ compile-time code : lit 'ESC'
     POSTPONE EMIT       \ compile-time code : EMIT
-    'SP'                \ char SPACE as separator for next string
+    'SP'                \ char SPACE as separator for end of string
     POSTPONE S?         \ compile-time code : S?
     POSTPONE TYPE       \ compile-time code : TYPE
     ; IMMEDIATE
     [THEN]
 
     [DEFINED] FORTH [IF]    \ word-set addon ?
-    CODE BODY>SQNFA     \ BODY -- ADR cnt             BODY > SQuoteNFA
-    SUB #2,PSP
-    SUB #4,TOS
-    MOV TOS,Y           \ Y = CFA
-    MOV Y,X             \ X = CFA
+\ NFA address is always even
+\ [NFA] = count_of_string + Immediate_flag
+\ NFA + count_of_string_odd = CFA
+\ NFA + count_of_string_even + 1 = CFA
+    CODE BODY>SQNFA     \ BODY -- NFA(addr cnt)             BODY > SQuoteNFA
+    SUB #2,PSP          \ -- x BODY
+    SUB #4,TOS          \ -- x CFA
+    MOV TOS,Y           \               Y = CFA
+    MOV Y,X             \               X = CFA
     BEGIN
-        SUB #2,X
-        MOV X,0(PSP)    \ -- string_test_address CFA
-        MOV.B @X+,TOS   \ -- string_test_address cnt_test
-        RRA TOS         \ -- string_test_address cnt_test/2
-        MOV TOS,W
-        BIT #1,W        \           cnt_test even ?
+        SUB #2,X        \ --            X = CFA-2i = NFA ?
+        MOV X,0(PSP)    \ -- CFA-2i x
+        MOV.B @X+,TOS   \ -- CFA-2i cnt_test+Imm
+        RRA TOS         \ -- CFA-2I cnt_test
+        MOV TOS,W       \
+        ADD #1,TOS
+        BIT #1,W        \                   cnt_test even ?
         0= IF
-            ADD #1,W    \           if yes add #1,TOS
+            ADD #1,W    \                   if yes add #1 to cnt_test
         THEN
-        ADD X,W         \           string_test_address + cnt_test
-        CMP W,Y         \           string_test_address + cnt_test = CFA ?
-    0<> WHILE           \           out of loop if yes
-        MOV @PSP,X      \           loop back to test with X - one_word
+        ADD X,W         \                   CFA-2i + aligned_cnt_test
+        CMP W,Y         \                   CFA-2i + aligned_cnt_test = CFA ?
+    0<> WHILE           \                   out of loop if yes
+        MOV @PSP,X      \                   loop back to test with CFA-2(i+1)
     REPEAT
-    MOV X,0(PSP)        \ -- string_addr string_cnt of NFA
-    MOV @IP+,PC
+    MOV @IP+,PC         \ -- addr cnt
     ENDCODE
     [THEN]
 
@@ -567,6 +578,7 @@ BW2 ADD #4,&DP              \ make room to compile two words
     ESC [8;42;80t       \ set 42L * 80C terminal display
 \
 \   title in reverse video
+    CR
     ESC [7m             \ Turn reverse video on
     CR ." FastForth V"
     VERSION @
@@ -613,21 +625,18 @@ BW2 ADD #4,&DP              \ make room to compile two words
     THEN ." MHz, "                      \ MCLK
     - U. ." bytes"                      \ HERE - MAIN_ORG = number of bytes code,
     ESC [0m                             \ Turn off character attributes
-\
-\   general
     CR
+
+\
+\   FORTH specs
     ." /COUNTED-STRING   = 255" CR
     ." /HOLD             = 34" CR
     ." /PAD              = 84" CR
     ." ADDRESS-UNIT-BITS = 16" CR
-    [DEFINED] {CORE_ANS}
-    [IF]
     ." FLOORED DIVISION  = "
-    KERNEL_ADDON @                      \ negative value if FLOORED DIVISION
-    0< IF ." true"
-    ELSE  ." false"
-    THEN    CR
-    [THEN]
+    [DEFINED] SM/REM [IF] ." false" [THEN]
+    [DEFINED] FM/MOD [IF] ." true" [THEN]
+    CR
     ." MAX-CHAR          = 255" CR
     ." MAX-N             = 32767" CR
     ." MAX-U             = 65535" CR
@@ -635,65 +644,84 @@ BW2 ADD #4,&DP              \ make room to compile two words
     ." MAX-UD            = 4294967295" CR
     ." STACK-CELLS       = 48" CR
     ." RETURN-STACK-CELLS= 48" CR
-    ." Definitions are always UPPERCASE." CR
-\
+    ." Definitions are forced UPPERCASE" CR
+\    ." BACKGROUND, COLD, WARM, ABORT customizable" CR
+\    ." automatic garbage collector" CR
+
 \   kernel specs
-    CR ESC [7m ." Kernel add-ons" ESC [0m CR  \ subtitle in reverse video
+    CR ESC [7m ." KERNEL add-ons" ESC [0m CR  \ subtitle in reverse video
     KERNEL_ADDON @
-    2*  DUP 0< IF ." 32.768kHz LF XTAL" CR THEN             \ BIT14
-    2*  DUP 0< IF ." /RTS /CTS " 2*                         \ BIT13
-            ELSE  2* DUP                                    \ /BIT13
-                0< IF ." /RTS " THEN                        \ /BIT13 & BIT12
-            THEN
-    2*  DUP 0< IF ." XON/XOFF "  THEN                       \ BIT11
-    2*  DUP 0< IF ." Half-Duplex "  THEN                    \ BIT10
-    2*  DUP 0< IF ." I2C_Master TERMINAL"                   \ BIT9
-            ELSE  ." UART TERMINAL" THEN CR                 \ /BIT9
-    2*  DUP 0< IF 2* DUP 0< IF ." DOUBLE and "                  \  BIT8 + BIT7
-                         THEN  ." Q15.16 numbers handling" CR
-            ELSE  2* DUP 0< IF ." DOUBLE numbers handling" CR   \ /BIT8 + BIT7
-                         THEN
-            THEN
-    2*  DUP 0< IF ." MSP430_X assembler with TI's syntax"
-                    CR 2* 2*                                \ BIT6 BIT5 BIT4
-            ELSE                                            \ /BIT6
-                2*  DUP
-                0< IF ." MSP430 Assembler"                  \       BIT5
-                    2*  DUP
-                    0< IF ." , 20bits extended addresses,"  \               BIT4
-                    THEN
-                ELSE 2*                                     \               BIT4
+    2*DUP   0< IF ." 32.768kHz LF XTAL" CR THEN         \ BIT14
+    2*DUP   0< IF ." /CTS " THEN                        \ BIT13
+    2*DUP   0< IF ." /RTS " THEN                        \ BIT12
+    2*DUP   0< IF ." XON/XOFF "  THEN                   \ BIT11
+    2*DUP   0< IF ." Half-Duplex "  THEN                \ BIT10
+    2*DUP   0< IF ." I2C_Master TERMINAL"               \ BIT9
+            ELSE  ." UART TERMINAL"                     \ /BIT9
+            THEN CR
+    2*DUP   0< IF 2*DUP
+                0< IF ." DOUBLE and "                   \  BIT8 + BIT7
+                THEN  ." Q15.16 numbers handling" CR
+            ELSE  2*DUP
+                0< IF ." DOUBLE numbers handling" CR    \ /BIT8 + BIT7
                 THEN
-                ."  with TI's syntax" CR
-            THEN DROP                                       \ BIT2 to BIT0 are free
+            THEN
+    2*DUP   0< IF       ." MSP430 16/20bits"            \ BIT6   BIT5
+            ELSE  2*DUP ." MSP430 16bits"               \ /BIT6
+                0< IF   ."  (20bits addr)"              \        BIT5
+                THEN
+            THEN    ."  assembler, with TI's syntax" CR
+    DROP
     [DEFINED] FORTH [IF] ." word-set management" CR 
     [THEN]
-    [DEFINED] LOAD" [IF] ." SD_CARD Load" CR
+    [DEFINED] LOAD" [IF] ." SD_CARD Load + Bootloader" CR
     [THEN]
-    [DEFINED] BOOT  [IF] ." SD_CARD Bootloader" CR
+    [DEFINED] READ" [IF] ." SD_CARD Read/Write/Del/CopyTERM2SD" CR
     [THEN]
-    [DEFINED] READ" [IF] ." SD_CARD Read/Write" CR
+
+\   extensions
+    CR ESC [7m ." EXTENSIONS" ESC [0m   \ subtitle in reverse video
+    [DEFINED] {CORE_ANS} [IF] CR ." CORE ANS94 'CORETEST passed'"
     [THEN]
-\
+    [DEFINED] {DOUBLE}   [IF] CR ." DOUBLE numbers set"
+    [THEN]
+    [DEFINED] {UTILITY}  [IF] CR ." UTILITY"
+    [THEN]
+    [DEFINED] {FIXPOINT} [IF] CR ." Q15.16 ADD SUB MUL DIV"
+    [THEN]
+    [DEFINED] {CORDIC}   [IF] CR ." CORDIC engine"
+    [THEN]
+    [DEFINED] {SD_TOOLS} [IF] CR ." SD_TOOLS"
+    [THEN]
+    [DEFINED] {RTC}      [IF] CR ." RTC utility"
+    [THEN]
+    [DEFINED] {UARTI2CS} [IF] CR ." UART to I2C_FastForth bridge"
+    [THEN]
+    CR
+
 \   display word-sets
+\   ------------------------------------\
     LASTVOC                             \ -- VOCLINK addr.
     BEGIN
         @ ?DUP                          \ -- VOCLINK            word-set here ?
     WHILE                               \ -- VLK
 \       --------------------------------\
-        CR ESC [7m                      \                       word-set TITLE in reverse video
+        ESC [7m                         \                       word-set TITLE in reverse video
         DUP THREADS @ 2* -              \ -- VLK WORDSET_BODY
         [DEFINED] FORTH                 \                       word-set addon ?
-        [IF] DUP BODY>SQNFA             \ -- VLK WRDST_BODY addr cnt
+        [IF]    DUP BODY>SQNFA          \ -- VLK WRDST_BODY addr cnt
         [ELSE]  OVER @                  \ -- VLK WRDST_BODY NEXT_VLINK
                 IF S" hidden"           \                       if next_vlink <>0
                 ELSE S" FORTH"          \                       if next_vlink = 0
                 THEN                    \ -- VLK WRDST_BODY addr cnt
-        [THEN]
-        TYPE ."  word-set"              \ -- VLK WRDST_BODY
+        [THEN]  TYPE                    \                       type word-set name
+        ."  word-set"                   \ -- VLK WRDST_BODY
         ESC [0m CR
-\       --------------------------------\                       block of DEFINITIONS
-\       : WORDS                         \ VOC_BODY --           customized WORD definition
+\       --------------------------------\
+\       : WORDS                         \ --
+\       --------------------------------\
+\       CR                              \
+\       CONTEXT @                       \ -- VOC_BODY
         PAD_ORG                         \ -- VOC_BODY PAD                  MOVE all threads from VOC_BODY to PAD_ORG
         THREADS @ 2*                    \ -- VOC_BODY PAD THREADS*2
         MOVE                            \ -- vocabulary entries are copied in PAD_ORG
@@ -703,8 +731,8 @@ BW2 ADD #4,&DP              \ make room to compile two words
                 DO                      \ -- ptr MAX            I =  PAD_ptr = thread*2
                 DUP I PAD_ORG + @       \ -- ptr MAX MAX NFAx
                     U< IF               \ -- ptr MAX            if MAX U< NFAx
-                        DROP DROP       \ --                    drop ptr and MAX
-                        I DUP PAD_ORG + @   \ -- new_ptr new_MAX
+                        DROP DROP I     \ --                    drop ptr and MAX
+                        DUP PAD_ORG + @ \ -- new_ptr new_MAX
                     THEN                \
                 2 +LOOP                 \ -- ptr MAX
             ?DUP                        \ -- ptr MAX MAX | -- ptr 0 (all threads in PAD = 0)
@@ -723,28 +751,8 @@ BW2 ADD #4,&DP              \ make room to compile two words
 \       --------------------------------\
         CR                              \ -- VLINK              definitions display
     REPEAT
-    DROP
-\
-\   extensions
-    CR ESC [7m ." EXTENSIONS" ESC [0m   \ subtitle in reverse video
-    [DEFINED] {CORE_ANS} [IF] CR ." CORE ANS94"
-    [THEN]
-    [DEFINED] {DOUBLE}   [IF] CR ." DOUBLE numbers set"
-    [THEN]
-    [DEFINED] {UTILITY}  [IF] CR ." UTILITY"
-    [THEN]
-    [DEFINED] {FIXPOINT} [IF] CR ." Q15.16 ADD SUB MUL DIV"
-    [THEN]
-    [DEFINED] {CORDIC}   [IF] CR ." CORDIC engine"
-    [THEN]
-    [DEFINED] {SD_TOOLS} [IF] CR ." SD_TOOLS"
-    [THEN]
-    [DEFINED] {RTC}      [IF] CR ." RTC utility"
-    [THEN]
-    [DEFINED] {UARTI2CS} [IF] CR ." UART to I2C_FastForth bridge"
-    [THEN]
-    CR
-    SYS                                 \ WARM
+\   ------------------------------------\ --
+    SYS                                 \ [0] SYS = WARM
     ;
 
 SPECS \ performs RST_RET and displays FastForth specs

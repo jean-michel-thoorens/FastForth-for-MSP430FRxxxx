@@ -1,14 +1,14 @@
 
-\ ; -------------------------------------
-\ ; CORETEST.4TH for any FastForth target
-\ ; -------------------------------------
+; -------------------------------------
+; CORETEST.4TH for any FastForth target
+; -------------------------------------
 
     MARKER {CORETEST}
 
     : ABORT_TEST        \ flag --
     $0D EMIT            \ return to column 1, no 'LF'
-    POSTPONE {CORETEST} \ remove all test words
     ABORT" {CORE_ANS} word set not found !"
+    POSTPONE {CORETEST} \ remove all test words
     ;
 
     [UNDEFINED] {CORE_ANS} ABORT_TEST
@@ -16,7 +16,7 @@
     : CORETESTSUCCESS
     $0D DUP EMIT        \ return to column 1, set true flag for ABORT"
     $0A BASE !          \ set decimal
-    {CORETEST}          \ remove all test words
+    {CORETEST}          \ remove all coretest definitionss
     ABORT" CORETEST + COREPLUSTEST success!" \ true_flag --
     ;
 
@@ -1531,5 +1531,5 @@ T{ MA? MA0 MA? MA1 MA? MA2 -> TRUE TRUE FALSE }T
 T{ MA0 -> }T
 T{ MA? MA0 MA? MA1 MA? MA2 -> FALSE FALSE FALSE }T
 
-ECHO
+ECHO 
 CORETESTSUCCESS

@@ -7,10 +7,10 @@
     SUB #2,PSP
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #400,TOS        \ FastForth V4.0
+    SUB #401,TOS        \ FastForth V4.1
     COLON
     'CR' EMIT            \ return to column 1 without 'LF'
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     RST_RET           \ remove ABORT_TEST_ASM definition before resuming
     ;
 

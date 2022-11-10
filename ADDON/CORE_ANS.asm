@@ -360,6 +360,31 @@ MSTAR       MOV @PSP,&MPYS
             MOV @IP+,PC
 
     .ELSE
+
+        .IFNDEF UMSTAR
+            FORTHWORD "UM*"
+; T.I. UNSIGNED MULTIPLY SUBROUTINE: U1 x U2 -> Ud
+; https://forth-standard.org/standard/core/UMTimes
+; UM*     u1 u2 -- ud   unsigned 16x16->32 mult.
+UMSTAR      MOV @PSP,S          ;2 ud1lo
+UMSTAR1     MOV #0,T            ;1 ud1hi=0
+            MOV #0,X            ;1 RESlo=0
+            MOV #0,Y            ;1 REShi=0
+            MOV #1,W            ;1 BIT TEST REGISTER
+UMSTARLOOP  BIT W,TOS           ;1 TEST ACTUAL BIT MRlo
+            JZ UMSTARNEXT       ;2 IF 0: DO NOTHING
+            ADD S,X             ;1 IF 1: ADD ud1lo TO RESlo
+            ADDC T,Y            ;1      ADDC ud1hi TO REShi
+UMSTARNEXT  ADD S,S             ;1 (RLA LSBs) ud1lo x 2
+            ADDC T,T            ;1 (RLC MSBs) ud1hi x 2
+            ADD W,W             ;1 (RLA) NEXT BIT TO TEST
+            JNC UMSTARLOOP      ;2 IF BIT IN CARRY: FINISHED    10~ loop
+            MOV X,0(PSP)        ;3 low result on stack
+            MOV Y,TOS           ;1 high result in TOS
+            MOV @IP+,PC         ;4 17 words
+        .ENDIF
+
+
 ;https://forth-standard.org/standard/core/MTimes
 ;C M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
             FORTHWORD "M*"
@@ -631,7 +656,7 @@ CFETCH      MOV.B @TOS,TOS      ;2
 ;https://forth-standard.org/standard/core/CStore
 ; C!      char c-addr --    store char in memory
             FORTHWORD "C!"
-CSTORE      MOV.B @PSP+,0(TOS)  ;4
+            MOV.B @PSP+,0(TOS)  ;4
             ADD #1,PSP          ;1
             MOV @PSP+,TOS       ;2
             MOV @IP+,PC
@@ -641,7 +666,7 @@ CSTORE      MOV.B @PSP+,0(TOS)  ;4
 ;https://forth-standard.org/standard/core/CComma
 ; C,   char --        append char
             FORTHWORD "C,"
-CCOMMA      MOV &DP,W
+            MOV &DP,W
             MOV.B TOS,0(W)
             ADD #1,&DP
             MOV @PSP+,TOS
@@ -658,14 +683,14 @@ PLUSSTORE   ADD @PSP+,0(TOS)
 ;https://forth-standard.org/standard/core/ALIGNED
 ;C ALIGNED  addr -- a-addr       align given addr
             FORTHWORD "ALIGNED"
-ALIGNED     BIT #1,TOS
+            BIT #1,TOS
             ADDC #0,TOS
             MOV @IP+,PC
 
 ;https://forth-standard.org/standard/core/ALIGN
 ;C ALIGN    --                         align HERE
             FORTHWORD "ALIGN"
-ALIGNN      BIT #1,&DP    ; 3
+            BIT #1,&DP    ; 3
             ADDC #0,&DP   ; 4
             MOV @IP+,PC
 
@@ -777,7 +802,7 @@ XDO         MOV #8000h,X    ;2 compute 8000h-limit = "fudge factor"
             FORTHWORDIMM "DO"       ; immediate
 ; https://forth-standard.org/standard/core/DO
 ; DO       -- DOadr   L: -- 0
-DO          SUB #2,PSP              ;
+            SUB #2,PSP              ;
             MOV TOS,0(PSP)          ;
             ADD #2,&DP             ;   make room to compile xdo
             MOV &DP,TOS            ; -- HERE+2
@@ -897,7 +922,7 @@ CHARR       mDOCOL
 ;https://forth-standard.org/standard/core/BracketCHAR
 ;C [CHAR]   --          compile character literal
             FORTHWORDIMM "[CHAR]"        ; immediate
-BRACCHAR    mDOCOL
+            mDOCOL
             .word   CHARR
             .word   lit,lit,COMMA
             .word   COMMA,EXIT
@@ -947,12 +972,12 @@ FILL_X      MOV @PSP+,TOS   ; pop new TOS
 
 ;https://forth-standard.org/standard/core/HEX
             FORTHWORD "HEX"
-HEX         MOV #16,&BASEADR
+            MOV #16,&BASEADR
             MOV @IP+,PC
 
 ;https://forth-standard.org/standard/core/DECIMAL
             FORTHWORD "DECIMAL"
-DECIMAL     MOV #10,&BASEADR
+            MOV #10,&BASEADR
             MOV @IP+,PC
 
 ; https://forth-standard.org/standard/core/HERE
@@ -963,17 +988,16 @@ DECIMAL     MOV #10,&BASEADR
 ;https://forth-standard.org/standard/core/p
 ;C (                \  --     paren ; skip input until )
             FORTHWORDIMM "\40"      ; immediate
-PARENT       mDOCOL
+            mDOCOL
             .word   lit,')',WORDD,DROP,EXIT
 
 ;https://forth-standard.org/standard/core/Dotp
 ; .(                \  --     dotparen ; type comment immediatly.
             FORTHWORDIMM ".\40"        ; immediate
-DOTPAREN    MOV #0,&CAPS
+            MOV #0,T
             mDOCOL
-            .word   lit,')',WORDD
+            .word   lit,')',WORDD+4
             .word   COUNT,TYPE
-            .word   BL,LIT,CAPS,STORE
             .word   EXIT
 
 ;https://forth-standard.org/standard/core/J
@@ -1123,6 +1147,7 @@ PAD         CALL rDOCON
             MOV @RSP+,IP
             MOV @IP+,PC
 
+    .IFNDEF TO
 ; https://forth-standard.org/standard/core/TO
 ; TO name Run-time: ( x -- )
 ; Assign the value x to named VALUE.
@@ -1130,6 +1155,7 @@ PAD         CALL rDOCON
             BIS #UF9,SR
             MOV @IP+,PC
 
+    .ENDIF
 ; https://forth-standard.org/standard/core/VALUE
 ; ( x "<spaces>name" -- )                      define a Forth VALUE
 ; Skip leading space delimiters. Parse name delimited by a space.

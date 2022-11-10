@@ -7,10 +7,10 @@
     0<> IF MOV #0,R14 THEN
     MOV R14,0(R15)
     MOV &$180A,R14
-    SUB #400,R14
+    SUB #401,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     ABORT" build FastForth with DOUBLE_INPUT addon!"
     RST_RET
     ;
@@ -43,153 +43,6 @@
     SUB #2,R15
     MOV R14,0(R15)
     MOV @R1+,R14
-    MOV @R13+,R0
-    ENDCODE
-    [THEN]
-
-    [UNDEFINED] 0< [IF]
-    CODE 0<
-    ADD R14,R14
-    SUBC R14,R14
-    XOR #-1,R14
-    MOV @R13+,R0
-    ENDCODE
-    [THEN]
-
-    [UNDEFINED] DROP [IF]
-    CODE DROP
-    MOV @R15+,R14
-    MOV @R13+,R0
-    ENDCODE
-    [THEN]
-
-    [UNDEFINED] DUP [IF]
-    CODE DUP
-BW1 SUB #2,R15
-    MOV R14,0(R15)
-    MOV @R13+,R0
-    ENDCODE
-
-    CODE ?DUP
-    CMP #0,R14
-    0<> ?GOTO BW1
-    MOV @R13+,R0
-    ENDCODE
-    [THEN]
-
-    [UNDEFINED] NIP [IF]
-    CODE NIP
-    ADD #2,R15
-    MOV @R13+,R0
-    ENDCODE
-    [THEN]
-
-    [UNDEFINED] UM/MOD [IF]
-    CODE UM/MOD
-        PUSH #DROP
-        MOV #$4028,R0
-    ENDCODE
-    [THEN]
-
-    $180E @ 0<   ; test the switch: FLOORED/SYMETRIC DIVISION
-    [IF]
-        [UNDEFINED] FM/MOD [IF]
-        CODE FM/MOD
-        MOV R14,R12
-        MOV @R15,R11
-        CMP #0,R14
-        S< IF
-            XOR #-1,R14
-            ADD #1,R14
-        THEN
-        CMP #0,0(R15)
-        S< IF
-            XOR #-1,2(R15)
-            XOR #-1,0(R15)
-            ADD #1,2(R15)
-            ADDC #0,0(R15)
-        THEN
-        PUSHM #3,R13
-        LO2HI
-            UM/MOD
-        HI2LO
-        POPM #3,R13
-        CMP #0,R11
-        S< IF
-            XOR #-1,0(R15)
-            ADD #1,0(R15)
-        THEN
-        XOR R12,R11
-        CMP #0,R11
-        S< IF
-            XOR #-1,R14
-            ADD #1,R14
-        THEN
-    
-        CMP #0,0(R15)
-        0<> IF
-            CMP #1,R14
-            S< IF
-            ADD R12,0(R15)
-            SUB #1,R14
-            THEN
-        THEN
-        MOV @R13+,R0
-        ENDCODE
-        [THEN]
-
-    [ELSE]
-        [UNDEFINED] SM/REM [IF]
-        CODE SM/REM
-        MOV R14,R12
-        MOV @R15,R11
-        CMP #0,R14
-        S< IF
-            XOR #-1,R14
-            ADD #1,R14
-        THEN
-        CMP #0,0(R15)
-        S< IF
-            XOR #-1,2(R15)
-            XOR #-1,0(R15)
-            ADD #1,2(R15)
-            ADDC #0,0(R15)
-        THEN
-        PUSHM #3,R13
-        LO2HI
-            UM/MOD
-        HI2LO
-        POPM #3,R13
-        CMP #0,R11
-        S< IF
-            XOR #-1,0(R15)
-            ADD #1,0(R15)
-        THEN
-        XOR R12,R11
-        CMP #0,R11
-        S< IF
-            XOR #-1,R14
-            ADD #1,R14
-        THEN
-        MOV @R13+,R0
-        ENDCODE
-        [THEN]
-    [THEN]
-
-    [UNDEFINED] / [IF]
-    : /
-    >R DUP 0< R>
-    [ $180E @ 0< ]
-    [IF]    FM/MOD
-    [ELSE]  SM/REM
-    [THEN]
-    NIP
-    ;
-    [THEN]
-
-    [UNDEFINED] C@ [IF]
-    CODE C@
-    MOV.B @R14,R14
     MOV @R13+,R0
     ENDCODE
     [THEN]
@@ -231,37 +84,19 @@ BW1 SUB #2,R15
     ENDCODE
     [THEN]
 
-    [UNDEFINED] < [IF]
-    CODE <
-    SUB @R15+,R14
-    S< ?GOTO FW1
-    0<> IF
-BW1 MOV #-1,R14
-    THEN
-    MOV @R13+,R0
-    ENDCODE
-
-    CODE >
-    SUB @R15+,R14
-    S< ?GOTO BW1
-FW1 AND #0,R14
-    MOV @R13+,R0
-    ENDCODE
-    [THEN]
-
     [UNDEFINED] IF [IF]
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -269,9 +104,9 @@ FW1 AND #0,R14
 
     [UNDEFINED] ELSE [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10) 
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10) 
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -286,13 +121,12 @@ FW1 AND #0,R14
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DOES> [IF]
-    CODE DOES>
-    MOV &$1DDC,R10
-    MOV #$1285,0(R10)
-    MOV R13,2(R10)
-    MOV @R1+,R13
-    MOV @R13+,R0
+    [UNDEFINED] SPACE [IF]
+    CODE SPACE
+    SUB #2,R15
+    MOV R14,0(R15)
+    MOV #$20,R14
+    MOV #EMIT,R0
     ENDCODE
     [THEN]
 
@@ -303,7 +137,7 @@ FW1 AND #0,R14
         PUSH R13
         BEGIN
             LO2HI
-            $20 EMIT
+            SPACE
             HI2LO
             SUB #2,R13
             SUB #1,R14
@@ -577,89 +411,89 @@ BW1 XOR #-1,0(R15)
 
     [UNDEFINED] M*/ [IF]
 
-        RST_SET
+    RST_SET
 
-        CODE TSTBIT
-        MOV @R15+,R9
-        AND @R9,R14
-        MOV @R13+,R0
-        ENDCODE
+    CODE TSTBIT
+    MOV @R15+,R9
+    AND @R9,R14
+    MOV @R13+,R0
+    ENDCODE
 
-        $180E 8 TSTBIT
+    $180E $10 TSTBIT
 
-        RST_RET
+    RST_RET
 
-        [IF]   ; MSP430FRxxxx with hardware_MPY
+    [IF]   ; MSP430FRxxxx with hardware_MPY
 
-        CODE M*/
-        MOV 4(R15),&$4D4
-        MOV 2(R15),&$4D6
-        MOV @R15+,&$4C8
-        MOV R14,R11
-        MOV R0,R0
-        MOV &$4E4,R12
-        MOV &$4E6,R14
-        MOV &$4E8,R10
-        MOV #0,R6
-        CMP #0,R10
-        S< IF
-            XOR #-1,R12
-            XOR #-1,R14
-            XOR #-1,R10
-            ADD #1,R12
-            ADDC #0,R14
-            ADDC #0,R10
-            MOV #-1,R6
-        THEN
+    CODE M*/
+    MOV 4(R15),&$4D4
+    MOV 2(R15),&$4D6
+    MOV @R15+,&$4C8
+    MOV R14,R11
+    MOV R0,R0
+    MOV &$4E4,R12
+    MOV &$4E6,R14
+    MOV &$4E8,R10
+    MOV #0,R6
+    CMP #0,R10
+    S< IF
+        XOR #-1,R12
+        XOR #-1,R14
+        XOR #-1,R10
+        ADD #1,R12
+        ADDC #0,R14
+        ADDC #0,R10
+        MOV #-1,R6
+    THEN
 
-        [ELSE]  ; no hardware multiplier
+    [ELSE]  ; no hardware multiplier
 
-        CODE M*/
-        MOV #0,R6
-        CMP #0,2(R15)
-        S< IF
-            XOR #-1,4(R15)
-            XOR #-1,2(R15)
-            ADD #1,4(R15)
-            ADDC #0,2(R15)
-            MOV #-1,R6
-        THEN
-        CMP #0,0(R15)
-        S< IF
-            XOR #-1,0(R15)
-            ADD #1,0(R15)
-            XOR #-1,R6
-        THEN
-                    MOV 4(R15),R8
-                    MOV 2(R15),R11
-                    MOV @R15+,R12
-                    MOV #0,R5
-                    MOV #0,2(R15)
-                    MOV #0,0(R15)
-                    MOV #0,R10
-                    MOV #1,R9
-        BEGIN       BIT R9,R12
-            0<> IF  ADD R8,2(R15)
-                    ADDC R11,0(R15)
-                    ADDC R5,R10
-            THEN    ADD R8,R8
-                    ADDC R11,R11
-                    ADDC R5,R5
-                    ADD R9,R9
-        U>= UNTIL
-        MOV R14,R11
-        MOV @R15,R14
-        MOV 2(R15),R12
+    CODE M*/
+    MOV #0,R6
+    CMP #0,2(R15)
+    S< IF
+        XOR #-1,4(R15)
+        XOR #-1,2(R15)
+        ADD #1,4(R15)
+        ADDC #0,2(R15)
+        MOV #-1,R6
+    THEN
+    CMP #0,0(R15)
+    S< IF
+        XOR #-1,0(R15)
+        ADD #1,0(R15)
+        XOR #-1,R6
+    THEN
+                MOV 4(R15),R8
+                MOV 2(R15),R11
+                MOV #0,R5
+                MOV @R15+,R12
+                MOV #0,2(R15)
+                MOV #0,0(R15)
+                MOV #0,R10
+                MOV #1,R9
+    BEGIN       BIT R9,R12
+        0<> IF  ADD R8,2(R15)
+                ADDC R11,0(R15)
+                ADDC R5,R10
+        THEN    ADD R8,R8
+                ADDC R11,R11
+                ADDC R5,R5
+                ADD R9,R9
+    U>= UNTIL
+    MOV R14,R11
+    MOV @R15,R14
+    MOV 2(R15),R12
 
-        [THEN]  ; endcase of software/hardware_MPY
+    [THEN]  ; endcase of software/hardware_MPY
 
     MOV #32,R5
     CMP #0,R10
     0= IF
         MOV R14,R10
-        CALL #$403A
+        CALL #<#+$1A
     ELSE
-        CALL #$4042
+        CALL #<#+$22
     THEN
     MOV @R15+,0(R15)
     CMP #0,R6
@@ -677,8 +511,8 @@ BW1 XOR #-1,0(R15)
             THEN
         THEN
     THEN
-    MOV #$40A0,R5
-    MOV #$40AE,R6
+    MOV #[THEN]+$5C,R5
+    MOV #[THEN]+$6A,R6
     MOV @R13+,R0
     ENDCODE
     [THEN]
@@ -687,7 +521,7 @@ BW1 XOR #-1,0(R15)
     : 2VARIABLE
     CREATE
     HI2LO
-    ADD #4,&$1DC0
+    ADD #4,&$1DBE
     MOV @R1+,R13
     MOV @R13+,R0
     ENDCODE
@@ -741,11 +575,48 @@ BW1 XOR #-1,0(R15)
 ; Complement to pass DOUBLE TESTS
 ; -------------------------------
 
+    [UNDEFINED] R> [IF]
+    CODE R>
+    SUB #2,R15
+    MOV R14,0(R15)
+    MOV @R1+,R14
+    MOV @R13+,R0
+    ENDCODE
+    [THEN]
+
+    [UNDEFINED] C@ [IF]
+    CODE C@
+    MOV.B @R14,R14
+    MOV @R13+,R0
+    ENDCODE
+    [THEN]
+
+    [UNDEFINED] DUP [IF]
+    CODE DUP
+BW1 SUB #2,R15
+    MOV R14,0(R15)
+    MOV @R13+,R0
+    ENDCODE
+
+    CODE ?DUP
+    CMP #0,R14
+    0<> ?GOTO BW1
+    MOV @R13+,R0
+    ENDCODE
+    [THEN]
+
     [UNDEFINED] SWAP [IF]
     CODE SWAP
     MOV @R15,R10
     MOV R14,0(R15)
     MOV R10,R14
+    MOV @R13+,R0
+    ENDCODE
+    [THEN]
+
+    [UNDEFINED] DROP [IF]
+    CODE DROP
+    MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE
     [THEN]
@@ -793,15 +664,15 @@ BW1 XOR #-1,0(R15)
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -809,9 +680,9 @@ BW1 XOR #-1,0(R15)
 
     [UNDEFINED] ELSE [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10)
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -834,8 +705,8 @@ BW1 XOR #-1,0(R15)
     CODE DO
     SUB #2,R15
     MOV R14,0(R15)
-    ADD #2,&$1DC0
-    MOV &$1DC0,R14
+    ADD #2,&$1DBE
+    MOV &$1DBE,R14
     MOV #XDO,-2(R14)
     ADD #2,&$1C00
     MOV &$1C00,R10
@@ -857,8 +728,8 @@ BW1 BIT #$100,R2
 
     CODE LOOP
     MOV #XLOOP,R9
-BW2 ADD #4,&$1DC0
-    MOV &$1DC0,R10
+BW2 ADD #4,&$1DBE
+    MOV &$1DBE,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     BEGIN
@@ -922,18 +793,27 @@ BW2 ADD #4,&$1DC0
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 0< [IF]
+    CODE 0<
+    ADD R14,R14
+    SUBC R14,R14
+    XOR #-1,R14
+    MOV @R13+,R0
+    ENDCODE
+    [THEN]
+
     [UNDEFINED] SOURCE [IF]
     CODE SOURCE
     SUB #4,R15
     MOV R14,2(R15)
-    MOV &$1DBA,R14
-    MOV &$1DBC,0(R15)
+    MOV &$1DB8,R14
+    MOV &$1DBA,0(R15)
     MOV @R13+,R0
     ENDCODE
     [THEN]
 
     [UNDEFINED] >IN [IF]
-    $1DBE CONSTANT >IN
+    $1DBC CONSTANT >IN
     [THEN]
 
     [UNDEFINED] 1+ [IF]
@@ -1069,22 +949,122 @@ BW2 ADD #4,&$1DC0
 
     [UNDEFINED] .( [IF] ; "
     CODE .(        ; "
-    MOV #0,&$1DB8
+    MOV #0,&CAPS
     COLON
     ')' WORD
     COUNT TYPE
-    $20 $1DB8 !
+    $20 CAPS !
     ; IMMEDIATE
     [THEN]
 
     [UNDEFINED] CR [IF]
     CODE CR
-    MOV #$409E,R0
+    MOV #[THEN],R0
     ENDCODE
 
     :NONAME
     $0D EMIT $0A EMIT
     ; IS CR
+    [THEN]
+
+    $180E @ 0<  ; test the switch: FLOORED/SYMETRIC DIVISION
+    [IF]
+        [UNDEFINED] FM/MOD [IF]
+        CODE FM/MOD
+        MOV R14,R12
+        MOV @R15,R11
+        CMP #0,R14
+        S< IF
+            XOR #-1,R14
+            ADD #1,R14
+        THEN
+        CMP #0,0(R15)
+        S< IF
+            XOR #-1,2(R15)
+            XOR #-1,0(R15)
+            ADD #1,2(R15)
+            ADDC #0,0(R15)
+        THEN
+        PUSHM  #2,R12
+        CALL #<#+8
+        MOV @R15+,R14
+        POPM  #2,R12
+        CMP #0,R11
+        S< IF
+            XOR #-1,0(R15)
+            ADD #1,0(R15)
+        THEN
+        XOR R12,R11
+        CMP #0,R11
+        S< IF
+            XOR #-1,R14
+            ADD #1,R14
+        THEN
+
+        CMP #0,0(R15)
+        0<> IF
+            CMP #1,R14
+            S< IF
+            ADD R12,0(R15)
+            SUB #1,R14
+            THEN
+        THEN
+        MOV @R13+,R0
+        ENDCODE
+        [THEN]
+    [ELSE]
+        [UNDEFINED] SM/REM [IF]
+        CODE SM/REM
+        MOV R14,R12
+        MOV @R15,R11
+        CMP #0,R14
+        S< IF
+            XOR #-1,R14
+            ADD #1,R14
+        THEN
+        CMP #0,0(R15)
+        S< IF
+            XOR #-1,2(R15)
+            XOR #-1,0(R15)
+            ADD #1,2(R15)
+            ADDC #0,0(R15)
+        THEN
+        PUSHM  #2,R12
+        CALL #<#+8
+        MOV @R15+,R14
+        POPM  #2,R12
+        CMP #0,R11
+        S< IF
+            XOR #-1,0(R15)
+            ADD #1,0(R15)
+        THEN
+        XOR R12,R11
+        CMP #0,R11
+        S< IF
+            XOR #-1,R14
+            ADD #1,R14
+        THEN
+        MOV @R13+,R0
+        ENDCODE
+        [THEN]
+    [THEN]
+
+    [UNDEFINED] NIP [IF]
+    CODE NIP
+    ADD #2,R15
+    MOV @R13+,R0
+    ENDCODE
+    [THEN]
+
+    [UNDEFINED] / [IF]
+    : /
+    >R DUP 0< R>
+    [ $180E @ 0< ]
+    [IF]    FM/MOD
+    [ELSE]  SM/REM
+    [THEN]
+    NIP
+    ;
     [THEN]
 
 
@@ -1442,14 +1422,14 @@ T{ LO-2INT  -1 M+ -> LO-2INT  -1. D+ }T
 ; To correct the result if the division is floored, only used when
 ; necessary i.e. negative quotient and remainder <> 0
 
-: ?$8000 [ -3 2 / -2 = ] LITERAL IF 1. D- THEN ;
+: ?FLOORED [ -3 2 / -2 = ] LITERAL IF 1. D- THEN ;
 
 T{  5.  7 11 M*/ ->  3. }T
-T{  5. -7 11 M*/ -> -3. ?$8000 }T
-T{ -5.  7 11 M*/ -> -3. ?$8000 }T
+T{  5. -7 11 M*/ -> -3. ?FLOORED }T
+T{ -5.  7 11 M*/ -> -3. ?FLOORED }T
 T{ -5. -7 11 M*/ ->  3. }T
 T{ MAX-2INT  8 16 M*/ -> HI-2INT }T
-T{ MAX-2INT -8 16 M*/ -> HI-2INT DNEGATE ?$8000 }T
+T{ MAX-2INT -8 16 M*/ -> HI-2INT DNEGATE ?FLOORED }T
 T{ MIN-2INT  8 16 M*/ -> LO-2INT }T
 T{ MIN-2INT -8 16 M*/ -> LO-2INT DNEGATE }T
 T{ MAX-2INT MAX-INTD MAX-INTD M*/ -> MAX-2INT }T

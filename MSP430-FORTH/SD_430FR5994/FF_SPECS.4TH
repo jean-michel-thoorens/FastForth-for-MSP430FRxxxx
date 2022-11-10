@@ -7,10 +7,10 @@
     SUB #2,R15
     MOV R14,0(R15)
     MOV &$180A,R14
-    SUB #400,R14
+    SUB #401,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     RST_RET
     ;
 
@@ -129,15 +129,15 @@ FW1 AND #0,R14
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -145,9 +145,9 @@ FW1 AND #0,R14
 
     [UNDEFINED] ELSE [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10)
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -162,9 +162,9 @@ FW1 AND #0,R14
     ENDCODE IMMEDIATE
 
     CODE UNTIL
-    MOV #$4096,R9
-BW1 ADD #4,&$1DC0
-    MOV &$1DC0,R10
+    MOV #[THEN]+$52,R9
+BW1 ADD #4,&$1DBE
+    MOV &$1DBE,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     MOV @R15+,R14
@@ -172,7 +172,7 @@ BW1 ADD #4,&$1DC0
     ENDCODE IMMEDIATE
 
     CODE AGAIN
-    MOV #$409C,R9
+    MOV #[THEN]+$58,R9
     GOTO BW1
     ENDCODE IMMEDIATE
 
@@ -200,8 +200,8 @@ BW1 ADD #4,&$1DC0
     CODE DO
     SUB #2,R15
     MOV R14,0(R15)
-    ADD #2,&$1DC0
-    MOV &$1DC0,R14
+    ADD #2,&$1DBE
+    MOV &$1DBE,R14
     MOV #XDO,-2(R14)
     ADD #2,&$1C00
     MOV &$1C00,R10
@@ -223,8 +223,8 @@ BW1 BIT #$100,R2
 
     CODE LOOP
     MOV #XLOOP,R9
-BW2 ADD #4,&$1DC0
-    MOV &$1DC0,R10
+BW2 ADD #4,&$1DBE
+    MOV &$1DBE,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     BEGIN
@@ -332,7 +332,7 @@ BW2 ADD #4,&$1DC0
     [UNDEFINED] UM/MOD [IF]
     CODE UM/MOD
     PUSH #DROP
-    MOV #$4028,R0
+    MOV #<#+8,R0
     ENDCODE
     [THEN]
 
@@ -371,7 +371,7 @@ BW2 ADD #4,&$1DC0
     [UNDEFINED] CR [IF]
 
     CODE CR
-    MOV #$409E,R0
+    MOV #[THEN],R0
     ENDCODE
 
     :NONAME
@@ -414,9 +414,16 @@ BW2 ADD #4,&$1DC0
 ; end of definitions we need
 ; --------------------------
 
+    CODE 2*DUP
+    SUB #2,R15
+    ADD R14,R14
+    MOV R14,0(R15)
+    MOV @R13+,R0
+    ENDCODE
+
     [UNDEFINED] S? [IF]
     CODE S?
-    MOV #S"+10,R0
+    MOV #S"+$0A,R0
     ENDCODE IMMEDIATE
     [THEN]
 
@@ -447,6 +454,7 @@ BW2 ADD #4,&$1DC0
         MOV.B @R9+,R14
         RRA R14
         MOV R14,R10
+        ADD #1,R14
         BIT #1,R10
         0= IF
             ADD #1,R10
@@ -456,7 +464,6 @@ BW2 ADD #4,&$1DC0
     0<> WHILE
         MOV @R15,R9
     REPEAT
-    MOV R9,0(R15)
     MOV @R13+,R0
     ENDCODE
     [THEN]
@@ -465,6 +472,7 @@ BW2 ADD #4,&$1DC0
     RST_RET
     ECHO
     ESC [8;42;80t
+    CR
     ESC [7m
     CR ." FastForth V"
     $180A @
@@ -510,18 +518,15 @@ BW2 ADD #4,&$1DC0
     - U. ." bytes"
     ESC [0m
     CR
+
     ." /COUNTED-STRING   = 255" CR
     ." /HOLD             = 34" CR
     ." /PAD              = 84" CR
     ." ADDRESS-UNIT-BITS = 16" CR
-    [DEFINED] {CORE_ANS}
-    [IF]
     ." FLOORED DIVISION  = "
-    $180E @
-    0< IF ." true"
-    ELSE  ." false"
-    THEN    CR
-    [THEN]
+    [DEFINED] SM/REM [IF] ." false" [THEN]
+    [DEFINED] FM/MOD [IF] ." true" [THEN]
+    CR
     ." MAX-CHAR          = 255" CR
     ." MAX-N             = 32767" CR
     ." MAX-U             = 65535" CR
@@ -529,88 +534,40 @@ BW2 ADD #4,&$1DC0
     ." MAX-UD            = 4294967295" CR
     ." STACK-CELLS       = 48" CR
     ." RETURN-STACK-CELLS= 48" CR
-    ." Definitions are always UPPERCASE." CR
-    CR ESC [7m ." Kernel add-ons" ESC [0m CR
+    ." Definitions are forced UPPERCASE" CR
+
+    CR ESC [7m ." KERNEL add-ons" ESC [0m CR
     $180E @
-    2*  DUP 0< IF ." 32.768kHz LF XTAL" CR THEN
-    2*  DUP 0< IF ." /RTS /CTS " 2*
-            ELSE  2* DUP
-                0< IF ." /RTS " THEN
-            THEN
-    2*  DUP 0< IF ." XON/XOFF "  THEN
-    2*  DUP 0< IF ." Half-Duplex "  THEN
-    2*  DUP 0< IF ." I2C_Master TERMINAL"
-            ELSE  ." UART TERMINAL" THEN CR
-    2*  DUP 0< IF 2* DUP 0< IF ." DOUBLE and "
-                         THEN  ." Q15.16 numbers handling" CR
-            ELSE  2* DUP 0< IF ." DOUBLE numbers handling" CR
-                         THEN
-            THEN
-    2*  DUP 0< IF ." MSP430_X assembler with TI's syntax"
-                    CR 2* 2*
-            ELSE
-                2*  DUP
-                0< IF ." MSP430 Assembler"
-                    2*  DUP
-                    0< IF ." , 20bits extended addresses,"
-                    THEN
-                ELSE 2*
+    2*DUP   0< IF ." 32.768kHz LF XTAL" CR THEN
+    2*DUP   0< IF ." /CTS " THEN
+    2*DUP   0< IF ." /RTS " THEN
+    2*DUP   0< IF ." XON/XOFF "  THEN
+    2*DUP   0< IF ." Half-Duplex "  THEN
+    2*DUP   0< IF ." I2C_Master TERMINAL"
+            ELSE  ." UART TERMINAL"
+            THEN CR
+    2*DUP   0< IF 2*DUP
+                0< IF ." DOUBLE and "
+                THEN  ." Q15.16 numbers handling" CR
+            ELSE  2*DUP
+                0< IF ." DOUBLE numbers handling" CR
                 THEN
-                ."  with TI's syntax" CR
-            THEN DROP
+            THEN
+    2*DUP   0< IF       ." MSP430 16/20bits"
+            ELSE  2*DUP ." MSP430 16bits"
+                0< IF   ."  (20bits addr)"
+                THEN
+            THEN    ."  assembler, with TI's syntax" CR
+    DROP
     [DEFINED] FORTH [IF] ." word-set management" CR 
     [THEN]
-    [DEFINED] LOAD" [IF] ." SD_CARD Load" CR
+    [DEFINED] LOAD" [IF] ." SD_CARD Load + Bootloader" CR
     [THEN]
-    [DEFINED] BOOT  [IF] ." SD_CARD Bootloader" CR
+    [DEFINED] READ" [IF] ." SD_CARD Read/Write/Del/CopyTERM2SD" CR
     [THEN]
-    [DEFINED] READ" [IF] ." SD_CARD Read/Write" CR
-    [THEN]
-    $1DC2
-    BEGIN
-        @ ?DUP
-    WHILE
-        CR ESC [7m
-        DUP $180C @ 2* -
-        [DEFINED] FORTH
-        [IF] DUP BODY>SQNFA
-        [ELSE]  OVER @
-                IF S" hidden"
-                ELSE S" FORTH"
-                THEN
-        [THEN]
-        TYPE ."  word-set"
-        ESC [0m CR
-        $1CE4
-        $180C @ 2*
-        MOVE
-        BEGIN
-            0 DUP
-            $180C @ 2* 0
-                DO
-                DUP I $1CE4 + @
-                    U< IF
-                        DROP DROP
-                        I DUP $1CE4 + @
-                    THEN
-                2 +LOOP
-            ?DUP
-        WHILE
-            DUP
-            2 - @
-            ROT
-            $1CE4 +
-            !
-            COUNT 2/
-            DUP >R TYPE
-            $10 R> - SPACES
-        REPEAT
-        DROP
-        CR
-    REPEAT
-    DROP
+
     CR ESC [7m ." EXTENSIONS" ESC [0m
-    [DEFINED] {CORE_ANS} [IF] CR ." CORE ANS94"
+    [DEFINED] {CORE_ANS} [IF] CR ." CORE ANS94 'CORETEST passed'"
     [THEN]
     [DEFINED] {DOUBLE}   [IF] CR ." DOUBLE numbers set"
     [THEN]
@@ -627,6 +584,49 @@ BW2 ADD #4,&$1DC0
     [DEFINED] {UARTI2CS} [IF] CR ." UART to I2C_FastForth bridge"
     [THEN]
     CR
+
+    $1DC0
+    BEGIN
+        @ ?DUP
+    WHILE
+        ESC [7m
+        DUP $180C @ 2* -
+        [DEFINED] FORTH
+        [IF]    DUP BODY>SQNFA
+        [ELSE]  OVER @
+                IF S" hidden"
+                ELSE S" FORTH"
+                THEN
+        [THEN]  TYPE
+        ."  word-set"
+        ESC [0m CR
+        $1CE4
+        $180C @ 2*
+        MOVE
+        BEGIN
+            0 DUP
+            $180C @ 2* 0
+                DO
+                DUP I $1CE4 + @
+                    U< IF
+                        DROP DROP I
+                        DUP $1CE4 + @
+                    THEN
+                2 +LOOP
+            ?DUP
+        WHILE
+            DUP
+            2 - @
+            ROT
+            $1CE4 +
+            !
+            COUNT 2/
+            DUP >R TYPE
+            $10 R> - SPACES
+        REPEAT
+        DROP
+        CR
+    REPEAT
     SYS
     ;
 

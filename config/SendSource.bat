@@ -12,6 +12,7 @@ IF /I "%~x1" == ".4TH" GOTO 4TH
 
 :: ==============================================================================================
 :: source file.f part
+:: %~dp0 is the path of this file.bat
 :: %~dpn1.f is the symbolic source file.f described as drive\path\name.f
 :: %~d1\inc\%~n2.pat is the pattern file for preprocessor gema.exe
 :: %~dpn1.4TH is the source file.4TH to be sent to the target
@@ -33,8 +34,8 @@ echo %~dpn1.f not found!
 goto badend
 )
 
-IF NOT EXIST %~dp1..\inc\%~n2.pat (
-echo %~dp1..\inc\%~n2.pat not found!
+IF NOT EXIST %~dp0..\inc\%~n2.pat (
+echo %~dp0..\inc\%~n2.pat not found!
 goto badend
 )
 
@@ -51,22 +52,22 @@ exit
 
 
 :preprocessF
-%~dp1..\prog\gema.exe -nobackup -line -t '-\r\n=\r\n' -f  %~dp1..\inc\%~n2.pat %~dpn1.f %~dpn1.4TH
-call  %~dp1..\config\Select.bat SelectDeviceId %~dp1..\inc\%~n2.pat
+%~dp0..\prog\gema.exe -nobackup -line -t '-\r\n=\r\n' -f  %~dp0..\inc\%~n2.pat %~dpn1.f %~dpn1.4TH
+call  %~dp0Select.bat SelectDeviceId %~dp0..\inc\%~n2.pat
 
 :DownloadF
 taskkill /F /IM ttermpro.exe 1> NUL 2>&1
 
 :Win32F
-"C:\Program Files\teraterm\ttpmacro.exe" /V %~dp1..\config\SendFile.ttl %~dpn1.4TH /C %3 %deviceid% 1> NUL 2>&1
+"C:\Program Files\teraterm\ttpmacro.exe" /V %~dp0SendFile.ttl %~dpn1.4TH /C %3 %deviceid% 1> NUL 2>&1
 IF NOT ERRORLEVEL 1 GOTO EndF
 
 :Win64F
-"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~dp1..\config\SendFile.ttl %~dpn1.4TH /C %3 %deviceid%
+"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~dp0SendFile.ttl %~dpn1.4TH /C %3 %deviceid%
 
 :EndF
 MOVE "%~dpn1.4TH" "%~dp1LAST.4TH" > NUL
-call  %~dp1..\config\Select.bat SelectDevice %~dp1..\inc\%~n2.pat
+call  %~dp0Select.bat SelectDevice %~dp0..\inc\%~n2.pat
 if not exist  %~dp1SD_%device:~3% MD %~dp1SD_%device:~3% > NUL 
 COPY /y %~dp1LAST.4TH %~dp1SD_%device:~3%\%~n1.4TH > NUL
 exit
@@ -74,6 +75,7 @@ exit
 
 :: ==============================================================================================
 :: source file.4TH part
+:: %~dp0 is the path of this file.bat
 :: %~dpn1.4TH is the file to be sent described as drive\path\name.4TH
 :: %~d1 is the drive of param %1
 :: %~nx0 is name.ext of this bat file
@@ -106,13 +108,12 @@ goto badend
 taskkill /F /IM ttermpro.exe 1> NUL 2>&1
 
 :Win324th
-"C:\Program Files\teraterm\ttpmacro.exe" /V %~dp1..\config\SendFile.ttl %~dpn1.4TH /C %2 0 1> NUL 2>&1
+"C:\Program Files\teraterm\ttpmacro.exe" /V %~dp0..\config\SendFile.ttl %~dpn1.4TH /C %2 0 1> NUL 2>&1
 IF NOT ERRORLEVEL 1 GOTO End4th
 
 :Win644th
-"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~dp1..\config\SendFile.ttl %~dpn1.4TH /C %2 0
+"C:\Program Files (x86)\teraterm\ttpmacro.exe" /V %~dp0..\config\SendFile.ttl %~dpn1.4TH /C %2 0
 
 :End4th
-::@COPY "%~dpn1.4TH" "%~dp1LAST.4TH" > NUL
 exit
 

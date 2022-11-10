@@ -1,9 +1,18 @@
 
-@set-syntax{C;\;}!  replace ! by semicolon
+@set-syntax{C;\;}!  tell GEMA to replace default Comment separator '!' by ';'
 
 ; ----------------------------------------------
 ;MSP430fr5738.pat
 ; ----------------------------------------------
+
+@reset-syntax{}; enable good interpreting of next line
+@define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
+
+@reset-syntax{}; enable good interpreting of next line
+@define{@read{@mergepath{@inpath{};MSP430FR57xx.pat;}}}
+
+@reset-syntax{}; enable good interpreting of next line
+@define{@read{@mergepath{@inpath{};MSP430FRxxxx.pat;}}}
 
 ; ----------------------------------------------
 ; MSP430FR5738 MEMORY MAP
@@ -55,26 +64,6 @@ RAM_LEN=\$0400;
 MAIN_ORG=\$C200;        Code space start
 MAIN_LEN=\$3E00;        15.5 k FRAM
 ; ----------------------------------------------
-\#LIT=\#\$C200;             asm CODE run time of LITERAL
-\#XSQUOTE=\#\$C214;         asm CODE run time of QUOTE
-\#MUSMOD=\#\$C228;          asm CODE 32/16 unsigned division, used by ?NUMBER, UM/MOD
-\#MDIV1DIV2=\#\$C23A;       asm CODE input for 48/16 unsigned division with DVDhi=0, see DOUBLE M*/
-\#MDIV1=\#\$C242;           asm CODE input for 48/16 unsigned division, see DOUBLE M*/
-\#RET_ADR=\#\$C26C;         asm CODE of INIT_SOFT_PFA and MARKER+8 definitions,
-\#SETIB=\#\$C26E;           CODE Set Input Buffer with org & len values, reset >IN pointer
-\#REFILL=\#\$C27E;          CODE accept one line from input and leave org len of input buffer
-\#CIB_ORG=\#\$C28A;         [CIB_ORG] = TIB_ORG by default; may be redirected to SDIB_ORG
-\#QFBRAN=\#\$C296;          CODE compiled by IF UNTIL
-\#BRAN=\#\$C29C;            CODE compiled by ELSE REPEAT AGAIN
-\#NEXT_ADR=\#\$C29E;        CODE NEXT instruction (MOV @IP+,PC)
-\#XDODOES=\#\$C2A0;         to restore rDODOES: MOV #XDODOES,rDODOES
-\#XDOCON=\#\$C2AE;          to restore rDOCON: MOV #XDOCON,rDOCON
-;                           to restore rDOVAR: MOV &INIT_DOVAR,rDOVAR
-;                           to restore rDOCOL: MOV &INIT_DOCOL,rDOCOL
-\#INIT_FORTH=\#\$C2BA;
-\#ABORT_TERM=\#\$4300;      CALL #ABORT_TERM to discard pending download
-\#UART_WARM=\#\$C372;       WARM address for UART TERMINAL
-\#I2C_WARM=\#\$C35C;        WARM address for I2C TERMINAL
 
 ; See MSP430FRxxxx.pat for other addresses
 

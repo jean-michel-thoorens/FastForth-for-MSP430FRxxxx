@@ -63,7 +63,7 @@ If you want to quickly get an idea of what Fast Forth can do, see the /MSP430-FO
 You will see that the FORTH language is used here as packaging of the program written in assembler.
 See /MSP430-FORTH/FF_SPECS.f for another point of view.
 
-For only 3 kbytes in addition, we have the primitives to access the SD_CARD FAT32: read, write, del, download source files and also to copy them from PC to the SD_Card.
+For only 3 kb in addition, we have the primitives to access the SD_CARD FAT32: read, write, del, download source files and also to copy them from PC to the SD_Card.
 It works with all SD\_CARD memories from 4GB to 64GB with FAT32 format.
 
 With all the kernel addons, including the 20 bits MSP430\_X assembler and the SD\_Card driver, FastForth size is **10 kB**.
@@ -100,6 +100,19 @@ Note: please, for each update download all subdirectories to correctly update th
                TX ---> RX            )
      Pin Px.y RTS ---> CTS (optionnal) RTS pin Px.y is described in your \inc\launchpad.asm)
     
+    TERATERM config terminal:   NewLine receive : LF,
+                                NewLine transmit : CR+LF
+                                Size : 80 chars x 42 lines (adjust lines according to your display)
+                                type terminal : VT520
+
+    TERATERM config serial port:    COM = these of your USBtoUART device
+                                    speed = TERMINALBAUDRATE value,
+                                    8 bits, no parity, 1 Stop bit,
+                                    XON/XOFF flow control,
+                                    delay = 0ms/line, 0ms/char
+    
+    **don't forget to save always new TERATERM configuration !**
+
 ## Out of the box
 
 Once FastForth is loaded in the target FRAM memory, you add assembly code or FORTH code, or both,
@@ -129,7 +142,24 @@ Finally, using the SCITE editor as IDE, all is ready to do everything from its "
 What is new ?
 -------------
 
-### V4.0, the last.   
+### V4.1, the last.   
+
+* = V4.0 - 10 bytes.
+
+* the pack of \inc\files.pat, used by GEMA.EXE to convert a generic FORTH file.f to a customised FORTH file.4TH, is simplified:
+    * MSP430FRxxxx.pat for FRAM(INFO TLV MAIN) declarations,
+    * MSP430FR5xxx.pat, MSP430FR57xx.pat and MSP430FR2xxx.pat for RAM declarations,
+    * \<target\>.pat and \<device\>.pat for target and device configurations.
+
+* rewritten bat files.
+
+* WARM now displays a number which includes the error codes SYSUNIV (7) and SYSSNIV (15), in addition to SYSRSTIV ones (31)
+
+* fixed `>NUMBER`
+
+* SD_TEST.4TH used as SD_CARD bootstrap on reset (or not) works fine, just for my 68th birthday!
+
+### V4.0, the penultimate last.   
 
 * = V3.9 - 26 bytes.
 
@@ -235,11 +265,11 @@ What is new ?
 
 * More complicated:
 
-  In the FastForth init process, COLD WARM BACKGRND are modified and INIT_FORTH is added.  
-  They start each with a call to a paired assembly subroutine:
+  In the FastForth init process, COLD WARM ABORT" BACKGRND are modified and INIT_FORTH is added.  
+  They include each a call to a paired assembly subroutine:
       
-          RST_SYS failures ------------>+       +<- ABORT_TERM <--- ABORT" <--- (error) <---+<-- COMPILE/EXECUTE<-INTERPRET <--+
-                                        |       |                                           |                                  ^
+          RST_SYS failures ------------>+       +<----------<display error>----- ABORT" <---+<-- COMPILE/EXECUTE<-INTERPRET <--+
+                                        |       |                                =====      |                                  ^
           RST ----------->+             |       v                                           v                                  |
                           v             |       +-> INIT_FORTH ----------->+-> ABORT->QUIT->+->ACCEPT->+            +->ACCEPT->+
           SW1+RST ------->+             |           ==========             ^                           |            ^
@@ -253,18 +283,18 @@ What is new ?
                           ^     ==== 
           [0] SYS ------->+
    
-                      CALL...   &STOP_APP          &SOFT_APP      &HARD_APP                              &BACKGRND_APP
-                                =========          =========      =========                              =============
+                      CALL...   &STOP_APP          &SOFT_APP    &HARD_APP       &ABORT_APP               &BACKGRND_APP
+                                =========          =========    =========       ==========               =============
 
-           Default subroutine   INIT_STOP          INIT_SOFT      INIT_TERM                              INIT_BACKGRND
-               Default action   UART: wait idle    do nothing     init TERM UC..                         UART: send RXON
-                                I2C: do nothing                   ..unlock I/O                           I2C: send Ctrl_Char $00 
+           Default subroutine   INIT_STOP          INIT_SOFT    INIT_TERM       ABORT_TERM               INIT_BACKGRND
+               Default action   UART: wait idle    do nothing   init TERM UC..  discard..                UART: send RXON
+                                I2C: do nothing                 ..unlock I/O    ..downloading            I2C: send Ctrl_Char $00 
           
-          note: -n SYS|SW1+RST reset the default subroutine of these four calls. 
+          note: -n SYS|SW1+RST reset the default subroutine of these five calls. 
                 don't use TOS in these subroutines.
 
     On the other hand, MARKER is modified in such a way that MARKER\_DOES executes a CALL to
-    the content of USER_BODY-2,   by default RET_ADR:
+    the content of USER_PARAM-2,   by default RET_ADR:
     
         MARKER [CFA]         = DODOES
                [PFA]         = MARKER_DOES
@@ -276,9 +306,9 @@ What is new ?
 By replacing [USER_PARAM-2] with the address of a new defined subroutine (named for example: REMOVE_XXX), 
 MARKER_DOES will execute it to restore n critical pointers (room made by 2n ALLOT) at USER_PARAM, USER_PARAM+2, ...
 
-Thus, with MARKER and the definition of subroutines STOP_XXX, SOFT_XXX, HARD_XXX, BACKGRND_XXX, 
-the programmer has full control of his "XXX" real time application using interrupts, 
-with everything he needs to start, stop and remove it properly, thanks to this 'soft' MARKER definition, 
+Thus, with MARKER and the definition of some subroutines according to the need: STOP_XXX, SOFT_XXX, HARD_XXX, ABORT_XXX, BACKGRND_XXX, 
+the programmer has full control of his "XXX" real time application using interrupts,
+with everything he needs to start, stop and remove it properly, thanks to this 'soft' MARKER definition,
 avoiding the hardware (SW1+RST) of the last chance. 
 
 See example in  /MSP430-FORTH/UARTI2CS.f.
@@ -513,26 +543,25 @@ In explorer you should obtain this back your driver letter:
            \UTILITY.asm               adds WORDS, DUMP, ? .S .RS
     
     \binaries\files.txt              ready for drag'n drop to prog.bat
-             \prog(.bat)             to do what ?...
+             \prog(.bat)             to do...
    
     \config\
-           \asm.properties                      configuration for *.inc,*.asm files
-           \forth.properties                    configuration for *.f,*.4th files
-           \fortran.properties                  configuration for *.pat files
-           \SciTEDirectory.properties           copy it to your project root folder
            \SciTEUser.properties                copy it in your home directory
+           \SciTEDirectory.properties           copy it to your project root folder
+           \asm.properties                      configuration for *.inc,*.asm, .pat files
+           \forth.properties                    configuration for *.f,*.4th files
            \SendFile.ttl                        TERATERM macro file to send source file to FASTFORTH
            \SendToSD.ttl                        TERATERM macro file to send source file to embedded SD_CARD 
            \build(.bat)                         called by scite to build target.txt program 
            \BSL_prog(.bat)                      to flash target with target.txt file with BSL_Scripter
            \FET_prog(.bat)                      to flash target with target.txt file with MSP430Flasher
-           \CopyTo_SD_Card(.bat)                to copy in your MSP430-FORTH
+           \Select.bat                          called to select target, device and deviceID
+           \CopyTo_SD_Card(.bat)                to copy a file in the target SD_Card
            \SendSource(.bat)                    to send file to FASTFORTH
            \Preprocess(.bat)                    to convert generic .f file to specific .4th file
-           \CopySourceFileToTarget_SD_Card.bat  copy it in any user folder for drag'n drop use
-           \SendSourceFileToTarget.bat          copy it in any user folder for drag'n drop use
-           \PreprocessSourceFile.bat            copy it in any user folder for drag'n drop use
-           \SelectTarget.bat                    called to select target, device and deviceID
+           \CopySourceFileToTarget_SD_Card.bat  create a link in any user folder for drag'n drop use
+           \SendSourceFileToTarget.bat          create a link in any user folder for drag'n drop use
+           \PreprocessSourceFile.bat            create a link in any user folder for drag'n drop use
     
     \inc\                         MACRO ASsembler files.inc, files.asm, GEMA preprocessor files.pat
         \TargetInit.asm           select target configuration file for AS assembler
@@ -540,10 +569,14 @@ In explorer you should obtain this back your driver letter:
         \ThingsInFirst.inc        general configuration for AS assembler
         \MSP430FRxxxx.inc         device declarations
         \ThingsInLast.inc         general post configuration for AS assembler
+    
         \FastForthREGtoTI.pat     converts FORTH symbolic registers names to TI Rx registers
         \tiREGtoFastForth.pat     converts TI Rx registers to FORTH symbolic registers names 
-        \MSP430FRxxxx.pat         device configuration for gema preprocessor
-        \MSP_EXP430FRxxxx.pat     target configuration for gema preprocessor
+        \MSP430FRxxxx.pat         FastForth generic declarations for INFO TLV FRAM areas
+        \MSP430FR2xxx.pat         FastForth RAM declarations for FR2xxx and FR4xxx families
+        \MSP430FR57xx.pat         FastForth RAM declarations for FR57xx family
+        \MSP430FR5xxx.pat         FastForth RAM declarations for FR5xxx and FR6xxx families
+        \MSP_EXP430FRxxxx.pat     target (launchpad) configuration
 
     \prog\        SciTEGlobal.properties, TERATERM.INI + programs.url
         
@@ -705,12 +738,11 @@ correctly ended with CR+LF.
 If you have MSP-EXP430FR5994, nothing to do.
 
 For the choice of a SD card socket be carefull, pin CD (Card Detect) must be present! 
-web search: "micro SD card 9 pin"
 Look for the good wiring in /Launchpad.asm file
 
 #### Compile with SD_Card addon
 
-in forthMSP430FR.asm, uncomment lines SD_CARD_LOADER,  SD_CARD_READ_WRITE, SD_TOOLS 
+in forthMSP430FR.asm, uncomment lines SD_CARD_LOADER,  SD_CARD_READ_WRITE
 then compile for your target
 
 ### the commands
@@ -836,7 +868,7 @@ Here is the FastForth memory management, one of its major assets, with both hard
 
         *  all programs donwloaded from the TERMINAL or from the SD_CARD are lost,
 
-        *  COLD_APP, SOFT_APP, HARD_APP and BACKGND_APP default values are restored,
+        *  COLD_APP, ABORT_APP, SOFT_APP, HARD_APP and BACKGND_APP default values are restored,
 
         *  all interrupts vectors are initialised with their default value, 
 
@@ -928,7 +960,7 @@ The register IP is the Interpretative Pointer.
 
 High level FORTH definitions starts with a boot code "DOCOL" which saves the IP pointer and loads it with the first address
 of a list of execution addresses, then performs a postincrement branch to the first one. 
-The list ends with the address of another piece of code: EXIT (6 cycles) which restores IP before the instruction MOV @IP+,PC.
+The list ends with the address of another piece of code: EXIT (6 cycles) which restores IP from stack before the instruction MOV @IP+,PC.
 
 here, the compilation of low level ADD definition :
 
@@ -1265,7 +1297,7 @@ Example:
     MARKER {MYAPP}
     'ESC' , 'XON' C, 'XOFF' C,
     
-    HDNCODE EXAMPLE         \ hidden definition because linked in the hidden word-set
+    HDNCODE EXAMPLE         \ hidden definition to be linked in the hidden word-set
     CMP #RET_ADR,&{MYAPP}-2 \ compare content of {MYAPP}-2 address with RET_ADR
     MOV &BASE,X             \ X = 16
     MOV #BASE,X             \ X = address of base
@@ -1360,7 +1392,7 @@ or use them directly then restore FastForth default values:
 
 If you want to restore only rDODOES, rDOCON and rDOVAR:
 
-`MOV #INIT_DOXXX+4,X`  
+`MOV #INIT_DOXXX+2,X`  
 `MOV @X+,rDODOES`  
 `MOV @X+,rDOCON`  
 `MOV @X,rDOVAR`
@@ -1678,17 +1710,17 @@ Once bootloader is enabled, any PUC event loads (and executes) the file \BOOT.4T
     WRITE           write sequentially the content of SD_buf to a file
     READ            read sequentially a file in SD_buf, leave a flag, false when the file is automatically closed.
     CLOSE           close last opened file.
-    DEL" TRUC"      remove the file TRUC from SD_CARD.
+    DEL" TRUC"      remove quietly the file TRUC from SD_CARD.
     WRITE" TRUC"    create or overwrite a file TRUC ready to write to its beginning.
     APPEND" TRUC"   open or create a file TRUC ready to write to the end of this file
     READ" TRUC"     open TRUC and load its first sector in SD_buf
     WR_SECT         Write SD_BUF in Sector loaded in  W=lo:X=hi
-    RD_SECT         load Sector W=lo:X=hi into SD_BUF, set BufferPtr=0
+    RD_SECT         Read Sector W=lo:X=hi into SD_BUF, set BufferPtr=0
 
 
 ## OPTIONNAL ADD-ON
 
-* Their respective MARKER word identified with braces {} removes all ADD-ONs words.  
+* Their respective MARKER word identified with braces {} removes all subsequent words.  
   Sources are in the folder \MSP430-FORTH\, as source.f file.
 
 ### ANS_COMP
@@ -1840,7 +1872,7 @@ F+,
     CLUSTER.        .123 CLUSTER. displays first sector of cluster 123  
     SECTOR.         .123456789 SECTOR. displays sector 123456789  
 
-### DOUBLE word set
+### DOUBLE word set (ANS94 compliant)
 
 [D.R             ](https://forth-standard.org/standard/double/DDotR),
 [2LITERAL        ](https://forth-standard.org/standard/double/TwoLITERAL),

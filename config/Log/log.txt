@@ -1,0 +1,39 @@
+Mon Nov  7 14:29:12 2022:	* -----/|-------------------------------------------------------------------- *
+Mon Nov  7 14:29:12 2022:	*     / |__                                                                   *
+Mon Nov  7 14:29:12 2022:	*    /_   /   MSP Flasher v1.3.20                                             *
+Mon Nov  7 14:29:12 2022:	*      | /                                                                    *
+Mon Nov  7 14:29:12 2022:	* -----|/-------------------------------------------------------------------- *
+Mon Nov  7 14:29:12 2022:	*
+Mon Nov  7 14:29:12 2022:	* Evaluating triggers...done
+Mon Nov  7 14:29:12 2022:	* Checking for available FET debuggers: 
+Mon Nov  7 14:29:12 2022:	* Found USB FET @ COM11 <- Selected
+Mon Nov  7 14:29:12 2022:	* Initializing interface @ COM11...done
+Mon Nov  7 14:29:12 2022:	* Checking firmware compatibility: 
+Mon Nov  7 14:29:12 2022:	* FET firmware is up to date.
+Mon Nov  7 14:29:12 2022:	* Reading FW version...
+Mon Nov  7 14:29:12 2022:	* Debugger does not support target voltages other than 3000 mV!
+Mon Nov  7 14:29:12 2022:	* Setting VCC to 3000 mV...done
+Mon Nov  7 14:29:13 2022:	* Accessing device...done
+Mon Nov  7 14:29:13 2022:	* Reading device information...done
+Mon Nov  7 14:29:14 2022:	* 
+Mon Nov  7 14:29:14 2022:	* ----------------------------------------------------------------------------
+Mon Nov  7 14:29:14 2022:	* Arguments   : -m SBW2 -z [RESET,VCC=3300] 
+Mon Nov  7 14:29:14 2022:	* ----------------------------------------------------------------------------
+Mon Nov  7 14:29:14 2022:	* Driver      : loaded
+Mon Nov  7 14:29:14 2022:	* Dll Version : 31400000
+Mon Nov  7 14:29:14 2022:	* FwVersion   : 31200000
+Mon Nov  7 14:29:14 2022:	* Interface   : TIUSB
+Mon Nov  7 14:29:14 2022:	* HwVersion   : E 4.0
+Mon Nov  7 14:29:14 2022:	* JTAG Mode   : AUTO
+Mon Nov  7 14:29:14 2022:	* Device      : MSP430FR5994
+Mon Nov  7 14:29:14 2022:	* EEM         : Level 5, ClockCntrl 2
+Mon Nov  7 14:29:14 2022:	* VCC ON      : 3000 mV
+Mon Nov  7 14:29:14 2022:	* ----------------------------------------------------------------------------
+Mon Nov  7 14:29:14 2022:	* Resetting device (RST/NMI)...done
+Mon Nov  7 14:29:15 2022:	* Starting target code execution...done
+Mon Nov  7 14:29:15 2022:	* Disconnecting from device...done
+Mon Nov  7 14:29:15 2022:	* 
+Mon Nov  7 14:29:15 2022:	* ----------------------------------------------------------------------------
+Mon Nov  7 14:29:15 2022:	* Driver      : closed (No error)
+Mon Nov  7 14:29:15 2022:	* ----------------------------------------------------------------------------
+Mon Nov  7 14:29:15 2022:	*/

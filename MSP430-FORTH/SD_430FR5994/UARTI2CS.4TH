@@ -9,35 +9,24 @@
     0<> IF MOV #0,R14 THEN
     MOV R14,0(R15)
     MOV &$180A,R14
-    SUB #400,R14
+    SUB #401,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     ABORT" <-- Ouch! unexpected I2C_FastForth target!"
     RST_RET
     ;
 
     ABORT_UARTI2CS
 
-
     MARKER {UARTI2CS}
     16 ALLOT
-
-
-    CODE LEDS MOV @R13+,R0 ENDCODE
 
     [UNDEFINED] = [IF]
     CODE =
     SUB @R15+,R14
     SUB #1,R14
     SUBC R14,R14
-    MOV @R13+,R0
-    ENDCODE
-    [THEN]
-
-    [UNDEFINED] + [IF]
-    CODE +
-    ADD @R15+,R14
     MOV @R13+,R0
     ENDCODE
     [THEN]
@@ -76,13 +65,13 @@ BW1
     BIC.B #$20,&$20C
     BIC.B #$20,&$204
     BIC.B #$10,&$21A
-    CMP #$406C,&{UARTI2CS}-2
+    CMP #<#+$4C,&{UARTI2CS}-2
     0<> IF
         MOV #{UARTI2CS},R10
-        MOV #$406C,-2(R10)
-        MOV @R10+,&$183A
-        MOV @R10+,&$183E
-        MOV @R10+,&$1840
+        MOV #<#+$4C,-2(R10)
+        MOV @R10+,&$183C
+        MOV @R10+,&$1842
+        MOV @R10+,&$1844
         MOV @R10+,&$FFF0
         MOV @R10+,&$FFDE
     THEN
@@ -96,10 +85,11 @@ BW1
 
     HDNCODE BACKGRND_U2I
     BIT #8,&$5CA
-    0<> IF
-        MOV #WARM_IP_ADR,0(R1)
-        PUSH #$40BA
-BW2     MOV #1,R14
+    0<> ?GOTO FW1
+    BIT.B #$40,&$240
+    0= IF
+FW1     MOV #1,R14
+        MOV #SYS+$0E,0(R1)
         GOTO BW1
     THEN
     BIC.B #$10,&$21C
@@ -125,14 +115,12 @@ BW3 MOV &{UARTI2CS}+12,&$3C0
     BIS.B #2,&$204
     [THEN]
     CALL &{UARTI2CS}+2
-    CMP #6,R14
-    0= ?GOTO BW2
     CMP #$0E,R14
     0<> IF
         CMP #$0A,R14
         U>= ?GOTO BW1
     THEN
-    MOV #ALLOT+$08,0(R1)
+    MOV #ALLOT+8,0(R1)
     MOV @R1+,R0
     ENDCODE
 
@@ -157,17 +145,17 @@ BW3 MOV &{UARTI2CS}+12,&$3C0
                 0<> UNTIL
                 MOV.B #'c',&$5CE
                 BEGIN
-                    BIT.B #4,&$261
+                    BIT.B #2,&$261
                 0<> UNTIL
                 BEGIN
-                  BIC.B #6,&I2CSM_IFG
-                  MOV R0,R0
-                  MOV.B &{UARTI2CS}+14,R10
-                  BEGIN
-                    MOV #0,R3
-                    SUB #1,R10
-                  0= UNTIL
-                  BIT.B #6,&I2CSM_IFG
+                   BIC.B #6,&I2CSM_IFG
+                   MOV R0,R0
+                   MOV.B &{UARTI2CS}+14,R10
+                   BEGIN
+                      MOV #0,R3
+                      SUB #1,R10
+                   0= UNTIL
+                   BIT.B #6,&I2CSM_IFG
                 0= UNTIL
                 ADD #2,R1
                 MOV @R1,R0
@@ -285,7 +273,7 @@ FW2
         THEN
         CMP.B #-1,R8
         0= IF
-            MOV.B #0,R8
+            MOV.B #1,&{UARTI2CS}+15
             MOV.B #$0D,&$5CE
             BEGIN
                 BIT #2,&$5DC
@@ -327,6 +315,7 @@ FW2
                 CMP.B #4,R9
                 U>= IF
                    MOV.B R9,R8
+                   MOV.B R8,&{UARTI2CS}+15
                    BIS.B #4,&$265
                 THEN
             THEN
@@ -339,7 +328,7 @@ FW2
         0<> UNTIL
         CMP.B #2,R9
     U>= WHILE
-        MOV.B #0,R8
+        BIC.B #2,&$265
         CALL #KEY+8
         BEGIN
             BIC #1,&$5DC
@@ -351,6 +340,7 @@ FW2
            0= UNTIL
             BIT #1,&$5DC
         0= UNTIL
+        MOV.B #0,R8
     REPEAT
     CALL #I2CM_STOP
     [DEFINED] LEDS [IF]
@@ -358,7 +348,6 @@ FW2
     [THEN]
     CMP.B #0,R9
     0= IF
-        MOV.B R8,&{UARTI2CS}+15
         MOV #ACCEPT+$1C,R0
     THEN
     CALL #KEY+8
@@ -378,24 +367,24 @@ FW2
     ." Connect to I2C_SLAVE at @"
     . $08 EMIT
      ." , TERATERM(Alt-B) "
-    ." or I2C_MASTER(S2) to quit..."
+    ." or I2C_MASTER(SW1) to quit..."
     HI2LO
     MOV @R1+,R13
     BEGIN
         BIT #1,&$5CA
     0= UNTIL
-    CMP #$406C,&{UARTI2CS}-2
+    CMP #<#+$4C,&{UARTI2CS}-2
     0= IF
         MOV #REMOVE_U2I,&{UARTI2CS}-2
-        MOV &$183A,&{UARTI2CS}
-        MOV &$183E,&{UARTI2CS}+2
-        MOV &$1840,&{UARTI2CS}+4
+        MOV &$183C,&{UARTI2CS}
+        MOV #STOP_U2I,&$183C
+        MOV &$1842,&{UARTI2CS}+2
+        MOV #HARD_U2I,&$1842
+        MOV &$1844,&{UARTI2CS}+4
+        MOV #BACKGRND_U2I,&$1844
         MOV &$FFF0,&{UARTI2CS}+6
-        MOV &$FFDE,&{UARTI2CS}+8
-        MOV #STOP_U2I,&$183A
-        MOV #HARD_U2I,&$183E
-        MOV #BACKGRND_U2I,&$1840
         MOV #U2I_TERM_INT,&$FFF0
+        MOV &$FFDE,&{UARTI2CS}+8
         MOV #500MS_INT,&$FFDE
         MOV R14,&{UARTI2CS}+10
         $180E $4000 TSTBIT

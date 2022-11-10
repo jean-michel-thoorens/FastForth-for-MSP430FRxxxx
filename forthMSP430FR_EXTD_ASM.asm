@@ -7,23 +7,23 @@
 ; ----------------------------------------------------------------------
 ;       MOV(.B) SR,dst   is coded as follow : MOV(.B) R2,dst            ; 1 cycle,  one word    AS=00   (register mode)
 ;       MOV(.B) #0,dst   is coded as follow : MOV(.B) R3,dst            ; 1 cycle,  one word    AS=00   (register mode)
-;       MOV(.B) &EDE,dst is coded as follow : MOV(.B) EDE(R2),dst       ; 3 cycles, two words   AS=01   ( x(reg)  mode)
-;       MOV(.B) #1,dst   is coded as follow : MOV(.B) 0(R3),dst         ; 1 cycle,  one word    AS=01   ( x(reg)  mode)
+;       MOV(.B) #1,dst   is coded as follow : MOV(.B) (R3),dst          ; 1 cycle,  one word    AS=01   ( x(reg)  mode)
 ;       MOV(.B) #4,dst   is coded as follow : MOV(.B) @R2,dst           ; 1 cycle,  one word    AS=10   ( @reg    mode)
 ;       MOV(.B) #2,dst   is coded as follow : MOV(.B) @R3,dst           ; 1 cycle,  one word    AS=10   ( @reg    mode)
 ;       MOV(.B) #8,dst   is coded as follow : MOV(.B) @R2+,dst          ; 1 cycle,  one word    AS=11   ( @reg+   mode)
 ;       MOV(.B) #-1,dst  is coded as follow : MOV(.B) @R3+,dst          ; 1 cycle,  one word    AS=11   ( @reg+   mode)
 ; ----------------------------------------------------------------------
+;       MOV(.B) &EDE,dst is coded as follow : MOV(.B) EDE(R2),dst       ; 3 cycles, two words   AS=01   ( x(reg)  mode)
 ;       MOV(.B) #xxxx,dst is coded as follow: MOV(.B) @PC+,dst          ; 2 cycles, two words   AS=11   ( @reg+   mode)
 ; ----------------------------------------------------------------------
 
-; PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rEXIT,rDOVAR,rDOCON, rDODOES, R3, SR,RSP, PC
-; PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7  ,  R6  ,  R5  ,   R4   , R3, R2, R1, R0
+; PUSHM order : PSP,TOS, IP,  S,  T,  W,  X,  Y, rDOVAR,rDOCON,rDODOES, rDOCOL, R3, SR,RSP, PC
+; PUSHM order : R15,R14,R13,R12,R11,R10, R9, R8,  R7   ,  R6  ,  R5   ,   R4  , R3, R2, R1, R0
 
 ; example : PUSHM #6,IP pushes IP,S,T,W,X,Y registers to return stack
 ;
-; POPM  order :  PC,RSP, SR, R3, rDODOES,rDOCON,rDOVAR,rEXIT,  Y,  X,  W,  T,  S, IP,TOS,PSP
-; POPM  order :  R0, R1, R2, R3,   R4   ,  R5  ,  R6  ,  R7 , R8, R9,R10,R11,R12,R13,R14,R15
+; POPM  order :  PC,RSP, SR, R3, rDOCOL,rDODOES,rDOCON,rDOVAR,  Y,  X,  W,  T,  S, IP,TOS,PSP
+; POPM  order :  R0, R1, R2, R3,   R4  ,  R5   ,  R6  ,  R7  , R8, R9,R10,R11,R12,R13,R14,R15
 
 ; example : POPM #6,IP   pop Y,X,W,T,S,IP registers from return stack
 
@@ -31,61 +31,63 @@
 ; DTCforthMSP430FR5xxx ASSEMBLER : search argument "xxxx"
 ; ----------------------------------------------------------------------
 
-; common code for maxi three successive SearchARG: SearchARG, SearchARG+Offset, SearchARG-offset
+; common code for maxi 3 successive SearchARG: SearchARG, SearchARG+Offset, SearchARG-offset
 ; leave PFA of VARIABLE, [PFA] of CONSTANT, User_Parameter_Field_Address of MARKER_DOES, CFA for all others.
-; if the ARGument is not found after those three SearchARg, the 'not found' error is issued by the last SrchOfst.
-SearchARGn  PUSH &TOIN              ;                   push TOIN, for next SearchARGn if any
+; if the ARGument is not found after those three SearchARg, the 'not found' error is issued by SrchOfst.
+SearchARGn  PUSH &TOIN              ;                   push TOIN for iterative SearchARGn if any
             mASM2FORTH              ; -- sep            sep =  ','|'('|' '
-            .word WORDD,FIND        ; -- addr           search string name first
-            .word QFBRAN,SRCHARGNUM ; -- addr           if string name not found
-            mNEXTADR                ; -- CFA
+            .word WORDD,FIND        ; -- addr           search definition
+            .word QFBRAN,SRCHARGNUM ; -- addr           if not found
+            mNEXTADR                ; -- CFA            of this definition
             MOV @TOS+,S             ; -- PFA            S=DOxxx
-QDOVAR      SUB #1287h,S            ;                   DOxxx = 1287h = CALL R7 = rDOVAR
-ISDOVAR     JZ ARGFOUND             ; -- addr           PFA = adr of VARIABLE
-QDOCON      ADD #1,S                ;                   DOxxx = 1286h = DOCON
-            JNZ QMARKER             ;                   if not DOCON
-ISDOCON     MOV @TOS,TOS            ; --
+QDOVAR      SUB #1287h,S            ;                   if CFA is DOVAR ?
+ISDOVAR     JZ ARGFOUND             ; -- addr           yes, PFA = adr of VARIABLE
+QDOCON      ADD #1,S                ;                   is CFA is DOCON ?
+            JNZ QMARKER             ;                   no
+ISDOCON     MOV @TOS,TOS            ; -- cte            yes, TOS = constant
             JMP ARGFOUND            ; -- cte
 QMARKER     CMP #MARKER_DOES,0(TOS) ; -- PFA            search if PFA = [MARKER_DOES]
             JNZ ISOTHER             ; -- PFA
         .IFDEF VOCABULARY_SET       ; -- PFA
-            ADD #30,TOS             ; -- UPFA+2         skip room for DP, CURRENT, CONTEXT(8), null_word, LASTVOC, RET_ADR 2+(2+2+16+2+2+2) +2 bytes
+ISMARKER    ADD #30,TOS             ; -- UPFA+2         skip room for DP, CURRENT, CONTEXT(8), null_word, LASTVOC, RET_ADR 2+(2+2+16+2+2+2) bytes +2 !
         .ELSE                       ;
-            ADD #8,TOS              ; -- UPFA+2         skip room for DP, RET_ADR  2+(2+2) +2 bytes
+ISMARKER    ADD #8,TOS              ; -- UPFA+2         skip room for DP, RET_ADR  2+(2+2) bytes +2 !
         .ENDIF                      ;
 ISOTHER     SUB #2,TOS              ; -- CFA|UPFA       UPFA = MARKER_DOES User_Parameter_Field_Address
 ARGFOUND    ADD #2,RSP              ;                   remove TOIN
-SEARCHRET   MOV @RSP+,PC            ;24                 SR(Z)=0 if ARG found
+            MOV @RSP+,PC            ;24                 SR(Z)=0 if ARG found
 
 SRCHARGNUM  .word QNUMBER           ;
             .word QFBRAN,ARGNOTFOUND; -- addr
             .word ARGFOUND          ; -- value
-ARGNOTFOUND mNEXTADR                ; -- x
+ARGNOTFOUND mNEXTADR                ; -- addr
             MOV @RSP+,&TOIN         ;                   restore TOIN
             MOV @RSP+,PC            ;32                 SR(Z)=1 if ARG not found
 ; ----------------------------------;
 
 ; ----------------------------------;
 SearchIndex
-; Search index of "xxxx(REG),"      ; <== ComputeIDXpREG <== PARAM1IDX
-; Search index of ",xxxx(REG)"      ; <== ComputeIDXpREG <== PARAM2IDX
+; Search index of "xxxx(REG),"      ; <== CompIdxSrchRn <== PARAM1IDX
+; Search index of ",xxxx(REG)"      ; <== CompIdxSrchRn <== PARAM2IDX
+; Search index of "xxxx(REG),"      ; <== CALLA, MOVA
+; Search index of ",xxxx(REG)"      ; <== MOVA
+            SUB #1,&TOIN            ;               move >IN back one (unskip first_char)
             MOV #'(',TOS            ; addr -- "("   as WORD separator to find xxxx of "xxxx(REG),"
-            SUB #1,&TOIN            ;               move >IN back one (unskip 'R')
 SearchARG                           ; sep -- n|d    or abort" not found"
-; Search ARG of "#xxxx,"            ; <== PARAM1SHARP
-; Search ARG of "&xxxx,"            ; <== PARAMXAMP
-; Search ARG of ",&xxxx"            ; <== PARAMXAMP <== PARAM2AMP
-            MOV TOS,W
+; Search ARG of "#xxxx,"            ; <== PARAM1SHARP   sep = ',' 
+; Search ARG of "&xxxx,"            ; <== PARAMXAMP     sep = ','
+; Search ARG of ",&xxxx"            ; <== PARAMXAMP <== PARAM2AMP   sep = ' '
+            MOV TOS,W               ;
             PUSHM #4,IP             ; -- sep        PUSHM IP,S,T,W as IP_RET,OPCODE,OPCODEADR,sep
             CALL #SearchARGn        ;               first search argument without offset
             JNZ SrchEnd             ; -- ARG        if ARG found
-SearchArgPl MOV #'+',TOS            ; -- '+'    
+SearchArgPl MOV #'+',TOS            ; -- '+'
             CALL #SearchARGn        ;               2th search argument with '+' as separator
             JNZ ArgPlusOfst         ; -- ARG        if ARG of ARG+offset found
-SearchArgMi MOV #'-',TOS            ; -- '-'    
+SearchArgMi MOV #'-',TOS            ; -- '-'
             CALL #SearchARGn        ;               3th search argument with '-' as separator
             SUB #1,&TOIN            ;               to handle offset with its minus sign
-ArgPlusOfst PUSH TOS                ; -- ARG        save ARG on stack
+ArgPlusOfst PUSH TOS                ; -- ARG        R-- IP_RET,OPCODE,OPCODEADR,sep,ARG
             MOV 2(RSP),TOS          ; -- sep        reload offset sep
 SrchOfst    mASM2FORTH              ;
             .word WORDD,QNUMBER     ; -- Ofst|c-addr flag
@@ -104,23 +106,22 @@ ARGD2SEND   MOV @RSP+,PC            ;
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER : search REG
 ; ----------------------------------------------------------------------
-; compute index of "xxxx(REG),"     ;               <== PARAM1IDX, sep=','
-; compute index of ",xxxx(REG)"     ;               <== PARAM2IDX, sep=' '
-ComputeIDXpREG                      ; addr -- Rn|addr
+; compute index of "xxxx(REG),"     ; <== PARAM1IDX, sep=','
+; compute index of ",xxxx(REG)"     ; <== PARAM2IDX, sep=' '
+CompIdxSrchRn                       ; addr -- Rn|addr
             CALL #SearchIndex       ; -- xxxx       aborted if not found
             CALL #ARGD2S            ;               skip arg_hi if DOUBLE
             MOV &DP,X
             MOV TOS,0(X)            ; -- xxxx       compile ARG xxxx
             ADD #2,&DP
             MOV #')',TOS            ; -- ")"        prepare separator to search REG of "xxxx(REG)"
-; search REG of "xxxx(REG),"    separator = ')'
-; search REG of ",xxxx(REG)"    separator = ')'
-; search REG of "@REG,"         separator = ',' <== PARAM1AT
-; search REG of "@REG+,"        separator = '+' <== PARAM1ATPL
-SkipRSearchRn
-            ADD #1,&TOIN            ;               skip "R" in input buffer
-; search REG of "REG,"          separator = ',' <== PARAM1REG
-; search REG of ",REG"          separator = ' ' <== PARAM2REG
+; search REG of "xxxx(REG),"
+; search REG of ",xxxx(REG)"
+; search REG of "@REG,"   sep = ',' ; <== PARAM1AT
+SkipRSrchRn ADD #1,&TOIN            ;               skip 'R' in input buffer
+; search REG of "@REG+,"  sep = '+' ; <== PARAM1ATPL
+; search REG of "REG,"    sep = ',' ; <== PARAM1REG
+; search REG of ",REG"    sep = ' ' ; <== PARAM2REG
 SearchRn    MOV &TOIN,W             ;
             PUSHM #4,IP             ;               PUSHM IP,S,T,W as IP_RET,OPCODE,OPCODEADR,TOIN
             mASM2FORTH              ;               search xx of Rxx
@@ -129,9 +130,9 @@ SearchRn    MOV &TOIN,W             ;
             mNEXTADR                ; -- Rn         number is found
             CMP #16,TOS             ; -- Rn
             JNC SrchEnd             ; -- Rn         SR(Z)=0, Rn found,
-            JC  BOUNDERROR          ;               abort if Rn out of bounds
+            JC  REGNUM_ERR          ;               abort if Rn out of bounds
 
-REGNOTFOUND mNEXTADR                ; -- addr       SR(Z)=1, (case of @REG not found),
+REGNOTFOUND mNEXTADR                ; -- addr       SR(Z)=1, (used in case of @REG not found),
             MOV @RSP,&TOIN          ; -- addr       restore TOIN, ready for next SearchRn
             JMP SrchEnd             ; -- addr       SR(Z)=1 ==> not a register
 
@@ -142,7 +143,7 @@ REGNOTFOUND mNEXTADR                ; -- addr       SR(Z)=1, (case of @REG not f
                                     ;               sep is "," for src TYPE II and " " for dst (TYPE II).
 PARAM1      JNZ QPARAM1SHARP        ; -- sep        if prefix <> 'R'
 PARAM1REG   CALL #SearchRn          ;               case of "REG,"
-            JNZ REGSHFT8L           ; -- 000R       REG of "REG," found, S=OPCODE=0
+            JNZ SWAPREG             ; -- 000R       REG of "REG," found, S=OPCODE=0
 ; ----------------------------------;
 QPARAM1SHARP CMP.B #'#',W           ; -- sep        W=first char
             JNE QPARAM1AMP
@@ -157,57 +158,58 @@ PARAM1SHARP CALL #SearchARG         ; -- xxxx       abort if not found
             MOV #0320h,S            ;               OPCODE = 0320h : MOV #2,dst is coded MOV @R3,dst
             CMP #2,TOS              ; -- xxxx       #2 ?
             JZ PARAMENDOF
+            MOV #0330h,S            ;               OPCODE = 0330h : MOV #-1,dst is coded MOV @R3+,dst
+            CMP #-1,TOS             ; -- xxxx       #-1 ?
+            JZ PARAMENDOF
             MOV #0220h,S            ;               OPCODE = 0220h : MOV #4,dst is coded MOV @R2,dst
             CMP #4,TOS              ; -- xxxx       #4 ?
             JZ PARAMENDOF
             MOV #0230h,S            ;               OPCODE = 0230h : MOV #8,dst is coded MOV @R2+,dst
             CMP #8,TOS              ; -- xxxx       #8 ?
             JZ PARAMENDOF
-            MOV #0330h,S            ;               OPCODE = 0330h : MOV #-1,dst is coded MOV @R3+,dst
-            CMP #-1,TOS             ; -- xxxx       #-1 ?
-            JZ PARAMENDOF
-            MOV #0030h,S            ; -- xxxx       for all other cases : MOV @PC+,dst
+SHARPOTHERS MOV #0030h,S            ; -- xxxx       for all other cases : MOV @PC+,dst
 ; endcase of "&xxxx,"               ;               <== PARAM1AMP
 ; endcase of ",&xxxx"               ;               <== PARAMXAMP <== PARAM2AMP
 StoreArg    MOV &DP,X               ;
             ADD #2,&DP              ;               cell allot for arg
             MOV TOS,0(X)            ;               compile arg
-            JMP     PARAMENDOF
+            JMP PARAMENDOF    
 ; ----------------------------------;
-QPARAM1AMP  CMP.B   #'&',W          ; -- sep
-            JNE     QPARAM1AT
+QPARAM1AMP  CMP.B #'&',W            ; -- sep
+            JNE QPARAM1AT    
 ; case of "&xxxx,"                  ;               search for "&xxxx,"
-PARAM1AMP   MOV     #0210h,S        ;               set code type : xxxx(R2) with AS=0b01 ==> x210h
+PARAM1AMP   MOV #0210h,S            ;               set code type : xxxx(R2) with AS=0b01 ==> x210h
 ; case of "&xxxx,"|",&xxxx"         ;               <== PARAM2AMP
-PARAMXAMP   CALL    #SearchARG      ; -- sep
-            CALL    #ARGD2S         ;               skip arg_hi of OPCODE type V
-            JMP     StoreArg        ; --            then ret
+PARAMXAMP   CALL #SearchARG         ;
+            CALL #ARGD2S            ;               skip arg_hi of OPCODE type V
+            JMP StoreArg            ; --            then ret
 ; ----------------------------------;
-QPARAM1AT   CMP.B   #'@',W          ; -- sep
-            JNE     PARAM1IDX
+QPARAM1AT   CMP.B #'@',W            ; -- sep
+            JNE PARAM1IDX    
 ; case of "@REG,"|"@REG+,"
-PARAM1AT    MOV     #0020h,S        ; -- sep        init OPCODE with indirect code type : AS=0b10
-            CALL    #SkipRSearchRn  ;               Z = not found
-            JNZ     REGSHFT8L       ; -- Rn         REG of "@REG," found
+PARAM1AT    MOV #0020h,S            ; -- sep        init OPCODE with indirect code type : AS=0b10
+            CALL #SkipRSrchRn       ;               Z = not found
+            JNZ SWAPREG             ; -- Rn         REG of "@REG," found
 ; case of "@REG+,"                  ; -- addr       search REG of "@REG+"
-PARAM1ATPL  BIS     #0010h,S        ;               change OPCODE from @REG to @REG+ type
-            MOV     #'+',TOS        ; -- sep
-            CALL    #SearchRn       ;
-            JNZ     QSKIPCOMMA      ; -- Rn         REG found
+PARAM1ATPL  MOV #'+',TOS            ; -- sep
+            CALL #SearchRn          ;
+            JNZ PARAM1ATPLX         ; -- Rn         REG found
 ; ----------------------------------;               REG not found
-; case of "xxxx(REG),"              ; -- sep
-PARAM1IDX   BIS     #0010h,S        ;               AS=0b01 for indexing address
-            CALL    #ComputeIDXpREG ;               compile index xxxx and search REG of "(REG)", abort if xxxx not found
-; case of "@REG+,"|"xxxx(REG),"     ;               <== PARAM1ATPL
-QSKIPCOMMA  CMP &SOURCE_LEN,&TOIN   ;               test OPCODE II parameter ending by REG+ or (REG) without comma,
-            JZ      REGSHFT8L       ;               i.e. >IN = SOURCE_LEN : don't skip char CR !
-SKIPCOMMA   ADD     #1,&TOIN        ; -- 000R       with OPCODE I, skip "," ready for the second operand search
+; case of "xxxx(REG),"              ; -- sep        OPCODE I
+; case of "xxxx(REG)"               ; -- sep        OPCODE II
+PARAM1IDX   CALL #CompIdxSrchRn     ; -- 000R       compile index xxxx and search REG of "(REG)", abort if xxxx not found
+; case of "@REG+,"|"xxxx(REG),"     ;               <== PARAM1ATPL OPCODE I
+; case of "@REG+"|"xxxx(REG)"       ;               <== PARAM1ATPL OPCODE II
+PARAM1ATPLX BIS #0010h,S            ;               AS=0b01 for indexing address, AS=0b11 for @REG+
+            MOV #3FFFh,W            ;2              4000h = first OPCODE type I
+            CMP S,W                 ;1              with OPCODE II @REG or xxxx(REG) don't skip CR !
+            ADDC #0,&TOIN           ;1              with OPCODE I, @REG+, or xxxx(REG), skip "," ready for the second operand search
 ; endcase of "@REG,"                ; -- 000R       <== PARAM1AT
 ; endcase of "REG,"                 ; -- 000R       <== PARAM1REG
-REGSHFT8L   SWPB    TOS             ; -- 0R00       swap bytes because it's not a dst REG typeI (not a 2 ops inst.)
-; endcase of ",REG"                 ; -- 000R       <== PARAM2REG (dst REG typeI)
-; endcase of ",xxxx(REG)"           ; -- 000R       <== PARAM2IDX (dst REG typeI)
-OPCODEPLREG ADD     TOS,S           ; -- 0R00|000R
+SWAPREG     SWPB TOS                ; -- 0R00       swap bytes because it's not a dst REG typeI (not a 2 ops inst.)
+; endcase of ",REG"                 ; -- 0R0D       <== PARAM2REG (dst REG typeI)
+; endcase of ",xxxx(REG)"           ; -- 0R0D       <== PARAM2IDX (dst REG typeI)
+OPCODEPLREG ADD TOS,S               ; -- 0R00|0R0D
 ; endcase of all                    ;               <== PARAM1SHARP PARAM1AMP PARAM2AMP
 PARAMENDOF  MOV @PSP+,TOS           ; --
             MOV @IP+,PC             ; --            S=OPCODE,T=OPCODEADR
@@ -218,7 +220,7 @@ PARAMENDOF  MOV @PSP+,TOS           ; --
 ; ----------------------------------------------------------------------
 PARAM2      JNZ     QPARAM2AMP      ; -- sep        if prefix <> 'R'
 PARAM2REG   CALL    #SearchRn       ; -- sep        case of ",REG"
-            JNZ     OPCODEPLREG     ; -- 000R       REG of ",REG" found
+            JNZ     OPCODEPLREG     ; -- 000D       REG of ",REG" found
 ; ----------------------------------;
 QPARAM2AMP  CMP.B   #'&',W          ;
             JNZ     PARAM2IDX       ;               '&' not found
@@ -228,8 +230,8 @@ PARAM2AMP   BIS     #0082h,S        ;               change OPCODE : AD=1, dst = 
 ; ----------------------------------;
 ; case of ",xxxx(REG)               ; -- sep
 PARAM2IDX   BIS     #0080h,S        ;               set AD=1
-            CALL    #ComputeIDXpREG ;               compile index xxxx and search REG of ",xxxx(REG)", abort if xxxx not found
-            JNZ     OPCODEPLREG     ; -- 000R       if REG found
+            CALL    #CompIdxSrchRn  ;               compile index xxxx and search REG of ",xxxx(REG)", abort if xxxx not found
+            JNZ     OPCODEPLREG     ; -- 000D       if REG found
             MOV     #NOTFOUND,PC    ;               does ABORT" ?"
 ; ----------------------------------;
 
@@ -241,7 +243,7 @@ InitAndSkipPrfx
             MOV #0,S                ;                   reset OPCODE
             MOV &DP,T               ;                   HERE --> OPCODEADR
             ADD #2,&DP              ;                   cell allot for opcode
-; SkipPrfx                          ; --                skip all occurring char 'BL' plus one prefix
+; SkipPrfx                          ; --                skip all occurring char 'BL', plus one prefix
 SkipPrfx    MOV #20h,W              ; --                W=BL
             MOV &TOIN,X             ; --
             ADD &SOURCE_ORG,X       ;
@@ -424,13 +426,17 @@ BIS_ASMTYPE BIS     W,S             ; -- BODYDOES       add it in OPCODE
             CALL rDODOES
             .word   TYPE2DOES,1280h
 
-BOUNDERRWM1 ADD     #1,W            ; <== RRAM|RRUM|RRCM|RLAM error
-BOUNDERRORW MOV     W,TOS           ; <== PUSHM|POPM|ASM_branch error
-BOUNDERROR                          ; <== REG number error
+; ----------------------------------------------------------------------
+; errors output
+; ----------------------------------------------------------------------
+
+MUL_REG_ERR ADD     #1,W            ; <== PUSHM|POPM|RRAM|RRUM|RRCM|RLAM error
+BRANCH_ERR  MOV     W,TOS           ; <== ASM_branch error
+REGNUM_ERR                          ; <== REG number error
             mASM2FORTH              ; -- n      n = value out of bounds
             .word   DOT,XSQUOTE
             .byte 13,"out of bounds"
-            .word   ABORT_TERM
+            .word   QABORT_YES
 
 ; ----------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER, CONDITIONAL BRANCHS
@@ -447,23 +453,23 @@ BOUNDERROR                          ; <== REG number error
 
             asmword "S>="           ; if >= assertion (opposite of jump if < )
             CALL rDOCON
-            .word   3800h           ; JL
+            .word   3800h
 
             asmword "S<"            ; if < assertion
             CALL rDOCON
-            .word   3400h           ; JGE
+            .word   3400h
 
             asmword "0>="           ; if 0>= assertion  ; use only with IF UNTIL WHILE !
             CALL rDOCON
-            .word   3000h           ; JN
+            .word   3000h
 
             asmword "0<"            ; jump if 0<        ; use only with ?GOTO !
             CALL rDOCON
-            .word   3000h           ; JN
+            .word   3000h
 
             asmword "U<"            ; if U< assertion
             CALL rDOCON
-            .word   2C00h           ; 
+            .word   2C00h
 
             asmword "U>="           ; if U>= assertion
             CALL rDOCON
@@ -492,14 +498,14 @@ ASM_THEN    MOV     &DP,W           ; -- @OPCODE    W=dst
 ASM_THEN1   MOV     @PSP+,TOS       ; --
             MOV     Y,X             ;
             ADD     #2,X            ; --        Y=@OPCODE   W=dst   X=src+2
-            SUB     X,W             ; --        Y=@OPCODE   W=dst-src+2=displacement*2 (bytes)
+            SUB     X,W             ; --        Y=@OPCODE   W=dst-src+2=displacement (bytes)
             CMP     #1023,W
-            JC      BOUNDERRORW     ;           (JHS) unsigned branch if displ. > 1022 bytes
+            JC      BRANCH_ERR      ;           (JHS) unsigned branch if displ. > 1022 bytes
             RRA     W               ; --        Y=@OPCODE   W=displacement (words)
             BIS     W,0(Y)          ; --        [@OPCODE]=OPCODE completed
             MOV     @IP+,PC
 
-;C ELSE     @OPCODE1 -- @OPCODE2    branch for IF..ELSE
+; ELSE      @OPCODE1 -- @OPCODE2    branch for IF..ELSE
             asmword "ELSE"
 ASM_ELSE    MOV     &DP,W           ; --        W=HERE
             MOV     #3C00h,0(W)     ;           compile unconditionnal branch
@@ -524,7 +530,7 @@ ASM_UNTIL2  MOV     @PSP+,TOS       ;  --
             SUB     #2,W            ;  --           Y=OPCODE    X=HERE  W=dst-2
             SUB     X,W             ;  --           Y=OPCODE    X=src   W=src-dst-2=displacement (bytes)
             CMP     #-1024,W        ;
-            JL      BOUNDERRORW     ;               signed branch if displ. < -1024 bytes
+            JL      BRANCH_ERR      ;               signed branch if displ. < -1024 bytes
             RRA     W               ;  --           Y=OPCODE    X=HERE  W=displacement (words)
             AND     #3FFh,W         ;  --           Y=OPCODE   X=HERE  W=troncated negative displacement (words)
             BIS     W,Y             ;  --           Y=OPCODE (completed)
@@ -553,9 +559,9 @@ ASM_REPEAT  mDOCOL                  ; -- @WHILE @BEGIN
 ; DTCforthMSP430FR5xxx ASSEMBLER : branch up to 3 backward labels and up to 3 forward labels
 ; ------------------------------------------------------------------------------------------
 ; used for non canonical branchs, as BASIC language: "goto line x"
-; labels BWx and FWx must be respectively set and used at the beginning of line (>IN < 8).
-; FWx at the beginning of a line can resolve only one previous GOTO|?GOTO  FWx.
-; BWx at the beginning of a line can be resolved by any subsequent GOTO|?GOTO BWx.
+; labels BWx and FWx must be set at the beginning of line (>IN < 8).
+; FWx can resolve only one previous GOTO|?GOTO FWx.
+; BWx can resolve any subsequent GOTO|?GOTO BWx.
 
 BACKWDOES   mNEXTADR
             MOV @RSP+,IP            ;
@@ -664,7 +670,7 @@ TYPE3DOES                           ; -- BODYDOES
             MOV     TOS,W           ; -- BODYDOES n         W = n
             MOV     @PSP+,TOS       ; -- BODYDOES
             SUB     #1,W            ;                       W = n floored to 0
-            JN      BOUNDERRWM1
+            JN      MUL_REG_ERR
             MOV     @TOS,X          ;                       X=OPCODE
             RLAM    #4,X            ;                       OPCODE bit 1000h --> C
             JNC     RxxMINSTRU      ;                       if bit 1000h = 0
@@ -674,11 +680,11 @@ PxxxINSTRU  MOV     S,Y             ;                       S=REG, Y=REG to test
 POPMINSTRU  SUB     W,S             ;                       to make POPM opcode, compute first REG to POP; TI is complicated....
 PUSHMINSTRU SUB     W,Y             ;                       Y=REG-(n-1)
             CMP     #16,Y
-            JC      BOUNDERRWM1     ;                       JC=JHS    (U>=)
+            JC      MUL_REG_ERR     ;                       JC=JHS    (U>=)
             RLAM    #4,W            ;                       W = n << 4
             JMP     BIS_ASMTYPE     ; BODYDOES --
 RxxMINSTRU  CMP     #4,W            ;
-            JC      BOUNDERRWM1     ;                       JC=JHS    (U>=)
+            JC      MUL_REG_ERR     ;                       JC=JHS    (U>=)
             SWPB    W               ;                       W = n << 8
             RLAM    #2,W            ;                       W = N << 10
             JMP     BIS_ASMTYPE     ; BODYDOES --
@@ -723,7 +729,7 @@ RxxMINSTRU  CMP     #4,W            ;
 ; --------------------------------------------------------------------------------
 ; DTCforthMSP430FR5xxx ASSEMBLER:  OPCODE TYPE III bis: CALLA (without extended word)
 ; --------------------------------------------------------------------------------
-; absolute and immediate instructions must be written as $x.xxxx  (DOUBLE numbers)
+; absolute and immediate instructions must be written as $x.xxxx  (DOUBLE numbers with dot)
 ; indexed instructions must be written as $xxxx(REG)
 ; --------------------------------------------------------------------------------
             asmword "CALLA"
@@ -744,7 +750,7 @@ CALLA02     RLAM #4,S               ;           (opcode>>4)<<4 = opcode
 CALLA1      ADD #2,S                ; -- sep    136h<<4 = opcode for CALLA @REG
             CMP.B #'@',W            ;           Search @REG
             JNZ CALLA2              ;
-CALLA11     CALL #SkipRSearchRn     ;
+CALLA11     CALL #SkipRSrchRn       ;
             JNZ  CALLA02            ;           if REG found, update opcode
 ;-----------------------------------;
             ADD #1,S                ;           137h<<4 = opcode for CALLA @REG+
@@ -774,7 +780,7 @@ CALLA41     CALL #SearchIndex       ; -- n
 ; to allow data access beyond $FFFF
 ; ===============================================================
 
-; MOVA (#$x.xxxx|&$x.xxxx|$xxxx(Rs)|Rs|@Rs|@Rs+ , &|Rd|$xxxx(Rd))
+; MOVA #$x.xxxx|&$x.xxxx|$xxxx(Rs)|Rs|@Rs|@Rs+ , &$x.xxxx|$xxxx(Rd)|Rd
 ; ADDA (#$x.xxxx|Rs , Rd)
 ; CMPA (#$x.xxxx|Rs , Rd)
 ; SUBA (#$x.xxxx|Rs , Rd)
@@ -810,7 +816,7 @@ MOVA12      CMP.B #'&',W            ; -- sep         case of MOVA &$x.xxxx
 MOVA13      BIC #00F0h,S            ;               set MOVA @REG, opcode
             CMP.B #'@',W            ; -- sep
             JNZ MOVA14              ;
-            CALL #SkipRSearchRn     ; -- Rn
+            CALL #SkipRSrchRn       ; -- Rn
             JNZ ACMS102             ;               if @REG found
             BIS #0010h,S            ;               set @REG+ opcode
             MOV #'+',TOS            ; -- '+'
@@ -823,7 +829,7 @@ MOVA14      BIS #0030h,S            ; -- sep        set xxxx(REG), opcode
             CALL #SearchIndex       ; -- n
             MOV TOS,2(T)            ; -- n          store $xxxx as 2th word
             MOV #')',TOS            ; -- ')'
-            CALL #SkipRSearchRn     ; -- Rn
+            CALL #SkipRSrchRn       ; -- Rn
             JMP MOVA132             ;
 
 ; 2th argument process ACMS2
@@ -848,7 +854,7 @@ MOVA23      BIS #070h,S             ;               set ,xxxx(REG) opcode
             CALL #SearchIndex       ; -- n
             MOV TOS,2(T)            ; -- n          write $xxxx of ,$xxxx(REG) as 2th word
             MOV #')',TOS            ; -- ")"        as WORD separator to find REG of "xxxx(REG),"
-            CALL #SkipRSearchRn     ; -- Rn
+            CALL #SkipRSrchRn       ; -- Rn
             JMP ACMS103
 
 ; --------------------------------------------------------------------------------
@@ -902,7 +908,7 @@ PRMX12      CMP.B #'&',W            ; -- sep
 ;-----------------------------------;
 PRMX13      CMP.B #'@',W            ; -- sep
             JNZ PRMX14
-PRMX131     CALL #SkipRSearchRn     ; -- Rn             Rn of @REG,
+PRMX131     CALL #SkipRSrchRn       ; -- Rn             Rn of @REG,
             JNZ PRMX102             ;                   if Rn found
 ;-----------------------------------;
             MOV #'+',TOS            ; -- '+'
@@ -915,7 +921,7 @@ PRMX134     CMP &SOURCE_LEN,&TOIN   ;                   test case of TYPE VI fir
 PRMX14      CALL #SearchIndex       ; -- n
             MOV TOS,0(PSP)          ; -- Hi Hi
 PRMX141     MOV #')',TOS            ; -- Hi ')'
-            CALL #SkipRSearchRn     ; -- Hi Rn
+            CALL #SkipRSrchRn       ; -- Hi Rn
             MOV @PSP+,TOS           ; -- Hi
             AND #0Fh,TOS
             BIS TOS,S

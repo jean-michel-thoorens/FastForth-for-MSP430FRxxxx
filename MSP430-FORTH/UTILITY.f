@@ -46,10 +46,10 @@
     SUB #2,PSP
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #400,TOS        \ FastForth V4.0
+    SUB #401,TOS        \ FastForth V4.1
     COLON
     'CR' EMIT           \ return to column 1 without 'LF'
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     RST_RET             \ remove ABORT_UTILITY definition before resuming
     ;
 
@@ -566,7 +566,8 @@ BW1 MOV     TOS,-4(PSP) \ -- S0  ( TOS S0 PSP ) |  -- TOS ( TOS R0 RSP )
 \ list all words of vocabulary first in CONTEXT.
     : WORDS                         \ --
     CR
-    CONTEXT @ PAD_ORG               \ -- VOC_BODY PAD_ORG                  MOVE all threads of VOC_BODY in PAD_ORG
+    CONTEXT @                       \ -- VOC_BODY
+    PAD_ORG                         \ -- VOC_BODY PAD_ORG                  MOVE all threads of VOC_BODY in PAD_ORG
     THREADS @ 2*                    \ -- VOC_BODY PAD_ORG THREAD*2
     MOVE                            \ -- vocabumary entries are copied in PAD_ORG
     BEGIN                           \ --

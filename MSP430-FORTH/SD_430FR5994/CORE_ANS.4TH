@@ -3,10 +3,10 @@
     SUB #2,R15
     MOV R14,0(R15)
     MOV &$180A,R14
-    SUB #400,R14
+    SUB #401,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     ;
 
     ABORT_CORE_ANS
@@ -39,12 +39,11 @@
     [IF] {CORE_ANS} [THEN]
 
     [UNDEFINED] {CORE_ANS} [IF]
-
     MARKER {CORE_ANS}
 
     [UNDEFINED] ABORT [IF]
     CODE ABORT
-    MOV #ALLOT+$08,R0
+    MOV #ALLOT+8,R0
     ENDCODE
     [THEN]
 
@@ -176,9 +175,9 @@ BW1 SUB #2,R15
 
     [UNDEFINED] C, [IF]
     CODE C,
-    MOV &$1DC0,R10
+    MOV &$1DBE,R10
     MOV.B R14,0(R10)
-    ADD #1,&$1DC0
+    ADD #1,&$1DBE
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE
@@ -266,15 +265,15 @@ FW1 MOV #-1,R14
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -282,9 +281,9 @@ FW1 MOV #-1,R14
 
     [UNDEFINED] ELSE [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10)
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -299,9 +298,9 @@ FW1 MOV #-1,R14
     ENDCODE IMMEDIATE
 
     CODE UNTIL
-    MOV #$4096,R9
-BW1 ADD #4,&$1DC0
-    MOV &$1DC0,R10
+    MOV #[THEN]+$52,R9
+BW1 ADD #4,&$1DBE
+    MOV &$1DBE,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     MOV @R15+,R14
@@ -309,7 +308,7 @@ BW1 ADD #4,&$1DC0
     ENDCODE IMMEDIATE
 
     CODE AGAIN
-    MOV #$409C,R9
+    MOV #[THEN]+$58,R9
     GOTO BW1
     ENDCODE IMMEDIATE
 
@@ -337,8 +336,8 @@ BW1 ADD #4,&$1DC0
     CODE DO
     SUB #2,R15
     MOV R14,0(R15)
-    ADD #2,&$1DC0
-    MOV &$1DC0,R14
+    ADD #2,&$1DBE
+    MOV &$1DBE,R14
     MOV #XDO,-2(R14)
     ADD #2,&$1C00
     MOV &$1C00,R10
@@ -360,8 +359,8 @@ BW1 BIT #$100,R2
 
     CODE LOOP
     MOV #XLOOP,R9
-BW2 ADD #4,&$1DC0
-    MOV &$1DC0,R10
+BW2 ADD #4,&$1DBE
+    MOV &$1DBE,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     BEGIN
@@ -417,10 +416,10 @@ BW2 ADD #4,&$1DC0
 
     [UNDEFINED] LEAVE [IF]
     CODE LEAVE
-    MOV &$1DC0,R10
+    MOV &$1DBE,R10
     MOV #UNLOOP,0(R10)
-    MOV #$409C,2(R10)
-    ADD #6,&$1DC0
+    MOV #[THEN]+$58,2(R10)
+    ADD #6,&$1DBE
     ADD #2,&$1C00
     ADD #4,R10
     MOV &$1C00,R9
@@ -560,7 +559,7 @@ FW1 MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE
 
-    $180E 8 TSTBIT
+    $180E $10 TSTBIT
 
     RST_RET
 
@@ -574,9 +573,7 @@ BW1     MOV R14,&$4C8
         MOV &$4E6,R14
         MOV @R13+,R0
         ENDCODE
-        [THEN]
 
-        [UNDEFINED] M* [IF]
         CODE M*
         MOV @R15,&$4C2
         GOTO BW1
@@ -584,6 +581,29 @@ BW1     MOV R14,&$4C8
         [THEN]
 
     [ELSE]  ; MSP430FR413x without hardware_MPY
+
+        [UNDEFINED] UM* [IF]
+        CODE UM*
+        MOV @R15,R12
+        MOV #0,R11
+        MOV #0,R9
+        MOV #0,R8
+        MOV #1,R10
+        BEGIN
+            BIT R10,R14
+            0<> IF 
+                ADD R12,R9
+                ADDC R11,R8
+            THEN
+            ADD R12,R12
+            ADDC R11,R11
+            ADD R10,R10
+        U>= UNTIL
+        MOV R9,0(R15)
+        MOV R8,R14
+        MOV @R13+,R0
+        ENDCODE
+        [THEN]
 
         [UNDEFINED] M* [IF]
         CODE M*
@@ -620,7 +640,7 @@ BW1     MOV R14,&$4C8
     [IF]
     CODE UM/MOD
     PUSH #DROP
-    MOV #$4028,R0
+    MOV #<#+8,R0
     ENDCODE
     [THEN]
 
@@ -643,7 +663,7 @@ BW1     MOV R14,&$4C8
             ADDC #0,0(R15)
         THEN
         PUSHM  #2,R12
-        CALL #$4028
+        CALL #<#+8
         MOV @R15+,R14
         POPM  #2,R12
         CMP #0,R11
@@ -687,7 +707,7 @@ BW1     MOV R14,&$4C8
             ADDC #0,0(R15)
         THEN
         PUSHM  #2,R12
-        CALL #$4028
+        CALL #<#+8
         MOV @R15+,R14
         POPM  #2,R12
         CMP #0,R11
@@ -855,8 +875,8 @@ BW1     MOV R14,&$4C8
 
     [UNDEFINED] ALIGN [IF]
     CODE ALIGN
-    BIT #1,&$1DC0
-    ADDC #0,&$1DC0
+    BIT #1,&$1DBE
+    ADDC #0,&$1DBE
     MOV @R13+,R0
     ENDCODE
     [THEN]
@@ -887,6 +907,7 @@ BW1     MOV R14,&$4C8
     MOV @R13+,R0
     ENDCODE
     [THEN]
+
 
     [UNDEFINED] CHAR [IF]
     : CHAR
@@ -980,13 +1001,12 @@ BW1     MOV R14,&$4C8
 
     [UNDEFINED] .( [IF] ; "
     CODE .(         ; "
-    PUSH R13
-    MOV #0,&$1DB8
-    LO2HI
-    ')' WORD
+    MOV #0,R11
+    COLON
+    ')' 
+    [ ' WORD 16 + , ]
     COUNT TYPE
     HI2LO
-    MOV #$20,&$1DB8
     MOV @R1+,R13
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -1001,30 +1021,28 @@ BW1     MOV R14,&$4C8
 
     [UNDEFINED] EXECUTE [IF]
     CODE EXECUTE
-    PUSH R14
-    MOV @R15+,R14
-    MOV @R1+,R0
+    MOV #\+$28,R0
     ENDCODE
     [THEN]
 
     [UNDEFINED] EVALUATE [IF]
     CODENNM
-    MOV @R1+,&$1DBE
     MOV @R1+,&$1DBC
     MOV @R1+,&$1DBA
+    MOV @R1+,&$1DB8
     MOV @R1+,R13
     MOV @R13+,R0
     ENDCODE
 
     CODE EVALUATE
-    MOV #$1DBA,R9
+    MOV #$1DB8,R9
     MOV @R9+,R12
     MOV @R9+,R11
     MOV @R9+,R10
     PUSHM #4,R13
     MOV R0,R13
     ADD #8,R13
-    MOV #\+$08,R0
+    MOV #\+8,R0
     MOV #0,R3
     ENDCODE
     ,
@@ -1033,9 +1051,9 @@ BW1     MOV R14,&$4C8
 
     [UNDEFINED] RECURSE [IF]
     CODE RECURSE
-    MOV &$1DC0,R9
-    MOV &$1DDC,0(R9)
-    ADD #2,&$1DC0
+    MOV &$1DBE,R9
+    MOV &$1DDA,0(R9)
+    ADD #2,&$1DBE
     MOV @R13+,R0
     ENDCODE IMMEDIATE
     [THEN]
@@ -1044,8 +1062,8 @@ BW1     MOV R14,&$4C8
     CODE SOURCE
     SUB #4,R15
     MOV R14,2(R15)
-    MOV &$1DBA,R14
-    MOV &$1DBC,0(R15)
+    MOV &$1DB8,R14
+    MOV &$1DBA,0(R15)
     MOV @R13+,R0
     ENDCODE
     [THEN]
@@ -1080,7 +1098,7 @@ BW1     MOV R14,&$4C8
     [THEN]
 
     [UNDEFINED] >IN [IF]
-    $1DBE CONSTANT >IN
+    $1DBC CONSTANT >IN
     [THEN]
 
     [UNDEFINED] PAD [IF]
@@ -1112,7 +1130,7 @@ BW1     MOV R14,&$4C8
     CREATE
     HI2LO
     MOV #$4030,-4(R10)
-    MOV #$409E,-2(R10)
+    MOV #[THEN],-2(R10)
     MOV @R1+,R13
     MOV @R13+,R0
     ENDCODE
@@ -1120,7 +1138,7 @@ BW1     MOV R14,&$4C8
 
     [UNDEFINED] CR [IF]
     CODE CR
-    MOV #$409E,R0
+    MOV #[THEN],R0
     ENDCODE
 
     :NONAME

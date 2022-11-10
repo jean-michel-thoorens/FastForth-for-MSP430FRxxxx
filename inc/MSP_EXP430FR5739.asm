@@ -285,15 +285,7 @@ LED2        .equ    2           ;  PJ.1 LED2 blue
 
             MOV.B   #CSKEY,&CSCTL0_H ;  Unlock CS registers
 
-    .IF FREQUENCY = 0.25
-;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
-            MOV     #DIVA_0 + DIVS_32 + DIVM_32,&CSCTL3
-
-    .ELSEIF FREQUENCY = 0.5
-;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
-            MOV     #DIVA_0 + DIVS_16 + DIVM_16,&CSCTL3
-
-    .ELSEIF FREQUENCY = 1
+    .IF FREQUENCY = 1
 ;            MOV     #DCOFSEL1+DCOFSEL0,&CSCTL1      ; Set 8MHZ DCO setting (default value)
             MOV     #DIVA_0 + DIVS_8 + DIVM_8,&CSCTL3
 
@@ -331,7 +323,7 @@ LED2        .equ    2           ;  PJ.1 LED2 blue
             MOV     #DIVA_0 + DIVS_0 + DIVM_0,&CSCTL3   ; set all dividers as 0
 
     .ELSEIF
-    .error "bad frequency setting, only 0.25,0.5,1,2,4,8,12,16,20,24 MHz"
+    .error "bad frequency setting, only 1,2,4,8,12,16,20,24 MHz"
     .ENDIF
 
     .IFDEF LF_XTAL

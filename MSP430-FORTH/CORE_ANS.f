@@ -35,10 +35,10 @@
     SUB #2,PSP
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #400,TOS            \ FastForth V4.0
+    SUB #401,TOS            \ FastForth V4.1
     COLON
     'CR' EMIT               \ return to column 1, no 'LF'
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     ;
 
     ABORT_CORE_ANS
@@ -78,7 +78,6 @@
     [IF] {CORE_ANS} [THEN]   \ if already defined removes it before.
 
     [UNDEFINED] {CORE_ANS} [IF]
-
     MARKER {CORE_ANS}
 
     [UNDEFINED] ABORT [IF]
@@ -749,9 +748,7 @@ BW1     MOV TOS,&OP2        \ Load 2nd operand
         MOV &RES1,TOS       \ high result in TOS
         MOV @IP+,PC
         ENDCODE
-        [THEN]
 
-        [UNDEFINED] M* [IF]
 \ https://forth-standard.org/standard/core/MTimes
 \ M*     n1 n2 -- dlo dhi  signed 16*16->32 multiply
         CODE M*
@@ -761,6 +758,32 @@ BW1     MOV TOS,&OP2        \ Load 2nd operand
         [THEN]
 
     [ELSE]  ; MSP430FR413x without hardware_MPY
+
+        [UNDEFINED] UM* [IF]
+\ T.I. UNSIGNED MULTIPLY SUBROUTINE: U1 x U2 -> Ud
+\ https://forth-standard.org/standard/core/UMTimes
+\ UM*     u1 u2 -- ud   unsigned 16x16->32 mult.
+        CODE UM*
+        MOV @PSP,S              \2 ud1lo
+        MOV #0,T                \1 ud1hi=0
+        MOV #0,X                \1 RESlo=0
+        MOV #0,Y                \1 REShi=0
+        MOV #1,W                \1 BIT TEST REGISTER
+        BEGIN
+            BIT W,TOS           \1 TEST ACTUAL BIT ud2lo
+            0<> IF 
+                ADD S,X         \1 ADD ud1lo TO RESlo
+                ADDC T,Y        \1 ADDC ud1hi TO REShi
+            THEN
+            ADD S,S             \1 (RLA LSBs) ud1lo x 2
+            ADDC T,T            \1 (RLC MSBs) ud1hi x 2
+            ADD W,W             \1 (RLA) NEXT BIT TO TEST
+        U>= UNTIL               \2 IF BIT IN CARRY: FINISHED    10~ loop
+        MOV X,0(PSP)            \3 low result on stack
+        MOV Y,TOS               \1 high result in TOS
+        MOV @IP+,PC             \4 17 words
+        ENDCODE
+        [THEN]
 
         [UNDEFINED] M* [IF]
 \ https://forth-standard.org/standard/core/UMTimes
@@ -1130,6 +1153,7 @@ BW1     MOV TOS,&OP2        \ Load 2nd operand
 \ ---------------------------
 \ BLOCK AND STRING COMPLEMENT
 \ ---------------------------
+
     [UNDEFINED] CHAR [IF]
 \ https://forth-standard.org/standard/core/CHAR
 \ CHAR   -- char           parse ASCII character
@@ -1241,13 +1265,12 @@ BW1     MOV TOS,&OP2        \ Load 2nd operand
 \ https://forth-standard.org/standard/core/Dotp
 \ .(        --          type comment immediatly.
     CODE .(         ; "
-    PUSH IP
-    MOV #0,&CAPS    \ CAPS OFF
-    LO2HI
-    ')' WORD
+    MOV #0,T            \ CAPS OFF
+    COLON
+    ')' 
+    [ ' WORD 16 + , ]   \ for volatile CAPS OFF
     COUNT TYPE
     HI2LO
-    MOV #$20,&CAPS  \ CAPS ON
     MOV @RSP+,IP
     MOV @IP+,PC
     ENDCODE IMMEDIATE
@@ -1266,9 +1289,7 @@ BW1     MOV TOS,&OP2        \ Load 2nd operand
 \ https://forth-standard.org/standard/core/EXECUTE
 \ EXECUTE   i*x xt -- j*x   execute Forth word at 'xt'
     CODE EXECUTE
-    PUSH TOS                \ 3 push xt
-    MOV @PSP+,TOS           \ 2
-    MOV @RSP+,PC            \ 4 xt --> PC
+    MOV #EXECUTE,PC
     ENDCODE
     [THEN]
 
@@ -1291,9 +1312,9 @@ BW1     MOV TOS,&OP2        \ Load 2nd operand
     MOV @X+,W               \ 2 W = TOIN
     PUSHM #4,IP             \ 6 PUSHM IP,S,T,W
     MOV PC,IP               \ 1
-    ADD #8,IP               \ 1 IP = address compiled after ENDCODE
+    ADD #8,IP               \ 1 IP = ENDCODE PC address 
     MOV #INTERPRET,PC       \ 3 addr defined in MSP430FRxxxx.pat
-    NOP                     \ 1 stuffing instruction
+    NOP                     \ 0 stuffing instruction (never executed)
     ENDCODE                 \
     ,                       \ end_of_EVALUATE_addr   --         compile the end_of_EVALUATE_addr
 

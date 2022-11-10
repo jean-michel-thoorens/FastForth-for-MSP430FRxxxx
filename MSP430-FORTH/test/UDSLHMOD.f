@@ -41,7 +41,7 @@
 \ ASSEMBLER conditionnal usage with ?JMP ?GOTO      S<  S>=  U<   U>=  0=  0<>  0<
 
 
-PWR_STATE
+RST_RET
 
 CODE DSM/REM                    \ D1 / D2 --> DREM DQUOT
             MOV TOS,Y           \ 1 Y=DVRhi

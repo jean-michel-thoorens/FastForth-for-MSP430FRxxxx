@@ -495,11 +495,6 @@ USE_MOVE
         .IFNDEF DOUBLE_INPUT
 DOUBLE_INPUT
         .ENDIF
-        .IFDEF BOOTLOADER
-            .IFNDEF CONDCOMP
-CONDCOMP                    ; mandatory for Bootstrap
-            .ENDIF
-        .ENDIF
     .ENDIF
     .IFDEF EXTENDED_ASM
         .IFNDEF DOUBLE_INPUT
@@ -540,8 +535,6 @@ DOUBLE_NUMBERS              ; to process double numbers
 ;-----------------------------------------------------------------------
 ; DEVICE I/O, MEMORY, SFR, vectors and minimum FORTH I/O declarations
 ;-----------------------------------------------------------------------
-FADDON .set 0
-
     .IFDEF MSP_EXP430FR5739
 LF_XTAL
         .IFNDEF UART_TERMINAL
@@ -657,6 +650,8 @@ UCA1_SD
 ; ---------------------------
 ; compute value of FORTHADDON
 ; ---------------------------
+FADDON .set 0
+
 ;    .IFDEF FLOORED_DIVISION
 ;FADDON .SET FADDON | BIT15  ; FLOORED_DIVISION
 ;    .ENDIF
@@ -688,19 +683,22 @@ FADDON .SET FADDON | BIT8   ; Q15.16 INPUT
 FADDON .SET FADDON | BIT7   ; DOUBLE INPUT
     .ENDIF
 ; ---------------------------
-    .IFDEF EXTENDED_ASM     ; Assembler 20 bits
+    .IFDEF LARGE_DATA       ; Assembler 20 bits
 FADDON .SET FADDON | BIT6
     .ENDIF
-;    .IFDEF MSP430ASSEMBLER
-FADDON .SET FADDON | BIT5   ; Assembler 16 bits
-;    .ENDIF
-    .IFDEF EXTENDED_MEM
-        .IFNDEF EXTENDED_ASM
-FADDON .SET FADDON | BIT4   ; Assembler 16 bits with Address access beyond $FFFF
+    .IFDEF LARGE_CODE
+        .IFNDEF LARGE_DATA
+FADDON .SET FADDON | BIT5   ; Assembler 16 bits with Address access beyond $FFFF
         .ENDIF
     .ENDIF
-    .IFDEF HMPY             ; see device.inc
-FADDON .SET FADDON | BIT3   ; hardware MPY
+    .IFDEF HMPY             ;
+FADDON .SET FADDON | BIT4   ; hardware MPY
+    .ENDIF
+    .IFDEF SD_CARD_LOADER
+FADDON .SET FADDON | BIT3
+    .ENDIF
+    .IFDEF SD_CARD_READ_WRITE
+FADDON .SET FADDON | BIT2
     .ENDIF
 ; ---------------------------
 ; BIT2 to BIT0 are free
@@ -781,39 +779,38 @@ HOLD_BASE       .equ HOLDS_ORG+HOLD_LEN
 ; ----------------------------------------------------
 ; FORTH interpreter
 ; ----------------------------------------------------
-HP              .equ HOLD_BASE      ; HOLD ptr
-STATE           .equ HOLD_BASE+2    ; Interpreter state
-BASEADR         .equ HOLD_BASE+4    ; BASE
-CAPS            .equ HOLD_BASE+6    ; CAPS
-SOURCE          .equ HOLD_BASE+8    ; len, org of input stream
-SOURCE_LEN      .equ HOLD_BASE+8    ;
-SOURCE_ORG      .equ HOLD_BASE+10   ;
-TOIN            .equ HOLD_BASE+12   ; CurrentInputBuffer pointer
+HP              .equ HOLD_BASE      ; HOLD ptr,                 init by <#
+STATE           .equ HOLD_BASE+2    ; Interpreter state         init by INIT_FORTH
+BASEADR         .equ HOLD_BASE+4    ; BASE                      init by INIT_FORTH
+SOURCE          .equ HOLD_BASE+6    ; len, org of input stream  init by REFILL
+SOURCE_LEN      .equ HOLD_BASE+6    ;                           init by REFILL
+SOURCE_ORG      .equ HOLD_BASE+8    ;                           init by REFILL
+TOIN            .equ HOLD_BASE+10   ; CurrentInputBuffer ptr    init by REFILL
 ; ----------------------------------------------------
 ; FORTH environment
 ; ----------------------------------------------------
-DP              .equ HOLD_BASE+14   ; dictionnary pointer
-LASTVOC         .equ HOLD_BASE+16   ;
-CURRENT         .equ HOLD_BASE+18   ;
-CONTEXT         .equ HOLD_BASE+20   ; 8 words of depth ending
-NULL_WORD       .equ HOLD_BASE+36   ; with a null word in addition
+DP              .equ HOLD_BASE+12   ; dictionnary pointer       init by INIT_FORTH and RST_RET
+LASTVOC         .equ HOLD_BASE+14   ;                           init by INIT_FORTH and RST_RET
+CURRENT         .equ HOLD_BASE+16   ;                           init by INIT_FORTH and RST_RET
+CONTEXT         .equ HOLD_BASE+18   ; 8 words of depth ending   init by INIT_FORTH and RST_RET
+NULL_WORD       .equ HOLD_BASE+34   ; + null word               init by INIT_FORTH and RST_RET
 ; ----------------------------------------------------
 ; FORTH compiler 
 ; ----------------------------------------------------
 ; RAM_ORG + $1D8 : can be shared with APPLICATION needs
 ; ----------------------------------------------------
-LAST_NFA        .equ HOLD_BASE+38   ; used by REVEAL, IMMEDIATE
-LAST_THREAD     .equ HOLD_BASE+40   ;    "    REVEAL
-LAST_CFA        .equ HOLD_BASE+42   ;    "    DOES>, RECURSE
-LAST_PSP        .equ HOLD_BASE+44   ;    "    REVEAL
-ASMBW1          .equ HOLD_BASE+46   ;
-ASMBW2          .equ HOLD_BASE+48   ;
-ASMBW3          .equ HOLD_BASE+50   ;
-ASMFW1          .equ HOLD_BASE+52   ;
-ASMFW2          .equ HOLD_BASE+54   ;
-ASMFW3          .equ HOLD_BASE+56   ;
+LAST_NFA        .equ HOLD_BASE+36   ; used by REVEAL, IMMEDIATE
+LAST_THREAD     .equ HOLD_BASE+38   ;    "    REVEAL
+LAST_CFA        .equ HOLD_BASE+40   ;    "    DOES>, RECURSE
+LAST_PSP        .equ HOLD_BASE+42   ;    "    REVEAL
+ASMBW1          .equ HOLD_BASE+44   ;
+ASMBW2          .equ HOLD_BASE+46   ;
+ASMBW3          .equ HOLD_BASE+48   ;
+ASMFW1          .equ HOLD_BASE+50   ;
+ASMFW2          .equ HOLD_BASE+52   ;
+ASMFW3          .equ HOLD_BASE+54   ;
 ; ----------------------------------------------------
-; RAM_ORG + $1EC : free RAM area
+; RAM_ORG + $1EA : free RAM area
 ; ----------------------------------------------------
 
     .IFDEF SD_CARD_LOADER
@@ -836,7 +833,7 @@ SD_BUF_END      .equ SD_BUF+200h        ; 512bytes
         .IF RAM_LEN < 2048              ; if RAM < 2K (FR57xx) the variables below are in INFO space (FRAM)
 SD_ORG     .equ INFO_ORG+5Ah            ;
         .ELSE                           ; if RAM >= 2k the variables below are in RAM
-SD_ORG     .equ SD_BUF_END+2            ; 1 word guard
+SD_ORG     .equ SD_BUF_END+2            ; 1 word guard (for CRC16bits !)
         .ENDIF
 
     .org SD_ORG
@@ -912,12 +909,14 @@ HDLH_CurClust   .equ 16 ; Current ClusterHi
 HDLL_CurSize    .equ 18 ; written size / not yet read size (Long)
 HDLH_CurSize    .equ 20 ; written size / not yet read size (Long)
 HDLW_BUFofst    .equ 22 ; SD_BUF offset ; used by LOAD"
-HDLW_PrevLEN    .equ 24 ; previous LEN
-HDLW_PrevORG    .equ 26 ; previous ORG
+HDLW_PrevLEN    .equ 24 ; interpret_buffer_LEN of previous handle
+HDLW_PrevORG    .equ 26 ; interpret_buffer_ORG of previous handle
+HDLW_PrevTOIN   .equ 28 ; interpret_buffer_PTR of previous handle
+HDLW_PrevQYEMIT .equ 30 ; echo state of previous handle
 
     .IF RAM_LEN < 2048     ; due to the lack of RAM, only 4 handles and PAD replaces SDIB
 HandleMax       .equ 4 ; and not 8 to respect INFO size (FRAM)
-HandleLenght    .equ 28
+HandleLenght    .equ 32
 HandlesLen      .equ handleMax*HandleLenght
 HandleEnd       .equ FirstHandle+handleMax*HandleLenght
 SD_END          .equ HandleEnd
@@ -926,7 +925,7 @@ SDIB_I2CCNT     .equ PAD_ORG-2
 SDIB_ORG        .equ PAD_ORG
     .ELSE      ; RAM_Size >= 2k all is in RAM
 HandleMax       .equ 8
-HandleLenght    .equ 28
+HandleLenght    .equ 32
 HandlesLen      .equ handleMax*HandleLenght
 HandleEnd       .equ FirstHandle+handleMax*HandleLenght
 SDIB_I2CADR     .equ SDIB_ORG-4
@@ -1028,7 +1027,11 @@ mNEXTADR    .MACRO
 ;-------------------------------------------------------------------------------
 ; FRAM INFO: KERNEL INIT CONSTANTS and VARIABLES
 ; ----------------------------------------------
+    .IF FREQUENCY > 24
+FREQ_KHZ        .word FREQUENCY         ; used to stabilize MCLK before start, see MSP430FRxxxx.asm
+    .ELSE
 FREQ_KHZ        .word FREQUENCY*1000    ; used to stabilize MCLK before start, see MSP430FRxxxx.asm
+    .ENDIF
     .IFNDEF UART_TERMINAL
 I2CSLAVEADR     .word I2C_TERM_ADR      ; on MSP430FR2xxx devices with BSL I2C, Slave address is FFA0h
 I2CSLAVEADR1    .word 0
@@ -1048,11 +1051,13 @@ DEEP_ORG                                ; MOV #DEEP_ORG,X     see "PUC 7" in for
 DEEP_TERM_VEC   .word TERMINAL_INT      ; MOV @X+,&TERM_VEC     ; TERMINAL_INT      --> FRAM TERM_VEC
     .IFNDEF SD_CARD_LOADER
 DEEP_STOP       .word INIT_STOP         ; MOV @X+,&STOP_APP     ; INIT_STOP         --> FRAM STOP_APP
+DEEP_ABORT      .word ABORT_TERM        ; MOV @X+,&ABORT_APP    ; INIT_ABORT        --> FRAM ABORT_APP
 DEEP_SOFT       .word INIT_SOFT         ; MOV @X+,&SOFT_APP     ; INIT_SOFT_TERM    --> FRAM SOFT_APP
 DEEP_HARD       .word INIT_TERM         ; MOV @X+,&HARD_APP     ; INIT_TERM         --> FRAM HARD_APP
 DEEP_SLEEP      .word INIT_BACKGRND     ; MOV @X+,&BACKGRND_APP ; INIT_BACKGRND     --> FRAM BACKGRND_APP
     .ELSE
 DEEP_STOP       .word INIT_STOP         ; MOV @X+,&STOP_APP     ; INIT_STOP         --> FRAM STOP_APP
+DEEP_ABORT      .word ABORT_TERM        ; MOV @X+,&ABORT_APP    ; INIT_ABORT        --> FRAM ABORT_APP
 DEEP_SOFT       .word INIT_SOFT_SD      ; MOV @X+,&SOFT_APP     ; INIT_SOFT_SD      --> FRAM SOFT_APP
 DEEP_HARD       .word INIT_HARD_SD      ; MOV @X+,&HARD_APP     ; INIT_HARD_SD      --> FRAM HARD_APP
 DEEP_SLEEP      .word INIT_BACKGRND     ; MOV @X+,&BACKGRND_APP ; INIT_BACKGRND     --> FRAM BACKGRND_APP
@@ -1061,6 +1066,7 @@ DEEP_DP         .word ROMDICT           ; MOV @X+,&RST_DP       ; DEEP_DP       
 DEEP_LASTVOC    .word lastvoclink       ; MOV @X+,&RST_LASTVOC  ; DEEP_LASTVOC      --> FRAM RST_LASTVOC
 DEEP_CURRENT    .word BODYFORTH         ; MOV @X+,&CURRENT      ; DEEP_CONTEXT      --> FRAM RST_CURRENT
 DEEP_CONTEXT    .word BODYFORTH         ; MOV @X+,&CONTEXT      ; DEEP_CONTEXT      --> FRAM RST_CONTEXT
+                .word 0                 ; to do FORTH ONLY
 ; --------------------------------------;
 PUC_ABORT_ORG                           ; MOV #PUC_ABORT_ORG,X
 ; --------------------------------------;
@@ -1083,22 +1089,23 @@ INIT_DOCOL      .word 0                 ; MOV @X+,R4            ; useless rDOCOL
 INIT_DODOES     .word xDODOES           ; MOV @X+,rDODOES       ; INIT_DODOES       --> rDODOES (R5)
 INIT_DOCON      .word xDOCON            ; MOV @X+,rDOCON        ; INIT_DOCON        --> rDOCON  (R6)
 INIT_DOVAR      .word RFROM             ; MOV @X+,rDOVAR        ; INIT_DOVAR        --> rDOVAR  (R7)
-INIT_CAPS       .word 32                ; MOV @X+,&CAPS         ; INIT_CAPS         --> RAM CAPS
 INIT_BASE       .word 10                ; MOV @X+,&BASE         ; INIT_BASE         --> RAM BASE
 INIT_LEAVE      .word LSTACK            ; MOV @X+,&LEAVEPTR     ; INIT_LEAVE        --> RAM LEAVEPTR
 ; --------------------------------------;
 ; FRAM RST values initialised by -1 SYS ; from DEEP_ORG+2
 ; --------------------------------------;
 RST_ORG                                 ; make room for RST values of:
-RST_LEN        .equ 16                  ; 16 bytes
+RST_LEN        .equ 20                  ; 10 words, 20 bytes (with only one trailing 0)
 ; --------------------------------------;
     .IFNDEF SD_CARD_LOADER
 STOP_APP        .word INIT_STOP         ; STOP_APP
+ABORT_APP       .word ABORT_TERM        ; ABORT_APP 
 SOFT_APP        .word INIT_SOFT         ; SOFT_APP
 HARD_APP        .word INIT_TERM         ; HARD_APP
 BACKGRND_APP    .word INIT_BACKGRND     ; BACKGRND_APP
     .ELSE
 STOP_APP        .word INIT_STOP         ; STOP_APP
+ABORT_APP       .word ABORT_TERM        ; ABORT_APP 
 SOFT_APP        .word INIT_SOFT_SD      ; SOFT_APP
 HARD_APP        .word INIT_HARD_SD      ; HARD_APP
 BACKGRND_APP    .word INIT_BACKGRND     ; BACKGRND_APP
@@ -1117,7 +1124,7 @@ RST_CONTEXT     .word BODYFORTH         ; CONTEXT space (8 CELLS)
 ; --------------------------------------;
                 .word 0                 ; NULL_WORD, always 0
 ; --------------------------------------;
-
+                .word 0
 ; --------------------------;
-; INFO_ORG + $5A : free use ;
+; INFO_ORG + $60 : free use ;
 ; --------------------------;

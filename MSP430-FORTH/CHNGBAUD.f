@@ -27,10 +27,10 @@
     0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (UART TERMINAL), set TOS = 0
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #400,TOS            \ FastForth V4.0
+    SUB #401,TOS            \ FastForth V4.1
     COLON
     $0D EMIT                \ return to column 1 without CR
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     ABORT" <-- Ouch! unexpected I2C_FastForth target!"
     RST_RET             \ remove ABORT_UARTI2CS definition before resuming
     ;
@@ -337,16 +337,16 @@ BW2 ADD #4,&DP              \ make room to compile two words
 
     : BAD_MHz
     $20 DUP EMIT
-            ABORT" only for 1,4,8,16,24 MHz MCLK!"
+            ABORT" only for 1, 2, 4, 8, 12, 16, 20, 24 MHz MCLK!"
     ;
 
-    : OVR_BAUDS
+    : OVER_BDS
     $20 DUP EMIT ESC [7m    \ set reverse video
-            ." with MCLK = " FREQ_KHZ @ 1000 U/ .
-            ABORT" MHz? don't dream!"
+                ." with MCLK = " FREQ_KHZ @ 1000 U/ .
+            ABORT" MHz ? don't dream!"
     ;
 
-    : CHNGBAUD                  \ only for 1, 4, 8, 16, 24 MHz
+    : CHNGBAUD                  \ only for 1, 4, 8, 12, 16, 20, 24 MHz
     RST_RET                     \ removes this created word (garbage collector)
     ECHO
     ESC [8;42;80t      \ set 42L * 80C terminal display
@@ -356,168 +356,217 @@ BW2 ADD #4,&DP              \ make room to compile two words
     FREQ_KHZ @ DUP >R               \ r-- target MCLCK frequency in MHz
     ." target MCLK = " 1000 U/ . ." MHz" CR
     ." choose your baudrate:" CR
-    ."  0 --> 6 MBds" CR        \ >= 24 MHz
-    ."  1 --> 5 MBds" CR        \ >= 20 MHz
-    ."  2 --> 4 MBds" CR        \ >= 16 MHz
-    ."  3 --> 3 MBds" CR        \ >= 12 MHz
-    ."  4 --> 1843200 Bds" CR   \ >= 8 MHz
-    ."  5 --> 921600 Bds" CR    \ >= 4 MHz
-    ."  6 --> 460800 Bds" CR    \ >= 2 MHz
-    ."  7 --> 230400 Bds" CR    \ >= 1 MHz
-    ."  8 --> 115200 Bds" CR    \ >= 500 kHz
-    ."  9 --> 38400 Bds" CR
-    ."  A --> 19200 Bds" CR
-    ."  B --> 9600 Bds" CR
-    ." other --> abort" CR
+    ."   0 --> 6 MBds" CR        \ >= 20 MHz
+    ."   1 --> 5 MBds" CR        \ >= 16 MHz
+    ."   2 --> 4 MBds" CR        \ >= 16 MHz
+    ."   3 --> 3 MBds" CR        \ >= 12 MHz
+    ."   4 --> 1843200 Bds" CR   \ >= 8 MHz
+    ."   5 --> 921600 Bds" CR    \ >= 4 MHz
+    ."   6 --> 460800 Bds" CR    \ >= 2 MHz
+    ."   7 --> 230400 Bds" CR    \ >= 1 MHz
+    ."   8 --> 115200 Bds" CR    \ >= 500 kHz
+    ."   9 --> 57600 Bds" CR
+    ."   A --> 38400 Bds" CR
+    ."   B --> 19200 Bds" CR
+    ."   C --> 9600 Bds" CR
+    ."   D --> DMX interface (250000 Bds)" CR
+    ."   M --> MIDI interface (31250 Bds)" CR
+    ." other --> quit" CR
     ." your choice: "
     KEY
     CASE
-    #48 OF  ." 6 MBds"          \ add this to the current line
+    #'0' OF  ." 6 MBds"          \ add this to the current line
             R> CASE
-                #24000 OF $4 $0 \ -- TERM_BRW  TERM_MCTLW
-                    ENDOF
-                24000 <
-                IF OVR_BAUDS    \ < 24 MHz --> abort
-                THEN BAD_MHz    \ other MHz --> abort
-            ENDCASE
-        ENDOF
-    #49 OF  ." 5 MBds"
-            R> CASE
-                #24000 OF $4 $EE00  ENDOF
-                #20000 OF $4 $0     ENDOF
+                #24000  OF $4  $0       ENDOF \ -- TERM_BRW  TERM_MCTLW
+                #20000  OF $3  $4900    ENDOF
                 20000 <
-                IF OVR_BAUDS    \ < 20 MHz --> abort
+                IF OVER_BDS    \ < 20 MHz --> abort
                 THEN BAD_MHz    \ other MHz --> abort
             ENDCASE
         ENDOF
-    #50 OF  ." 4 MBds"
+    #'1' OF  ." 5 MBds"
             R> CASE
-                #24000 OF $6 $0     ENDOF
-                #20000 OF $5 $0     ENDOF
-                #16000 OF $4 $0     ENDOF
+                #24000  OF $4  $EE00    ENDOF
+                #20000  OF $4  $0       ENDOF
+                20000 <
+                IF OVER_BDS    \ < 16 MHz --> abort
+                THEN BAD_MHz    \ other MHz --> abort
+            ENDCASE
+        ENDOF
+    #'2' OF  ." 4 MBds"
+            R> CASE
+                #24000  OF $6  $0       ENDOF
+                #20000  OF $5  $0       ENDOF
+                #16000  OF $4  $0       ENDOF
                 16000 <
-                IF OVR_BAUDS    \ < 16 MHz --> abort
+                IF OVER_BDS    \ < 16 MHz --> abort
                 THEN BAD_MHz    \ other MHz --> abort
             ENDCASE
         ENDOF
-    #51 OF  ." 3 MBds"
+    #'3' OF  ." 3 MBds"
             R> CASE
-                #24000 OF $8 $0     ENDOF
-                #20000 OF $6 $D600  ENDOF
-                #16000 OF $5 $4900  ENDOF
-                #12000 OF $4 $0     ENDOF
+                #24000  OF $8  $0       ENDOF
+                #20000  OF $6  $D600    ENDOF
+                #16000  OF $5  $4900    ENDOF
+                #12000  OF $4  $0       ENDOF
                 12000 <
-                IF OVR_BAUDS    \ < 12 MHz --> abort
+                IF OVER_BDS    \ < 12 MHz --> abort
                 THEN BAD_MHz    \ other MHz --> abort
             ENDCASE
         ENDOF
-    #52 OF  ." 1843200 Bds"
+    #'4' OF  ." 1843200 Bds"
             R> CASE
-                #24000 OF $0D $0200 ENDOF
-                #20000 OF $0A $DF00 ENDOF
-                #16000 OF $8 $D600  ENDOF
-                #12000 OF $6 $AA00  ENDOF
-                #8000  OF $5 $9200  ENDOF
+                #24000  OF $0D $0200    ENDOF
+                #20000  OF $0A $DF00    ENDOF
+                #16000  OF $8  $D600    ENDOF
+                #12000  OF $6  $AA00    ENDOF
+                #8000   OF $5  $9200    ENDOF
                 8000 <
-                IF OVR_BAUDS    \ < 8 MHz --> abort
+                IF OVER_BDS    \ < 8 MHz --> abort
                 THEN BAD_MHz    \ other MHz --> abort
             ENDCASE
         ENDOF
-    #53 OF  ." 921600 Bds"
+    #'5' OF  ." 921600 Bds"
             R> CASE
-                #24000 OF $1 $00A1  ENDOF
-                #20000 OF $1 $B751  ENDOF
-                #16000 OF $11 $4A00 ENDOF
-                #12000 OF $0D $0200  ENDOF
-                #8000  OF $8 $D600  ENDOF
-                #4000  OF $4 $4900  ENDOF
+                #24000  OF $1  $00A1    ENDOF
+                #20000  OF $1  $B751    ENDOF
+                #16000  OF $11 $4A00    ENDOF
+                #12000  OF $0D $0200    ENDOF
+                #8000   OF $8  $D600    ENDOF
+                #4000   OF $4  $4900    ENDOF
                 4000 <
-                IF OVR_BAUDS    \ < 4 MHz --> abort
+                IF OVER_BDS    \ < 4 MHz --> abort
                 THEN BAD_MHz    \ other MHz --> abort
             ENDCASE
         ENDOF
-    #54 OF  ." 460800 Bds"
+    #'6' OF  ." 460800 Bds"
             R> CASE
-                #24000 OF $3 $0241  ENDOF
-                #20000 OF $2 $92B1  ENDOF
-                #16000 OF $2 $BB21  ENDOF
-                #12000 OF $1 $00A1  ENDOF
-                #8000  OF $11 $4A00 ENDOF
-                #4000  OF $8 $D600  ENDOF
-                #2000  OF $4 $4900  ENDOF
+                #24000  OF $3  $0241    ENDOF
+                #20000  OF $2  $92B1    ENDOF
+                #16000  OF $2  $BB21    ENDOF
+                #12000  OF $1  $00A1    ENDOF
+                #8000   OF $11 $4A00    ENDOF
+                #4000   OF $8  $D600    ENDOF
+                #2000   OF $4  $4900    ENDOF
                 2000 <
-                IF OVR_BAUDS    \ < 2 MHz --> abort
+                IF OVER_BDS    \ < 2 MHz --> abort
                 THEN BAD_MHz    \ other MHz --> abort
             ENDCASE
         ENDOF
-    #55 OF  ." 230400 Bds"
+    #'7' OF  ." 230400 Bds"
             R> CASE
-                #24000 OF $6 $2081  ENDOF
-                #20000 OF $5 $EE61  ENDOF
-                #16000 OF $4 $5551  ENDOF
-                #12000 OF $3 $0241  ENDOF
-                #8000  OF $2 $BB21  ENDOF
-                #4000  OF $11 $4A00 ENDOF
-                #2000  OF $8 $D600  ENDOF
-                #1000  OF $4 $4900  ENDOF
-                1000 <
-                IF OVR_BAUDS    \ < 1 MHz --> abort
-                THEN BAD_MHz    \ other MHz --> abort
+                #24000  OF $6  $2081    ENDOF
+                #20000  OF $5  $EE61    ENDOF
+                #16000  OF $4  $5551    ENDOF
+                #12000  OF $3  $0241    ENDOF
+                #8000   OF $2  $BB21    ENDOF
+                #4000   OF $11 $4A00    ENDOF
+                #2000   OF $8  $D600    ENDOF
+                #1000   OF $4  $4900    ENDOF
+                BAD_MHz    \ other MHz --> abort
             ENDCASE
         ENDOF
-    #56 OF  ." 115200 Bds"
+    #'8' OF  ." 115200 Bds"
             R> CASE
-                #24000 OF $0D $4901 ENDOF
-                #20000 OF $0A $AD01 ENDOF
-                #16000 OF $8 $F7A1  ENDOF
-                #12000 OF $6 $2081  ENDOF
-                #8000  OF $4 $5551  ENDOF
-                #4000  OF $2 $BB21  ENDOF
-                #2000  OF $11 $4A00 ENDOF
-                #1000  OF $8 $D600  ENDOF
-                #500   OF $4 $4900  ENDOF
-                500 <
-                IF OVR_BAUDS    \ < 500 Khz --> abort
-                THEN BAD_MHz    \ other MHz --> abort
+                #24000  OF $0D $4901    ENDOF
+                #20000  OF $0A $AD01    ENDOF
+                #16000  OF $8  $F7A1    ENDOF
+                #12000  OF $6  $2081    ENDOF
+                #8000   OF $4  $5551    ENDOF
+                #4000   OF $2  $BB21    ENDOF
+                #2000   OF $11 $4A00    ENDOF
+                #1000   OF $8  $D600    ENDOF
+                BAD_MHz    \ other MHz --> abort
             ENDCASE
         ENDOF
-    #57 OF  ." 38400 Bds"
+    #'9' OF  ." 57600 Bds"
+            R> CASE
+                #24000  OF $1A $D601    ENDOF
+                #20000  OF $15 $00A1    ENDOF
+                #16000  OF $11 $DD51    ENDOF
+                #12000  OF $0D $4901    ENDOF
+                #8000   OF $8  $F7A1    ENDOF
+                #4000   OF $4  $5551    ENDOF
+                #2000   OF $2  $BB21    ENDOF
+                #1000   OF $11 $4A00    ENDOF
+                BAD_MHz    \ other MHz --> abort
+            ENDCASE
+        ENDOF
+    #'A' OF  ." 38400 Bds"
             R> CASE
                 #24000  OF $27 $0011    ENDOF
+                #20000  OF $20 $BF01    ENDOF
                 #16000  OF $1A $D601    ENDOF
+                #12000  OF $13 $5581    ENDOF
                 #8000   OF $0D $4901    ENDOF
-                #4000   OF $6 $2081     ENDOF
-                #1000   OF $1 $00A1     ENDOF
+                #4000   OF $6  $2081    ENDOF
+                #2000   OF $3  $0241    ENDOF
+                #1000   OF $1  $00A1    ENDOF
                 BAD_MHz    \ other MHz --> abort
             ENDCASE
         ENDOF
-    #65 OF  ." 19200 Bds"
+    #'B' OF  ." 19200 Bds"
             R> CASE
                 #24000  OF $4E $0021    ENDOF
+                #20000  OF $41 $D611    ENDOF
                 #16000  OF $34 $4911    ENDOF
+                #12000  OF $27 $0011    ENDOF
                 #8000   OF $1A $D601    ENDOF
                 #4000   OF $0D $4901    ENDOF
-                #1000   OF $3 $0241     ENDOF
+                #2000   OF $6  $2081    ENDOF
+                #1000   OF $3  $0241    ENDOF
                 BAD_MHz    \ other MHz --> abort
             ENDCASE
         ENDOF
-    #66 OF  ." 9600 Bds"
+    #'C' OF  ." 9600 Bds"
             R> CASE
                 #24000  OF $9C $0041    ENDOF
+                #20000  OF $82 $2531    ENDOF
                 #16000  OF $68 $D621    ENDOF
+                #12000  OF $4E $0021    ENDOF
                 #8000   OF $34 $4911    ENDOF
                 #4000   OF $1A $D601    ENDOF
-                #1000   OF $6 $2081     ENDOF
+                #2000   OF $13 $4901    ENDOF
+                #1000   OF $6  $2081    ENDOF
                 BAD_MHz    \ other MHz --> abort
             ENDCASE
         ENDOF
-        ." abort" ABORT" "      \ ABORT" " displays nothing
+    #'D' OF  ." DMX interface (250000 Bds)"
+            R> CASE
+                #24000  OF $6  $1       ENDOF
+                #20000  OF $5  $1       ENDOF
+                #16000  OF $4  $1       ENDOF
+                #12000  OF $3  $1       ENDOF
+                #8000   OF $2  $1       ENDOF
+                #4000   OF $10 $0       ENDOF
+                #2000   OF $8  $0       ENDOF
+                #1000   OF $4  $0       ENDOF
+                BAD_MHz    \ other MHz --> abort
+            ENDCASE
+        ENDOF
+    #'M' OF  ." MIDI interface (31250 Bds)"
+            R> CASE
+                #24000  OF $30 $1       ENDOF
+                #20000  OF $28 $1       ENDOF
+                #16000  OF $20 $1       ENDOF
+                #12000  OF $18 $1       ENDOF
+                #8000   OF $10 $1       ENDOF
+                #4000   OF $8  $1       ENDOF
+                #2000   OF $4  $1       ENDOF
+                #1000   OF $2  $1       ENDOF
+                BAD_MHz    \ other MHz --> abort
+            ENDCASE
+        ENDOF
+        ABORT" "    \ ABORT" " displays nothing
     ENDCASE
     TERMMCTLW_RST !             \ set UCAxMCTLW value in FRAM
     TERMBRW_RST !               \ set UCAxBRW value in FRAM
     CR ESC [7m                  \ escape sequence to set reverse video
-    ." Change baudrate in Teraterm, save its setup, then reset target."
+    ." Change baudrate in Teraterm, save its setup, then hit a key."
     ESC [0m
+    CR
+    KEY
+    0 SYS
     ;
 
     CHNGBAUD

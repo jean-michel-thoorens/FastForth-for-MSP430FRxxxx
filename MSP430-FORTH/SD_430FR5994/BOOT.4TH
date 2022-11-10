@@ -46,9 +46,7 @@ BW1 SUB #2,R15
 
     [UNDEFINED] EXECUTE [IF]
     CODE EXECUTE
-    PUSH R14
-    MOV @R15+,R14
-    MOV @R1+,R0
+    MOV #\+$28,R0
     ENDCODE
     [THEN]
 

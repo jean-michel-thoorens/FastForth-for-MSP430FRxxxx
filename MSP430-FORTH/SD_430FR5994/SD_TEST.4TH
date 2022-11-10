@@ -13,10 +13,10 @@
         MOV #0,0(R15)
     [THEN]
     MOV &$180A,R14
-    SUB #400,R14
+    SUB #401,R14
     COLON
     $0D EMIT
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     ABORT" build FastForth with SD_CARD_READ_WRITE addon!"
     RST_RET
     ;
@@ -67,15 +67,15 @@
     CODE IF
     SUB #2,R15
     MOV R14,0(R15)
-    MOV &$1DC0,R14
-    ADD #4,&$1DC0
-    MOV #$4096,0(R14)
+    MOV &$1DBE,R14
+    ADD #4,&$1DBE
+    MOV #[THEN]+$52,0(R14)
     ADD #2,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
 
     CODE THEN
-    MOV &$1DC0,0(R14)
+    MOV &$1DBE,0(R14)
     MOV @R15+,R14
     MOV @R13+,R0
     ENDCODE IMMEDIATE
@@ -84,9 +84,9 @@
     [UNDEFINED] ELSE
     [IF]
     CODE ELSE
-    ADD #4,&$1DC0
-    MOV &$1DC0,R10
-    MOV #$409C,-4(R10)
+    ADD #4,&$1DBE
+    MOV &$1DBE,R10
+    MOV #[THEN]+$58,-4(R10)
     MOV R10,0(R14)
     SUB #2,R10
     MOV R10,R14
@@ -101,9 +101,9 @@
     ENDCODE IMMEDIATE
 
     CODE UNTIL
-    MOV #$4096,R9
-BW1 ADD #4,&$1DC0
-    MOV &$1DC0,R10
+    MOV #[THEN]+$52,R9
+BW1 ADD #4,&$1DBE
+    MOV &$1DBE,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     MOV @R15+,R14
@@ -111,7 +111,7 @@ BW1 ADD #4,&$1DC0
     ENDCODE IMMEDIATE
 
     CODE AGAIN
-    MOV #$409C,R9
+    MOV #[THEN]+$58,R9
     GOTO BW1
     ENDCODE IMMEDIATE
 
@@ -139,8 +139,8 @@ BW1 ADD #4,&$1DC0
     CODE DO
     SUB #2,R15
     MOV R14,0(R15)
-    ADD #2,&$1DC0
-    MOV &$1DC0,R14
+    ADD #2,&$1DBE
+    MOV &$1DBE,R14
     MOV #XDO,-2(R14)
     ADD #2,&$1C00
     MOV &$1C00,R10
@@ -162,8 +162,8 @@ BW1 BIT #$100,R2
 
     CODE LOOP
     MOV #XLOOP,R9
-BW2 ADD #4,&$1DC0
-    MOV &$1DC0,R10
+BW2 ADD #4,&$1DBE
+    MOV &$1DBE,R10
     MOV R9,-4(R10)
     MOV R14,-2(R10)
     BEGIN
@@ -335,7 +335,7 @@ BW1 SUB #2,R15
     [IF]
 
     CODE CR
-    MOV #$409E,R0
+    MOV #[THEN],R0
     ENDCODE
 
     :NONAME
@@ -461,7 +461,7 @@ BW1 SUB #2,R15
     MOV R8,&$201E
     CMP #$200,R8
     U>= IF
-        CALL #WRITE+4
+        CALL #WRITE+$4
     THEN
     MOV @R13+,R0
     ENDCODE
@@ -473,6 +473,25 @@ BW1 SUB #2,R15
     CLOSE
     ;
 
+    CODE START_TIMER
+    MOV #%01_0010_0100,&$3C0
+    MOV @R13+,R0
+    ENDCODE
+
+    CODE DISPLAY_TIME
+    SUB #6,R15
+    MOV R14,4(R15)
+    MOV &$3D0,2(R15)
+    MOV #0,&$3C0
+    MOV #0,0(R15)
+    MOV #33,R14
+    CALL #<#+8
+    MOV @R15+,R14
+    ADD #2,R15
+    COLON
+    ECHO ." , done in " U. ." ms"
+    ;
+
     : SD_TEST
     ECHO
     $0D EMIT
@@ -480,14 +499,14 @@ BW1 SUB #2,R15
     ." ----------" CR
     ." SD_TESTS  " CR
     ." ----------" CR
-    ." ? Fast Forth Specifs" CR
-    ." 0 Set date and time" CR
+    ." ? Fast Forth Specs" CR
+    ." 0 Set date and time (MSP430FR5xxx)" CR
     ." 1 Load {UTILITY} words" CR
     ." 2 Load {SD_TOOLS} words" CR
     ." 3 Load {CORE_ANS} words" CR
-    ." 4 Load ANS core tests" CR
-    ." 5 Load a source file to make 10k program" CR
-    ." 6 Read it only (47k)" CR
+    ." 4 Execute ANS core tests" CR
+    ." 5 Load a source file to compile 10k program" CR
+    ." 6 Read it only (51k)" CR
     ." 7 write FORTH dump in YOURFILE.TXT" CR
     ." 8 append FORTH dump to YOURFILE.TXT" CR
     ." 9 delete YOURFILE.TXT" CR
@@ -495,24 +514,31 @@ BW1 SUB #2,R15
     KEY DUP $0D = 
                 IF KEY DROP ." 'CR'"
                 ELSE DUP EMIT
-                THEN CR
-    NOECHO
+                THEN
     RST_RET
+    NOECHO
     CASE
-    '?' OF  LOAD" FF_SPECS.4TH" ENDOF
-    '0' OF  LOAD" RTC.4TH"      ENDOF
-    '1' OF  LOAD" UTILITY.4TH"  ENDOF
-    '2' OF  LOAD" SD_TOOLS.4TH" ENDOF
-    '3' OF  LOAD" CORE_ANS.4TH" ENDOF
-    '4' OF  LOAD" CORETEST.4TH" ENDOF
-    '5' OF  LOAD" PROG10K.4TH"  ENDOF
-    '6' OF  READ" PROG10K.4TH"
-            BEGIN READ UNTIL    ENDOF
-    '7' OF  WRITE" YOURFILE.TXT"
-            WRITEDUMP           ENDOF
-    '8' OF  APPEND" YOURFILE.TXT"
-            WRITEDUMP           ENDOF
-    '9' OF  DEL" YOURFILE.TXT"  ENDOF
+    '?' OF  CR LOAD" FF_SPECS.4TH"  ENDOF
+    '0' OF  CR LOAD" RTC.4TH"       ENDOF
+    '1' OF  CR LOAD" UTILITY.4TH"   ENDOF
+    '2' OF  CR LOAD" SD_TOOLS.4TH"  ENDOF
+    '3' OF  CR LOAD" CORE_ANS.4TH"  ENDOF
+    '4' OF  CR LOAD" CORETEST.4TH"  ENDOF
+    '5' OF  CR LOAD" PROG10K.4TH"   ENDOF
+
+    '6' OF  START_TIMER
+            READ" PROG10K.4TH"
+            BEGIN READ UNTIL
+            DISPLAY_TIME            ENDOF
+    '7' OF  START_TIMER
+            WRITE" YOURFILE.TXT"
+            WRITEDUMP DISPLAY_TIME  ENDOF
+    '8' OF  START_TIMER
+            APPEND" YOURFILE.TXT"
+            WRITEDUMP DISPLAY_TIME  ENDOF
+    '9' OF  START_TIMER
+            DEL" YOURFILE.TXT"
+            DISPLAY_TIME            ENDOF
     ENDCASE
     ;
 

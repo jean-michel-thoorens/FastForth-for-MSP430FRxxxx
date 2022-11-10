@@ -124,8 +124,8 @@
 \
 \ driver test : MCLK=24MHz, PL2303CG with shortened cable (20cm), WIFI off, all windows apps closed else Scite and TERATERM.
 \ -----------                                                                                    .
-\                                                                                               .         ┌────────────────────────────────┐
-\     notebook                                  USB to I2C bridge                              +-- I2C -->| up to 112 I2C_FASTFORTH targets|
+\                                                                       RST                     .         ┌────────────────────────────────┐
+\     notebook                                  USB to I2C bridge       ┌─┐                    +-- I2C -->| up to 112 I2C_FASTFORTH targets|
 \ ┌───────────────┐          ╔════════════════════════════════════════════════════════════╗   /         ┌───────────────────────────────┐  |
 \ |   WINDOWS 10  |          ║ PL2303GC/HXD/TA               launchpad running UARTI2CS   ║  +-- I2C -->|    MSP430FR4133 @ 1 MHz       |  |
 \ |               |          ║───────────────┐           ┌────────────────────────────────║ /        ┌───────────────────────────────┐  |──┘
@@ -135,15 +135,14 @@
 \ |               |          ║───────────────┘           └────────────────────────────────║          └───────────────────────────────┘
 \ |               |          ║               |<- l=20cm->|                                ║<-l=20cm->| 
 \ └───────────────┘          ╚════════════════════════════════════════════════════════════╝              
-\                                                                       |_|
-\ test results :                                                        RST
+\                                                                       └─┘
+\ test results :                                                        SW1
 \ ------------
 \
-\ Full duplex downloading (+ interpret + compile + execute) CORETEST.4TH to I2C Master target = 625ms/732kBds.
-\ Full duplex downloading (+ interpret + compile + execute) CORETEST.4TH to I2C Slave target = 1047ms/431kBds.
+\ Full duplex downloading (+ interpret + compile + execute) CORETEST.4TH to I2C Master target = 547ms/836kBds.
+\ Full duplex downloading (+ interpret + compile + execute) CORETEST.4TH to I2C Slave target = 1031ms/443kBds.
 \ the difference (422 ms) is the effective time of the I2C Half duplex exchange.
-\ [(9 bits / char) + ( 2*START + 2*addr + 1 CTRL_Char + 1 STOP / line )] = [(45763 chars * 9 bits) + (1538 lines * 30 bits)] / 0,422 = 1,085 MHz
-\ ==> I2C effective rate = 109 % of I2C Fast-mode Plus (Fm+).
+\ [(9 bits / char) + ( 2*START + 2*addr + 1 CTRL_Char + 1 STOP / line )] = [(45773 chars * 9 bits) + (1536 lines * 30 bits)] / 0.485 = 507 kHz
 \ 
 \ also connected to and tested with another I2C_FastForth target with MCLK = 1MHz (I2C CLK > MCLK !).
 \
@@ -187,39 +186,35 @@
     0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (UART TERMINAL), set TOS = 0
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #400,TOS            \ FastForth V4.0
+    SUB #401,TOS            \ FastForth V4.1
     COLON                   \ ASSEMBLER switch to FORTH with IP backup
     $0D EMIT                \ return to column 1 without CR
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     ABORT" <-- Ouch! unexpected I2C_FastForth target!"
     RST_RET                 \ remove the ABORT_UARTI2CS definition before continuing the download.
     ;
 
     ABORT_UARTI2CS          \ run tests
-
+\
 \ here is a MARKER definition, used to free the program memory including it, and restoring previous hardware context if any.
 
-    MARKER {UARTI2CS}   \ the command : ' <MARKER_definition>, leaves USER_PARAM address on the stack.
-\                         &{UARTI2CS}-2   = USER_DOES     <-- #REMOVE_U2I addr, the subroutine used to restore the low level environment below:
+    MARKER {UARTI2CS}   \ assembly addr   = your content
+\                         &{UARTI2CS}-2   = USER_PARAM-2  <-- #REMOVE_U2I addr, the subroutine used to restore the low level environment below:
     16 ALLOT            \ &{UARTI2CS}     = USER_PARAM    <-- previous &STOP_APP addr
-                        \ &{UARTI2CS}+2   = USER_PARAM+2  <-- previous &HARD_APP addr
+\                       \ &{UARTI2CS}+2   = USER_PARAM+2  <-- previous &HARD_APP addr
 \                         &{UARTI2CS}+4   = USER_PARAM+4  <-- previous &BACKGRND_APP addr
 \                         &{UARTI2CS}+6   = USER_PARAM+6  <-- previous &TERM_VEC addr
 \                         &{UARTI2CS}+8   = USER_PARAM+8  <-- previous &Px_VEC addr
 \ local variables :       UARTI2CS_ADR=\{UARTI2CS\}\+10;  <-- I2C_Slave_Addr<<1
-\                         TIMER_CONF=\{UARTI2CS\}\+12     <-- TIM_CTL configuration
-\                         COLLISION_DLY=\{UARTI2CS\}\+14; <-- 20 us resolution delay after I2C collision
+\ (defined as is in       TIMER_CONF=\{UARTI2CS\}\+12     <-- TIM_CTL configuration
+\ ..\inc\target.pat)      COLLISION_DLY=\{UARTI2CS\}\+14; <-- 20 us resolution delay after I2C collision
 \                         DUPLEX_MODE=\{UARTI2CS\}\+15;   <-- flag = 4 --> NOECHO, <> 4 --> ECHO, -1 = I2C link lost
-\ USER_PARAMS[-2...+16[ are initialised by START_U2I and USER_PARAMS[-2...+10[ are restored by REMOVE_U2I.
-
-\ =========================================================================
-    CODE LEDS MOV @IP+,PC ENDCODE \ comment this line to remove LEDS option
-\ =========================================================================
-
+\ USER_PARAMS[-2...+16[ are initialised by START_U2I and only USER_PARAMS[-2...+10[ are restored by REMOVE_U2I.
+\
 \ -----------------------------------------------------------------------
 \ first we download the set of definitions we need (copied from CORE_ANS)
 \ -----------------------------------------------------------------------
-\
+
     [UNDEFINED] = [IF]
 \ https://forth-standard.org/standard/core/Equal
 \ =      x1 x2 -- flag         test x1=x2
@@ -231,19 +226,6 @@
     ENDCODE
     [THEN]
 
-    [UNDEFINED] + [IF]  \ for [ABORT, (GEMA pattern)
-\ https://forth-standard.org/standard/core/Plus
-\ +       n1/u1 n2/u2 -- n3/u3     add n1+n2
-    CODE +
-    ADD @PSP+,TOS
-    MOV @IP+,PC
-    ENDCODE
-    [THEN]
-
-\ -----------------------------
-\ end of definitions we need...
-\ -----------------------------
-\
     [UNDEFINED] TSTBIT [IF]
     CODE TSTBIT         \ addr bit_mask -- true/flase flag
     MOV @PSP+,X
@@ -252,6 +234,14 @@
     ENDCODE
     [THEN]
 
+\ -----------------------------
+\ end of definitions we need...
+\ -----------------------------
+\
+\ =========================================================================
+\    CODE LEDS MOV @IP+,PC ENDCODE \ comment/uncomment this line to remove/add LEDS option
+\ =========================================================================
+\
 \ see symbolic values in ..\inc\launchpad.pat or/and in ..\inc\device.pat
 \ note: HDNCODE definitions are HiDdeN and cannot be called from TERMINAL
 \   ------------------------------------\
@@ -271,7 +261,7 @@
 \   ------------------------------------\
     HDNCODE REMOVE_U2I                  \   REMOVE_APP subroutine 
 \   ------------------------------------\
-BW1                                     \ <-- WARM <-- INIT_FORTH <-- SYS_failures|RESET 
+BW1                                     \ <-- WARM <-- INIT_FORTH <-- SYS_failures|software_BOR 
 \   ------------------------------------\
     [DEFINED] LEDS [IF]
     BIC.B #LED1,&LED1_OUT               \ set TX red led OFF
@@ -303,39 +293,39 @@ BW1                                     \ <-- WARM <-- INIT_FORTH <-- SYS_failur
     ENDCODE                             \
 \   ------------------------------------\
 
-\   ------------------------------------\
+\   ====================================\
     HDNCODE STOP_U2I                    \ new STOP_APP subroutine, defined for the example, not used.
-\   ------------------------------------\
+\   ====================================\
     CALL #I2CM_STOP                     \ send I2C STOP
-    MOV &{UARTI2CS},PC                  \ run previous STOP_APP then RET
+    MOV &OLD_STOP_APP,PC                \ run previous STOP_APP then RET
     ENDCODE                             \
 \   ------------------------------------\
 
-\   ------------------------------------\
+\   ====================================\
     HDNCODE BACKGRND_U2I                \       new BACKGRND_APP subroutine, RET to LPM0 shut down.
-\   ------------------------------------\
+\   ====================================\
 \   user request test                   \
 \   ------------------------------------\
     BIT #8,&TERM_STATW                  \ 3     break sent by TERATERM (Alt+B) ?
-    0<> IF
-        MOV #WARM_IP_ADR,0(RSP)         \       replace BACKGRND_U2I return by INIT_FORTH followed by WARM 
-        PUSH #INIT_FORTH                \
-\   ------------------------------------\
-BW2     MOV #1,TOS                      \       to identify manual request to REMOVE_U2I
+    0<> ?GOTO FW1
+    BIT.B #SW1,&SW1_IN                  \       SW1 pressed ?
+    0= IF                               \
+FW1     MOV #1,TOS                      \       to identify human request to REMOVE_U2I
+        MOV #TOS2WARM,0(RSP)            \       replace BACKGRND_U2I ret directly by TOS2WARM (no need STOP_APP(I2CM_STOP) )
         GOTO BW1                        \ 2
-    THEN
+    THEN                                \
 \   ------------------------------------\
     BIC.B #INT_IN,&INT_IN_IFG           \ 4     clear INT_IN IFG
     MOV #'CR',S                         \ 2     S = 'CR' = penultimate char of line to be RXed by UART
     MOV #0,T                            \ 2     T = init buffer pointer for UART_TERMINAL input
     MOV.B &DUPLEX_MODE,Y                \ 3     Y = 4 ==> NOECHO else ECHO, for U2I_TERM_INT and 500MS_INT use
-    MOV &{UARTI2CS}+4,PC                \ 3     previous BACKGRND_APP executes RXON, enabling TERMINAL TX, then RET to LPM0 shut down.
+    MOV &OLD_BACKGRND_APP,PC            \ 3     previous BACKGRND_APP executes RXON, enabling TERMINAL TX, then RET to BACKGRND.
     ENDCODE                             \
 \   ------------------------------------\
 
-\   ------------------------------------\
+\   ====================================\
     HDNCODE HARD_U2I                    \ new HARD_APP subroutine, RETurn redirected to ABORT --> ACCEPT --> BACKGRND
-\   ------------------------------------\
+\   ====================================\
 \   init 500MS_INT                      \ used to scan I2C_Slave hard RESET and to slow down (re)START RX loop
 \   ------------------------------------\
 BW3 MOV &TIMER_CONF,&TIM_CTL            \ start RX_timer, up mode
@@ -361,12 +351,10 @@ BW3 MOV &TIMER_CONF,&TIM_CTL            \ start RX_timer, up mode
 \   ------------------------------------\
 \   run previous HARD_APP               \
 \   ------------------------------------\
-    CALL &{UARTI2CS}+2                  \       execute previous HARD_APP to init TERM_UC, activates I/O.
+    CALL &OLD_HARD_APP                  \       execute previous HARD_APP to init TERM_UC, activates I/O.
 \   ------------------------------------\       TOS = USERSYS=$00|SYSRSTIV=$02|$04|$0E|$xx as UARTI2CS|POWER_ON|RST|SVSH_threshold|SYS_failures 
 \   define new SYSRSTIV select          \
 \   ------------------------------------\
-    CMP #6,TOS                          \       SYSRSTIV = RESET ?
-    0= ?GOTO BW2                        \       if yes goto REMOVE_U2I with TOS = 1, return to WARM
     CMP #$0E,TOS                        \       SVSHIFG SVSH event = #14 ? (POWER_ON)
     0<> IF                              \       if not
         CMP #$0A,TOS                    \           SYSRSTIV >= violation memory protected areas ?
@@ -374,7 +362,7 @@ BW3 MOV &TIMER_CONF,&TIM_CTL            \ start RX_timer, up mode
     THEN                                \
 \   ------------------------------------\
     MOV #ABORT,0(RSP)                   \       replace WARM return by ABORT return
-    MOV @RSP+,PC                        \       --> ABORT --> ACCCEPT --> BACKGRND --> LPM4
+    MOV @RSP+,PC                        \       --> ABORT --> ACCEPT --> BACKGRND --> LPM0
     ENDCODE                             \
 \   ------------------------------------\
 
@@ -382,7 +370,7 @@ BW3 MOV &TIMER_CONF,&TIM_CTL            \ start RX_timer, up mode
     HDNCODE I2CM_START                      \           I2C_Master START and TX Address, version with collision detection and resolution
 \   ----------------------------------------\     _
     BIS.B   #SM_SDA,&I2CSM_DIR              \ 3    v_   force SDA as output (low)
-    BIS     &UARTI2CS_ADR,X                 \ 3   _     X = (Slave_Address<<1 | R/w bit)
+    BIS     &UARTI2CS_ADR,X                 \ 3   _     X = (Slave_Address<<1 + R/w bit)
     BIS.B   #SM_SCL,&I2CSM_DIR              \ 3    v_   force SCL as output (low)
 \   ----------------------------------------\
 \   I2C_Master Send I2C Addr                \
@@ -400,7 +388,7 @@ BW3 MOV &TIMER_CONF,&TIM_CTL            \ start RX_timer, up mode
             BIT.B #SM_SDA,&I2CSM_IN         \ 3 h           get SDA input
             0= IF                           \ 2 h
 \               ----------------------------\
-\               collision detected          \               if SDA input low, collision detected
+\               collision detected          \               if SDA input is low, collision detected
 \               ----------------------------\
                 BEGIN                       \
                     BIT #TX,&TERM_IFG       \ 3
@@ -409,19 +397,19 @@ BW3 MOV &TIMER_CONF,&TIM_CTL            \ start RX_timer, up mode
 \               ----------------------------\
 \               collision resolution        \
 \               ----------------------------\
-                BEGIN                       \               wait until SDA high
-                    BIT.B #SM_SDA,&I2CSM_IN \ 3 h
+                BEGIN                       \    
+                    BIT.B #SM_SCL,&I2CSM_IN \ 3 h           wait while SCL is low (case of I2C_Slave stretching)
                 0<> UNTIL                   \ 2
 \               ----------------------------\
                 BEGIN                       \               wait for 20us bus idle time
-                  BIC.B #SM_BUS,&I2CSM_IFG  \ 4                 clear SM_BUS IFG
-                  NOP3                      \ 3
-                  MOV.B &COLLISION_DLY,W    \ 3                 load delay value 
-                  BEGIN                     \
-                    NOP                     \ 1
-                    SUB #1,W                \ 1
-                  0= UNTIL                  \ 2               4~ x (delay value)
-                  BIT.B #SM_BUS,&I2CSM_IFG  \ 4
+                   BIC.B #SM_BUS,&I2CSM_IFG \ 4                 clear SM_BUS IFG
+                   NOP3                     \ 3
+                   MOV.B &COLLISION_DLY,W   \ 3                 load delay value 
+                   BEGIN                    \
+                      NOP                   \ 1
+                      SUB #1,W              \ 1
+                   0= UNTIL                 \ 2               4~ x (delay value)
+                   BIT.B #SM_BUS,&I2CSM_IFG \ 4
                 0= UNTIL                    \ 2             + 16~ dead time for the remainder of idle time
 \               ----------------------------\
                 ADD #2,RSP                  \ 1             remove the RET for Nack/Ack processing and select..
@@ -600,7 +588,7 @@ FW2 \ single use forward label              \ <──────── if Nack 
         THEN                                \               (275 cycles for 500MS_INT)
         CMP.B #-1,Y                         \ 1 l           return of I2C_Slave on bus ?
         0= IF                               \ 2 l           if yes
-            MOV.B #0,Y                      \                   clear 'no_I2C_Slave' flag, ECHO is ON
+            MOV.B #1,&DUPLEX_MODE           \                   clear 'no_I2C_Slave' flag, ECHO is ON
             MOV.B #'CR',&TERM_TXBUF         \                   send CR+LF to terminal
             BEGIN                           \
                 BIT #TX,&TERM_IFG           \
@@ -626,7 +614,7 @@ FW2 \ single use forward label              \ <──────── if Nack 
                   SUB #1,W                  \ 1 l       count down of bits
                 0= UNTIL                    \ 2 l
 \               ----------------------------\
-\               case of RX data $FF         \               case of -1 SYS for example
+\               case of RX data $FF         \           case of I2C_Slave BOR, ABORT request, I2C_BUS lost
 \               ----------------------------\
                 CMP.B #-1,X                 \ 1 l       received char $FF ? let's consider that the slave is lost...
             0<> WHILE                       \ 2 l
@@ -652,13 +640,14 @@ FW2 \ single use forward label              \ <──────── if Nack 
                     0<> UNTIL               \ 2 l       loop if no
                     MOV.B X,&TERM_TXBUF     \ 3 l       send RXed char to UART TERMINAL
                 THEN                        \
-            REPEAT                          \ 2 l       loop back to RX data
+            REPEAT                          \ 2 l       loop back to RX data for chars {$08...$FF}
 \           --------------------------------\
-\           case of RX CTRL_Char {$00...$07}\           here Master holds SCL low, Slave can test it: CMP #8,&TERM_STATW
+\           case of RX CTRL_Char {$00...$07}\           here Master holds SCL low
 \           --------------------------------\           see forthMSP430FR_TERM_I2C.asm
                 CMP.B #4,X                  \ 1         
                 U>= IF                      \ 2
                    MOV.B X,Y                \           NOECHO = $04, ECHO = {$05...$07}
+                   MOV.B Y,&DUPLEX_MODE     \           save NOECHO flag
                    BIS.B #SM_SDA,&I2CSM_DIR \ 3 l       prepare SDA low = Ack for Ctrl_Chars {$04...$07}
                 THEN                        \
 \           --------------------------------\
@@ -673,7 +662,7 @@ FW2 \ single use forward label              \ <──────── if Nack 
             BIT.B #SM_SDA,&I2CSM_IN         \ 3 h _     get SDA as TX Ack/Nack state
             BIS.B #SM_SCL,&I2CSM_DIR        \ 3 h  v_   SCL as output : force SCL low
 \           --------------------------------\    
-        0<> UNTIL                           \ 2 l       if Ack, loop back to Master_RX data after CTRL_Chars {$04...$07,$08...$FE}
+        0<> UNTIL                           \ 2 l       if Ack, loop back to Master_RX data after CTRL_Chars {$04...$07}
 \       ------------------------------------\   
 \       Nack is sent by Master              \           case of CTRL-Chars {$FF...$03}, SDA is high, SCL is low 
 \       ------------------------------------\   
@@ -681,20 +670,21 @@ FW2 \ single use forward label              \ <──────── if Nack 
     U>= WHILE                               \   l       out of loop for CTRL_chars {$00,$01}
 \       ------------------------------------\   
 \       CTRL_Char {$02,$03,$FF}             \           only CTRL_Char $FF is used
-\       ------------------------------------\
+\       ------------------------------------\       _
+        BIC.B #SM_SCL,&I2CSM_DIR            \ 3 l _^    release SCL (high) to avoid Stretch time out on I2C_Slave side
+        CALL #UART_RXON                     \           resume UART downloading source file
+        BEGIN                               \
+            BIC #RX,&TERM_IFG               \           clear UCRXIFG
+            MOV &FREQ_KHZ,X                 \           1000, 2000, 4000, 8000, 16000, 240000
+           BEGIN MOV #65,W                  \           2~        <-------+ wait time for TERMINAL to refill its USB buffer
+               BEGIN SUB #1,W               \           1~        <---+   | ==> ((65*3)+5)*FREQ_KHZ/1000 = 200ms delay
+               0= UNTIL                     \           2~ 3~ loop ---+   |
+               SUB #1,X                     \           1~                |
+           0= UNTIL                         \           2~ 200~ loop -----+
+            BIT #RX,&TERM_IFG               \           4 new char in TERMRXBUF during this delay ?
+        0= UNTIL                            \           2 yes, the input stream is still active: loop back
         MOV.B #0,Y                          \           set echo ON
-        CALL #UART_RXON                     \               resume UART downloading source file
-        BEGIN                               \   
-            BIC #RX,&TERM_IFG               \               clear UCRXIFG
-            MOV &FREQ_KHZ,X                 \               1000, 2000, 4000, 8000, 16000, 240000
-           BEGIN MOV #65,W                  \               2~        <-------+ wait time for TERMINAL to refill its USB buffer
-               BEGIN SUB #1,W               \               1~        <---+   | ==> ((65*3)+5)*FREQ_KHZ/1000 = 200ms delay
-               0= UNTIL                     \               2~ 3~ loop ---+   |
-               SUB #1,X                     \               1~                |
-           0= UNTIL                         \               2~ 200~ loop -----+
-            BIT #RX,&TERM_IFG               \               4 new char in TERMRXBUF during this delay ?
-        0= UNTIL                            \               2 yes, the input stream is still active: loop back
-    REPEAT                                  \   l       loop back to reSTART RX on WARM|ABORT messages.
+    REPEAT                                  \   l       loop back to reSTART RX on WARM|ABORT" messages or I2C_Bus lost.
 \   ----------------------------------------\
 \   I2C_Master_RX Send STOP                 \           remainder: CTRL_Chars {$00,$01}
 \   ----------------------------------------\ 
@@ -711,7 +701,6 @@ FW2 \ single use forward label              \ <──────── if Nack 
 \   I2C_Slave ACCEPT ctrl_char $00          \ case of request by I2C_Slave ACCEPT
 \   ----------------------------------------\
     0= IF                                   \
-        MOV.B Y,&DUPLEX_MODE                \ save updated NOECHO flag before RET
         MOV #BACKGRND,PC                    \ which calls BACKGRND_U2I, RXON enabling TERMINAL TX, then LPM0 shut down.
     THEN                                    \                             
 \   ----------------------------------------\
@@ -735,9 +724,9 @@ FW2 \ single use forward label              \ <──────── if Nack 
 \ I2C_address<<1  mini = $10, maxi = $EE (I2C-bus specification and user manual V6)
 \ type on TERMINAL "$12 START_U2I" to link teraterm TERMINAL with FastForth I2C_Slave target at address $12
 
-\   ------------------------------------\
+\   ====================================\
     CODE START_U2I                      \ I2C_Addr<<1 --   
-\   ------------------------------------\
+\   ====================================\
     SUB #2,PSP                          \               DUP
     MOV TOS,0(PSP)                      \
     COLON                               \               ASSEMBLER switch to FORTH with IP backup
@@ -745,7 +734,7 @@ FW2 \ single use forward label              \ <──────── if Nack 
     ." Connect to I2C_SLAVE at @"       \
     . 'BS' EMIT                         \               display number without space after
      ." , TERATERM(Alt-B) "             \
-    ." or I2C_MASTER(RST) to quit..."   \
+    ." or I2C_MASTER(SW1) to quit..."   \
     HI2LO                               \               FORTH switch to ASSEMBLER
     MOV @RSP+,IP                        \               restore IP
     BEGIN                               \
@@ -754,15 +743,15 @@ FW2 \ single use forward label              \ <──────── if Nack 
     CMP #RET_ADR,&{UARTI2CS}-2          \               USER_DOES default value ?
     0= IF                               \               if yes
         MOV #REMOVE_U2I,&{UARTI2CS}-2   \               USER_DOES of {UARTI2CS} will CALL &{UARTI2CS}-2 = CALL #REMOVE_U2I
-        MOV &STOP_APP,&{UARTI2CS}       \               save STOP_APP value to {UARTI2CS}
-        MOV &HARD_APP,&{UARTI2CS}+2     \               save HARD_APP value to {UARTI2CS}+2
-        MOV &BACKGRND_APP,&{UARTI2CS}+4 \               save BACKGRND_APP value to {UARTI2CS}+4
-        MOV &TERM_VEC,&{UARTI2CS}+6     \               save TERM_VEC value to {UARTI2CS}+6
-        MOV &INT_IN_VEC,&{UARTI2CS}+8   \               save INT_IN_VEC value to {UARTI2CS}+8
+        MOV &STOP_APP,&OLD_STOP_APP     \               save previous STOP_APP value to {UARTI2CS}
         MOV #STOP_U2I,&STOP_APP         \               set STOP_APP with STOP_U2I addr
+        MOV &HARD_APP,&OLD_HARD_APP     \               save previous HARD_APP value to {UARTI2CS}+2
         MOV #HARD_U2I,&HARD_APP         \               set HARD_APP with HARD_U2I addr
+        MOV &BACKGRND_APP,&OLD_BACKGRND_APP \           save previous BACKGRND_APP value to {UARTI2CS}+4
         MOV #BACKGRND_U2I,&BACKGRND_APP \               set BACKGRND_APP with BACKGRND_U2I addr
+        MOV &TERM_VEC,&OLD_TERM_VEC     \               save previous TERM_VEC value to {UARTI2CS}+6
         MOV #U2I_TERM_INT,&TERM_VEC     \               set TERM_VEC with U2I_TERM_INT addr
+        MOV &INT_IN_VEC,&OLD_INT_IN_VEC \               save previous INT_IN_VEC value to {UARTI2CS}+8
         MOV #500MS_INT,&INT_IN_VEC      \               set INT_IN_VEC with 500MS_INT addr
 \       --------------------------------\
         MOV TOS,&UARTI2CS_ADR           \               save I2C_address<<1 at {UARTI2CS}+10
@@ -776,7 +765,7 @@ FW2 \ single use forward label              \ <──────── if Nack 
           [IF]   MOV #76,&COLLISION_DLY \               > set 20us delay = (delay*MHz/4 -4, and set ECHO (<>4)
           [ELSE] MOV #36,&COLLISION_DLY \               )
           [THEN]                        \               )
-        [THEN]                          \
+        [THEN]                          \               here we may add a priority... by slice of 20us
     THEN                                \
     MOV #0,TOS                          \ -- 0          to enter in HARD_U2I with 0 SYS
     GOTO BW3                            \               goto HARD_U2I as new HARD_APP, direct return to ABORT

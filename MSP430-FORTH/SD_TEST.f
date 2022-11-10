@@ -89,10 +89,10 @@
         MOV #0,0(PSP)
     [THEN]
     MOV &VERSION,TOS
-    SUB #400,TOS        \ FastForth V4.0
+    SUB #401,TOS        \ FastForth V4.1
     COLON
     'CR' EMIT           \ return to column 1 without 'LF'
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     ABORT" build FastForth with SD_CARD_READ_WRITE addon!"
     RST_RET             \ remove ABORT_SD_TEST definition before resuming
     ;
@@ -624,6 +624,25 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     CLOSE                       \ close YOURFILE.TXT
     ;
 
+    CODE START_TIMER
+    MOV #%01_0010_0100,&TB0CTL  \ start  TB0, ACLK (32768 Hz), continuous mode
+    MOV @IP+,PC
+    ENDCODE
+
+    CODE DISPLAY_TIME
+    SUB #6,PSP
+    MOV TOS,4(PSP)              \ save TOS
+    MOV &TB0R,2(PSP)            \ DVDlo=TB0R
+    MOV #0,&TB0CTL              \ stop timer
+    MOV #0,0(PSP)               \ DVDhi=0
+    MOV #33,TOS                 \ DVR=33  --> 0.7% error, 1985ms max
+    CALL #MUSMOD                \ DVDlo DVDhi DVR -- REM QUOTlo QUOThi
+    MOV @PSP+,TOS               \ -- REM QUOTlo
+    ADD #2,PSP                  \ -- QUOlo
+    COLON
+    ECHO ." , done in " U. ." ms"
+    ;
+
     : SD_TEST
     ECHO
     'CR' EMIT
@@ -631,39 +650,46 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ." ----------" CR
     ." SD_TESTS  " CR
     ." ----------" CR
-    ." ? Fast Forth Specifs" CR
-    ." 0 Set date and time" CR
+    ." ? Fast Forth Specs" CR
+    ." 0 Set date and time (MSP430FR5xxx)" CR
     ." 1 Load {UTILITY} words" CR
     ." 2 Load {SD_TOOLS} words" CR
     ." 3 Load {CORE_ANS} words" CR
-    ." 4 Load ANS core tests" CR
-    ." 5 Load a source file to make 10k program" CR
-    ." 6 Read it only (47k)" CR
+    ." 4 Execute ANS core tests" CR
+    ." 5 Load a source file to compile 10k program" CR
+    ." 6 Read it only (51k)" CR
     ." 7 write FORTH dump in YOURFILE.TXT" CR
     ." 8 append FORTH dump to YOURFILE.TXT" CR
     ." 9 delete YOURFILE.TXT" CR
     ." your choice: "
     KEY DUP 'CR' = 
-                IF KEY DROP ." 'CR'"
+                IF KEY DROP ." 'CR'"    \ skip LF...
                 ELSE DUP EMIT
-                THEN CR
-    NOECHO
+                THEN
     RST_RET                             \ remove all definitions
+    NOECHO
     CASE
-    '?' OF  LOAD" FF_SPECS.4TH" ENDOF   \
-    '0' OF  LOAD" RTC.4TH"      ENDOF
-    '1' OF  LOAD" UTILITY.4TH"  ENDOF
-    '2' OF  LOAD" SD_TOOLS.4TH" ENDOF
-    '3' OF  LOAD" CORE_ANS.4TH" ENDOF
-    '4' OF  LOAD" CORETEST.4TH" ENDOF
-    '5' OF  LOAD" PROG10K.4TH"  ENDOF
-    '6' OF  READ" PROG10K.4TH"          \ open file as read
-            BEGIN READ UNTIL    ENDOF   \ sequentially read 512 bytes, then file is closed
-    '7' OF  WRITE" YOURFILE.TXT"        \ overwrite existing file or create new file
-            WRITEDUMP           ENDOF
-    '8' OF  APPEND" YOURFILE.TXT"       \ append to existing file or create new file
-            WRITEDUMP           ENDOF
-    '9' OF  DEL" YOURFILE.TXT"  ENDOF
+    '?' OF  CR LOAD" FF_SPECS.4TH"  ENDOF   \ LOAD" command is always executed after the SD_TEST exit,
+    '0' OF  CR LOAD" RTC.4TH"       ENDOF   \ so, no risk of crashing this program, regardless of RST_RET use...
+    '1' OF  CR LOAD" UTILITY.4TH"   ENDOF
+    '2' OF  CR LOAD" SD_TOOLS.4TH"  ENDOF
+    '3' OF  CR LOAD" CORE_ANS.4TH"  ENDOF
+    '4' OF  CR LOAD" CORETEST.4TH"  ENDOF
+    '5' OF  CR LOAD" PROG10K.4TH"   ENDOF
+                                        \ ...instead of READ" WRITE" APPEND" DEL" which are executed immediately
+    '6' OF  START_TIMER
+            READ" PROG10K.4TH"          \ open file as read
+            BEGIN READ UNTIL            \ sequentially read 512 bytes, then the file is closed
+            DISPLAY_TIME            ENDOF
+    '7' OF  START_TIMER
+            WRITE" YOURFILE.TXT"        \ create new file or overwrite existing file
+            WRITEDUMP DISPLAY_TIME  ENDOF
+    '8' OF  START_TIMER
+            APPEND" YOURFILE.TXT"       \ append to existing file or create new file
+            WRITEDUMP DISPLAY_TIME  ENDOF
+    '9' OF  START_TIMER
+            DEL" YOURFILE.TXT"          \ no message
+            DISPLAY_TIME            ENDOF
     ENDCASE
     ;
 

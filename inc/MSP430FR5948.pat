@@ -1,6 +1,16 @@
 
 @set-syntax{C;\;}!  replace ! by semicolon
+
 ;MSP430fr5948.pat
+
+@reset-syntax{}; to enable good interpreting of next line
+@define{@read{@mergepath{@inpath{};MSP430FRxxxx.pat;}}}
+
+@reset-syntax{}; to enable good interpreting of next line
+@define{@read{@mergepath{@inpath{};MSP430FR5xxx.pat;}}}
+
+@reset-syntax{}; to enable good interpreting of next line
+@define{@read{@mergepath{@inpath{};FastForthREGtoTI.pat;}}}
 
 ; ----------------------------------------------
 ; MSP430fr5948 MEMORY MAP
@@ -39,200 +49,15 @@ INFO_LEN=\$0200;
 RAM_ORG=\$1C00;
 RAM_LEN=\$0800;
 
-; ---------------------------------------
-; FORTH RAM areas :
-; ---------------------------------------
-
-; See MSP430FRxxxx.pat
-
-; ---------------------------------------
-; FastForth RAM memory map (>= 1k)
-; ---------------------------------------
-LEAVEPTR=\$1C00;        Leave-stack pointer, init by QUIT
-LSATCK=\$1C00;          leave stack,      grow up
-PSTACK=\$1C80;          parameter stack,  grow down
-RSTACK=\$1CE0;          Return stack,     grow down
-;
-PAD_I2CADR=\$1CE0;      RX I2C address
-PAD_I2CCNT=\$1CE2;      count max
-PAD_ORG=\$1CE4;         user scratch pad buffer, 84 bytes, grow up
-;
-TIB_I2CADR=\$1D38;      TX I2C address
-TIB_I2CCNT=\$1D3A;      count of bytes
-TIB_ORG=\$1D3C;         Terminal input buffer, 84 bytes, grow up
-;
-HOLDS_ORG=\$1D90;       base address for HOLDS
-HOLD_BASE=\$1DB2;       BASE HOLD area, grow down
-;
-HP=\$1DB2;              HOLD ptr
-STATEADR=\$1DB4;        Interpreter state
-BASEADR=\$1DB6;         base
-CAPS=\$1DB8;            CAPS ON/OFF
-SOURCE_LEN=\$1DBA;      len of input stream
-SOURCE_ORG=\$1DBC;      adr of input stream
-TOIN=\$1DBE;            >IN
-;
-DP=\$1DC0;              dictionary ptr
-LASTVOC=\$1DC2;         keep VOC-LINK
-CURRENT=\$1DC4;         CURRENT dictionnary ptr
-CONTEXT=\$1DC6;         CONTEXT dictionnary space (8 + Null CELLS)
-;
-; ---------------------------------------
-; RAM_ORG + $1D8 : may be shared between FORTH compiler and user application
-; ---------------------------------------
-LAST_NFA=\$1DD8;
-LAST_THREAD=\$1DDA;
-LAST_CFA=\$1DDC;
-LAST_PSP=\$1DDE;
-ASM_CURR=\$1DE0;        CODE saves CURRENT, ENDCODE restores CURRENT
-ASMBW1=\$1DE2;          3 backward labels
-ASMBW2=\$1DE4;
-ASMBW3=\$1DE6;
-ASMFW1=\$1DE8;          3 forward labels
-ASMFW2=\$1DEA;
-ASMFW3=\$1DEC;
-;
-; ---------------------------------------
-; RAM_ORG + $1EE RAM free 
-; ---------------------------------------
-;
-; ---------------------------------------
-; RAM_ORG + $1FC: SD buffer
-; ---------------------------------------
-SD_BUF_I2ADR=\$1DFC;
-SD_BUF_I2CNT=\$1DFE;
-SD_BUF=\$1E00;      \ SD_Card buffer
-BUFEND=\$2000;
-
-; ---------------------------------------
-; FAT16 FileSystemInfos
-; ---------------------------------------
-FATtype=\$2002;
-BS_FirstSectorL=\$2004;
-BS_FirstSectorH=\$2006;
-OrgFAT1=\$2008;
-FATSize=\$200A;
-OrgFAT2=\$200C;
-OrgRootDir=\$200E;
-OrgClusters=\$2010;         Sector of Cluster 0
-SecPerClus=\$2012;
-
-; ---------------------------------------
-; SD command
-; ---------------------------------------
-SD_CMD_FRM=\$2014;  6 bytes SD_CMDx inverted frame \${CRC,ll,LL,hh,HH,CMD}
-SD_CMD_FRM0=\$2014; CRC:ll  word access
-SD_CMD_FRM1=\$2015; ll      byte access
-SD_CMD_FRM2=\$2016; LL:hh   word access
-SD_CMD_FRM3=\$2017; hh      byte access
-SD_CMD_FRM4=\$2018; HH:CMD  word access
-SD_CMD_FRM5=\$2019; CMD     byte access
-SectorL=\$201A;     2 words
-SectorH=\$201C;
-
-; ---------------------------------------
-; BUFFER management
-; ---------------------------------------
-BufferPtr=\$201E;
-BufferLen=\$2020;
-
-; ---------------------------------------
-; FAT entry
-; ---------------------------------------
-ClusterL=\$2022;     16 bits wide (FAT16)
-ClusterH=\$2024;     16 bits wide (FAT16)
-LastFATsector=\$2026;   Set by FreeAllClusters, used by OPEN_OVERWRITE
-LastFAToffset=\$2028;   Set by FreeAllClusters, used by OPEN_OVERWRITE
-FATsector=\$202A;       used by APPEND"
-
-; ---------------------------------------
-; DIR entry
-; ---------------------------------------
-DIRclusterL=\$202C;  contains the Cluster of current directory ; 1 if FAT16 root directory
-DIRclusterH=\$202E;  contains the Cluster of current directory ; 1 if FAT16 root directory
-EntryOfst=\$2030;
-
-; ---------------------------------------
-; Handle Pointer
-; ---------------------------------------
-CurrentHdl=\$2032;  contains the address of the last opened file structure, or 0
-
-; ---------------------------------------
-; Load file operation
-; ---------------------------------------
-pathname=\$2034;
-EndOfPath=\$2036;
-
-; ---------------------------------------
-; Handle structure
-; ---------------------------------------
-; three handle tokens :
-; token = 0 : free handle
-; token = 1 : file to read
-; token = 2 : file updated (write)
-; token =-1 : LOAD"ed file (source file)
-
-; offset values
-HDLW_PrevHDL=0;     previous handle ; used by LOAD"
-HDLB_Token=2;       token
-HDLB_ClustOfst=3;   Current sector offset in current cluster (Byte)
-HDLL_DIRsect=4;     Dir SectorL (Long)
-HDLH_DIRsect=6;
-HDLW_DIRofst=8;     BUFFER offset of Dir entry
-HDLL_FirstClus=10;  File First ClusterLo (identify the file)
-HDLH_FirstClus=12;  File First ClusterHi (byte)
-HDLL_CurClust=14;   Current ClusterLo
-HDLH_CurClust=16;   Current ClusterHi (T as 3Th byte)
-HDLL_CurSize=18;    written size / not yet read size (Long)
-HDLH_CurSize=20;    written size / not yet read size (Long)
-HDLW_BUFofst=22;    BUFFER offset ; used by LOAD" and by WRITE"
-HDLW_PrevLEN=24;    previous LEN
-HDLW_PrevORG=26;    previous ORG
-
-
-;OpenedFirstFile     ; "openedFile" structure
-HandleMax=8;
-HandleLenght=28;
-FirstHandle=\$2038;
-HandleEnd=\$2118;
-
-;SD_card Input Buffer
-SDIB_I2CADR=\$2118;
-SDIB_I2CCNT=\$211A;
-SDIB_ORG=\$251C;
-SDIB_LEN=\$54;
-
-SD_END=\$2170;
-SD_LEN=\$16E;
+; See MSP430FR5xxx.pat
 
 ; ============================================
 ; FRAM MAIN
 ; ============================================
 MAIN_ORG=\$4400;        Code space start
 MAIN_LEN=\$BC00;        47 k FRAM
-; ----------------------------------------------
-\#LIT=\#\$4400;             asm CODE run time of LITERAL
-\#XSQUOTE=\#\$4414;         asm CODE run time of QUOTE
-\#MUSMOD=\#\$4428;          asm CODE 32/16 unsigned division, used by ?NUMBER, UM/MOD
-\#MDIV1DIV2=\#\$443A;       asm CODE input for 48/16 unsigned division with DVDhi=0, see DOUBLE M*/
-\#MDIV1=\#\$4442;           asm CODE input for 48/16 unsigned division, see DOUBLE M*/
-\#RET_ADR=\#\$446C;         asm CODE of INIT_SOFT_PFA and MARKER+8 definitions,
-\#SETIB=\#\$446E;           CODE Set Input Buffer with org & len values, reset >IN pointer
-\#REFILL=\#\$447E;          CODE accept one line from input and leave org len of input buffer
-\#CIB_ORG=\#\$448A;         [CIB_ORG] = TIB_ORG by default; may be redirected to SDIB_ORG
-\#QFBRAN=\#\$4496;          CODE compiled by IF UNTIL
-\#BRAN=\#\$449C;            CODE compiled by ELSE REPEAT AGAIN
-\#NEXT_ADR=\#\$449E;        CODE NEXT instruction (MOV @IP+,PC)
-\#XDODOES=\#\$44A0;         to restore rDODOES: MOV #XDODOES,rDODOES
-\#XDOCON=\#\$44AE;          to restore rDOCON: MOV #XDOCON,rDOCON
-;                           to restore rDOVAR: MOV &INIT_DOVAR,rDOVAR
-;                           to restore rDOCOL: MOV &INIT_DOCOL,rDOCOL
-\#INIT_FORTH=\#\$44BA;
-\#ABORT_TERM=\#\$4500;      CALL #ABORT_TERM to discard pending download
-\#UART_WARM=\#\$4572;       WARM address for UART TERMINAL
-\#I2C_WARM=\#\$455C;        WARM address for I2C TERMINAL
 
-; See MSP430FRxxxx.pat for other addresses
+; See MSP430FRxxxx.pat
 
 ; ----------------------------------------------
 ; Interrupt Vectors and signatures - MSP430FR5948

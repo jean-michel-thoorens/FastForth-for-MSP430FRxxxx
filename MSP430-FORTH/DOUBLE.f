@@ -37,10 +37,10 @@
     0<> IF MOV #0,TOS THEN  \ if TOS <> 0 (DOUBLE input), set TOS = 0
     MOV TOS,0(PSP)
     MOV &VERSION,TOS
-    SUB #400,TOS            \   FastForth V4.0
+    SUB #401,TOS            \   FastForth V4.1
     COLON
     $0D EMIT                \ return to column 1 without CR
-    ABORT" FastForth V4.0 please!"
+    ABORT" FastForth V4.1 please!"
     ABORT" build FastForth with DOUBLE_INPUT addon!"
     RST_RET                 \ if no abort remove this word
     ;
@@ -78,173 +78,6 @@
     MOV TOS,0(PSP)  \ 3
     MOV @RSP+,TOS   \ 2
     MOV @IP+,PC     \ 4
-    ENDCODE
-    [THEN]
-
-    [UNDEFINED] 0< [IF]
-\ https://forth-standard.org/standard/core/Zeroless
-\ 0<     n -- flag      true if TOS negative
-    CODE 0<
-    ADD TOS,TOS     \ 1 set carry if TOS negative
-    SUBC TOS,TOS    \ 1 TOS=-1 if carry was clear
-    XOR #-1,TOS     \ 1 TOS=-1 if carry was set
-    MOV @IP+,PC     \
-    ENDCODE
-    [THEN]
-
-    [UNDEFINED] DROP [IF]
-\ https://forth-standard.org/standard/core/DROP
-\ DROP     x --          drop top of stack
-    CODE DROP
-    MOV @PSP+,TOS   \ 2
-    MOV @IP+,PC     \ 4
-    ENDCODE
-    [THEN]
-
-    [UNDEFINED] DUP [IF]
-\ https://forth-standard.org/standard/core/DUP
-\ DUP      x -- x x      duplicate top of stack
-    CODE DUP
-BW1 SUB #2,PSP      \ 2  push old TOS..
-    MOV TOS,0(PSP)  \ 3  ..onto stack
-    MOV @IP+,PC     \ 4
-    ENDCODE
-
-    CODE ?DUP
-\ https://forth-standard.org/standard/core/qDUP
-\ ?DUP     x -- 0 | x x    DUP if nonzero
-    CMP #0,TOS      \ 2  test for TOS nonzero
-    0<> ?GOTO BW1    \ 2
-    MOV @IP+,PC     \ 4
-    ENDCODE
-    [THEN]
-
-    [UNDEFINED] NIP [IF]
-\ https://forth-standard.org/standard/core/NIP
-\ NIP      x1 x2 -- x2         Drop the first item below the top of stack
-    CODE NIP
-    ADD #2,PSP
-    MOV @IP+,PC
-    ENDCODE
-    [THEN]
-
-    [UNDEFINED] UM/MOD [IF]
-\ https://forth-standard.org/standard/core/UMDivMOD
-\ UM/MOD   udlo|udhi u1 -- r q   unsigned 32/16->r16 q16
-    CODE UM/MOD
-        PUSH #DROP      \
-        MOV #MUSMOD,PC  \ execute MUSMOD then return to DROP
-    ENDCODE
-    [THEN]
-
-    KERNEL_ADDON @ 0<   ; test the switch: FLOORED/SYMETRIC DIVISION
-    [IF]
-        [UNDEFINED] FM/MOD [IF]
-\ https://forth-standard.org/standard/core/FMDivMOD
-\ FM/MOD   d1 n1 -- r q   floored signed div'n
-        CODE FM/MOD
-        MOV TOS,S           \           S=DIV
-        MOV @PSP,T          \           T=DVDhi
-        CMP #0,TOS          \           n2 >= 0 ?
-        S< IF               \
-            XOR #-1,TOS
-            ADD #1,TOS      \ -- d1 u2
-        THEN
-        CMP #0,0(PSP)       \           d1hi >= 0 ?
-        S< IF               \
-            XOR #-1,2(PSP)  \           d1lo
-            XOR #-1,0(PSP)  \           d1hi
-            ADD #1,2(PSP)   \           d1lo+1
-            ADDC #0,0(PSP)  \           d1hi+C
-        THEN                \ -- uDVDlo uDVDhi uDIVlo
-        PUSHM #3,IP         \           save IP,S,T
-        LO2HI
-            UM/MOD          \ -- uREMlo uQUOTlo
-        HI2LO
-        POPM #3,IP          \           restore T,S,IP
-        CMP #0,T            \           T=DVDhi --> REM_sign
-        S< IF
-            XOR #-1,0(PSP)
-            ADD #1,0(PSP)
-        THEN
-        XOR S,T             \           S=DIV XOR T=DVDhi = Quot_sign
-        CMP #0,T            \ -- n3 u4  T=quot_sign
-        S< IF
-            XOR #-1,TOS
-            ADD #1,TOS
-        THEN                \ -- n3 n4  S=divisor
-    
-        CMP #0,0(PSP)       \ remainder <> 0 ?
-        0<> IF
-            CMP #1,TOS      \ quotient < 1 ?
-            S< IF
-            ADD S,0(PSP)  \ add divisor to remainder
-            SUB #1,TOS    \ decrement quotient
-            THEN
-        THEN
-        MOV @IP+,PC
-        ENDCODE
-        [THEN]
-
-    [ELSE]
-        [UNDEFINED] SM/REM [IF]
-\ https://forth-standard.org/standard/core/SMDivREM
-\ SM/REM   DVDlo DVDhi DIV -- r3 q4  symmetric signed div
-        CODE SM/REM
-        MOV TOS,S           \           S=DIV
-        MOV @PSP,T          \           T=DVDhi
-        CMP #0,TOS          \           n2 >= 0 ?
-        S< IF               \
-            XOR #-1,TOS
-            ADD #1,TOS      \ -- d1 u2
-        THEN
-        CMP #0,0(PSP)       \           d1hi >= 0 ?
-        S< IF               \
-            XOR #-1,2(PSP)  \           d1lo
-            XOR #-1,0(PSP)  \           d1hi
-            ADD #1,2(PSP)   \           d1lo+1
-            ADDC #0,0(PSP)  \           d1hi+C
-        THEN                \ -- uDVDlo uDVDhi uDIVlo
-        PUSHM #3,IP         \           save IP,S,T
-        LO2HI
-            UM/MOD          \ -- uREMlo uQUOTlo
-        HI2LO
-        POPM #3,IP          \           restore T,S,IP
-        CMP #0,T            \           T=DVDhi --> REM_sign
-        S< IF
-            XOR #-1,0(PSP)
-            ADD #1,0(PSP)
-        THEN
-        XOR S,T             \           S=DIV XOR T=DVDhi = Quot_sign
-        CMP #0,T            \ -- n3 u4  T=quot_sign
-        S< IF
-            XOR #-1,TOS
-            ADD #1,TOS
-        THEN                \ -- n3 n4  S=divisor
-        MOV @IP+,PC
-        ENDCODE
-        [THEN]
-    [THEN]
-
-    [UNDEFINED] / [IF]
-\ https://forth-standard.org/standard/core/Div
-\ /      n1 n2 -- n3       signed quotient
-    : /
-    >R DUP 0< R>
-    [ KERNEL_ADDON @ 0< ]
-    [IF]    FM/MOD
-    [ELSE]  SM/REM
-    [THEN]
-    NIP
-    ;
-    [THEN]
-
-    [UNDEFINED] C@ [IF]
-\ https://forth-standard.org/standard/core/CFetch
-\ C@     c-addr -- char   fetch char from memory
-    CODE C@
-    MOV.B @TOS,TOS
-    MOV @IP+,PC
     ENDCODE
     [THEN]
 
@@ -293,28 +126,6 @@ BW1 SUB #2,PSP      \ 2  push old TOS..
     ENDCODE
     [THEN]
 
-    [UNDEFINED] < [IF]      \ define < and >
-\ https://forth-standard.org/standard/core/less
-\ <      n1 n2 -- flag        test n1<n2, signed
-    CODE <
-    SUB @PSP+,TOS   \ 1 TOS=n2-n1
-    S< ?GOTO FW1    \ 2 signed
-    0<> IF          \ 2
-BW1 MOV #-1,TOS \ 1 flag Z = 0
-    THEN
-    MOV @IP+,PC
-    ENDCODE
-
-\ https://forth-standard.org/standard/core/more
-\ >     n1 n2 -- flag         test n1>n2, signed
-    CODE >
-    SUB @PSP+,TOS   \ 2 TOS=n2-n1
-    S< ?GOTO BW1    \ 2 --> +5
-FW1 AND #0,TOS      \ 1 flag Z = 1
-    MOV @IP+,PC
-    ENDCODE
-    [THEN]
-
     [UNDEFINED] IF [IF] \ define IF THEN
 \ https://forth-standard.org/standard/core/IF
 \ IF       -- IFadr    initialize conditional forward branch
@@ -359,15 +170,14 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
     ENDCODE
     [THEN]
 
-    [UNDEFINED] DOES> [IF]
-\ https://forth-standard.org/standard/core/DOES
-\ DOES>    --          set action for the latest CREATEd definition
-    CODE DOES>
-    MOV &LAST_CFA,W     \ W = CFA of CREATEd word
-    MOV #DODOES,0(W)    \ replace CFA (CALL rDOCON) by new CFA (CALL rDODOES)
-    MOV IP,2(W)         \ replace PFA by the address after DOES> as execution address
-    MOV @RSP+,IP
-    MOV @IP+,PC
+    [UNDEFINED] SPACE [IF]
+\ https://forth-standard.org/standard/core/SPACE
+\ SPACE   --               output a space
+    CODE SPACE
+    SUB #2,PSP              \ 1
+    MOV TOS,0(PSP)          \ 3
+    MOV #$20,TOS            \ 2
+    MOV #EMIT,PC            \ 17~  23~
     ENDCODE
     [THEN]
 
@@ -380,15 +190,15 @@ FW1 AND #0,TOS      \ 1 flag Z = 1
         PUSH IP
         BEGIN
             LO2HI
-            $20 EMIT
+            SPACE           \ 25~
             HI2LO
-            SUB #2,IP
-            SUB #1,TOS
+            SUB #2,IP       \ 1
+            SUB #1,TOS      \ 1
         0= UNTIL
-        MOV @RSP+,IP
+        MOV @RSP+,IP        \ 
     THEN
-    MOV @PSP+,TOS           \ --         drop n
-    MOV @IP+,PC
+    MOV @PSP+,TOS           \  --         drop n
+    MOV @IP+,PC             \
     ENDCODE
     [THEN]
 
@@ -696,85 +506,85 @@ BW1 XOR #-1,0(PSP)
     [UNDEFINED] M*/ [IF]
 \ https://forth-standard.org/standard/double/MTimesDiv
 
-        RST_SET
+    RST_SET
 
-        CODE TSTBIT     \ addr bit_mask -- true/flase flag
-        MOV @PSP+,X
-        AND @X,TOS
-        MOV @IP+,PC
-        ENDCODE
+    CODE TSTBIT     \ addr bit_mask -- true/flase flag
+    MOV @PSP+,X
+    AND @X,TOS
+    MOV @IP+,PC
+    ENDCODE
 
-        KERNEL_ADDON HMPY TSTBIT \ hardware MPY ?
+    KERNEL_ADDON HMPY TSTBIT \ hardware MPY ?
 
-        RST_RET     \ remove TSTBIT definition
+    RST_RET     \ remove TSTBIT definition
 
-        [IF]   ; MSP430FRxxxx with hardware_MPY
+    [IF]   ; MSP430FRxxxx with hardware_MPY
 
-        CODE M*/                \ d1 * n1 / +n2 -- d2
-        MOV 4(PSP),&MPYS32L     \ 5             Load 1st operand    d1lo
-        MOV 2(PSP),&MPYS32H     \ 5                                 d1hi
-        MOV @PSP+,&OP2          \ 4 -- d1 n2    load 2nd operand    n1
-        MOV TOS,T               \ T = DIV
-        NOP3
-        MOV &RES0,S             \ 3 S = RESlo
-        MOV &RES1,TOS           \ 3 TOS = RESmi
-        MOV &RES2,W             \ 3 W = REShi
-        MOV #0,rDOCON           \ clear sign flag
-        CMP #0,W                \ negative product ?
-        S< IF                   \ compute ABS value if yes
-            XOR #-1,S
-            XOR #-1,TOS
-            XOR #-1,W
-            ADD #1,S
-            ADDC #0,TOS
-            ADDC #0,W
-            MOV #-1,rDOCON       \ set sign flag
-        THEN
+    CODE M*/                \ d1 * n1 / +n2 -- d2
+    MOV 4(PSP),&MPYS32L     \ 5             Load 1st operand    d1lo
+    MOV 2(PSP),&MPYS32H     \ 5                                 d1hi
+    MOV @PSP+,&OP2          \ 4 -- d1 n2    load 2nd operand    n1
+    MOV TOS,T               \ T = DIV
+    NOP3
+    MOV &RES0,S             \ 3 S = RESlo
+    MOV &RES1,TOS           \ 3 TOS = RESmi
+    MOV &RES2,W             \ 3 W = REShi
+    MOV #0,rDOCON           \ clear sign flag
+    CMP #0,W                \ negative product ?
+    S< IF                   \ compute ABS value if yes
+        XOR #-1,S
+        XOR #-1,TOS
+        XOR #-1,W
+        ADD #1,S
+        ADDC #0,TOS
+        ADDC #0,W
+        MOV #-1,rDOCON       \ set sign flag
+    THEN
 
-        [ELSE]  ; no hardware multiplier
+    [ELSE]  ; no hardware multiplier
 
-        CODE M*/    \ d1lo d1hi n1 +n2 -- d2lo d2hi
-        MOV #0,rDOCON               \ rDOCON = sign
-        CMP #0,2(PSP)               \ d1 < 0 ?
-        S< IF
-            XOR #-1,4(PSP)
-            XOR #-1,2(PSP)
-            ADD #1,4(PSP)
-            ADDC #0,2(PSP)
-            MOV #-1,rDOCON
-        THEN                        \ ud1
-        CMP #0,0(PSP)               \ n1 < 0 ?
-        S< IF
-            XOR #-1,0(PSP)
-            ADD #1,0(PSP)           \ u1
-            XOR #-1,rDOCON
-        THEN                        \ let's process UM*     -- ud1lo ud1hi u1 +n2
-                    MOV 4(PSP),Y            \ 3 uMDlo
-                    MOV 2(PSP),T            \ 3 uMDhi
-                    MOV @PSP+,S             \ 2 uMRlo        -- ud1lo ud1hi +n2
-                    MOV #0,rDODOES          \ 1 uMDlo=0
-                    MOV #0,2(PSP)           \ 3 uRESlo=0
-                    MOV #0,0(PSP)           \ 3 uRESmi=0     -- uRESlo uRESmi +n2
-                    MOV #0,W                \ 1 uREShi=0
-                    MOV #1,X                \ 1 BIT TEST REGlo
-        BEGIN       BIT X,S                 \ 1 test actual bit in uMRlo
-            0<> IF  ADD Y,2(PSP)            \ 3 IF 1: ADD uMDlo TO uRESlo
-                    ADDC T,0(PSP)           \ 3      ADDC uMDmi TO uRESmi
-                    ADDC rDODOES,W          \ 1      ADDC uMRlo TO uREShi
-            THEN    ADD Y,Y                 \ 1 (RLA LSBs) uMDlo *2
-                    ADDC T,T                \ 1 (RLC MSBs) uMDhi *2
-                    ADDC rDODOES,rDODOES    \ 1 (RLA LSBs) uMDlo *2
-                    ADD X,X                 \ 1 (RLA) NEXT BIT TO TEST
-        U>= UNTIL                           \ 1 IF BIT IN CARRY: FINISHED   W=uREShi
-\       TOS     +n2
-\       W       REShi
-\       0(PSP)  RESmi
-\       2(PSP)  RESlo
-        MOV TOS,T
-        MOV @PSP,TOS
-        MOV 2(PSP),S
+    CODE M*/    \ d1lo d1hi n1 +n2 -- d2lo d2hi
+    MOV #0,rDOCON               \ rDOCON = sign
+    CMP #0,2(PSP)               \ d1 < 0 ?
+    S< IF
+        XOR #-1,4(PSP)
+        XOR #-1,2(PSP)
+        ADD #1,4(PSP)
+        ADDC #0,2(PSP)
+        MOV #-1,rDOCON
+    THEN                        \ ud1
+    CMP #0,0(PSP)               \ n1 < 0 ?
+    S< IF
+        XOR #-1,0(PSP)
+        ADD #1,0(PSP)           \ u1
+        XOR #-1,rDOCON
+    THEN                        \ let's process MU*     -- ud1lo ud1hi u1 +n2
+                MOV 4(PSP),Y            \ 3 ud1lo
+                MOV 2(PSP),T            \ 3 ud1mi
+                MOV #0,rDODOES          \ 1 ud1hi=0
+                MOV @PSP+,S             \ 2 u1           -- ud1lo ud1hi +n2
+                MOV #0,2(PSP)           \ 3 uRESlo=0
+                MOV #0,0(PSP)           \ 3 uRESmi=0     -- uRESlo uRESmi +n2
+                MOV #0,W                \ 1 uREShi=0
+                MOV #1,X                \ 1 BIT TEST REGlo
+    BEGIN       BIT X,S                 \ 1 test actual bit in u1
+        0<> IF  ADD Y,2(PSP)            \ 3 IF 1: ADD ud1lo TO uRESlo
+                ADDC T,0(PSP)           \ 3      ADDC ud1mi TO uRESmi
+                ADDC rDODOES,W          \ 1      ADDC ud1hi TO uREShi
+        THEN    ADD Y,Y                 \ 1 (RLA LSBs) ud1lo *2
+                ADDC T,T                \ 1 (RLC MSBs) ud1mi *2
+                ADDC rDODOES,rDODOES    \ 1 (RLA LSBs) ud1hi *2
+                ADD X,X                 \ 1 (RLA) NEXT BIT TO TEST
+    U>= UNTIL                           \ 1 IF BIT IN CARRY: FINISHED   W=uREShi
+\   TOS     +n2
+\   W       REShi
+\   0(PSP)  RESmi
+\   2(PSP)  RESlo
+    MOV TOS,T
+    MOV @PSP,TOS
+    MOV 2(PSP),S
 
-        [THEN]  ; endcase of software/hardware_MPY
+    [THEN]  ; endcase of software/hardware_MPY
 
 \   process division
 \   reg     input           output
@@ -818,7 +628,7 @@ BW1 XOR #-1,0(PSP)
     MOV #XDOCON,rDOCON
     MOV @IP+,PC             \ 52 words
     ENDCODE
-    [THEN]
+    [THEN]      \ end of [UNDEFINED] M*/
 
     [UNDEFINED] 2VARIABLE [IF]
 \ https://forth-standard.org/standard/double/TwoVARIABLE
@@ -884,6 +694,44 @@ BW1 XOR #-1,0(PSP)
 ; Complement to pass DOUBLE TESTS
 ; -------------------------------
 
+    [UNDEFINED] R> [IF]
+\ https://forth-standard.org/standard/core/Rfrom
+\ R>    -- x    R: x --   pop from return stack ; CALL #RFROM performs DOVAR
+    CODE R>
+    SUB #2,PSP      \ 1
+    MOV TOS,0(PSP)  \ 3
+    MOV @RSP+,TOS   \ 2
+    MOV @IP+,PC     \ 4
+    ENDCODE
+    [THEN]
+
+    [UNDEFINED] C@ [IF]
+\ https://forth-standard.org/standard/core/Fetch
+\ C@     c-addr -- char   fetch char from memory
+    CODE C@
+    MOV.B @TOS,TOS
+    MOV @IP+,PC
+    ENDCODE
+    [THEN]
+
+    [UNDEFINED] DUP [IF]    \ define DUP and ?DUP
+\ https://forth-standard.org/standard/core/DUP
+\ DUP      x -- x x      duplicate top of stack
+    CODE DUP
+BW1 SUB #2,PSP      \ 2  push old TOS..
+    MOV TOS,0(PSP)  \ 3  ..onto stack
+    MOV @IP+,PC     \ 4
+    ENDCODE
+
+\ https://forth-standard.org/standard/core/qDUP
+\ ?DUP     x -- 0 | x x    DUP if nonzero
+    CODE ?DUP
+    CMP #0,TOS      \ 2  test for TOS nonzero
+    0<> ?GOTO BW1    \ 2
+    MOV @IP+,PC     \ 4
+    ENDCODE
+    [THEN]
+
     [UNDEFINED] SWAP [IF]
 \ https://forth-standard.org/standard/core/SWAP
 \ SWAP     x1 x2 -- x2 x1    swap top two items
@@ -891,6 +739,15 @@ BW1 XOR #-1,0(PSP)
     MOV @PSP,W      \ 2
     MOV TOS,0(PSP)  \ 3
     MOV W,TOS       \ 1
+    MOV @IP+,PC     \ 4
+    ENDCODE
+    [THEN]
+
+    [UNDEFINED] DROP [IF]
+\ https://forth-standard.org/standard/core/DROP
+\ DROP     x --          drop top of stack
+    CODE DROP
+    MOV @PSP+,TOS   \ 2
     MOV @IP+,PC     \ 4
     ENDCODE
     [THEN]
@@ -1096,6 +953,17 @@ BW2 ADD #4,&DP          \ make room to compile two words
     ENDCODE
     [THEN]
 
+    [UNDEFINED] 0< [IF]
+\ https://forth-standard.org/standard/core/Zeroless
+\ 0<     n -- flag      true if TOS negative
+    CODE 0<
+    ADD TOS,TOS     \ 1 set carry if TOS negative
+    SUBC TOS,TOS    \ 1 TOS=-1 if carry was clear
+    XOR #-1,TOS     \ 1 TOS=-1 if carry was set
+    MOV @IP+,PC     \
+    ENDCODE
+    [THEN]
+
     [UNDEFINED] SOURCE [IF]
 \ https://forth-standard.org/standard/core/SOURCE
 \ SOURCE    -- adr u    of current input buffer
@@ -1296,6 +1164,114 @@ BW2 ADD #4,&DP          \ make room to compile two words
     :NONAME
     'CR' EMIT 'LF' EMIT
     ; IS CR
+    [THEN]
+
+    KERNEL_ADDON @ 0<  ; test the switch: FLOORED/SYMETRIC DIVISION
+    [IF]
+        [UNDEFINED] FM/MOD [IF]
+\ https://forth-standard.org/standard/core/FMDivMOD
+\ FM/MOD   d1 n1 -- r q   floored signed div'n
+        CODE FM/MOD
+        MOV TOS,S           \           S=DIV
+        MOV @PSP,T          \           T=DVDhi
+        CMP #0,TOS          \           n2 >= 0 ?
+        S< IF               \
+            XOR #-1,TOS
+            ADD #1,TOS      \ -- d1 u2
+        THEN
+        CMP #0,0(PSP)       \           d1hi >= 0 ?
+        S< IF               \
+            XOR #-1,2(PSP)  \           d1lo
+            XOR #-1,0(PSP)  \           d1hi
+            ADD #1,2(PSP)   \           d1lo+1
+            ADDC #0,0(PSP)  \           d1hi+C
+        THEN                \ -- uDVDlo uDVDhi uDIVlo
+        PUSHM  #2,S         \ 4         PUSHM S,T
+        CALL #MUSMOD
+        MOV @PSP+,TOS
+        POPM  #2,S          \ 4         POPM T,S
+        CMP #0,T            \           T=DVDhi --> REM_sign
+        S< IF
+            XOR #-1,0(PSP)
+            ADD #1,0(PSP)
+        THEN
+        XOR S,T             \           S=DIV XOR T=DVDhi = Quot_sign
+        CMP #0,T            \ -- n3 u4  T=quot_sign
+        S< IF
+            XOR #-1,TOS
+            ADD #1,TOS
+        THEN                \ -- n3 n4  S=divisor
+
+        CMP #0,0(PSP)       \ remainder <> 0 ?
+        0<> IF
+            CMP #1,TOS      \ quotient < 1 ?
+            S< IF
+            ADD S,0(PSP)  \ add divisor to remainder
+            SUB #1,TOS    \ decrement quotient
+            THEN
+        THEN
+        MOV @IP+,PC
+        ENDCODE
+        [THEN]
+    [ELSE]
+        [UNDEFINED] SM/REM [IF]
+\ https://forth-standard.org/standard/core/SMDivREM
+\ SM/REM   DVDlo DVDhi DIV -- r3 q4  symmetric signed div
+        CODE SM/REM
+        MOV TOS,S           \           S=DIV
+        MOV @PSP,T          \           T=DVDhi
+        CMP #0,TOS          \           n2 >= 0 ?
+        S< IF               \
+            XOR #-1,TOS
+            ADD #1,TOS      \ -- d1 u2
+        THEN
+        CMP #0,0(PSP)       \           d1hi >= 0 ?
+        S< IF               \
+            XOR #-1,2(PSP)  \           d1lo
+            XOR #-1,0(PSP)  \           d1hi
+            ADD #1,2(PSP)   \           d1lo+1
+            ADDC #0,0(PSP)  \           d1hi+C
+        THEN                \ -- uDVDlo uDVDhi uDIVlo
+        PUSHM  #2,S         \ 4         PUSHM S,T
+        CALL #MUSMOD
+        MOV @PSP+,TOS
+        POPM  #2,S          \ 4         POPM T,S
+        CMP #0,T            \           T=DVDhi --> REM_sign
+        S< IF
+            XOR #-1,0(PSP)
+            ADD #1,0(PSP)
+        THEN
+        XOR S,T             \           S=DIV XOR T=DVDhi = Quot_sign
+        CMP #0,T            \ -- n3 u4  T=quot_sign
+        S< IF
+            XOR #-1,TOS
+            ADD #1,TOS
+        THEN                \ -- n3 n4  S=divisor
+        MOV @IP+,PC
+        ENDCODE
+        [THEN]
+    [THEN]
+
+    [UNDEFINED] NIP [IF]
+\ https://forth-standard.org/standard/core/NIP
+\ NIP      x1 x2 -- x2         Drop the first item below the top of stack
+    CODE NIP
+    ADD #2,PSP
+    MOV @IP+,PC
+    ENDCODE
+    [THEN]
+
+    [UNDEFINED] / [IF]
+\ https://forth-standard.org/standard/core/Div
+\ /      n1 n2 -- n3       signed quotient
+    : /
+    >R DUP 0< R>
+    [ KERNEL_ADDON @ 0< ]   \ test the switch: FLOORED / SYMETRIC DIVISION
+    [IF]    FM/MOD
+    [ELSE]  SM/REM
+    [THEN]
+    NIP
+    ;
     [THEN]
 
 \ ==============================================================================

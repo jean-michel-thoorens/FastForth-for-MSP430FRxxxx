@@ -1,10 +1,11 @@
 ::PreProcessSourceFile.bat
-::used as link in any folder to drag and drop file.f on it.
+::used as link in any folder to drag and drop source file.f on it.
 
+:: %~dp0 is the path of this file.bat
 :: %1 is file.f to be preprocessed
-:: %2 is used by Preprocess.bat as error : "unexpected third parameter"
 
-call  ..\config\Select.bat SelectTemplate
-call  ..\config\Preprocess.bat %1 ..\inc\%template% %2
-pause
+call  %~dp0Select.bat SelectTarget
+start  %~dp0Preprocess.bat %1 %~dp0..\inc\%target%
+
+@pause > NUL
 exit

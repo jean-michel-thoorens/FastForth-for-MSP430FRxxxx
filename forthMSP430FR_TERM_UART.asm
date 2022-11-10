@@ -20,49 +20,14 @@
 ; MSP_EXP430FR2355   P4.3 P4.2 P2.0
 ; LP_MSP430FR2476    P1.4 P1.5 P6.1
 ;
-;-------------------------------------------------------------------------------
-; UART TERMINAL: QABORT ABORT_TERM INIT_BACKGRND RXON INIT_FORTH INIT_TERM INIT_COLD INIT_SOFT
-;-------------------------------------------------------------------------------
-;
-;-----------------------------------;
-; modifying TOs is forbidden here ! ;
-;-----------------------------------;
-INIT_FORTH                          ; common ABORT_TERM|WARM subroutine, to init DEFERed definitions + INIT_FORTH
-;-----------------------------------;
-            MOV @RSP+,IP            ; init IP with CALLER next address
-;                                   ;
-            MOV #PUC_ABORT_ORG,X    ; FRAM INFO         FRAM MAIN
-;                                   ; ---------         ---------
-            MOV @X+,&PFAACCEPT      ; BODYACCEPT    --> PFAACCEPT
-            MOV @X+,&PFAEMIT        ; BODYEMIT      --> PFAEMIT
-            MOV @X+,&PFAKEY         ; BODYKEY       --> PFAKEY
-            MOV @X+,&CIB_ORG        ; TIB_ORG       --> CIB_ORG             TIB = Terminal Input Buffer, CIB = Current Input Buffer
-;                                   ;
-;                                   ; FRAM INFO         REG|RAM
-;                                   ; ---------         -------
-            MOV @X+,RSP             ; INIT_RSTACK   --> R1=RSP              PSP is initialised with ABORT
-            MOV @X+,rDOCOL          ; EXIT          --> R4=rDOCOL           (if DTC=2)
-            MOV @X+,rDODOES         ; XDODOES       --> R5=rDODOES
-            MOV @X+,rDOCON          ; XDOCON        --> R6=rDOCON
-            MOV @X+,rDOVAR          ; RFROM         --> R7=rDOVAR
-            MOV @X+,&CAPS           ; INIT_CAPS     --> RAM CAPS            init CAPS ON
-            MOV @X+,&BASEADR        ; INIT_BASE     --> RAM BASE            init decimal base
-            MOV @X+,&LEAVEPTR       ; INIT_LEAVE    --> RAM LEAVEPTR
-            MOV #0,&STATE           ; 0             --> RAM STATE
-            CALL &SOFT_APP          ; default SOFT_APP = INIT_SOFT = RET_ADR, value set by DEEP_RESET.
-            MOV #SEL_RST,PC         ; goto PUC 7 to select the user's choice from TOS value: RST_RET|DEEP_RESET
-;-----------------------------------;
+;------------------------------------------------------------------------------------------------------------
+; UART TERMINAL: ?ABORT, INIT values of ABORT_APP, BACKGRND_APP, HARD_APP, COLD_APP and SOFT_APP
+;------------------------------------------------------------------------------------------------------------
 
-; ?ABORT defines the run-time part of ABORT"
-;-----------------------------------;
-QABORT      CMP #0,2(PSP)           ; -- f addr cnt     if f is true abort current process then display ABORT" msg.
-            JNZ ABORT_TERM          ;
-THREEDROP   ADD #4,PSP              ; -- cnt
-            JMP DROP                ;
-ABORT_TERM  PUSH #ABORT_INIT        ; ABORT_TERM is called by INTERPRET, QREVEAL, TYPE2DOES
-; ----------------------------------;
-UART_ABORT  CALL #UART_RXON         ;
-; ----------------------------------;
+; ==================================;
+ABORT_TERM                          ; INIT value of ABORT_APP,  used by SD_CARD_ERROR
+; ==================================;
+            CALL #UART_RXON         ;
 A_UART_LOOP BIC #RX_TERM,&TERM_IFG  ; clear RX_TERM
             MOV &FREQ_KHZ,Y         ; 1000, 2000, 4000, 8000, 16000, 24000
 A_USB_LOOPJ MOV #65,X               ; 2~        <-------+ linux with minicom seems very very slow...
@@ -73,8 +38,17 @@ A_USB_LOOPI SUB #1,X                ; 1~        <---+   | ...to refill its USB b
             BIT #RX_TERM,&TERM_IFG  ; 4 new char in TERMRXBUF after 200ms delay ?
             JNZ A_UART_LOOP         ; 2 yes, the input stream is still active: loop back
             MOV @RSP+,PC
+
+; ?ABORT defines the run-time part of ABORT"
+;-----------------------------------;
+QABORT      CMP #0,2(PSP)           ; -- f addr cnt     if f is true abort current process then display ABORT" msg.
+            JNZ QABORT_YES          ;
+            ADD #4,PSP              ; -- cnt
+            JMP DROP                ;
 ; ----------------------------------;
-ABORT_INIT  CALL #INIT_FORTH        ;                   common ?ABORT|PUC subroutine
+QABORT_YES  CALL &ABORT_APP         ;                   QABORT_YES called by INTERPRET, QREVEAL, TYPE2DOES
+; ----------------------------------;
+            CALL #INIT_FORTH        ;                   common ?ABORT|PUC subroutine
             .word   DUP             ; -- f addr cnt cnt
             .word   QFBRAN,ABORT_END; -- f addr 0       don't force ECHO, no display if ABORT" is an empty string
             .word   ECHO            ; -- f addr cnt     force ECHO
@@ -82,22 +56,22 @@ ABORT_INIT  CALL #INIT_FORTH        ;                   common ?ABORT|PUC subrou
             .byte   4,27,"[7m"      ;
             .word   TYPE            ;                   ESC [7m = set reverse video
 ; ----------------------------------;
-; Display QABORT|WARM message       ; -- addr cnt       <== WARM jumps here
+; Display QABORT|WARM message       ; -- f addr cnt     <== WARM jumps here
 ; ----------------------------------;
 ABORT_TYPE  .word   TYPE            ; -- f              type QABORT|WARM message
 SDABORT_END .word   XSQUOTE         ;                   set normal video Display then goto ABORT
             .byte   4,27,"[0m"      ;
             .word   TYPE            ;                   ESC [0m = set normal video
-ABORT_END   .word   ABORT           ; -- f              no return
+ABORT_END   .word   ABORT           ; -- f              no return, param stack is cleared..
 ; ----------------------------------;
 
 ;-------------------------------------------------------------------------------
 ; INIT TERMinal then enable I/O     ;
 ;-------------------------------------------------------------------------------
-INIT_HARD                           ;
-; ----------------------------------;
-INIT_TERM                           ; default content of HARD_APP called by WARM
-; ----------------------------------;
+
+; ==================================;
+INIT_TERM                           ; INIT value of HARD_APP called by WARM
+; ==================================;
     MOV #0081h,&TERM_CTLW0          ; 8 bits, UC SWRST + UCLK = SMCLK, max 6MBds @24MHz
     MOV &TERMBRW_RST,&TERM_BRW      ; init value in FRAM INFO
     MOV &TERMMCTLW_RST,&TERM_MCTLW  ; init value in FRAM INFO
@@ -108,13 +82,15 @@ INIT_TERM                           ; default content of HARD_APP called by WARM
     MOV @RSP+,PC                    ; RET
 ; ----------------------------------;
 
-; ----------------------------------;
-INIT_STOP                           ; default STOP_APP, called by SYS: wait end of TX to TERMINAL
-; ----------------------------------;
+; ==================================;
+INIT_STOP                           ; INIT value of STOP_APP, called by SYS: wait end of TX to TERMINAL
+; ==================================;
 TX_IDLE     BIT #1,&TERM_STATW      ;3 uart busy ?
             JNZ TX_IDLE             ;2 loop back while TERM_UART is busy
-; ----------------------------------;
-INIT_SOFT   MOV @RSP+,PC            ;
+; ==================================;
+INIT_SOFT                           ;
+; ==================================;
+   MOV @RSP+,PC                     ;
 ; ----------------------------------;
 
 ;-------------------------------------------------------------------------------
@@ -124,7 +100,7 @@ INIT_SOFT   MOV @RSP+,PC            ;
 ;-----------------------------------;
 UART_WARM                           ; (n) --
 ;-----------------------------------;
-WARM    CALL &HARD_APP              ; default HARD_APP = INIT_TERM, value set by DEEP_RESET.
+WARM    CALL &HARD_APP              ;
         mASM2FORTH                  ;
         .word   ECHO                ;
         .word   XSQUOTE             ;
@@ -142,7 +118,6 @@ WARM    CALL &HARD_APP              ; default HARD_APP = INIT_TERM, value set by
         .word   BRAN,ABORT_TYPE     ; no return
 ;-----------------------------------;
 
-;-----------------------------------;
             FORTHWORD "SYS"         ; n --      select COLD, DEEP_COLD, WARM (as software RST,DEEP_RST,WARM)
 ;-----------------------------------;
 SYS         CALL &STOP_APP          ; default STOP_APP = INIT_STOP, set by DEEP_RESET.
@@ -190,17 +165,28 @@ RESET                               ; <--- RST vector <----------- PUC <--- POR 
 INITRAMLOOP SUB #2,X                ; 1
             MOV #0,RAM_ORG(X)       ; 3
             JNZ INITRAMLOOP         ; 2 6 cycles loop !
+; ;-------------------------------------------------------------------------------
+; ; PUC 5: GET SYSRSTIV and USERSYS
+; ;-------------------------------------------------------------------------------
+;             MOV &SYSRSTIV,X        ; X <-- SYSRSTIV <-- 0
 ;-------------------------------------------------------------------------------
-; PUC 5: GET SYSRSTIV and USERSYS
+; PUC 5: GET SYSUNIV_SYSSNIV_SYSRSTIV ( %0_UUU0_SSSS0_RRRRR0) and USERSYS
 ;-------------------------------------------------------------------------------
-            MOV &SYSRSTIV,X         ; X <-- SYSRSTIV <-- 0
+            MOV &SYSUNIV,X          ; 0 --> SYSUNIV --> X   (%0000_0000_0000_UUU0) (7 values)
+            RLAM #4,X               ; make room for SYSSNIV (%0000_0000_UUU0_0000)
+            ADD X,X                 ;                       (%0000_000U_UU00_0000)
+            BIS &SYSSNIV,X          ; 0 --> SYSSNIV --> X   (%0000_000U_UU0S_SSS0) (15 values)
+            RLAM #4,X               ; make room for SYSRSTIV(%000U_UU0S_SSS0_0000)
+            RLAM #2,X               ;                       (%0UUU_0SSS_S000_0000)
+            BIS.B &SYSRSTIV,X       ; 0 --> SYSRSTIV --> X  (%0UUU_0SSS_S0RR_RRR0) (31 values)
+;-------------------------------------------------------------------------------
             MOV &USERSYS,TOS        ; TOS = FRAM USERSYS
             MOV #0,&USERSYS         ; clear FRAM USERSYS
             BIT #-1,TOS             ;
             JNZ PUC6                ; if TOS <> 0, keep USERSYS value
             MOV X,TOS               ; else TOS <-- SYSRSTIV
 ;-------------------------------------------------------------------------------
-; PUC 6: START FORTH engine: WARM (BOOT)
+; PUC 6: START FORTH engine: WARM|BOOT
 ;-------------------------------------------------------------------------------
 PUC6        CALL #INIT_FORTH        ; common part of QABORT|PUC
 PUCNEXT     .word WARM              ; no return. May be redirected by BOOT.
@@ -209,6 +195,7 @@ PUCNEXT     .word WARM              ; no return. May be redirected by BOOT.
 ;-------------------------------------------------------------------------------
 ; INTERPRETER INPUT: ACCEPT KEY EMIT ECHO NOECHO
 ;-------------------------------------------------------------------------------
+
             FORTHWORD "ACCEPT"      ;
 ;-----------------------------------;
 ;https://forth-standard.org/standard/core/ACCEPT
@@ -307,11 +294,10 @@ CR_NEXT     BIT #RX_TERM,&TERM_IFG  ;               char 'LF' is received ?
 ; ----------------------------------;
             SUB @PSP+,TOS           ; -- len'       R-- ACCEPT_NEXT
             MOV @RSP+,IP            ;               R--
-ACCEPT_EOL  MOV.B S,Y               ;               output a BL on TERMINAL (for the case of error occuring)
+            MOV.B S,Y               ;               output a BL on TERMINAL (for the case of error occuring)
             JMP QYEMIT              ;               before return to QUIT to interpret line
 ; **********************************;               UF9 to UF11 will be resetted.
 
-;-----------------------------------;
             FORTHWORD "KEY"
 ;-----------------------------------;
 ; https://forth-standard.org/standard/core/KEY
@@ -319,9 +305,9 @@ ACCEPT_EOL  MOV.B S,Y               ;               output a BL on TERMINAL (for
 KEY         MOV @PC+,PC             ;4  Code Field Address (CFA) of KEY
 PFAKEY      .word   BODYKEY         ;   Parameter Field Address (PFA) of KEY, with default value
 BODYKEY     PUSH #KEYNEXT           ;
-; ----------------------------------;
-INIT_BACKGRND                       ; default content of BACKGRND_APP called by BACKGRND
-; ----------------------------------;
+; ==================================;
+INIT_BACKGRND                       ; INIT value of BACKGRND_APP
+; ==================================;
 UART_RXON                           ;
 ; ----------------------------------;
     .IFDEF TERMINAL3WIRES           ;   first software flow control
@@ -343,7 +329,6 @@ KEYLOOP     BIT #RX_TERM,&TERM_IFG  ; loop if bit0 = 0 in interupt flag register
             MOV @IP+,PC
 ;-----------------------------------;
 
-;-----------------------------------;
             FORTHWORD "EMIT"        ;       save X before use if used
 ;-----------------------------------;
 ; https://forth-standard.org/standard/core/EMIT
@@ -355,14 +340,12 @@ BODYEMIT    MOV TOS,Y               ;1 output character to the default output: T
             JMP QYEMIT              ;2 + 12~
 ;-----------------------------------;
 
-;-----------------------------------;
             FORTHWORD "ECHO"        ; --    connect ACCEPT and EMIT to TERMINAL input (default)
 ;-----------------------------------;
 ECHO        MOV #0B3A2h,&QYEMIT     ;       MOV #'BIT #TX_TERM,0(PC)',&QYEMIT
             MOV @IP+,PC             ;
 ;-----------------------------------;
 
-;-----------------------------------;
             FORTHWORD "NOECHO"      ; --    disconnect ACCEPT and EMIT from TERMINAL input
 ;-----------------------------------;
 NOECHO      MOV #4D30h,&QYEMIT      ;       MOV #'MOV @IP+,PC',&QYEMIT

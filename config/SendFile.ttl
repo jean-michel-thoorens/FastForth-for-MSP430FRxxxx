@@ -7,17 +7,18 @@
 
 connect param3
 
-inputbox 'Send this file to the MSP430FR target:' ' ' param2
-
-setecho 0           ; no echo from Teraterm
-showtt 0            ; close teraterm windows
-
-
 ;logfile = '\teraterm.log'
 ;dirname logdir param2  ; logir = dir of file.4TH to be sent
 ;strconcat logdir logfile
 ;logopen logdir 1
 
+
+
+
+inputbox 'Send this file to the MSP430FR target:' ' ' param2
+
+setecho 0           ; no echo from Teraterm
+showtt 0            ; close teraterm windows
 
 ; DEVICE ID TEST
 ; ==============
@@ -26,7 +27,7 @@ sendln 'CODE ?ID'                               ; CODE ?ID
 sendln 'CMP #0,R14 0<> IF SUB &$1A04,R14 THEN'  ; CMP #0,TOS 0<> IF SUB &DEVICEID,TOS THEN
 sendln 'COLON '                                 ; COLON
 sendln '$1B EMIT $63 EMIT'                      ; $1B EMIT $63 EMIT   \ send 'ESC c' (clear screen)
-;sendln '13 EMIT $10 EMIT'                      ; CR
+;sendln '13 EMIT $10 EMIT'                       ; CR
 sendln ' ABORT" Device'39's ID mismatch!" '     ; ABORT" Device's ID mismatch!"
 sendln 'RST_RET ;'                              ; RST_RET ; 
 
@@ -59,11 +60,9 @@ endif
 
 uptime timeend  ; stops chrono...
 diff = timeend - timestart
-
-;sprintf2 resultat " %s download and execute: %d msec" param2 diff
 filestat param2 size
 KBds = 10 * size / diff
-sprintf2 resultat " %s download compile execute: %d msec (%d kBds eff.)" param2 diff KBds
+sprintf2 resultat " download compile execute %s in %d ms (%d kBds eff.)" param2 diff KBds
 
 showtt 1    ; display teraterm window
 
@@ -72,6 +71,3 @@ messagebox resultat "teraterm.exe"
 ;logclose
 
 ;unlink
-;end
-
-

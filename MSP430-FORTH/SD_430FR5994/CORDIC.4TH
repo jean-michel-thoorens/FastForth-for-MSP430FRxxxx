@@ -87,7 +87,7 @@ MARKER {CORDIC}
     MOV @R13+,R0
     ENDCODE
 
-    $180E 8 TSTBIT
+    $180E $10 TSTBIT
 
     RST_RET
 
@@ -218,7 +218,7 @@ BW3     ADD R14,R9
         ADD R10,R10
         U>= UNTIL
         MOV R11,R9
-        MOV #$40AE,R6
+        MOV #[THEN]+$6A,R6
         MOV @R1+,R0
         ENDCODE
 
@@ -366,7 +366,7 @@ FW1     RRA R12
     MOV #0,2(R15)
     MOV R14,0(R15)
     MOV #286,R14
-    CALL #$4028
+    CALL #<#+8
     MOV @R15+,0(R15)
     CMP #0,R6
     S< IF
@@ -375,7 +375,7 @@ FW1     RRA R12
         ADD #1,0(R15)
         ADDC #0,R14
     THEN
-    MOV #$40AE,R6
+    MOV #[THEN]+$6A,R6
     MOV @R13+,R0
     ENDCODE
 

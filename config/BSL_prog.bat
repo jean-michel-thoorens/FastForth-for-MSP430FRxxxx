@@ -27,6 +27,7 @@
 ::      $(3) port COMx in use, example: COM8
 ::
 :: \config\BSL_Scripter.bat variables:
+:: %~dp0 is the path of this file.bat
 :: %1 = target name without ext. of \binaries\target.txt file
 :: %2 = port COMx in use
 :: %~d1 = drive: of %1
@@ -34,8 +35,8 @@
 
 
 @set PortCOM=%2
-@if 1%PortCOM% == 1 CALL %~dp1..\config\Select.bat SelectPortCOM
+@if 1%PortCOM% == 1 CALL %~dp0Select.bat SelectPortCOM
 
-@%~dp1..\prog\BSL-Scripter.exe --log --quiet --initComm [INVOKE,%PortCOM%,UART,9600,PARITY] --device FRxx --erase ERASE_ALL --exit [RESET]
-@%~dp1..\prog\BSL-Scripter.exe --log --initComm [INVOKE,%PortCOM%,UART,9600,PARITY] --device FRxx --speed FAST  --bslPwd %~dp1binaries\pass32_default.txt -w %~dp1binaries\%~nx1 --exit [RESET]
+@%~dp0..\prog\BSL-Scripter.exe --log --quiet --initComm [INVOKE,%PortCOM%,UART,9600,PARITY] --device FRxx --erase ERASE_ALL --exit [RESET]
+@%~dp0..\prog\BSL-Scripter.exe --log --initComm [INVOKE,%PortCOM%,UART,9600,PARITY] --device FRxx --speed FAST  --bslPwd %~dp0..\binaries\pass32_default.txt -w %~dp0..\binaries\%~nx1 --exit [RESET]
 @pause

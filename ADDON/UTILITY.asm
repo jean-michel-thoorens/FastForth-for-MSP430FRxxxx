@@ -328,8 +328,8 @@ WORDS2      .word   LIT,0,DUP
             .word   LIT,0
             .word   xdo                     ;   DO
 WORDS3      .word   DUP,II,PAD,PLUS,FETCH   ;   old MAX NFA U< NFA ?
-            .word   ULESS,QFBRAN,WORDS4      ;   no
-            .word   TWODROP,II              ;   yes, replace old MAX of NFA by new MAX of NFA
+            .word   ULESS,QFBRAN,WORDS4     ;   no
+            .word   DROP,DROP,II            ;   yes, replace old MAX of NFA by new MAX of NFA
             .word   DUP,PAD,PLUS,FETCH      ;
 WORDS4      .word   LIT,2,xploo,WORDS3      ;   2 +LOOP
             .word   QDUP                    ;   MAX of NFA = 0 ?
